@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Environment Variables (Crucial for your MongoDB URI)
+.env
+.env.local
+.env.*
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs
+*.log
+
+# Build/Dist
+dist/
+build/
+
+# IDE/Editor folders
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS related files
+.DS_Store
+Thumbs.db
+
+# Temporary Excel upload storage (if not using buffers)
+uploads/
+temp/
