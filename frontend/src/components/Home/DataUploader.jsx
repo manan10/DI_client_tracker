@@ -23,7 +23,7 @@ const DataUploader = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const data = await request("/clients/sync-status");
+        const data = await request("/upload/sync-status");
         if (data.lastSync) setLastSync(data.lastSync);
       } catch (err) {
         console.error("Status check failed", err);
@@ -55,11 +55,13 @@ const DataUploader = () => {
     formData.append("nonFamFile", files.nonfam);
 
     try {
-      const response = await request("/clients/sync", "POST", formData);
+      const response = await request("/upload/sync", "POST", formData);
       setSyncStatus({ isOpen: true, success: true, summary: response.summary });
       setLastSync(new Date());
       setFiles({ aum: null, family: null, nonfam: null });
-    } catch {
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || "Sync failed. Check server connection.";
+      setFileError(errorMessage);
       setSyncStatus({ isOpen: true, success: false, summary: null });
     }
   };
@@ -124,7 +126,7 @@ const DataUploader = () => {
         className={`w-full py-4 rounded-xl font-black text-xs uppercase tracking-[0.2em] text-white transition-all ${
           loading || !files.aum || !files.family || !files.nonfam
             ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-            : "bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100"
+            : "bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-100" // Updated to Amber/Gold
         }`}
       >
         {loading ? "Processing Wealth Elite..." : "Start Full Sync"}

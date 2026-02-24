@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const LogSchema = new mongoose.Schema({
+const InteractionSchema = new mongoose.Schema({
   client: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Client', 
@@ -14,9 +14,15 @@ const LogSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
   type: { 
     type: String, 
+    // Merged types for brevity
     enum: ['In-Person', 'Call', 'WhatsApp', 'Email'], 
     required: true 
   },
+  // Added back from previous discussion to track business growth
+  discussionPoints: [{ 
+    type: String, 
+    enum: ['MF', 'PMS', 'AIF', 'Equity', 'Insurance', 'Tax Planning'] 
+  }],
   summary: { type: String, required: true, trim: true },
   followUpRequired: { type: Boolean, default: false },
   followUpDate: { type: Date },
@@ -25,6 +31,7 @@ const LogSchema = new mongoose.Schema({
     enum: ['Pending', 'Completed', 'Cancelled', 'N/A'],
     default: function() { return this.followUpRequired ? 'Pending' : 'N/A' }
   },
+  // Kept for regulatory safety in Surat
   complianceCheck: { 
     type: Boolean, 
     default: false,
@@ -32,4 +39,7 @@ const LogSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Log', LogSchema);
+// Optimized for your timeline view
+InteractionSchema.index({ client: 1, date: -1 });
+
+module.exports = mongoose.model('Interaction', InteractionSchema);
