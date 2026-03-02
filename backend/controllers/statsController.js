@@ -17,13 +17,7 @@ exports.getDashboardStats = async (req, res) => {
         ]);
 
         const totalAUM = aumResult.length > 0 ? aumResult[0].total : 0;
-
-        // 3. Precise Interaction Count
         const totalInteractions = await Interaction.countDocuments();
-
-        // Server-side debug log to verify numbers
-        console.log(`Stats Aggregated -> Clients: ${totalClients}, AUM: ${totalAUM}, Logs: ${totalInteractions}`);
-
         res.status(200).json({
             totalClients,
             totalAUM,

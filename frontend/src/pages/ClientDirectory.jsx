@@ -5,8 +5,9 @@ import Navbar from "../components/Navbar";
 import { useApi } from "../hooks/useApi";
 import DirectoryFilters from "../components/Directory/DirectoryFilters";
 import ClientTableRow from "../components/Directory/ClientTableRow";
+import ClientDrawer from "../components/Directory/ClientDrawer";
+import InteractionModal from "../components/InteractionModal";
 
-// Declared outside to prevent re-creation during render
 const SortableHeader = ({ label, sortKey, sortConfig, requestSort, align = "left" }) => {
   const isActive = sortConfig.key === sortKey;
   return (
@@ -21,10 +22,10 @@ const SortableHeader = ({ label, sortKey, sortConfig, requestSort, align = "left
         <div className="flex items-center">
           {isActive ? (
             sortConfig.direction === 'asc' ? 
-              <ChevronUp size={14} className="text-amber-600 animate-in fade-in zoom-in duration-200" /> : 
-              <ChevronDown size={14} className="text-amber-600 animate-in fade-in zoom-in duration-200" />
+              <ChevronUp size={14} className="text-amber-600" /> : 
+              <ChevronDown size={14} className="text-amber-600" />
           ) : (
-            <ArrowUpDown size={12} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <ArrowUpDown size={12} className="text-slate-300 opacity-0 group-hover:opacity-100" />
           )}
         </div>
       </div>
@@ -40,6 +41,11 @@ const ClientDirectory = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 20;
 
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [preSelectedClient, setPreSelectedClient] = useState(null);
+
   const navigate = useNavigate();
   const { request, loading } = useApi();
 
@@ -48,20 +54,24 @@ const ClientDirectory = () => {
       try {
         const data = await request("/clients/");
         setClients(data);
-      } catch { /* Handled by hook */ }
+      } catch { /* Handled */ }
     };
     fetchClients();
   }, [request]);
 
-  // Handlers to reset pagination without using useEffect
-  const handleSearchChange = (value) => {
-    setSearchTerm(value);
-    setCurrentPage(1); 
+  const handleClientClick = (client) => {
+    setSelectedClient(client);
+    setIsDrawerOpen(true);
   };
 
-  const handleTierChange = (value) => {
-    setFilterTier(value);
-    setCurrentPage(1);
+  const handleOpenModalFromDrawer = () => {
+    setPreSelectedClient(selectedClient);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setPreSelectedClient(null);
   };
 
   const requestSort = (key) => {
@@ -73,7 +83,7 @@ const ClientDirectory = () => {
       return;
     }
     setSortConfig({ key, direction });
-    setCurrentPage(1); // Reset page on sort change for UX consistency
+    setCurrentPage(1);
   };
 
   const processedClients = useMemo(() => {
@@ -107,7 +117,7 @@ const ClientDirectory = () => {
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
   const currentRecords = processedClients.slice(indexOfFirstRecord, indexOfLastRecord);
-  const totalPages = Math.ceil(processedClients.length / recordsPerPage);
+  const totalRecords = processedClients.length;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -117,20 +127,19 @@ const ClientDirectory = () => {
           <div>
             <button 
               onClick={() => navigate("/")} 
-              className="flex items-center text-amber-600 text-[10px] font-black uppercase tracking-[0.2em] mb-3 hover:text-amber-700 transition-all group"
+              className="flex items-center text-amber-600 text-[10px] font-black uppercase tracking-[0.2em] mb-3 hover:text-amber-700"
             >
-              <ArrowLeft size={14} className="mr-2 group-hover:-translate-x-1 transition-transform" /> 
-              Back to Dashboard
+              <ArrowLeft size={14} className="mr-2" /> Back to Dashboard
             </button>
-            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Client Directory</h1>
+            <h1 className="text-3xl font-black text-slate-900 uppercase">Client Directory</h1>
             <p className="text-slate-500 text-[11px] font-bold uppercase tracking-widest mt-1">
               {loading ? "Refreshing..." : `Managing ${clients.length} Total Records`}
             </p>
           </div>
-          <DirectoryFilters onSearchChange={handleSearchChange} onTierChange={handleTierChange} />
+          <DirectoryFilters onSearchChange={(v) => { setSearchTerm(v); setCurrentPage(1); }} onTierChange={(v) => { setFilterTier(v); setCurrentPage(1); }} />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200 border-t-4 border-t-amber-500 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-xl border-t-4 border-t-amber-500 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead className="bg-slate-50/50 text-[10px] font-black uppercase tracking-[0.15em] border-b">
@@ -143,35 +152,46 @@ const ClientDirectory = () => {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {currentRecords.map((client) => (
-                  <ClientTableRow key={client._id} client={client} />
+                  <ClientTableRow key={client._id} client={client} onClick={() => handleClientClick(client)} />
                 ))}
               </tbody>
             </table>
           </div>
-
-          <div className="flex justify-between items-center px-10 py-6 bg-slate-50/50 border-t border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-              Showing {processedClients.length > 0 ? indexOfFirstRecord + 1 : 0} to {Math.min(indexOfLastRecord, processedClients.length)} of {processedClients.length}
+          
+          <div className="flex justify-between items-center px-10 py-6 bg-slate-50 border-t">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              Showing {totalRecords > 0 ? indexOfFirstRecord + 1 : 0} to {Math.min(indexOfLastRecord, totalRecords)} of {totalRecords}
             </p>
             <div className="flex gap-3">
               <button 
                 disabled={currentPage === 1 || loading}
                 onClick={() => setCurrentPage(prev => prev - 1)}
-                className="px-4 py-2 text-[10px] font-black uppercase border border-slate-200 rounded-lg disabled:opacity-30 hover:bg-white transition-all shadow-sm"
-              >
-                Previous
-              </button>
+                className="px-4 py-2 text-[10px] font-black uppercase border rounded-lg disabled:opacity-30"
+              >Previous</button>
               <button 
-                disabled={currentPage === totalPages || loading || totalPages === 0}
+                disabled={indexOfLastRecord >= totalRecords || loading}
                 onClick={() => setCurrentPage(prev => prev + 1)}
-                className="px-4 py-2 bg-amber-600 text-white text-[10px] font-black uppercase rounded-lg shadow-lg shadow-amber-100 disabled:opacity-30 hover:bg-amber-700 transition-all"
-              >
-                Next
-              </button>
+                className="px-4 py-2 bg-amber-600 text-white text-[10px] font-black uppercase rounded-lg disabled:opacity-30"
+              >Next</button>
             </div>
           </div>
         </div>
       </main>
+
+      <ClientDrawer 
+        isOpen={isDrawerOpen} 
+        onClose={() => setIsDrawerOpen(false)} 
+        client={selectedClient}
+        onLogInteraction={handleOpenModalFromDrawer}
+      />
+
+      <InteractionModal 
+        key={preSelectedClient?._id || 'new-interaction'}
+        isOpen={isModalOpen} 
+        onClose={handleCloseModal} 
+        onRefresh={() => { /* re-fetch if needed */ }}
+        initialClient={preSelectedClient} 
+      />
     </div>
   );
 };

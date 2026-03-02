@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ClientTableRow = ({ client }) => {
+const ClientTableRow = ({ client, onClick }) => {
   // Helper to compact large AUM numbers into Indian Word Format
   const formatAUM = (value) => {
     if (!value || value === 0) return "₹ 0";
@@ -24,7 +24,7 @@ const ClientTableRow = ({ client }) => {
   };
 
   return (
-    <tr className="hover:bg-slate-50/80 transition-all group border-b border-slate-50 last:border-0">
+    <tr onClick={onClick} className="hover:bg-slate-50/80 transition-all group border-b border-slate-50 last:border-0">
       {/* Reduced py-3 for a more compact vertical feel */}
       <td className="px-8 py-3">
         <p className="text-sm font-black text-slate-800 uppercase tracking-tight group-hover:text-amber-600 transition-colors">

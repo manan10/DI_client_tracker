@@ -1,8 +1,15 @@
 const express = require("express");
 const router = express.Router();
 const interactionController = require("../controllers/interactionController");
+const { protect } = require("../middleware/authMiddleware");
 
-router.post("/", interactionController.createInteraction);
-router.get("/recent", interactionController.getRecentInteractions);
+router.post("/", protect, interactionController.createInteraction);
+router.get("/recent", protect, interactionController.getRecentInteractions);
+router.get("/pending", protect, interactionController.getPendingFollowUps);
+router.patch(
+  "/:id/status",
+  protect,
+  interactionController.updateFollowUpStatus,
+);
 
 module.exports = router;

@@ -7,6 +7,7 @@ const clientRoutes = require("./routes/clientRoutes");
 const interactionRoutes = require("./routes/interactionRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const statsRoutes = require('./routes/statsRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use("/api/clients", clientRoutes);
 app.use("/api/interactions", interactionRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/stats", statsRoutes);
+app.use('/api/auth', authRoutes);
 
 mongoose
   .connect(process.env.MONGO_URI)
