@@ -12,20 +12,29 @@ export const useApi = (baseUrl = "http://localhost:5000/api") => {
 
       try {
         const token = localStorage.getItem("token");
+        const isFormData = data instanceof FormData;
+
         const response = await axios({
           url: `${baseUrl}${endpoint}`,
           method,
           data,
           headers: {
-            "Content-Type": "application/json",
+            // Remove application/json for FormData to allow browser to set boundary
+            ...(isFormData ? {} : { "Content-Type": "application/json" }),
             ...(token && { Authorization: `Bearer ${token}` }),
           },
         });
 
         return response.data;
       } catch (err) {
-        const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || "Something went wrong";
+        const errorMessage = 
+          err.response?.data?.error || 
+          err.response?.data?.message || 
+          err.message || 
+          "Something went wrong";
+        
         setError(errorMessage);
+
         if (err.response?.status === 401) {
           localStorage.removeItem("token");
           localStorage.removeItem("user");

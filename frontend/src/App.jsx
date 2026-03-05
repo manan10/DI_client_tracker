@@ -1,8 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./hooks/useAuth";
+
 import Home from "./pages/Home";
 import ClientDirectory from "./pages/ClientDirectory";
 import Auth from "./pages/Auth";
-import { AuthProvider, useAuth } from "./hooks/useAuth";
+import Settings from "./pages/Settings";
 
 // Component to protect routes
 const ProtectedRoute = ({ children }) => {
@@ -35,6 +37,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ClientDirectory />
+                </ProtectedRoute>
+              } 
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
                 </ProtectedRoute>
               } 
             />

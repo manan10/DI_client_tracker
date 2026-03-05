@@ -8,7 +8,7 @@ const UniversalSearch = ({ onClientSelect }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { request } = useApi();
   const wrapperRef = useRef(null);
-  const inputRef = useRef(null); // Added for keyboard shortcut focus
+  const inputRef = useRef(null);
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -52,13 +52,13 @@ const UniversalSearch = ({ onClientSelect }) => {
   return (
     <div className="relative w-full" ref={wrapperRef}>
       <div className="relative group flex items-center">
-        <Search className="absolute left-4 text-slate-400 group-focus-within:text-amber-600 transition-colors" size={18} />
+        <Search className="absolute left-4 text-slate-400 dark:text-slate-500 group-focus-within:text-amber-600 transition-colors" size={18} />
         
         <input
           ref={inputRef}
           type="text"
           placeholder="SEARCH CLIENTS..."
-          className="w-full pl-12 pr-16 py-3 bg-slate-100 hover:bg-slate-200/50 border border-slate-200 focus:border-amber-500/50 focus:bg-white rounded-2xl text-[11px] font-black text-slate-700 placeholder:text-slate-400 outline-none transition-all duration-300 uppercase tracking-widest shadow-sm focus:shadow-md"
+          className="w-full pl-12 pr-16 py-3 bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200/50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-amber-500/50 focus:bg-white dark:focus:bg-slate-900 rounded-2xl text-[11px] font-black text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all duration-300 uppercase tracking-widest shadow-sm focus:shadow-md"
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
@@ -69,10 +69,10 @@ const UniversalSearch = ({ onClientSelect }) => {
 
         {/* Keyboard Shortcut Hint */}
         <div className="absolute right-4 flex items-center gap-1 pointer-events-none group-focus-within:opacity-0 transition-opacity">
-          <kbd className="px-1.5 py-0.5 text-[9px] font-black bg-white border border-slate-200 text-slate-400 rounded-md shadow-sm">
+          <kbd className="px-1.5 py-0.5 text-[9px] font-black bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 dark:text-slate-300 rounded-md shadow-sm">
             {navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? '⌘' : 'CTRL'}
           </kbd>
-          <kbd className="px-1.5 py-0.5 text-[9px] font-black bg-white border border-slate-200 text-slate-400 rounded-md shadow-sm">
+          <kbd className="px-1.5 py-0.5 text-[9px] font-black bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 dark:text-slate-300 rounded-md shadow-sm">
             K
           </kbd>
         </div>
@@ -80,28 +80,38 @@ const UniversalSearch = ({ onClientSelect }) => {
 
       {/* Results Dropdown */}
       {isOpen && searchTerm.length > 0 && (
-        <div className="absolute z-70 w-full mt-3 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="p-3 border-b border-slate-50 bg-slate-50/50">
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-2">Client Results</p>
+        <div className="absolute z-70 w-full mt-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="p-3 border-b border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+            <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-2">Client Results</p>
           </div>
           <div className="max-h-80 overflow-y-auto">
             {filteredClients.length > 0 ? (
               filteredClients.map((c) => (
-                <div key={c._id} onClick={() => handleSelect(c)} className="flex items-center justify-between p-4 hover:bg-amber-50/40 cursor-pointer group border-b border-slate-50 last:border-0">
+                <div 
+                  key={c._id} 
+                  onClick={() => handleSelect(c)} 
+                  className="flex items-center justify-between p-4 hover:bg-amber-50/40 dark:hover:bg-amber-900/10 cursor-pointer group border-b border-slate-50 dark:border-slate-800 last:border-0 transition-colors"
+                >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-amber-600 shadow-sm transition-all">
+                    <div className="w-9 h-9 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:text-amber-600 shadow-sm transition-all">
                       <User size={16} />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-slate-800 uppercase tracking-tight group-hover:text-amber-700">{c.name}</p>
-                      <p className="text-[9px] font-bold text-slate-400 font-mono uppercase">{c.pan}</p>
+                      <p className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight group-hover:text-amber-700 dark:group-hover:text-amber-500 transition-colors">
+                        {c.name}
+                      </p>
+                      <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 font-mono uppercase">
+                        {c.pan}
+                      </p>
                     </div>
                   </div>
-                  <ArrowRight size={14} className="text-slate-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                  <ArrowRight size={14} className="text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                 </div>
               ))
             ) : (
-              <div className="p-10 text-center text-[10px] font-black text-slate-300 uppercase italic">No matches</div>
+              <div className="p-10 text-center text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase italic">
+                No matches
+              </div>
             )}
           </div>
         </div>

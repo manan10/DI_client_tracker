@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, CheckCircle2, Search, Mic, MicOff, Lock } from 'lucide-react'; // Added Lock icon
+import { X, CheckCircle2, Search, Mic, MicOff, Lock, ChevronDown } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 
 const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
@@ -21,7 +21,6 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
     complianceCheck: false
   });
 
-  // Check if we should disable selection
   const isClientLocked = !!initialClient;
 
   useEffect(() => {
@@ -109,35 +108,40 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-110 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm p-0 sm:p-4">
-      <div className="bg-white rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in slide-in-from-bottom sm:zoom-in duration-300">
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+    <div className="fixed inset-0 z-110 flex items-end sm:items-center justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm p-0 sm:p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in slide-in-from-bottom sm:zoom-in duration-300 border dark:border-slate-800">
+        
+        {/* Modal Header */}
+        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
           <div>
-            <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">Log Interaction</h2>
-            <p className="text-[9px] font-bold text-amber-600 uppercase tracking-widest">Unified Recording System</p>
+            <h2 className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">Log Interaction</h2>
+            <p className="text-[9px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest">Unified Recording System</p>
           </div>
-          <button onClick={resetAndClose} className="text-slate-400 hover:text-slate-600 p-2"><X size={24} /></button>
+          <button onClick={resetAndClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 p-2 transition-colors">
+            <X size={24} />
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6 max-h-[85vh] sm:max-h-[75vh] overflow-y-auto">
-          {/* Client Selection Section */}
+        <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6 max-h-[85vh] sm:max-h-[75vh] overflow-y-auto custom-scrollbar">
+          
+          {/* Client Selection */}
           <div className="relative" ref={dropdownRef}>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+            <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
               Client Selection
             </label>
             <div className="relative">
               {isClientLocked ? (
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-600" size={16} />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-600 dark:text-amber-500" size={16} />
               ) : (
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600" size={16} />
               )}
               <input 
                 type="text"
                 disabled={isClientLocked}
                 className={`w-full pl-12 pr-4 py-4 border rounded-2xl text-sm font-bold outline-none transition-all ${
                   isClientLocked 
-                  ? 'bg-amber-50/50 border-amber-100 text-slate-900 cursor-not-allowed' 
-                  : 'bg-slate-50 border-slate-200 focus:border-amber-600'
+                  ? 'bg-amber-50/50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/30 text-slate-900 dark:text-slate-200 cursor-not-allowed' 
+                  : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:border-amber-600 dark:focus:border-amber-500 focus:bg-white dark:focus:bg-slate-800'
                 }`}
                 value={searchTerm}
                 onChange={(e) => {
@@ -148,39 +152,42 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
                 required
               />
               {isClientLocked && (
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-black text-amber-600 uppercase tracking-widest">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-black text-amber-600 dark:text-amber-500 uppercase tracking-widest">
                   Fixed Selection
                 </span>
               )}
             </div>
 
+            {/* Dropdown Results */}
             {!isClientLocked && isDropdownOpen && searchTerm.length > 0 && (
-              <div className="absolute z-20 w-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
+              <div className="absolute z-20 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
                 {filteredClients.map(c => (
-                  <div key={c._id} onClick={() => selectClient(c)} className="p-4 hover:bg-amber-50 cursor-pointer border-b border-slate-50 last:border-0">
-                    <p className="text-sm font-black text-slate-800 uppercase">{c.name}</p>
-                    <p className="text-[10px] font-bold text-slate-400 font-mono tracking-tighter uppercase">{c.pan}</p>
+                  <div key={c._id} onClick={() => selectClient(c)} className="p-4 hover:bg-amber-50 dark:hover:bg-amber-900/20 cursor-pointer border-b border-slate-50 dark:border-slate-700 last:border-0 transition-colors">
+                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase">{c.name}</p>
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 font-mono tracking-tighter uppercase">{c.pan}</p>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
+          {/* Type & Follow-up */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Type</label>
+            <div className="relative">
+              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Type</label>
               <select 
-                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:border-amber-600 appearance-none"
+                className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-200 outline-none focus:border-amber-600 dark:focus:border-amber-500 appearance-none"
                 value={formData.type}
                 onChange={(e) => setFormData({...formData, type: e.target.value})}
               >
-                {['In-Person', 'Call', 'WhatsApp', 'Email'].map(t => <option key={t} value={t}>{t}</option>)}
+                {['In-Person', 'Call', 'WhatsApp', 'Email'].map(t => <option key={t} value={t} className="dark:bg-slate-900">{t}</option>)}
               </select>
+              <ChevronDown size={16} className="absolute right-4 bottom-5 text-slate-400 pointer-events-none" />
             </div>
 
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Follow-up Required?</label>
-              <div className="flex items-center h-13.5 gap-3 px-4 bg-slate-50 border border-slate-200 rounded-2xl">
+              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Follow-up Required?</label>
+              <div className="flex items-center h-13.5 gap-3 px-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl">
                  <input 
                   type="checkbox" 
                   checked={formData.followUpRequired} 
@@ -190,7 +197,7 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
                  {formData.followUpRequired && (
                    <input 
                     type="date" 
-                    className="flex-1 bg-transparent text-xs font-bold outline-none text-slate-700"
+                    className="flex-1 bg-transparent text-xs font-bold outline-none text-slate-700 dark:text-slate-200 color-scheme-dark"
                     onChange={(e) => setFormData({...formData, followUpDate: e.target.value})}
                     required
                    />
@@ -199,8 +206,9 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
             </div>
           </div>
 
+          {/* Discussion Points */}
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Discussion Points</label>
+            <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Discussion Points</label>
             <div className="flex flex-wrap gap-2">
               {['MF', 'PMS', 'AIF', 'Equity', 'Insurance', 'Tax Planning'].map(point => (
                 <button
@@ -209,8 +217,8 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
                   onClick={() => toggleDiscussionPoint(point)}
                   className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tight transition-all border ${
                     formData.discussionPoints.includes(point) 
-                    ? 'bg-amber-600 border-amber-600 text-white shadow-lg shadow-amber-100' 
-                    : 'bg-white border-slate-200 text-slate-500 hover:border-amber-300'
+                    ? 'bg-amber-600 border-amber-600 text-white shadow-lg shadow-amber-100/20' 
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-700'
                   }`}
                 >
                   {point}
@@ -219,14 +227,15 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
             </div>
           </div>
 
+          {/* Summary Area */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Interaction Summary</label>
+              <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Interaction Summary</label>
               <button 
                 type="button" 
                 onClick={handleVoiceInput}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black transition-all ${
-                  isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-amber-100 text-amber-700'
+                  isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
                 }`}
               >
                 {isListening ? <MicOff size={10}/> : <Mic size={10}/>}
@@ -235,14 +244,19 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
             </div>
             <textarea 
               required
-              className="w-full p-5 bg-slate-50 border border-slate-200 rounded-3xl text-sm font-medium outline-none focus:border-amber-600 h-36 resize-none"
+              className="w-full p-5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-3xl text-sm font-medium text-slate-900 dark:text-slate-200 outline-none focus:border-amber-600 dark:focus:border-amber-500 h-36 resize-none transition-all"
               placeholder="Tap the mic to dictate or type your notes here..."
               value={formData.summary}
               onChange={(e) => setFormData({...formData, summary: e.target.value})}
             />
           </div>
 
-          <div className={`p-5 rounded-3xl border flex items-start gap-4 transition-all ${formData.complianceCheck ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100'}`}>
+          {/* Compliance Box */}
+          <div className={`p-5 rounded-3xl border flex items-start gap-4 transition-all ${
+            formData.complianceCheck 
+            ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/30' 
+            : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800'
+          }`}>
             <input 
               type="checkbox" 
               required
@@ -251,16 +265,19 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
               className="mt-1 w-5 h-5 accent-emerald-500 cursor-pointer" 
             />
             <div>
-              <p className="text-[11px] font-black text-slate-800 uppercase leading-none mb-1">Compliance Confirmation</p>
-              <p className="text-[10px] text-slate-500 font-medium">I verify that disclaimers were provided as a Financial Product Distributor.</p>
+              <p className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase leading-none mb-1">Compliance Confirmation</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">I verify that disclaimers were provided as a Financial Product Distributor.</p>
             </div>
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading || !formData.client}
             className={`w-full py-5 rounded-3xl font-black text-xs uppercase tracking-[0.25em] shadow-2xl transition-all flex items-center justify-center gap-2 ${
-                !formData.client ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-200 active:scale-[0.98]'
+                !formData.client 
+                ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed' 
+                : 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-200/40 dark:shadow-none active:scale-[0.98]'
             }`}
           >
             {loading ? 'Logging...' : 'Save Interaction'}
