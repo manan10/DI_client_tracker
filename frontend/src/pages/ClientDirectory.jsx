@@ -6,7 +6,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import DirectoryFilters from "../components/Directory/DirectoryFilters";
 import ClientTableRow from "../components/Directory/ClientTableRow";
-import ClientDrawer from "../components/Directory/ClientDrawer";
+import ClientDrawer from "../components/Directory/ClientDrawer/ClientDrawer";
 import InteractionModal from "../components/InteractionModal";
 import TierSummary from "../components/Directory/TierSummary";
 import SortableHeader from "../components/Directory/SortableHeader";

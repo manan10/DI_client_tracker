@@ -13,10 +13,14 @@
     "@headlessui/react": "^2.2.9",
     "@tailwindcss/vite": "^4.2.0",
     "axios": "^1.13.5",
+    "file-saver": "^2.0.5",
+    "firebase": "^12.10.0",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.574.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router-dom": "^7.13.0"
+    "react-router-dom": "^7.13.0",
+    "save-as": "^0.1.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

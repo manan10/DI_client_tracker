@@ -61,3 +61,55 @@ exports.getDormantClients = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+// @desc    Add a document record to a client
+// @route   POST /api/clients/:id/documents
+exports.addDocument = async (req, res) => {
+  try {
+    const { name, docType, storagePath, downloadUrl, uploadedBy } = req.body;
+
+    // 1. Basic Validation
+    if (!name || !docType || !storagePath || !downloadUrl) {
+      return res.status(400).json({ message: "Missing required document fields" });
+    }
+
+    // 2. Find client and push to documents array
+    const client = await Client.findById(req.params.id);
+    if (!client) return res.status(404).json({ message: "Client not found" });
+
+    const newDoc = {
+      name,
+      docType,
+      storagePath,
+      downloadUrl,
+      uploadedBy,
+      uploadedAt: new Date()
+    };
+
+    client.documents.push(newDoc);
+    await client.save();
+
+    res.status(201).json(client.documents); // Return updated list of docs
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// @desc    Delete a document record from MongoDB
+// @route   DELETE /api/clients/:id/documents/:docId
+exports.deleteDocument = async (req, res) => {
+  try {
+    const { id, docId } = req.params;
+
+    const client = await Client.findById(id);
+    if (!client) return res.status(404).json({ message: "Client not found" });
+
+    // Filter the array to remove the specific document ID
+    client.documents = client.documents.filter(doc => doc._id.toString() !== docId);
+    await client.save();
+
+    res.json({ success: true, message: "Document record removed from database" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

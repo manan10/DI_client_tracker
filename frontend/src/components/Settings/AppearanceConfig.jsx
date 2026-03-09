@@ -9,7 +9,7 @@ const AppearanceConfig = ({ isDark, onToggleTheme }) => (
     </header>
 
     <div className="space-y-6">
-      <div className="p-8 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="p-8 bg-slate-50 dark:bg-slate-800/40 rounded-4xl border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-6">
           <div className="h-16 w-16 bg-white dark:bg-slate-900 rounded-2xl shadow-sm flex items-center justify-center text-amber-600">
             {isDark ? <Moon size={32} /> : <Sun size={32} />}
@@ -27,10 +27,10 @@ const AppearanceConfig = ({ isDark, onToggleTheme }) => (
         </button>
       </div>
 
-      <div className="p-8 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border border-slate-100 dark:border-slate-800">
+      <div className="p-8 bg-slate-50 dark:bg-slate-800/40 rounded-4xl border border-slate-100 dark:border-slate-800">
          <div className="flex items-center gap-4 mb-6">
            <Globe size={18} className="text-slate-400" />
-           <p className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-[0.1em]">Regional Settings</p>
+           <p className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Regional Settings</p>
          </div>
          <div className="flex justify-between items-center py-4 border-b border-slate-100 dark:border-slate-800">
             <span className="text-xs font-bold text-slate-500 uppercase">Currency Format</span>

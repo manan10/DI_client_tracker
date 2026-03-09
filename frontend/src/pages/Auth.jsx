@@ -3,7 +3,7 @@ import { Mail, Lock, Loader2, ChevronRight, Eye, EyeOff, ShieldCheck, User } fro
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useApi } from '../hooks/useApi';
-import Logo from '../assets/logo.png'; 
+import Logo from '../assets/logo_nobrand.png'; 
 
 const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -46,8 +46,8 @@ const Auth = () => {
         </div>
 
         <div className="relative z-10">
-          <div className="mb-10 inline-block">
-            <img src={Logo} alt="Logo" className="h-24 w-auto object-contain drop-shadow-[0_10px_20px_rgba(245,158,11,0.2)]" />
+          <div className="mb-1 inline-block">
+            <img src={Logo} alt="Logo" className="h-48 w-auto object-contain drop-shadow-[0_10px_20px_rgba(245,158,11,0.2)]" />
           </div>
           <h1 className="text-7xl lg:text-8xl font-[1000] text-white leading-[0.85] tracking-tighter uppercase mb-6">
             DALAL <br />

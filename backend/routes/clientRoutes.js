@@ -8,4 +8,7 @@ router.get("/", protect, clientController.getAllClients);
 router.get("/:id", protect, clientController.getClientById);
 router.get("/dormant", protect, clientController.getDormantClients);
 
+router.post('/:id/documents', clientController.addDocument);
+router.delete('/:id/documents/:docId', clientController.deleteDocument);
+
 module.exports = router;

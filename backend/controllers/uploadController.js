@@ -5,7 +5,6 @@ exports.syncWealthElite = async (req, res) => {
   try {
     console.log("Starting Wealth Elite Sync...");
 
-    // 1. Safeguard check for Multer files
     if (!req.files) {
       return res.status(400).json({ error: "No files received by the server." });
     }
@@ -13,13 +12,15 @@ exports.syncWealthElite = async (req, res) => {
     const { aumFile, familyFile, nonFamFile } = req.files;
     
     if (!aumFile || !familyFile || !nonFamFile) {
-      return res.status(400).json({ error: "Sync requires all three Excel files." });
+      return res.status(400).json({ error: "Sync requires all three Excel files (AUM, Family, Non-Family)." });
     }
 
-    // 2. Process Excel data via Service
-    const clients = syncService.processWealthEliteFiles(req.files);
+    const clients = await syncService.processWealthEliteFiles(req.files);
 
-    // 3. Bulk Write to MongoDB
+    if (!clients || clients.length === 0) {
+      return res.status(400).json({ error: "No valid client data found in the uploaded files." });
+    }
+
     const bulkOps = clients.map((client) => ({
       updateOne: {
         filter: { pan: client.pan },
@@ -30,7 +31,7 @@ exports.syncWealthElite = async (req, res) => {
 
     const result = await Client.bulkWrite(bulkOps);
 
-    console.log("Sync Complete:", result.upsertedCount, "new clients added.");
+    console.log(`Sync Complete: ${result.upsertedCount} new, ${result.modifiedCount} updated.`);
 
     res.status(200).json({
       message: "Sync Successful",
@@ -43,7 +44,7 @@ exports.syncWealthElite = async (req, res) => {
     });
   } catch (error) {
     console.error("Controller Sync Error:", error);
-    res.status(500).json({ error: "Internal server error during sync." });
+    res.status(500).json({ error: "Internal server error during sync. Please check file formats." });
   }
 };
 
@@ -54,6 +55,6 @@ exports.getSyncStatus = async (req, res) => {
       .select("updatedAt");
     res.json({ lastSync: latest ? latest.updatedAt : null });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch status" });
+    res.status(500).json({ error: "Failed to fetch sync status" });
   }
 };

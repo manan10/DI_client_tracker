@@ -1,7 +1,15 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const admin = require("firebase-admin");
+
 require("dotenv").config();
+
+const serviceAccount = require("./di-docs-22358-firebase-adminsdk-fbsvc-e1edd86d4d.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
 const clientRoutes = require("./routes/clientRoutes");
 const interactionRoutes = require("./routes/interactionRoutes");
@@ -13,6 +21,22 @@ const settingsRoutes = require('./routes/settingsRoutes');
 const app = express();
 
 app.use(cors());
+
+app.use((req, res, next) => {
+  if (req.method === 'DELETE' && req.headers['content-type'] === 'application/json') {
+    let data = '';
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => {
+      if (data === 'null') {
+        req.body = {}; 
+      }
+      next();
+    });
+  } else {
+    next();
+  }
+});
+
 app.use(express.json());
 
 app.use("/api/clients", clientRoutes);

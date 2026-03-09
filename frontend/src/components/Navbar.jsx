@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, LogOut, Shield, Sun, Moon, SettingsIcon, Menu, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import Logo from '../assets/logo.png';
+import Logo from '../assets/logo_nobrand.png';
 
 const Navbar = () => {
   const { user, logout } = useAuth();

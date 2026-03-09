@@ -13,10 +13,11 @@ const StatCards = () => {
   });
 
   useEffect(() => {
+    let isMounted = true;
     const fetchStats = async () => {
       try {
         const data = await request("/stats/dashboard");
-        if (data) {
+        if (data && isMounted) {
           setStats({
             totalClients: data.totalClients || 0,
             totalFamilies: data.totalFamilies || 0,
@@ -29,60 +30,55 @@ const StatCards = () => {
       }
     };
     fetchStats();
+    return () => { isMounted = false; };
   }, [request]);
 
   const formatAUM = (value) => {
     if (value >= 10000000) return `₹${(value / 10000000).toFixed(2)} Cr`;
     if (value >= 100000) return `₹${(value / 100000).toFixed(2)} L`;
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(value);
+    return `₹${value.toLocaleString('en-IN')}`;
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6 mb-12">
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
       <StatCard
-        title="Total Families"
-        value={`${stats.totalFamilies}`}
-        icon={<Home size={20} />}
-        borderClass="border-l-slate-900 dark:border-l-slate-400"
-        colorClass="text-slate-900 dark:text-slate-400"
+        title="Families"
+        value={stats.totalFamilies}
+        icon={<Home />}
+        colorClass="text-slate-600 dark:text-slate-400"
         bgIconClass="bg-slate-50 dark:bg-slate-800"
       />
       <StatCard
-        title="Total Clients"
-        value={`${stats.totalClients}`}
-        icon={<Users size={20} />}
-        borderClass="border-l-amber-600"
+        title="Clients"
+        value={stats.totalClients}
+        icon={<Users />}
         colorClass="text-amber-600"
-        bgIconClass="bg-amber-50 dark:bg-amber-950/30"
+        bgIconClass="bg-amber-50 dark:bg-amber-950/20"
       />
       <StatCard
-        title="Meeting Logs"
+        title="Logs"
         value={stats.totalInteractions}
-        icon={<Clock size={20} />}
-        borderClass="border-l-amber-500"
+        icon={<Clock />}
         colorClass="text-amber-500"
-        bgIconClass="bg-amber-50 dark:bg-amber-950/30"
+        bgIconClass="bg-amber-50 dark:bg-amber-950/20"
       />
       <StatCard
-        title="Est. AUM"
+        title="AUM"
         value={formatAUM(stats.totalAUM)}
-        icon={<TrendingUp size={20} />}
-        borderClass="border-l-amber-500"
-        colorClass="text-amber-600"
-        bgIconClass="bg-amber-50 dark:bg-amber-950/30"
-      />
-      <StatCard
-        title="Compliance"
-        value="100%"
-        icon={<ShieldCheck size={20} />}
-        borderClass="border-l-emerald-500"
+        icon={<TrendingUp />}
         colorClass="text-emerald-600"
-        bgIconClass="bg-emerald-50 dark:bg-emerald-950/30"
+        bgIconClass="bg-emerald-50 dark:bg-emerald-950/20"
       />
+      {/* Compliance hidden on smaller mobile screens to save space, visible from md up */}
+      <div className="hidden md:block">
+        <StatCard
+          title="Status"
+          value="Compliant"
+          icon={<ShieldCheck />}
+          colorClass="text-blue-600"
+          bgIconClass="bg-blue-50 dark:bg-blue-950/20"
+        />
+      </div>
     </div>
   );
 };

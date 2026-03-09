@@ -16,18 +16,25 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState('business');
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
+  // 1. Component States
   const [thresholds, setThresholds] = useState({ diamond: 5, gold: 2, silver: 0.5, bronze: 0.1 });
   const [compliance, setCompliance] = useState({ arn: '', euin: '', disclaimer: '' });
   const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'));
 
+  // 2. Fetch Data on Mount
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const globalData = await request('/settings');
         if (globalData) {
-          setThresholds(globalData.business.thresholds);
-          setCompliance(globalData.compliance);
+          if (globalData.business?.thresholds) {
+            setThresholds(globalData.business.thresholds);
+          }
+          if (globalData.compliance) {
+            setCompliance(globalData.compliance);
+          }
         }
+        // Sync local theme state with user preferences from Auth context
         if (user?.preferences) {
           setIsDark(user.preferences.theme === 'dark');
         }
@@ -37,26 +44,37 @@ const Settings = () => {
         setIsInitialLoading(false);
       }
     };
-    loadSettings();
-  }, []);
 
+    loadSettings();
+    // Added dependencies to satisfy ESLint rules
+  }, [request, user?.preferences]);
+
+  // 3. Theme Toggle Logic (User-specific)
   const toggleTheme = async () => {
     const newTheme = !isDark ? 'dark' : 'light';
     setIsDark(!isDark);
+    
+    // Immediate UI Feedback (DOM manipulation)
     if (newTheme === 'dark') document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
 
+    // Persist to User document in Backend
     try {
       await request('/settings/preferences', 'PATCH', { theme: newTheme });
-      setUser({ ...user, preferences: { ...user.preferences, theme: newTheme } });
+      // Update local auth context so Navbar/Other pages stay in sync
+      setUser({ ...user, preferences: { ...user?.preferences, theme: newTheme } });
     } catch {
       console.error("Failed to save theme preference");
     }
   };
 
+  // 4. Global Save (Business & Compliance Logic)
   const handleGlobalSave = async () => {
     try {
-      const payload = { business: { thresholds }, compliance };
+      const payload = { 
+        business: { thresholds }, 
+        compliance 
+      };
       await request('/settings', 'PUT', payload);
       alert("Business settings updated successfully!");
     } catch {
@@ -96,26 +114,25 @@ const Settings = () => {
       <main className="max-w-[98%] mx-auto px-3 sm:px-6 lg:py-12 py-6">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start">
           
-          {/* Sidebar / Mobile Nav Header */}
+          {/* Sidebar / Mobile Horizontal Nav */}
           <aside className="w-full lg:w-72 lg:sticky lg:top-28">
             <div className="hidden lg:block mb-8 px-2">
               <h2 className="text-3xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">Settings</h2>
               <p className="text-[10px] font-bold text-amber-600 uppercase tracking-[0.2em] mt-1">Portal Configuration</p>
             </div>
 
-            {/* Navigation: Horizontal scroll on mobile, Vertical on Desktop */}
             <nav className="flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0 scrollbar-hide -mx-3 px-3 lg:mx-0 lg:px-0">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-shrink-0 flex items-center gap-3 px-5 lg:px-6 py-3 lg:py-4 rounded-xl lg:rounded-2xl text-[10px] lg:text-[11px] font-black uppercase tracking-widest transition-all ${
+                  className={`shrink-0 flex items-center gap-3 px-5 lg:px-6 py-3 lg:py-4 rounded-xl lg:rounded-2xl text-[10px] lg:text-[11px] font-black uppercase tracking-widest transition-all ${
                     activeTab === tab.id 
                       ? 'bg-amber-600 text-white shadow-lg shadow-amber-200 dark:shadow-none' 
                       : 'bg-white lg:bg-transparent dark:bg-slate-900 lg:dark:bg-transparent text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-100 lg:border-transparent dark:border-slate-800'
                   }`}
                 >
-                  <tab.icon size={16} className="lg:w-[18px] lg:h-[18px]" />
+                  <tab.icon size={16} className="lg:w-5 lg:h-5" />
                   <span className="lg:hidden">{tab.label}</span>
                   <span className="hidden lg:inline">{tab.fullLabel}</span>
                 </button>
@@ -124,12 +141,12 @@ const Settings = () => {
           </aside>
 
           {/* Main Content Card */}
-          <div className="flex-1 w-full bg-white dark:bg-slate-900 rounded-[1.5rem] lg:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl lg:shadow-2xl relative min-h-[500px] lg:min-h-[750px] overflow-hidden">
-            <div className="p-5 sm:p-8 lg:p-14">
+          <div className="flex-1 w-full bg-white dark:bg-slate-900 rounded-3xl lg:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl lg:shadow-2xl relative min-h-125 lg:min-h-187.5 overflow-hidden">
+            <div className="p-5 sm:p-8 lg:p-14 mb-20 lg:mb-0">
               {renderContent()}
             </div>
 
-            {/* Floating Save Button Bar */}
+            {/* Sticky Save Button (Mobile) / Absolute (Desktop) */}
             {(activeTab === 'business' || activeTab === 'compliance') && (
               <div className="sticky lg:absolute bottom-0 left-0 right-0 p-4 lg:p-8 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex justify-center lg:justify-end items-center gap-6 z-20">
                  <span className="hidden lg:block text-[10px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest">
