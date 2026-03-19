@@ -1,5 +1,34 @@
 const Client = require("../models/Client");
 const Interaction = require("../models/Interaction"); 
+const { VaultItem } = require("../models/VaultItem"); // Import VaultItem model
+
+exports.deleteDocument = async (req, res) => {
+  try {
+    const { id, docId } = req.params;
+
+    const client = await Client.findById(id);
+    if (!client) return res.status(404).json({ message: "Client not found" });
+
+    // 1. Find the document in the array to get the storagePath
+    const docToDelete = client.documents.id(docId);
+    
+    if (docToDelete) {
+      const pathToRemove = docToDelete.storagePath;
+
+      // 2. Remove from Vault Registry (The Documents Tab)
+      await VaultItem.deleteOne({ storagePath: pathToRemove });
+      
+      // 3. Remove from Client array
+      client.documents.pull(docId); 
+      await client.save();
+    }
+
+    res.json({ success: true, message: "Document removed from client and vault registry" });
+  } catch (err) {
+    console.error("Delete Doc Error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
 
 exports.createClient = async (req, res) => {
   try {
@@ -95,21 +124,3 @@ exports.addDocument = async (req, res) => {
   }
 };
 
-// @desc    Delete a document record from MongoDB
-// @route   DELETE /api/clients/:id/documents/:docId
-exports.deleteDocument = async (req, res) => {
-  try {
-    const { id, docId } = req.params;
-
-    const client = await Client.findById(id);
-    if (!client) return res.status(404).json({ message: "Client not found" });
-
-    // Filter the array to remove the specific document ID
-    client.documents = client.documents.filter(doc => doc._id.toString() !== docId);
-    await client.save();
-
-    res.json({ success: true, message: "Document record removed from database" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};

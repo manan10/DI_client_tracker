@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, LogOut, Shield, Sun, Moon, SettingsIcon, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Shield, Sun, Moon, SettingsIcon, Menu, X, Files } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import Logo from '../assets/logo_nobrand.png';
 
@@ -15,7 +15,6 @@ const Navbar = () => {
     (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
   });
 
-  // Sync theme remains in effect as it touches an external system (DOM)
   useEffect(() => {
     const root = window.document.documentElement;
     if (isDark) {
@@ -28,7 +27,7 @@ const Navbar = () => {
   }, [isDark]);
 
   const handleLogout = () => {
-    setIsMenuOpen(false); // Close menu first
+    setIsMenuOpen(false);
     logout();
     navigate('/login');
   };
@@ -36,29 +35,33 @@ const Navbar = () => {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Directory', path: '/directory', icon: Users },
+    { name: 'Documents', path: '/documents', icon: Files }, // New Documents Tab Added
     { name: 'Settings', path: '/settings', icon: SettingsIcon }
   ];
 
   return (
-    <nav className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-50 transition-colors duration-300">
-      <div className="max-w-[95%] mx-auto px-4 md:px-6 h-20">
+    <nav className="bg-white/80 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 transition-all duration-300 shadow-sm">
+      <div className="max-w-[98%] mx-auto px-4 md:px-6 h-20">
         <div className="flex justify-between items-center h-20">
           
-          {/* Logo Section */}
-          <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 group shrink-0">
-            <img src={Logo} alt="Logo" className="h-8 md:h-10 w-auto" />
+          {/* Logo Section with deeper contrast */}
+          <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 group shrink-0 transition-transform active:scale-95">
+            <div className="relative">
+              <img src={Logo} alt="Logo" className="h-9 md:h-11 w-auto drop-shadow-md" />
+              <div className="absolute -inset-1 bg-amber-500/10 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
             <div className="flex flex-col">
-              <span className="block text-xs md:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">
+              <span className="block text-sm md:text-base font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter leading-none">
                 Dalal Investment
               </span>
-              <span className="text-[8px] md:text-[9px] font-bold text-amber-600 uppercase tracking-[0.2em] mt-0.5">
+              <span className="text-[9px] md:text-[10px] font-black text-amber-600 dark:text-amber-500 uppercase tracking-[0.2em] mt-1 italic">
                 Distributor Portal
               </span>
             </div>
           </Link>
 
-          {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-8">
+          {/* Desktop Navigation - Pill Style for better visibility */}
+          <div className="hidden md:flex items-center bg-slate-100/50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-700/50">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -66,59 +69,61 @@ const Navbar = () => {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`flex items-center gap-2 text-[11px] font-black uppercase tracking-widest transition-all ${
+                  className={`flex items-center gap-2.5 px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${
                     isActive 
-                      ? 'text-amber-600' 
-                      : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                      ? 'bg-white dark:bg-slate-700 text-amber-600 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600' 
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800'
                   }`}
                 >
-                  <Icon size={16} />
+                  <Icon size={16} strokeWidth={isActive ? 3 : 2} />
                   {item.name}
                 </Link>
               );
             })}
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2 md:gap-4">
+          {/* Actions with tactile feedback */}
+          <div className="flex items-center gap-3 md:gap-4">
             <button
               onClick={() => setIsDark(!isDark)}
-              className="p-2 md:p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-amber-600 transition-all border border-transparent dark:border-slate-700 shadow-sm"
+              className="p-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-amber-600 hover:border-amber-500/50 transition-all border border-slate-200 dark:border-slate-700 shadow-sm active:scale-90"
             >
-              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+              {isDark ? <Sun size={19} strokeWidth={2.5} /> : <Moon size={19} strokeWidth={2.5} />}
             </button>
 
-            <div className="hidden lg:flex flex-col items-end border-l border-slate-100 dark:border-slate-800 pl-6">
-              <span className="text-[10px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">
+            <div className="hidden lg:flex flex-col items-end border-l border-slate-200 dark:border-slate-800 pl-6 space-y-0.5">
+              <span className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tight">
                 {user?.name || 'Administrator'}
               </span>
-              <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] flex items-center gap-1">
-                <Shield size={8} className="text-amber-500" /> Admin Session
-              </span>
+              <div className="bg-amber-100 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-900/50">
+                <span className="text-[8px] font-black text-amber-700 dark:text-amber-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <Shield size={10} fill="currentColor" fillOpacity={0.2} /> Admin Session
+                </span>
+              </div>
             </div>
             
             <button 
               onClick={handleLogout}
-              className="hidden md:block p-2.5 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-red-600 rounded-xl transition-all border border-transparent dark:border-slate-700"
+              className="hidden md:flex p-2.5 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-all border border-slate-200 dark:border-slate-700 shadow-sm group"
             >
-              <LogOut size={18} />
+              <LogOut size={19} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
 
-            {/* Mobile Menu Toggle */}
+            {/* Mobile Menu Toggle - High visibility */}
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900"
+              className="md:hidden p-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg active:scale-95 transition-transform"
             >
-              {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu Overlay - More color */}
       {isMenuOpen && (
-        <div className="md:hidden absolute top-20 left-0 w-full bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 animate-in slide-in-from-top duration-300">
-          <div className="flex flex-col p-6 gap-4">
+        <div className="md:hidden absolute top-20 left-0 w-full bg-slate-50 dark:bg-slate-900 border-b-2 border-amber-500/50 animate-in slide-in-from-top-4 duration-300 z-50 shadow-2xl">
+          <div className="flex flex-col p-6 gap-3">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -126,25 +131,18 @@ const Navbar = () => {
                 <Link
                   key={item.name}
                   to={item.path}
-                  onClick={() => setIsMenuOpen(false)} // FIX: Close menu on click
-                  className={`flex items-center gap-4 p-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                  onClick={() => setIsMenuOpen(false)}
+                  className={`flex items-center gap-4 p-5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all ${
                     isActive 
-                      ? 'bg-amber-600 text-white' 
-                      : 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                      ? 'bg-amber-600 text-white shadow-xl shadow-amber-600/20 translate-x-2' 
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                   }`}
                 >
-                  <Icon size={18} />
+                  <Icon size={20} strokeWidth={isActive ? 3 : 2} />
                   {item.name}
                 </Link>
               );
             })}
-            <button 
-              onClick={handleLogout}
-              className="flex items-center gap-4 p-4 rounded-xl text-xs font-black uppercase tracking-widest bg-red-50 dark:bg-red-950/30 text-red-600"
-            >
-              <LogOut size={18} />
-              Logout
-            </button>
           </div>
         </div>
       )}

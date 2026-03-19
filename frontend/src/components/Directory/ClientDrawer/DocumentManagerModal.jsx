@@ -79,17 +79,26 @@ const DocumentManagerModal = ({ isOpen, onClose, client, onRefresh }) => {
 
     setIsDeleting(true);
     try {
+      // 1. PHYSICAL STORAGE DELETE
       try {
         const storageRef = ref(storage, doc.storagePath);
         await deleteObject(storageRef);
       } catch (fErr) {
         if (fErr.code !== 'storage/object-not-found') throw fErr;
       }
+
+      // 2. CLIENT METADATA DELETE
       await request(`/clients/${client._id}/documents/${doc._id}`, 'DELETE', {});
+
+      // 3. VAULT METADATA DELETE (Syncing with the Documents Tab)
+      // We pass the storagePath as a query parameter
+      await request(`/vault/item?storagePath=${encodeURIComponent(doc.storagePath)}`, 'DELETE');
+
       setSelectedDoc(null);
       if (onRefresh) onRefresh();
     } catch (err) {
       console.error("Deletion failed:", err);
+      alert("Error removing from Vault sync. The file might still appear in the Documents tab.");
     } finally {
       setIsDeleting(false);
     }
@@ -97,7 +106,7 @@ const DocumentManagerModal = ({ isOpen, onClose, client, onRefresh }) => {
 
   return (
     <Transition.Root show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-[110]" onClose={handleClose}>
+      <Dialog as="div" className="relative z-110" onClose={handleClose}>
         <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0">
           <div className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity" />
         </Transition.Child>
@@ -107,10 +116,10 @@ const DocumentManagerModal = ({ isOpen, onClose, client, onRefresh }) => {
             <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enterTo="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-200" leaveFrom="opacity-100 translate-y-0 sm:scale-100" leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
               <Dialog.Panel className="relative transform overflow-hidden rounded-[2.5rem] bg-[#0B0F19] text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-6xl border border-white/5">
                 
-                <div className="flex h-[80vh] min-h-[600px]">
+                <div className="flex h-[80vh] min-h-150">
                   {/* LEFT SIDEBAR */}
                   <div className="w-1/3 border-r border-white/5 flex flex-col bg-[#0B0F19]">
-                    <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                    <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/2">
                       <div className="truncate pr-2">
                         <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-white">
                           {view === 'list' ? 'Client Vault' : 'Upload'}
@@ -140,7 +149,6 @@ const DocumentManagerModal = ({ isOpen, onClose, client, onRefresh }) => {
                       </div>
                     </div>
 
-                    {/* DARK THEMED SEARCH BAR */}
                     {view === 'list' && (
                       <div className="px-6 py-4 border-b border-white/5">
                         <div className="relative group">
@@ -150,7 +158,7 @@ const DocumentManagerModal = ({ isOpen, onClose, client, onRefresh }) => {
                             placeholder="Filter vault..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-white/[0.03] border border-white/5 rounded-xl pl-10 pr-4 py-2.5 text-[11px] font-bold text-white focus:ring-1 focus:ring-orange-500/50 outline-none transition-all placeholder:text-slate-600"
+                            className="w-full bg-white/3 border border-white/5 rounded-xl pl-10 pr-4 py-2.5 text-[11px] font-bold text-white focus:ring-1 focus:ring-orange-500/50 outline-none transition-all placeholder:text-slate-600"
                           />
                         </div>
                       </div>
@@ -167,11 +175,11 @@ const DocumentManagerModal = ({ isOpen, onClose, client, onRefresh }) => {
                                 className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 ${
                                   selectedDoc?._id === doc._id 
                                   ? 'bg-orange-500/10 border-orange-500/30' 
-                                  : 'border-white/5 hover:bg-white/[0.02]'
+                                  : 'border-white/5 hover:bg-white/2'
                                 }`}
                               >
                                 <div className="flex items-center gap-4 text-left truncate">
-                                  <div className={`p-2.5 rounded-xl flex-shrink-0 ${selectedDoc?._id === doc._id ? 'bg-orange-500 text-white' : 'bg-white/5 text-slate-500'}`}>
+                                  <div className={`p-2.5 rounded-xl shrink-0 ${selectedDoc?._id === doc._id ? 'bg-orange-500 text-white' : 'bg-white/5 text-slate-500'}`}>
                                     <FileText size={18} />
                                   </div>
                                   <div className="truncate">
@@ -181,7 +189,7 @@ const DocumentManagerModal = ({ isOpen, onClose, client, onRefresh }) => {
                                     <p className="text-[9px] text-slate-500 font-bold uppercase mt-0.5 tracking-widest">{doc.docType}</p>
                                   </div>
                                 </div>
-                                <ChevronRight size={14} className={`flex-shrink-0 ${selectedDoc?._id === doc._id ? 'text-orange-500' : 'text-slate-700'}`} />
+                                <ChevronRight size={14} className={`shrink-0 ${selectedDoc?._id === doc._id ? 'text-orange-500' : 'text-slate-700'}`} />
                               </button>
                             ))}
                           </div>
@@ -219,7 +227,7 @@ const DocumentManagerModal = ({ isOpen, onClose, client, onRefresh }) => {
                         </div>
                       ) : (
                         <div className="text-center">
-                          <div className="w-20 h-20 bg-white/[0.03] rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-white/5">
+                          <div className="w-20 h-20 bg-white/3 rounded-4xl flex items-center justify-center mx-auto mb-6 border border-white/5">
                             <FileText size={32} className="text-slate-800" />
                           </div>
                           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Preview Intelligence</p>
@@ -229,7 +237,7 @@ const DocumentManagerModal = ({ isOpen, onClose, client, onRefresh }) => {
                     </div>
 
                     {selectedDoc && (
-                        <div className="px-8 py-4 bg-white/[0.02] border-t border-white/5 flex justify-between items-center">
+                        <div className="px-8 py-4 bg-white/2 border-t border-white/5 flex justify-between items-center">
                             <div className="flex items-center gap-4">
                                 <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
                                     Date: <span className="text-slate-200 ml-1">{new Date(selectedDoc.uploadedAt).toLocaleDateString()}</span>

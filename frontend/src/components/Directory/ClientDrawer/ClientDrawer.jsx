@@ -35,7 +35,7 @@ const ClientDrawer = ({ isOpen, onClose, client, onLogInteraction }) => {
     <>
       <Transition.Root show={isOpen} as={Fragment}>
         {/* FIXED: Added arbitrary value brackets for z-index */}
-        <Dialog as="div" className="relative z-[100]" onClose={onClose}>
+        <Dialog as="div" className="relative z-100" onClose={onClose}>
           <Transition.Child as={Fragment} enter="ease-out duration-500" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-500" leaveFrom="opacity-100" leaveTo="opacity-0">
             <div className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity" />
           </Transition.Child>

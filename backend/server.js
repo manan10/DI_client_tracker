@@ -17,6 +17,7 @@ const uploadRoutes = require("./routes/uploadRoutes");
 const statsRoutes = require('./routes/statsRoutes');
 const authRoutes = require('./routes/authRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const vaultRoutes = require('./routes/vaultRoutes');
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/stats", statsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/vault', vaultRoutes);
 
 mongoose
   .connect(process.env.MONGO_URI)

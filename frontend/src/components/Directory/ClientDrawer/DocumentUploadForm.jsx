@@ -38,23 +38,25 @@ const DocumentUploadForm = ({ client, onUploadSuccess, onCancel }) => {
     setError(null);
     
     try {
-      // 1. SECURE TOKEN EXCHANGE
-      // If not authenticated, get a custom token from Node.js and sign in to Firebase
       if (!auth.currentUser) {
         const authData = await request('/auth/firebase-token', 'GET');
         if (!authData?.token) throw new Error("Could not retrieve security token.");
-        
         await signInWithCustomToken(auth, authData.token);
-        console.log("✅ Secure Vault Session Established");
       }
 
-      // 2. PREPARE STORAGE PATH
+      // --- IMPROVED STORAGE PATH LOGIC ---
       const timestamp = Date.now();
       const familyFolder = client.familyId || 'unassigned';
-      const storagePath = `families/${familyFolder}/${client._id}/${timestamp}_${file.name}`;
+      const safeName = (client.name || 'CLIENT').replace(/\s+/g, '_').toUpperCase();
+      const clientFolderName = `${safeName}_${client._id}`;
+      
+      // The directory where the file lives (The Parent)
+      const parentDir = `families/${familyFolder}/${clientFolderName}`;
+      
+      // Full Path of the actual file
+      const storagePath = `${parentDir}/${timestamp}_${file.name}`;
       const storageRef = ref(storage, storagePath);
 
-      // 3. INITIATE UPLOAD
       const uploadTask = uploadBytesResumable(storageRef, file);
 
       uploadTask.on('state_changed', 
@@ -64,15 +66,14 @@ const DocumentUploadForm = ({ client, onUploadSuccess, onCancel }) => {
         }, 
         (err) => {
           console.error("Firebase Storage Error:", err);
-          setError("Storage upload failed. Check Mumbai Vault permissions.");
+          setError("Storage upload failed.");
           setUploading(false);
         }, 
         async () => {
           try {
-            // 4. GET DOWNLOAD URL
             const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
 
-            // 5. SYNC METADATA TO MONGODB
+            // 1. Add to Client's Private Document List
             await request(`/clients/${client._id}/documents`, "POST", {
               name: file.name,
               docType,
@@ -81,25 +82,34 @@ const DocumentUploadForm = ({ client, onUploadSuccess, onCancel }) => {
               uploadedBy: "Admin", 
             });
             
+            // 2. Sync to Global Vault (The "Documents" Tab)
+            // This ensures it shows up in the file browser tree
+            await request('/vault/sync', 'POST', {
+                name: file.name,
+                type: 'file',
+                storagePath,
+                downloadUrl,
+                size: (file.size / 1024).toFixed(1) + " KB",
+                parentPath: parentDir // Points to the folder it belongs in
+            });
+
             setUploading(false);
             onUploadSuccess(); 
           } catch (dbErr) {
-            console.error("Backend Sync Error:", dbErr);
-            setError("File uploaded, but database record failed.");
+            console.error("Database Sync Error:", dbErr);
+            setError("File uploaded, but database sync failed.");
             setUploading(false);
           }
         }
       );
     } catch (err) {
-      console.error("Auth/Upload Error:", err);
-      setError(err.message || "Failed to establish secure connection.");
+      setError(err.message || "Connection failed.");
       setUploading(false);
     }
   };
 
   return (
     <div className="space-y-6 py-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* 1. Doc Type Selection */}
       <div>
         <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 block">
           Document Classification
@@ -116,7 +126,6 @@ const DocumentUploadForm = ({ client, onUploadSuccess, onCancel }) => {
         </div>
       </div>
 
-      {/* 2. File Picker */}
       <div className="relative">
         <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 block">
           File Attachment
@@ -137,7 +146,7 @@ const DocumentUploadForm = ({ client, onUploadSuccess, onCancel }) => {
                 <FileText size={18} />
               </div>
               <div>
-                <p className="text-[11px] font-black text-slate-700 dark:text-slate-200 truncate max-w-[140px] uppercase tracking-tight">
+                <p className="text-[11px] font-black text-slate-700 dark:text-slate-200 truncate max-w-35 uppercase tracking-tight">
                   {file.name}
                 </p>
                 <p className="text-[9px] text-amber-600 font-black uppercase mt-0.5">
@@ -154,7 +163,6 @@ const DocumentUploadForm = ({ client, onUploadSuccess, onCancel }) => {
         )}
       </div>
 
-      {/* 3. Errors */}
       {error && (
         <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-xl text-red-600 dark:text-red-400 text-[10px] font-bold uppercase">
           <AlertCircle size={14} />
@@ -162,7 +170,6 @@ const DocumentUploadForm = ({ client, onUploadSuccess, onCancel }) => {
         </div>
       )}
 
-      {/* 4. Progress Bar */}
       {uploading && (
         <div className="space-y-3 px-1">
           <div className="flex justify-between text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
@@ -178,7 +185,6 @@ const DocumentUploadForm = ({ client, onUploadSuccess, onCancel }) => {
         </div>
       )}
 
-      {/* 5. Buttons */}
       <div className="flex gap-3 pt-2">
         {!uploading && (
           <button 
@@ -191,7 +197,7 @@ const DocumentUploadForm = ({ client, onUploadSuccess, onCancel }) => {
         <button 
           disabled={!file || uploading}
           onClick={handleUpload}
-          className="flex-[2] bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-all shadow-xl shadow-slate-200 dark:shadow-none active:scale-95"
+          className="flex-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-all shadow-xl shadow-slate-200 dark:shadow-none active:scale-95"
         >
           {uploading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
           {uploading ? 'Processing' : 'Commit to Vault'}

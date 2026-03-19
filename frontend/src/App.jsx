@@ -5,6 +5,7 @@ import Home from "./pages/Home";
 import ClientDirectory from "./pages/ClientDirectory";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
+import Documents from "./pages/Documents"; // New Documents Page Added
 
 // Component to protect routes
 const ProtectedRoute = ({ children }) => {
@@ -45,6 +46,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Settings />
+                </ProtectedRoute>
+              } 
+            />
+            <Route
+              path="/documents"
+              element={
+                <ProtectedRoute>
+                  <Documents />
                 </ProtectedRoute>
               } 
             />

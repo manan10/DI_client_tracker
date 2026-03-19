@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Database, ArrowRight } from 'lucide-react';
+import { Users, Database, ArrowRight, ShieldCheck } from 'lucide-react';
 
 const DirectoryBlock = ({ clientCount }) => {
   const navigate = useNavigate();
@@ -8,36 +8,50 @@ const DirectoryBlock = ({ clientCount }) => {
   return (
     <div 
       onClick={() => navigate('/directory')}
-      className="group bg-white dark:bg-slate-900 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800 p-8 cursor-pointer hover:border-amber-300 dark:hover:border-amber-500/50 transition-all relative overflow-hidden group duration-300"
+      className="group relative overflow-hidden cursor-pointer transition-all duration-300
+                 /* TACTILE SURFACE */
+                 bg-white dark:bg-[#0a0c10] 
+                 border-2 border-slate-200 dark:border-white/5 
+                 border-b-4 border-b-slate-300 dark:border-b-black/60
+                 rounded-[2.5rem] p-8 lg:p-12
+                 hover:-translate-y-1 active:translate-y-0.5
+                 shadow-[0_15px_40px_-15px_rgba(0,0,0,0.1)] dark:shadow-none"
     >
-      {/* Background Icon - Shifted to deep slate for dark mode texture */}
-      <div className="absolute -right-4 -bottom-4 text-slate-50 dark:text-slate-800/50 group-hover:text-amber-50 dark:group-hover:text-amber-900/10 transition-colors duration-500">
-        <Database size={160} />
+      {/* Background Texture - Visual anchor for depth */}
+      <div className="absolute -right-8 -bottom-8 text-slate-100 dark:text-white/2 transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-12">
+        <Database size={240} strokeWidth={1} />
       </div>
       
-      <div className="relative z-10">
-        <div className="flex items-center gap-4 mb-4">
-          {/* Main Icon Container */}
-          <div className="p-3 bg-amber-600 rounded-xl text-white shadow-lg shadow-amber-200 dark:shadow-none">
-            <Users size={24} />
+      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+          {/* ICON WELL: Emerald/Slate for high-end database feel */}
+          <div className="w-16 h-16 bg-emerald-600 dark:bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-emerald-500/20 group-hover:rotate-6 transition-transform">
+            <Users size={32} strokeWidth={2.5} />
           </div>
-          <div>
-            <h3 className="font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight text-xl leading-none">
-              Client Directory
-            </h3>
-            <p className="text-[10px] font-bold text-amber-600 uppercase tracking-[0.2em] mt-1">
-              Centralized Database
+          
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <h3 className="text-2xl lg:text-3xl font-[1000] text-slate-950 dark:text-white uppercase tracking-tighter leading-none">
+                Master Directory
+              </h3>
+              <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-md">
+                <ShieldCheck size={10} className="text-emerald-600" />
+                <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Verified</span>
+              </div>
+            </div>
+            <p className="text-xs lg:text-sm font-medium text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed">
+              Access your full intelligence vault of <span className="text-slate-900 dark:text-white font-black">{clientCount}+ wealth elite clients</span>. 
+              Search by PAN, manage families, and analyze portfolio ties in one unified terminal.
             </p>
           </div>
         </div>
         
-        <p className="text-slate-500 dark:text-slate-400 text-sm max-w-md leading-relaxed mb-8 font-medium">
-          Access your full database of {clientCount}+ wealth elite clients. Filter by Tier, search by PAN, and manage contact details in one centralized view.
-        </p>
-        
-        {/* Call to Action */}
-        <div className="flex items-center text-amber-700 dark:text-amber-500 font-black text-xs uppercase tracking-widest group-hover:gap-3 transition-all duration-300">
-          Open Full Directory <ArrowRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" />
+        {/* CALL TO ACTION: Large touch target */}
+        <div className="flex items-center gap-4 py-4 px-6 bg-slate-50 dark:bg-white/5 border-2 border-slate-100 dark:border-white/5 rounded-2xl 
+                        text-slate-900 dark:text-white font-[1000] text-[11px] uppercase tracking-[0.2em] 
+                        group-hover:bg-slate-900 group-hover:text-white dark:group-hover:bg-emerald-600 transition-all duration-300">
+          Open Registry 
+          <ArrowRight size={18} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
         </div>
       </div>
     </div>

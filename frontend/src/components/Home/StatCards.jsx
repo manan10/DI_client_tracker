@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Clock, ShieldCheck, TrendingUp, Users, Home } from "lucide-react";
+import { Clock, ShieldCheck, TrendingUp, Users, Home as HomeIcon } from "lucide-react";
 import StatCard from "./StatCard";
 import { useApi } from "../../hooks/useApi";
 
@@ -25,9 +25,7 @@ const StatCards = () => {
             totalInteractions: data.totalInteractions || 0
           });
         }
-      } catch (err) {
-        console.error("Fetch failed", err);
-      }
+      } catch (err) { console.error("Stats fetch failed", err); }
     };
     fetchStats();
     return () => { isMounted = false; };
@@ -40,45 +38,38 @@ const StatCards = () => {
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-      <StatCard
-        title="Families"
-        value={stats.totalFamilies}
-        icon={<Home />}
-        colorClass="text-slate-600 dark:text-slate-400"
-        bgIconClass="bg-slate-50 dark:bg-slate-800"
+    /* GRID STRATEGY:
+       - grid-cols-2: 2 cards per row on mobile (No scrolling!)
+       - md:flex: Reverts to a single row on tablets/desktop
+    */
+    <div className="grid grid-cols-2 md:flex md:flex-row md:items-center gap-3 sm:gap-4 md:justify-center px-1 sm:px-4 py-2">
+      <StatCard 
+        title="Families" 
+        value={stats.totalFamilies} 
+        icon={<HomeIcon />} 
+        colorClass="text-slate-600 dark:text-slate-400" 
       />
-      <StatCard
-        title="Clients"
-        value={stats.totalClients}
-        icon={<Users />}
-        colorClass="text-amber-600"
-        bgIconClass="bg-amber-50 dark:bg-amber-950/20"
+      
+      <StatCard 
+        title="Clients" 
+        value={stats.totalClients} 
+        icon={<Users />} 
+        colorClass="text-orange-600 dark:text-orange-500" 
       />
-      <StatCard
-        title="Logs"
-        value={stats.totalInteractions}
-        icon={<Clock />}
-        colorClass="text-amber-500"
-        bgIconClass="bg-amber-50 dark:bg-amber-950/20"
+      
+      <StatCard 
+        title="Logs" 
+        value={stats.totalInteractions} 
+        icon={<Clock />} 
+        colorClass="text-amber-600 dark:text-amber-500" 
       />
-      <StatCard
-        title="AUM"
-        value={formatAUM(stats.totalAUM)}
-        icon={<TrendingUp />}
-        colorClass="text-emerald-600"
-        bgIconClass="bg-emerald-50 dark:bg-emerald-950/20"
+      
+      <StatCard 
+        title="AUM" 
+        value={formatAUM(stats.totalAUM)} 
+        icon={<TrendingUp />} 
+        colorClass="text-emerald-700 dark:text-emerald-500" 
       />
-      {/* Compliance hidden on smaller mobile screens to save space, visible from md up */}
-      <div className="hidden md:block">
-        <StatCard
-          title="Status"
-          value="Compliant"
-          icon={<ShieldCheck />}
-          colorClass="text-blue-600"
-          bgIconClass="bg-blue-50 dark:bg-blue-950/20"
-        />
-      </div>
     </div>
   );
 };
