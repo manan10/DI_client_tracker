@@ -1,22 +1,33 @@
 @import "tailwindcss";
 
 @theme {
-  /* This tells Tailwind v4 that the .dark class on a parent should trigger dark styles */
-  --font-sans: "Inter", ui-sans-serif, system-ui; /* example */
+  --color-brand-beige: #F9F7F2; 
+  --color-brand-cream: #FDFCF8; 
+  --font-sans: "Inter", ui-sans-serif, system-ui;
 }
 
-/* Add this to your CSS file */
-@custom-variant dark (&:where(.dark, .dark *));
+/* Ensure the dark selector is simple so Tailwind 4 picks it up */
+@variant dark (&:where(.dark, .dark *));
 
 @layer base {
   body {
-    background-color: #F8FAFC;
+    background-color: #F9F7F2; 
     color: #0f172a;
     transition: background-color 0.3s, color 0.3s;
   }
+
+  /* This is the critical part: Telling the body what to do when .dark is present */
+  .dark body {
+    background-color: #1e293b !important; 
+    color: #f1f5f9;
+  }
 }
 
-.dark body {
-  background-color:  #020617; /* #020617; slate-950 */
-  color: #f1f5f9; /* slate-100 */
+/* --- SCROLLBARS --- */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { 
+  background: #cbd5e1; 
+  border-radius: 10px; 
 }
+.dark ::-webkit-scrollbar-thumb { background: #475569; }

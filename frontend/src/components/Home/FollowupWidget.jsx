@@ -40,7 +40,7 @@ const FollowUpWidget = () => {
             Pending Follow-ups
           </h3>
         </div>
-        <span className="text-[10px] font-black px-2.5 py-1 bg-white dark:bg-white/5 border-2 border-slate-200 dark:border-white/10 rounded-lg text-slate-500 dark:text-slate-400">
+        <span className="text-[10px] font-black px-2.5 py-1 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-white/10 rounded-lg text-slate-500 dark:text-slate-400">
           {followUps.length}
         </span>
       </div>
@@ -56,7 +56,7 @@ const FollowUpWidget = () => {
             <div 
               key={task._id} 
               className="group flex items-center justify-between p-4 
-                         bg-white dark:bg-[#0a0c10] 
+                         bg-white dark:bg-slate-800 
                          border-2 border-slate-200 dark:border-white/5 
                          border-b-4 border-b-slate-300 dark:border-b-black/60
                          rounded-2xl hover:-translate-y-1 active:translate-y-0.5 
@@ -102,10 +102,10 @@ const FollowUpWidget = () => {
       </div>
 
       {/* 3. TACTILE FOOTER ACTION */}
-      <button className="w-full flex items-center justify-center gap-3 py-4 bg-white dark:bg-white/5 hover:bg-slate-900 dark:hover:bg-orange-600 text-slate-500 dark:text-slate-400 hover:text-white rounded-2xl border-2 border-slate-200 dark:border-white/10 border-b-4 border-b-slate-300 dark:border-b-black/40 shadow-md transition-all text-[10px] font-black uppercase tracking-widest active:scale-[0.98] group">
+      {/* <button className="w-full flex items-center justify-center gap-3 py-4 bg-white dark:bg-white/5 hover:bg-slate-900 dark:hover:bg-orange-600 text-slate-500 dark:text-slate-400 hover:text-white rounded-2xl border-2 border-slate-200 dark:border-white/10 border-b-4 border-b-slate-300 dark:border-b-black/40 shadow-md transition-all text-[10px] font-black uppercase tracking-widest active:scale-[0.98] group">
         Master Task List
         <ArrowRight size={14} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
-      </button>
+      </button> */}
     </div>
   );
 };

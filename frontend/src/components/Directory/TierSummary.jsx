@@ -21,7 +21,7 @@ const TierSummary = ({ families, activeTier, thresholds }) => {
   ];
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-5 mb-6 transition-colors duration-300">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-5 mb-6 transition-colors duration-300">
       <div className="flex justify-between items-center mb-4">
         <div>
           <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none mb-1">Portfolio Snapshot</h3>

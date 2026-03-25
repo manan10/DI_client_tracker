@@ -32,12 +32,27 @@ exports.updateUserPreferences = async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(
       req.user.id, 
+      // Using $set to ensure we only touch the preferences field
       { $set: { preferences: req.body } }, 
-      { new: true }
+      { new: true, runValidators: true }
     );
-    res.json(user.preferences);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Wrap the response in a consistent 'success/data' object
+    res.status(200).json({ 
+      success: true, 
+      data: user.preferences 
+    });
   } catch (err) {
-    res.status(500).json({ message: "Failed to update preferences" });
+    console.error("Update Preferences Error:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to update preferences",
+      error: err.message 
+    });
   }
 };
 

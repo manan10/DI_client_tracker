@@ -21,7 +21,7 @@ const InteractionSchema = new mongoose.Schema({
   // Added back from previous discussion to track business growth
   discussionPoints: [{ 
     type: String, 
-    enum: ['MF', 'PMS', 'AIF', 'Equity', 'Insurance', 'Tax Planning'] 
+    enum: ['MF', 'PMS', 'AIF', 'Equity', 'Debt', 'SIF', 'Tax Planning'] 
   }],
   summary: { type: String, required: true, trim: true },
   followUpRequired: { type: Boolean, default: false },

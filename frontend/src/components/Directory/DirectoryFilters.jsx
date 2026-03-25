@@ -12,7 +12,7 @@ const DirectoryFilters = ({ onSearchChange, onTierChange }) => (
       <input
         type="text"
         placeholder="Search Name or PAN..."
-        className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm dark:text-slate-100 outline-none focus:border-amber-600 dark:focus:border-amber-500 shadow-sm transition-all uppercase placeholder:normal-case placeholder:text-slate-400 dark:placeholder:text-slate-600"
+        className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl text-sm dark:text-slate-100 outline-none focus:border-amber-600 dark:focus:border-amber-500 shadow-sm transition-all uppercase placeholder:normal-case placeholder:text-slate-400 dark:placeholder:text-slate-600"
         onChange={(e) => onSearchChange(e.target.value)}
       />
     </div>
@@ -20,15 +20,15 @@ const DirectoryFilters = ({ onSearchChange, onTierChange }) => (
     {/* Filter Select */}
     <div className="relative">
       <select
-        className="w-full pl-4 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-amber-600 dark:focus:border-amber-500 shadow-sm cursor-pointer appearance-none transition-all"
+        className="w-full pl-4 pr-10 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-amber-600 dark:focus:border-amber-500 shadow-sm cursor-pointer appearance-none transition-all"
         onChange={(e) => onTierChange(e.target.value)}
       >
-        <optgroup label="Relationship Status" className="bg-white dark:bg-slate-900 text-slate-400">
+        <optgroup label="Relationship Status" className="bg-white dark:bg-slate-800 text-slate-400">
           <option value="All">All Tiers</option>
           <option value="Attention" className="text-red-600 dark:text-red-400">⚠️ Needs Attention</option>
         </optgroup>
         
-        <optgroup label="Tier Filter" className="bg-white dark:bg-slate-900 text-slate-400">
+        <optgroup label="Tier Filter" className="bg-white dark:bg-slate-800 text-slate-400">
           <option value="Diamond">Diamond</option>
           <option value="Gold">Gold</option>
           <option value="Silver">Silver</option>

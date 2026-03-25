@@ -29,7 +29,7 @@ const ClientTableRow = ({ client, onClick }) => {
   return (
     <>
       {/* MAIN FAMILY ROW */}
-      <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-all group border-b border-slate-50 dark:border-slate-800 cursor-pointer bg-white dark:bg-slate-900">
+      <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition-all group border-b border-slate-50 dark:border-slate-800 cursor-pointer bg-white dark:bg-slate-800">
         <td className="px-8 py-4 flex items-center gap-3">
           <button onClick={handleToggle} className="p-1 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-md text-amber-600 dark:text-amber-500 transition-colors">
             {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}

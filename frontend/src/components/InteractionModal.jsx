@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, CheckCircle2, Search, Mic, MicOff, Lock, ChevronDown } from 'lucide-react';
+import { X, Search, Mic, Lock, ChevronDown, Check, Calendar as CalendarIcon } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 
 const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
@@ -18,7 +18,6 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
     summary: '',
     followUpRequired: false,
     followUpDate: '',
-    complianceCheck: false
   });
 
   const isClientLocked = !!initialClient;
@@ -29,19 +28,15 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
         try {
           const data = await request('/clients/');
           setClients(data);
-        } catch (err) {
-          console.error("Failed to load clients", err);
-        }
+        } catch (err) { console.error("Failed to load clients", err); }
       };
       fetchClients();
     }
   }, [isOpen, request, isClientLocked]);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
-      }
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setIsDropdownOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -49,19 +44,14 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
 
   const handleVoiceInput = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return alert("Voice recognition not supported.");
-
+    if (!SpeechRecognition) return;
     const recognition = new SpeechRecognition();
     recognition.lang = 'en-IN';
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
-      setFormData(prev => ({ 
-        ...prev, 
-        summary: prev.summary ? prev.summary + " " + transcript : transcript 
-      }));
+      setFormData(prev => ({ ...prev, summary: prev.summary ? prev.summary + " " + transcript : transcript }));
     };
     recognition.start();
   };
@@ -70,13 +60,6 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
     c.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     c.pan?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const selectClient = (client) => {
-    if (isClientLocked) return;
-    setFormData({ ...formData, client: client._id, clientName: client.name });
-    setSearchTerm(client.name);
-    setIsDropdownOpen(false);
-  };
 
   const toggleDiscussionPoint = (point) => {
     setFormData(prev => ({
@@ -94,13 +77,11 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
       await request('/interactions', 'POST', payload);
       if (onRefresh) onRefresh();
       resetAndClose();
-    } catch {
-      alert("Error saving interaction.");
-    }
+    } catch { alert("Error saving interaction."); }
   };
 
   const resetAndClose = () => {
-    setFormData({ client: '', clientName: '', type: 'In-Person', discussionPoints: [], summary: '', followUpRequired: false, followUpDate: '', complianceCheck: false });
+    setFormData({ client: '', clientName: '', type: 'In-Person', discussionPoints: [], summary: '', followUpRequired: false, followUpDate: '' });
     setSearchTerm('');
     onClose();
   };
@@ -108,183 +89,175 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-110 flex items-end sm:items-center justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm p-0 sm:p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in slide-in-from-bottom sm:zoom-in duration-300 border dark:border-slate-800">
+    <div className="fixed inset-0 z-110 flex items-center justify-center bg-slate-900/60 dark:bg-slate-950/90 backdrop-blur-sm p-0 sm:p-4">
+      <div className="bg-white dark:bg-[#1e293b] w-full max-w-4xl sm:rounded-xl shadow-2xl overflow-hidden border-t sm:border border-slate-200 dark:border-slate-700 flex flex-col max-h-screen sm:max-h-[90vh]">
         
-        {/* Modal Header */}
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-between items-center shrink-0">
           <div>
-            <h2 className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">Log Interaction</h2>
-            <p className="text-[9px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest">Unified Recording System</p>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Interaction Log</h2>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold mt-0.5">Corporate Intelligence System</p>
           </div>
-          <button onClick={resetAndClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 p-2 transition-colors">
-            <X size={24} />
+          <button onClick={resetAndClose} className="text-slate-400 hover:text-red-500 p-2 transition-colors">
+            <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6 max-h-[85vh] sm:max-h-[75vh] overflow-y-auto custom-scrollbar">
-          
-          {/* Client Selection */}
-          <div className="relative" ref={dropdownRef}>
-            <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
-              Client Selection
-            </label>
-            <div className="relative">
-              {isClientLocked ? (
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-600 dark:text-amber-500" size={16} />
-              ) : (
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600" size={16} />
-              )}
-              <input 
-                type="text"
-                disabled={isClientLocked}
-                className={`w-full pl-12 pr-4 py-4 border rounded-2xl text-sm font-bold outline-none transition-all ${
-                  isClientLocked 
-                  ? 'bg-amber-50/50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/30 text-slate-900 dark:text-slate-200 cursor-not-allowed' 
-                  : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:border-amber-600 dark:focus:border-amber-500 focus:bg-white dark:focus:bg-slate-800'
-                }`}
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setIsDropdownOpen(true);
-                }}
-                onFocus={() => !isClientLocked && setIsDropdownOpen(true)}
-                required
-              />
-              {isClientLocked && (
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-black text-amber-600 dark:text-amber-500 uppercase tracking-widest">
-                  Fixed Selection
-                </span>
-              )}
-            </div>
-
-            {/* Dropdown Results */}
-            {!isClientLocked && isDropdownOpen && searchTerm.length > 0 && (
-              <div className="absolute z-20 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
-                {filteredClients.map(c => (
-                  <div key={c._id} onClick={() => selectClient(c)} className="p-4 hover:bg-amber-50 dark:hover:bg-amber-900/20 cursor-pointer border-b border-slate-50 dark:border-slate-700 last:border-0 transition-colors">
-                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase">{c.name}</p>
-                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 font-mono tracking-tighter uppercase">{c.pan}</p>
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-10 space-y-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            
+            <div className="lg:col-span-5 space-y-10">
+              {/* Client Selection */}
+              <div className="relative" ref={dropdownRef}>
+                <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Client Record</label>
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                    {isClientLocked ? <Lock size={14} /> : <Search size={14} />}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Type & Follow-up */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="relative">
-              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Type</label>
-              <select 
-                className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-200 outline-none focus:border-amber-600 dark:focus:border-amber-500 appearance-none"
-                value={formData.type}
-                onChange={(e) => setFormData({...formData, type: e.target.value})}
-              >
-                {['In-Person', 'Call', 'WhatsApp', 'Email'].map(t => <option key={t} value={t} className="dark:bg-slate-900">{t}</option>)}
-              </select>
-              <ChevronDown size={16} className="absolute right-4 bottom-5 text-slate-400 pointer-events-none" />
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Follow-up Required?</label>
-              <div className="flex items-center h-13.5 gap-3 px-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl">
-                 <input 
-                  type="checkbox" 
-                  checked={formData.followUpRequired} 
-                  onChange={(e) => setFormData({...formData, followUpRequired: e.target.checked})}
-                  className="w-5 h-5 accent-amber-600 cursor-pointer"
-                 />
-                 {formData.followUpRequired && (
-                   <input 
-                    type="date" 
-                    className="flex-1 bg-transparent text-xs font-bold outline-none text-slate-700 dark:text-slate-200 color-scheme-dark"
-                    onChange={(e) => setFormData({...formData, followUpDate: e.target.value})}
+                  <input 
+                    type="text"
+                    disabled={isClientLocked}
+                    className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:border-slate-400 dark:focus:border-slate-500 outline-none transition-all disabled:opacity-60"
+                    placeholder="Search name or PAN..."
+                    value={searchTerm}
+                    onChange={(e) => { setSearchTerm(e.target.value); setIsDropdownOpen(true); }}
                     required
-                   />
-                 )}
+                  />
+                </div>
+                {!isClientLocked && isDropdownOpen && searchTerm.length > 0 && (
+                  <div className="absolute z-20 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                    {filteredClients.map(c => (
+                      <div key={c._id} onClick={() => { setFormData({...formData, client: c._id, clientName: c.name}); setSearchTerm(c.name); setIsDropdownOpen(false); }} className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer border-b border-slate-50 dark:border-slate-700 last:border-0">
+                        <p className="text-sm font-bold text-slate-900 dark:text-white">{c.name}</p>
+                        <p className="text-[10px] text-slate-500 font-mono uppercase">{c.pan}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Wider grid for Inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="min-w-0">
+                  <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Channel</label>
+                  <div className="relative">
+                    <select 
+                      className="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-sm appearance-none outline-none focus:border-slate-400"
+                      value={formData.type}
+                      onChange={(e) => setFormData({...formData, type: e.target.value})}
+                    >
+                      {['In-Person', 'Call', 'WhatsApp', 'Email'].map(t => <option className='dark: bg-white text-slate-900' key={t} value={t}>{t}</option>)}
+                    </select>
+                    <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                <div className="min-w-0">
+                  <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Follow-up</label>
+                  <div className="flex items-center bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden h-11.5">
+                    <div className="px-3 border-r border-slate-200 dark:border-slate-700 flex items-center h-full shrink-0">
+                      <input 
+                        type="checkbox" 
+                        checked={formData.followUpRequired} 
+                        onChange={(e) => setFormData({...formData, followUpRequired: e.target.checked})}
+                        className="w-4 h-4 accent-slate-900 dark:accent-emerald-500 rounded cursor-pointer"
+                      />
+                    </div>
+                    {/* Contained Date input area */}
+                    <div className="relative flex-1 h-full min-w-0">
+                      <input 
+                        type="date"
+                        disabled={!formData.followUpRequired}
+                        className="w-full h-full px-3 pr-9 text-[11px] font-bold bg-transparent outline-none dark:text-white disabled:opacity-20 uppercase transition-opacity relative z-10"
+                        value={formData.followUpDate}
+                        onChange={(e) => setFormData({...formData, followUpDate: e.target.value})}
+                        style={{ colorScheme: 'dark' }}
+                      />
+                      <CalendarIcon 
+                        size={14} 
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-0" 
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Focus Topics</label>
+                <div className="flex flex-wrap gap-2">
+                  {['MF', 'PMS', 'AIF', 'SIF', 'Debt', 'Tax Planning'].map(point => (
+                    <button
+                      key={point}
+                      type="button"
+                      onClick={() => toggleDiscussionPoint(point)}
+                      className={`px-3 py-1.5 rounded text-[10px] font-bold border transition-all ${
+                        formData.discussionPoints.includes(point) 
+                        ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-600 dark:border-emerald-600' 
+                        : 'bg-white dark:bg-transparent border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400'
+                      }`}
+                    >
+                      {point}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Discussion Points */}
-          <div>
-            <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Discussion Points</label>
-            <div className="flex flex-wrap gap-2">
-              {['MF', 'PMS', 'AIF', 'Equity', 'Insurance', 'Tax Planning'].map(point => (
-                <button
-                  key={point}
-                  type="button"
-                  onClick={() => toggleDiscussionPoint(point)}
-                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tight transition-all border ${
-                    formData.discussionPoints.includes(point) 
-                    ? 'bg-amber-600 border-amber-600 text-white shadow-lg shadow-amber-100/20' 
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-700'
+            {/* Interaction Summary */}
+            <div className="lg:col-span-7 flex flex-col min-h-87.5">
+              <div className="flex justify-between items-center mb-3">
+                <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Notes & Summary</label>
+                <button 
+                  type="button" 
+                  onClick={handleVoiceInput}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded text-[10px] font-bold transition-all ${
+                    isListening ? 'bg-red-50 text-red-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
                   }`}
                 >
-                  {point}
+                  <Mic size={12} className={isListening ? 'animate-pulse' : ''} />
+                  {isListening ? 'LISTENING' : 'DICTATE'}
                 </button>
-              ))}
+              </div>
+              <textarea 
+                required
+                className="w-full flex-1 p-5 bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-slate-400 leading-relaxed placeholder:text-slate-400"
+                placeholder="Detail the key takeaways and proposed actions..."
+                value={formData.summary}
+                onChange={(e) => setFormData({...formData, summary: e.target.value})}
+              />
             </div>
           </div>
 
-          {/* Summary Area */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Interaction Summary</label>
-              <button 
-                type="button" 
-                onClick={handleVoiceInput}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black transition-all ${
-                  isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
-                }`}
-              >
-                {isListening ? <MicOff size={10}/> : <Mic size={10}/>}
-                {isListening ? 'LISTENING...' : 'VOICE-TO-TEXT'}
-              </button>
-            </div>
-            <textarea 
-              required
-              className="w-full p-5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-3xl text-sm font-medium text-slate-900 dark:text-slate-200 outline-none focus:border-amber-600 dark:focus:border-amber-500 h-36 resize-none transition-all"
-              placeholder="Tap the mic to dictate or type your notes here..."
-              value={formData.summary}
-              onChange={(e) => setFormData({...formData, summary: e.target.value})}
-            />
+          <div className="flex justify-end pt-4 shrink-0">
+            <button
+              type="submit"
+              disabled={loading || !formData.client}
+              className="w-full sm:w-auto px-12 py-3.5 bg-slate-900 dark:bg-emerald-600 hover:bg-black dark:hover:bg-emerald-700 text-white rounded-lg text-xs font-bold uppercase tracking-[0.2em] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+            >
+              {loading ? 'Processing...' : 'Save Interaction'}
+              <Check size={16} strokeWidth={3} />
+            </button>
           </div>
-
-          {/* Compliance Box */}
-          <div className={`p-5 rounded-3xl border flex items-start gap-4 transition-all ${
-            formData.complianceCheck 
-            ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/30' 
-            : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800'
-          }`}>
-            <input 
-              type="checkbox" 
-              required
-              checked={formData.complianceCheck}
-              onChange={(e) => setFormData({...formData, complianceCheck: e.target.checked})}
-              className="mt-1 w-5 h-5 accent-emerald-500 cursor-pointer" 
-            />
-            <div>
-              <p className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase leading-none mb-1">Compliance Confirmation</p>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">I verify that disclaimers were provided as a Financial Product Distributor.</p>
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading || !formData.client}
-            className={`w-full py-5 rounded-3xl font-black text-xs uppercase tracking-[0.25em] shadow-2xl transition-all flex items-center justify-center gap-2 ${
-                !formData.client 
-                ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed' 
-                : 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-200/40 dark:shadow-none active:scale-[0.98]'
-            }`}
-          >
-            {loading ? 'Logging...' : 'Save Interaction'}
-            <CheckCircle2 size={18} />
-          </button>
         </form>
       </div>
+
+      <style>{`
+        /* Reset absolute indicator and force it to only the input box */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          background: transparent;
+          color: transparent;
+          cursor: pointer;
+          height: 100%;
+          width: 100%;
+          position: absolute;
+          top: 0;
+          left: 0;
+          padding: 0;
+          margin: 0;
+          opacity: 0;
+        }
+      `}</style>
     </div>
   );
 };

@@ -75,7 +75,7 @@ const Documents = () => {
   const capacityPercentage = Math.min((totalSizeMB / 5120) * 100, 100);
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] dark:bg-[#020408] transition-colors duration-300 relative font-sans">
+    <div className="min-h-screen bg-[#FDFDFD] dark:bg-slate-950 transition-colors duration-300 relative font-sans">
       <Navbar />
       <VaultRegistry activities={activities} isOpen={isRegistryOpen} onClose={() => setIsRegistryOpen(false)} />
 
@@ -90,21 +90,62 @@ const Documents = () => {
                 </div>
             </div>
             
-            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-                {!searchTerm && <button onClick={() => { setEditValue(""); setIsCreatingFolder(true); }} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl font-black text-[11px] uppercase shadow-lg shadow-emerald-600/20"><Plus size={16} /> New Folder</button>}
-                <button onClick={handleReSync} className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-400 hover:text-emerald-600 transition-colors"><RefreshCw size={18} /></button>
-                <div className="flex items-center gap-1 px-3 py-2 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-                  <button onClick={handleSelectAll} className="flex items-center gap-2 text-[10px] font-black uppercase pr-2 border-r border-slate-200 dark:border-slate-800">
-                    {isAllFilteredSelected ? <CheckSquare size={16} className="text-emerald-600" /> : <Square size={16} />}
+          <div className="flex flex-wrap items-stretch gap-2 w-full lg:w-auto">
+              {/* New Folder Button */}
+              {!searchTerm && (
+                  <button 
+                      onClick={() => { setEditValue(""); setIsCreatingFolder(true); }} 
+                      className="flex items-center gap-2 px-4 h-10 bg-emerald-600 text-white rounded-lg font-black text-[11px] uppercase shadow-lg shadow-emerald-600/20 active:scale-95 transition-transform"
+                  >
+                      <Plus size={16} /> New Folder
                   </button>
-                  <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-lg ${viewMode === 'grid' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}><LayoutGrid size={16} /></button>
-                  <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-lg ${viewMode === 'list' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}><List size={16} /></button>
-                </div>
-                <div className="relative flex-1 lg:w-60 group">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={14} />
-                    <input type="text" placeholder={searchTerm ? "Searching..." : "Quick find..."} className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-[11px] font-black uppercase outline-none focus:border-emerald-500 transition-all" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                </div>
-            </div>
+              )}
+
+              {/* Re-Sync Button */}
+              <button 
+                  onClick={handleReSync} 
+                  className="flex items-center justify-center w-10 h-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-400 hover:text-emerald-600 transition-colors active:bg-slate-50"
+              >
+                  <RefreshCw size={18} />
+              </button>
+
+              {/* Selection and View Mode Toggle */}
+              <div className="flex items-center gap-1 px-2 h-10 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-800">
+                  <button 
+                      onClick={handleSelectAll} 
+                      className="flex items-center justify-center w-8 h-full border-r border-slate-200 dark:border-slate-700/50 mr-1"
+                  >
+                      {isAllFilteredSelected ? <CheckSquare size={16} className="text-emerald-600" /> : <Square size={16} className="text-slate-400" />}
+                  </button>
+                  
+                  <div className="flex gap-0.5">
+                      <button 
+                          onClick={() => setViewMode("grid")} 
+                          className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                      >
+                          <LayoutGrid size={16} />
+                      </button>
+                      <button 
+                          onClick={() => setViewMode("list")} 
+                          className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                      >
+                          <List size={16} />
+                      </button>
+                  </div>
+              </div>
+
+              {/* Search Input */}
+              <div className="relative flex-1 lg:w-64 group h-10">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={14} />
+                  <input 
+                      type="text" 
+                      placeholder={searchTerm ? "Searching..." : "Quick find..."} 
+                      className="w-full h-full pl-9 pr-4 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-lg text-[11px] font-black uppercase outline-none focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 transition-all placeholder:text-slate-400" 
+                      value={searchTerm} 
+                      onChange={(e) => setSearchTerm(e.target.value)} 
+                  />
+              </div>
+          </div>
         </div>
 
         {uploading && (
@@ -119,7 +160,7 @@ const Documents = () => {
 
         <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4" : "flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm"}>
           {viewMode === "list" && (
-            <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+            <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase text-slate-400 tracking-widest">
               <div className="col-span-1">Select</div><div className="col-span-7">Name</div><div className="col-span-2">Type</div><div className="col-span-2 text-right">Actions</div>
             </div>
           )}
@@ -129,14 +170,14 @@ const Documents = () => {
           ) : (
             <>
               {!searchTerm && (
-                <label className={viewMode === "grid" ? "group relative bg-slate-50 dark:bg-slate-800/50 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-5 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition-all aspect-square" : "flex items-center gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer border-b border-slate-100 dark:border-slate-800 transition-all"}>
+                <label className={viewMode === "grid" ? "group relative bg-slate-50 dark:bg-slate-700/50 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-5 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition-all aspect-square" : "flex items-center gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer border-b border-slate-100 dark:border-slate-800 transition-all"}>
                   <Upload size={viewMode === "grid" ? 24 : 18} className="text-slate-400 group-hover:text-emerald-600" />
                   <input type="file" multiple className="hidden" onChange={(e) => startBatchUpload(Array.from(e.target.files))} />
                   <span className="text-[10px] font-black uppercase text-slate-500 ml-2">Upload</span>
                 </label>
               )}
               {isCreatingFolder && !searchTerm && (
-                  <div className={viewMode === "grid" ? "bg-white dark:bg-slate-800 border-2 border-emerald-500 rounded-2xl p-4 flex flex-col items-center justify-center animate-in zoom-in-95 aspect-square" : "flex items-center gap-4 px-6 py-4 border-b border-emerald-500 bg-emerald-50/10"}>
+                  <div className={viewMode === "grid" ? "bg-white dark:bg-slate-700 border-2 border-emerald-500 rounded-2xl p-4 flex flex-col items-center justify-center animate-in zoom-in-95 aspect-square" : "flex items-center gap-4 px-6 py-4 border-b border-emerald-500 bg-emerald-50/10"}>
                       <Folder size={viewMode === "grid" ? 32 : 18} className="text-emerald-600" />
                       <input autoFocus value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={() => setIsCreatingFolder(false)} onKeyDown={async (e) => { if (e.key === 'Enter' && editValue.trim()) { await handleCreateFolder(editValue.trim()); setIsCreatingFolder(false); setEditValue(""); } }} className="bg-transparent text-[10px] font-black outline-none border-b border-emerald-500 uppercase ml-2 flex-1" placeholder="NAME..." />
                   </div>

@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Database, ArrowRight, ShieldCheck } from 'lucide-react';
 
-const DirectoryBlock = ({ clientCount }) => {
+const DirectoryBlock = () => {
   const navigate = useNavigate();
 
   return (
@@ -10,7 +10,7 @@ const DirectoryBlock = ({ clientCount }) => {
       onClick={() => navigate('/directory')}
       className="group relative overflow-hidden cursor-pointer transition-all duration-300
                  /* TACTILE SURFACE */
-                 bg-white dark:bg-[#0a0c10] 
+                 bg-white dark:bg-slate-800 
                  border-2 border-slate-200 dark:border-white/5 
                  border-b-4 border-b-slate-300 dark:border-b-black/60
                  rounded-[2.5rem] p-8 lg:p-12
@@ -40,7 +40,7 @@ const DirectoryBlock = ({ clientCount }) => {
               </div>
             </div>
             <p className="text-xs lg:text-sm font-medium text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed">
-              Access your full intelligence vault of <span className="text-slate-900 dark:text-white font-black">{clientCount}+ wealth elite clients</span>. 
+              Access your full intelligence vault of all wealth elite clients. 
               Search by PAN, manage families, and analyze portfolio ties in one unified terminal.
             </p>
           </div>

@@ -124,7 +124,7 @@ const ClientDirectory = () => {
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border-t-4 border-t-amber-500 border-x border-b border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-              <thead className="bg-slate-50/50 dark:bg-slate-800/50 text-[10px] font-black uppercase tracking-[0.15em] border-b border-slate-100 dark:border-slate-800">
+              <thead className="bg-slate-50/50 dark:bg-slate-900/50 text-[10px] font-black uppercase tracking-[0.15em] border-b border-slate-100 dark:border-slate-800">
                 <tr>
                   <SortableHeader label="Client / Family Name" sortKey="name" sortConfig={sortConfig} requestSort={requestSort} />
                   <SortableHeader label="Total Family AUM" sortKey="aum" sortConfig={sortConfig} requestSort={requestSort} />

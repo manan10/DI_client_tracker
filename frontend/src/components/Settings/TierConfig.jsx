@@ -30,9 +30,9 @@ const TierConfig = ({ thresholds, setThresholds }) => (
     <div className="mt-12 p-8 bg-amber-50 dark:bg-amber-900/10 rounded-4xl border border-amber-100 dark:border-amber-900/20 flex gap-5 items-start">
       <Info className="text-amber-600 mt-1" size={20} />
       <div>
-        <p className="text-xs font-bold text-amber-900 dark:text-amber-400 uppercase tracking-tight mb-1">Impact Analysis</p>
+        <p className="text-xs font-bold text-amber-900 dark:text-amber-400 uppercase tracking-tight mb-1">Warning</p>
         <p className="text-[11px] font-medium text-amber-800/70 dark:text-amber-500/70 leading-relaxed">
-          Adjusting these values will re-classify all families in your directory immediately.
+          Adjusting these values will re-classify all families in your directory immediately after saving.
         </p>
       </div>
     </div>

@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, LogOut, Shield, Sun, Moon, SettingsIcon, Menu, X, Files } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  Users, 
+  LogOut, 
+  Shield, 
+  Sun, 
+  Moon, 
+  SettingsIcon, 
+  Menu, 
+  X, 
+  Files,
+  BarChart3 // Added for Accounts & Performance
+} from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import Logo from '../assets/logo_nobrand.png';
 
@@ -35,7 +47,8 @@ const Navbar = () => {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Directory', path: '/directory', icon: Users },
-    { name: 'Documents', path: '/documents', icon: Files }, // New Documents Tab Added
+    { name: 'Documents', path: '/documents', icon: Files },
+    { name: 'Accounts', path: '/accounts', icon: BarChart3 }, // Added Accounts Tab
     { name: 'Settings', path: '/settings', icon: SettingsIcon }
   ];
 
@@ -44,7 +57,7 @@ const Navbar = () => {
       <div className="max-w-[98%] mx-auto px-4 md:px-6 h-20">
         <div className="flex justify-between items-center h-20">
           
-          {/* Logo Section with deeper contrast */}
+          {/* Logo Section */}
           <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 group shrink-0 transition-transform active:scale-95">
             <div className="relative">
               <img src={Logo} alt="Logo" className="h-9 md:h-11 w-auto drop-shadow-md" />
@@ -60,7 +73,7 @@ const Navbar = () => {
             </div>
           </Link>
 
-          {/* Desktop Navigation - Pill Style for better visibility */}
+          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center bg-slate-100/50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-700/50">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -82,7 +95,7 @@ const Navbar = () => {
             })}
           </div>
 
-          {/* Actions with tactile feedback */}
+          {/* Actions */}
           <div className="flex items-center gap-3 md:gap-4">
             <button
               onClick={() => setIsDark(!isDark)}
@@ -109,7 +122,7 @@ const Navbar = () => {
               <LogOut size={19} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
 
-            {/* Mobile Menu Toggle - High visibility */}
+            {/* Mobile Menu Toggle */}
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden p-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg active:scale-95 transition-transform"
@@ -120,7 +133,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu Overlay - More color */}
+      {/* Mobile Menu Overlay */}
       {isMenuOpen && (
         <div className="md:hidden absolute top-20 left-0 w-full bg-slate-50 dark:bg-slate-900 border-b-2 border-amber-500/50 animate-in slide-in-from-top-4 duration-300 z-50 shadow-2xl">
           <div className="flex flex-col p-6 gap-3">

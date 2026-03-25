@@ -1,11 +1,14 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from 'sonner';
+
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 
 import Home from "./pages/Home";
 import ClientDirectory from "./pages/ClientDirectory";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
-import Documents from "./pages/Documents"; // New Documents Page Added
+import Documents from "./pages/Documents"; 
+import Accounts from "./pages/Accounts";
 
 // Component to protect routes
 const ProtectedRoute = ({ children }) => {
@@ -19,6 +22,7 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" richColors expand={true} />
       <Router>
         <div className="min-h-screen bg-gray-50">
           <Routes>
@@ -54,6 +58,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Documents />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route
+              path="/accounts"
+              element={
+                <ProtectedRoute>
+                  <Accounts />
                 </ProtectedRoute>
               } 
             />

@@ -13,7 +13,7 @@ const FileCard = ({
 }) => {
   
   const menuContent = isMenuOpen && (
-    <div className={`absolute ${viewMode === 'list' ? 'right-0 top-10' : 'top-10 right-2'} w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-xl p-1.5 z-50 animate-in fade-in zoom-in-95`} onClick={e => e.stopPropagation()}>
+    <div className={`absolute ${viewMode === 'list' ? 'right-0 top-10' : 'top-10 right-2'} w-44 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-xl p-1.5 z-50 animate-in fade-in zoom-in-95`} onClick={e => e.stopPropagation()}>
         {isSearchMode && (
           <button onClick={(e) => { e.stopPropagation(); onGoToFolder(); }} className="w-full text-left px-2 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-[10px] font-black uppercase flex items-center gap-2 rounded-lg text-blue-600 transition-colors">
             <ExternalLink size={12} /> Go to folder

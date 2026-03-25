@@ -20,27 +20,27 @@ const InteractionTimeline = () => {
     switch (type) {
       case 'In-Person': return { 
         icon: <User size={12} strokeWidth={3} />, 
-        color: 'text-amber-700 dark:text-amber-400', 
+        color: 'text-amber-800 dark:text-amber-400', 
         bg: 'bg-amber-100 dark:bg-amber-500/10',
         border: 'border-amber-200 dark:border-amber-500/20'
       };
       case 'Call': return { 
         icon: <Phone size={12} strokeWidth={3} />, 
-        color: 'text-blue-700 dark:text-blue-400', 
+        color: 'text-blue-800 dark:text-blue-400', 
         bg: 'bg-blue-100 dark:bg-blue-500/10',
         border: 'border-blue-200 dark:border-blue-500/20'
       };
       case 'WhatsApp': return { 
         icon: <MessageSquare size={12} strokeWidth={3} />, 
-        color: 'text-emerald-800 dark:text-emerald-400', 
+        color: 'text-emerald-900 dark:text-emerald-400', 
         bg: 'bg-emerald-100 dark:bg-emerald-500/10',
         border: 'border-emerald-200 dark:border-emerald-500/20'
       };
       default: return { 
         icon: <Clock size={12} strokeWidth={3} />, 
-        color: 'text-slate-700 dark:text-slate-400', 
+        color: 'text-slate-800 dark:text-slate-400', 
         bg: 'bg-slate-100 dark:bg-white/5',
-        border: 'border-slate-200 dark:border-white/10'
+        border: 'border-slate-300 dark:border-white/10'
       };
     }
   };
@@ -61,8 +61,8 @@ const InteractionTimeline = () => {
 
   return (
     <div className="relative px-2">
-      {/* 1. THE POWER LINE: Deep Blue vertical anchor */}
-      <div className="absolute left-6 sm:left-8 top-0 bottom-0 w-1 bg-linear-to-b from-blue-600 via-blue-400 to-transparent dark:from-blue-500 dark:via-blue-900 dark:to-transparent rounded-full opacity-30 dark:opacity-20" />
+      {/* 1. THE POWER LINE: Changed from Blue to Emerald/Green */}
+      <div className="absolute left-6 sm:left-8 top-0 bottom-0 w-1 bg-linear-to-b from-emerald-600 via-emerald-400 to-transparent dark:from-emerald-500 dark:via-emerald-900 dark:to-transparent rounded-full opacity-20 dark:opacity-10" />
 
       <div className="space-y-12">
         {interactions.length > 0 ? (
@@ -71,15 +71,14 @@ const InteractionTimeline = () => {
             return (
               <div key={item._id} className="relative pl-14 sm:pl-16 group">
                 
-                {/* 2. TACTILE NODE: Larger, more visible colored circles */}
-                <div className={`absolute left-4 sm:left-6 top-1 w-5 h-5 rounded-full border-4 border-white dark:border-[#05070a] z-10 shadow-lg transition-transform group-hover:scale-125 
+                <div className={`absolute left-4 sm:left-6 top-1 w-5 h-5 rounded-full border-4 border-brand-beige dark:border-slate-900 z-10 shadow-lg transition-transform group-hover:scale-125 
                                 ${styles.color.split(' ')[0].replace('text', 'bg')} `} />
                 
                 <div className="flex flex-col gap-2">
-                  {/* HEADER STRIP */}
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <h4 className="text-[15px] font-[1000] text-slate-950 dark:text-white uppercase tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      {/* Hover text changed to emerald */}
+                      <h4 className="text-[15px] font-black text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                         {item.client?.name}
                       </h4>
                       <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border-2 ${styles.bg} ${styles.color} ${styles.border}`}>
@@ -87,30 +86,29 @@ const InteractionTimeline = () => {
                       </span>
                     </div>
                     
-                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 dark:text-slate-500 uppercase tracking-[0.2em] bg-slate-100 dark:bg-white/5 px-3 py-1 rounded-full border border-slate-200 dark:border-white/10 shadow-sm">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-[0.2em] bg-white/50 dark:bg-white/5 px-3 py-1 rounded-full border border-slate-200 dark:border-white/10 shadow-sm">
                       <Calendar size={12} strokeWidth={3} />
                       {new Date(item.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
                     </div>
                   </div>
 
-                  {/* SUMMARY LOG: Maximum readability */}
-                  <div className="relative p-4 bg-white dark:bg-white/2 border-2 border-slate-100 dark:border-white/5 rounded-2xl shadow-sm group-hover:border-blue-500/30 transition-all">
-                    <p className="text-[14px] text-slate-800 dark:text-slate-300 font-medium leading-relaxed">
+                  <div className="relative p-4 bg-white/80 dark:bg-slate-800 border-2 border-slate-200/60 dark:border-white/5 rounded-2xl shadow-sm group-hover:border-emerald-500/30 transition-all">
+                    <p className="text-[14px] text-slate-900 dark:text-slate-300 font-medium leading-relaxed">
                       {item.summary}
                     </p>
 
-                    {/* DISCUSSION PILLS: Blue-tinted tags */}
                     {item.discussionPoints?.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-50 dark:border-white/5">
+                      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-white/5">
                         {item.discussionPoints.map(p => (
-                          <span key={p} className="text-[9px] font-black px-3 py-1 rounded-md bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20 uppercase tracking-widest">
+                          <span key={p} className="text-[9px] font-black px-3 py-1 rounded-md bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20 uppercase tracking-widest">
                             #{p}
                           </span>
                         ))}
                       </div>
                     )}
                     
-                    <ArrowUpRight size={14} className="absolute top-4 right-4 text-slate-200 dark:text-slate-800 group-hover:text-blue-500 transition-colors" />
+                    {/* Icon hover changed to emerald */}
+                    <ArrowUpRight size={14} className="absolute top-4 right-4 text-slate-300 dark:text-slate-700 group-hover:text-emerald-500 transition-colors" />
                   </div>
                 </div>
               </div>
@@ -118,10 +116,10 @@ const InteractionTimeline = () => {
           })
         ) : (
           <div className="py-24 text-center">
-             <div className="w-20 h-20 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+             <div className="w-20 h-20 bg-white/50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
                 <History size={32} className="text-slate-300 dark:text-slate-700" />
              </div>
-             <p className="text-[12px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.3em]">System Log Empty</p>
+             <p className="text-[12px] font-black text-slate-500 dark:text-slate-600 uppercase tracking-[0.3em]">System Log Empty</p>
           </div>
         )}
       </div>

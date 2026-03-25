@@ -114,11 +114,11 @@ const DocumentManagerModal = ({ isOpen, onClose, client, onRefresh }) => {
         <div className="fixed inset-0 z-10 overflow-hidden">
           <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
             <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enterTo="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-200" leaveFrom="opacity-100 translate-y-0 sm:scale-100" leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
-              <Dialog.Panel className="relative transform overflow-hidden rounded-[2.5rem] bg-[#0B0F19] text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-6xl border border-white/5">
+              <Dialog.Panel className="relative transform overflow-hidden rounded-[2.5rem] bg-slate-900 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-6xl border border-white/5">
                 
                 <div className="flex h-[80vh] min-h-150">
                   {/* LEFT SIDEBAR */}
-                  <div className="w-1/3 border-r border-white/5 flex flex-col bg-[#0B0F19]">
+                  <div className="w-1/3 border-r border-white/5 flex flex-col bg-slate-800">
                     <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/2">
                       <div className="truncate pr-2">
                         <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-white">
@@ -179,7 +179,7 @@ const DocumentManagerModal = ({ isOpen, onClose, client, onRefresh }) => {
                                 }`}
                               >
                                 <div className="flex items-center gap-4 text-left truncate">
-                                  <div className={`p-2.5 rounded-xl shrink-0 ${selectedDoc?._id === doc._id ? 'bg-orange-500 text-white' : 'bg-white/5 text-slate-500'}`}>
+                                  <div className={`p-2.5 rounded-xl shrink-0 ${selectedDoc?._id === doc._id ? 'bg-orange-500 text-white' : 'bg-slate-700 text-slate-500'}`}>
                                     <FileText size={18} />
                                   </div>
                                   <div className="truncate">
@@ -208,7 +208,7 @@ const DocumentManagerModal = ({ isOpen, onClose, client, onRefresh }) => {
                   </div>
 
                   {/* PREVIEW AREA */}
-                  <div className="w-2/3 bg-black flex flex-col relative">
+                  <div className="w-2/3 bg-slate-950 flex flex-col relative">
                     <div className="absolute top-6 right-6 flex items-center gap-3 z-20">
                         {selectedDoc && (
                             <a href={selectedDoc.downloadUrl} target="_blank" rel="noreferrer" className="p-2.5 bg-white/5 border border-white/5 rounded-xl text-slate-400 hover:text-orange-500 transition-all">

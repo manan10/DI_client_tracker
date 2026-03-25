@@ -4,7 +4,7 @@ const StatCard = ({ title, value, icon, colorClass = "text-amber-600" }) => {
   return (
     <div className="flex items-center gap-3 px-3 py-4 sm:px-5 sm:py-3 flex-1 group transition-all duration-300 relative
                     /* THE TACTILE LIFT */
-                    bg-white dark:bg-slate-900 
+                    bg-white dark:bg-slate-800 
                     border border-slate-200 dark:border-white/5 
                     border-b-4 border-b-slate-200 dark:border-b-black/40
                     shadow-[0_4px_12px_-5px_rgba(0,0,0,0.1)]

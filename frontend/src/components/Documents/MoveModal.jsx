@@ -65,7 +65,7 @@ const MoveModal = ({ isOpen, onConfirm, onClose, folderTree, selectedItems, stat
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-200 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-[#0B0F17] border border-slate-800 w-full max-w-md rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden relative">
         
         {/* Success/Error Overlay */}
