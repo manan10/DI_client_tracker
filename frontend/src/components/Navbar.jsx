@@ -11,7 +11,8 @@ import {
   Menu, 
   X, 
   Files,
-  BarChart3 // Added for Accounts & Performance
+  BarChart3,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import Logo from '../assets/logo_nobrand.png';
@@ -47,8 +48,8 @@ const Navbar = () => {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Directory', path: '/directory', icon: Users },
-    { name: 'Documents', path: '/documents', icon: Files },
-    { name: 'Accounts', path: '/accounts', icon: BarChart3 }, // Added Accounts Tab
+    { name: 'Documents', path: '/documents', icon: Files, isLocked: true }, // Added Locked Flag
+    { name: 'Accounts', path: '/accounts', icon: BarChart3 },
     { name: 'Settings', path: '/settings', icon: SettingsIcon }
   ];
 
@@ -82,7 +83,7 @@ const Navbar = () => {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`flex items-center gap-2.5 px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${
+                  className={`flex items-center gap-2.5 px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-300 relative group/item ${
                     isActive 
                       ? 'bg-white dark:bg-slate-700 text-amber-600 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600' 
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800'
@@ -90,6 +91,9 @@ const Navbar = () => {
                 >
                   <Icon size={16} strokeWidth={isActive ? 3 : 2} />
                   {item.name}
+                  {item.isLocked && (
+                    <Lock size={10} className="ml-1 text-slate-400 group-hover/item:text-amber-500 transition-colors" />
+                  )}
                 </Link>
               );
             })}
@@ -145,14 +149,17 @@ const Navbar = () => {
                   key={item.name}
                   to={item.path}
                   onClick={() => setIsMenuOpen(false)}
-                  className={`flex items-center gap-4 p-5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all ${
+                  className={`flex items-center justify-between p-5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all ${
                     isActive 
                       ? 'bg-amber-600 text-white shadow-xl shadow-amber-600/20 translate-x-2' 
                       : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                   }`}
                 >
-                  <Icon size={20} strokeWidth={isActive ? 3 : 2} />
-                  {item.name}
+                  <div className="flex items-center gap-4">
+                    <Icon size={20} strokeWidth={isActive ? 3 : 2} />
+                    {item.name}
+                  </div>
+                  {item.isLocked && <Lock size={14} className="opacity-50" />}
                 </Link>
               );
             })}

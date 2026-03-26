@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
 import Documents from "./pages/Documents"; 
 import Accounts from "./pages/Accounts";
+import MaintenanceView from "./pages/MaintenanceView";
 
 // Component to protect routes
 const ProtectedRoute = ({ children }) => {
@@ -57,7 +58,8 @@ function App() {
               path="/documents"
               element={
                 <ProtectedRoute>
-                  <Documents />
+                  {/* <Documents /> */}
+                  <MaintenanceView />
                 </ProtectedRoute>
               } 
             />

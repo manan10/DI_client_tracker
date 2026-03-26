@@ -149,13 +149,26 @@ export const useDocuments = (currentPath) => {
   const handleDeleteItem = async (item) => {
     setLocalLoading(item.id, true);
     try {
-      if (item.type === 'folder') await deleteFolderRecursive(item.storagePath);
-      else await deleteFileFromStorage(item.storagePath);
-      await request(`/vault/item?storagePath=${item.storagePath}`, 'DELETE');
+      // 1. Delete from Firebase first
+      if (item.type === 'folder') {
+        await deleteFolderRecursive(item.storagePath);
+      } else {
+        await deleteFileFromStorage(item.storagePath);
+      }
+      
+      // 2. Delete from MongoDB via your API
+      // We pass NO third argument so 'data' remains null and is excluded from the Axios call
+      await request(`/vault/item?storagePath=${encodeURIComponent(item.storagePath)}`, 'DELETE');
+      
       await fetchFilesAndActivity();
-    } finally { setLocalLoading(item.id, false); }
+    } catch (error) {
+      console.error("Deletion failed:", error);
+      // You might want to show a toast error here
+    } finally {
+      setLocalLoading(item.id, false);
+    }
   };
-
+  
   const startBatchUpload = async (files) => {
     setUploading(true);
     for (let i = 0; i < files.length; i++) {
