@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const interactionController = require("../controllers/interactionController");
-const { protect } = require("../middleware/authMiddleware");
+const { protect } = require("../middleware/authmiddleware");
 
 router.post("/", protect, interactionController.createInteraction);
 router.get("/recent", protect, interactionController.getRecentInteractions);

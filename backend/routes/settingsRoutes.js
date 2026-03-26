@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authmiddleware');
 const settingsController = require('../controllers/settingsController');
 
 router.get('/', protect, settingsController.getGlobalSettings);
