@@ -5,7 +5,7 @@ import axios from "axios";
  * Custom hook for handling API requests with loading and error states.
  * Updated to prevent sending 'null' bodies on DELETE requests.
  */
-export const useApi = (baseUrl = "http://localhost:5000/api") => {
+export const useApi = (baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api") => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
