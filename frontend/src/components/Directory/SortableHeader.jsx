@@ -17,7 +17,7 @@ const SortableHeader = ({ label, sortKey, sortConfig, requestSort, align = "left
         <span className={`
           transition-colors uppercase tracking-widest text-[10px]
           ${isActive 
-            ? 'text-amber-600 dark:text-amber-500 font-black' 
+            ? 'text-emerald-600 dark:text-emerald-500 font-black' 
             : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-900 dark:group-hover:text-slate-200'}
         `}>
           {label}
@@ -26,8 +26,8 @@ const SortableHeader = ({ label, sortKey, sortConfig, requestSort, align = "left
         <div className="flex items-center min-w-3.5">
           {isActive ? (
             sortConfig.direction === 'asc' 
-              ? <ChevronUp size={14} className="text-amber-600 dark:text-amber-500 animate-in fade-in slide-in-from-bottom-1" /> 
-              : <ChevronDown size={14} className="text-amber-600 dark:text-amber-500 animate-in fade-in slide-in-from-top-1" />
+              ? <ChevronUp size={14} className="text-emerald-600 dark:text-emerald-500 animate-in fade-in slide-in-from-bottom-1" /> 
+              : <ChevronDown size={14} className="text-emerald-600 dark:text-emerald-500 animate-in fade-in slide-in-from-top-1" />
           ) : (
             <ArrowUpDown 
               size={12} 

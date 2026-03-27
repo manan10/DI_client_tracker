@@ -5,6 +5,7 @@ exports.createInteraction = async (req, res) => {
   try {
     const {
       client,
+      date, // 1. Extract the date from the frontend request
       type,
       discussionPoints,
       summary,
@@ -14,9 +15,13 @@ exports.createInteraction = async (req, res) => {
     } = req.body;
 
     const userId = req.user._id;
+
+    // 2. Pass the date to the model. 
+    // If date is undefined, the model default (usually Date.now) will take over.
     const newInteraction = new Interaction({
       client,
       user: userId,
+      date: date ? new Date(date) : new Date(), 
       type,
       discussionPoints,
       summary,
@@ -26,7 +31,25 @@ exports.createInteraction = async (req, res) => {
     });
 
     const savedInteraction = await newInteraction.save();
-    await Client.findByIdAndUpdate(client, { lastMet: new Date() });
+
+    /**
+     * 3. Update Client's 'lastMet'
+     * We use a conditional update so that if you add an interaction from 2 months ago,
+     * it doesn't accidentally overwrite a 'lastMet' date from last week.
+     */
+    const interactionDate = new Date(date || Date.now());
+    
+    await Client.findOneAndUpdate(
+      { 
+        _id: client,
+        $or: [
+          { lastMet: { $exists: false } },
+          { lastMet: { $lt: interactionDate } }
+        ]
+      },
+      { lastMet: interactionDate }
+    );
+
     res.status(201).json(savedInteraction);
   } catch (error) {
     console.error("Interaction Save Error:", error);

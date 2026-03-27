@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Search, User, ArrowRight, X, Command, Zap } from "lucide-react";
+import { Search, User, ArrowRight, X, Zap } from "lucide-react";
+import { useNavigate } from "react-router-dom"; // ADDED
 import { useApi } from "../../hooks/useApi";
 
-const UniversalSearch = ({ onClientSelect }) => {
+const UniversalSearch = () => { // REMOVED onClientSelect prop
   const [clients, setClients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const { request } = useApi();
   const wrapperRef = useRef(null);
   const inputRef = useRef(null);
+  const navigate = useNavigate(); // ADDED
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -48,7 +50,7 @@ const UniversalSearch = ({ onClientSelect }) => {
   ).slice(0, 6);
 
   const handleSelect = (client) => {
-    onClientSelect(client);
+    navigate(`/client/${client._id}`); // ROUTE TO NEW PAGE
     setSearchTerm("");
     setIsOpen(false);
   };
@@ -66,10 +68,6 @@ const UniversalSearch = ({ onClientSelect }) => {
           type="text"
           placeholder="SEARCH CLIENTS BY NAME OR PAN..."
           autoComplete="off"
-          /* FIXED COLORS: 
-             - Light: Using pure white (bg-white) instead of slate-100 for maximum readability.
-             - Text: Using slate-900 for sharp contrast even when not focused.
-          */
           className="w-full pl-16 pr-20 py-5 
                      bg-white dark:bg-slate-800/80 
                      text-slate-900 dark:text-white 
@@ -112,14 +110,14 @@ const UniversalSearch = ({ onClientSelect }) => {
                         rounded-[2.5rem] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] 
                         overflow-hidden animate-in fade-in zoom-in-95 duration-200">
           
-          <div className="p-5 border-b-2 border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/2 flex items-center gap-3">
+          <div className="p-5 border-b-2 border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5 flex items-center gap-3">
             <Zap size={14} className="text-green-500" fill="currentColor" />
             <p className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.3em]">
               Intelligence Database Results
             </p>
           </div>
           
-          <div className="p-3 max-h-125 overflow-y-auto no-scrollbar space-y-2">
+          <div className="p-3 max-h-75 overflow-y-auto no-scrollbar space-y-2">
             {filteredClients.length > 0 ? (
               filteredClients.map((c) => (
                 <div 

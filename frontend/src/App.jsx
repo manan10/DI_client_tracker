@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
 import Documents from "./pages/Documents"; 
 import Accounts from "./pages/Accounts";
+import ClientDetail from "./pages/ClientDetail";
 import MaintenanceView from "./pages/MaintenanceView";
 
 // Component to protect routes
@@ -69,6 +70,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Accounts />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route
+              path="/client/:id"
+              element={
+                <ProtectedRoute>
+                  <ClientDetail />
                 </ProtectedRoute>
               } 
             />

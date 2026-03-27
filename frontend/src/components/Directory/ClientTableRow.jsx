@@ -31,16 +31,16 @@ const ClientTableRow = ({ client, onClick }) => {
       {/* MAIN FAMILY ROW */}
       <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition-all group border-b border-slate-50 dark:border-slate-800 cursor-pointer bg-white dark:bg-slate-800">
         <td className="px-8 py-4 flex items-center gap-3">
-          <button onClick={handleToggle} className="p-1 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-md text-amber-600 dark:text-amber-500 transition-colors">
+          <button onClick={handleToggle} className="p-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-md text-emerald-600 dark:text-emerald-500 transition-colors">
             {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
           </button>
           <div onClick={() => onClick(client)}>
             <div className="flex items-center gap-2">
-              <p className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">
+              <p className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-500 transition-colors">
                 {client.name}
               </p>
               {client.members?.length > 1 ? (
-                <span className="text-[9px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-500 px-1.5 py-0.5 rounded-full font-black border border-amber-200 dark:border-amber-800 tracking-widest">FAMILY</span>
+                <span className="text-[9px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-500 px-1.5 py-0.5 rounded-full font-black border border-emerald-200 dark:border-emerald-800 tracking-widest">FAMILY</span>
               ) : (
                 <span className="text-[9px] bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400 px-1.5 py-0.5 rounded-full font-black border border-blue-100 dark:border-blue-800 tracking-widest">INDIVIDUAL</span>
               )}
@@ -90,14 +90,14 @@ const ClientTableRow = ({ client, onClick }) => {
       {isExpanded && client.members.map((member) => {
         const isActuallyHead = member.isFamilyHead || (member.pan === client.pan);
         return (
-          <tr key={member._id} onClick={() => onClick(member)} className={`hover:bg-amber-50/30 dark:hover:bg-amber-900/10 transition-all border-b border-slate-100 dark:border-slate-800 ${isActuallyHead ? 'bg-slate-50/60 dark:bg-slate-800/40' : 'bg-slate-50/20 dark:bg-slate-800/20'}`}>
+          <tr key={member._id} onClick={() => onClick(member)} className={`hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10 transition-all border-b border-slate-100 dark:border-slate-800 ${isActuallyHead ? 'bg-slate-50/60 dark:bg-slate-800/40' : 'bg-slate-50/20 dark:bg-slate-800/20'}`}>
             <td className="px-8 py-3 pl-20 relative">
               <div className="absolute left-12 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-800"></div>
               <div className="flex items-center gap-2">
-                {isActuallyHead ? <Star size={12} className="text-amber-500 fill-amber-500" /> : <User size={12} className="text-slate-400 dark:text-slate-600" />}
+                {isActuallyHead ? <Star size={12} className="text-emerald-500 fill-emerald-500" /> : <User size={12} className="text-slate-400 dark:text-slate-600" />}
                 <p className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase">
                   {member.name}
-                  {isActuallyHead && <span className="ml-2 text-[8px] text-amber-600 dark:text-amber-500 font-black border border-amber-200 dark:border-amber-800 px-1 rounded uppercase bg-white dark:bg-slate-900">Self</span>}
+                  {isActuallyHead && <span className="ml-2 text-[8px] text-emerald-600 dark:text-emerald-500 font-black border border-emerald-200 dark:border-emerald-800 px-1 rounded uppercase bg-white dark:bg-slate-900">Self</span>}
                 </p>
               </div>
               <p className="text-[9px] font-bold text-slate-400 dark:text-slate-600 font-mono uppercase pl-5">{member.pan || "NO PAN"}</p>
