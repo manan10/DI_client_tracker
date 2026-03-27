@@ -44,6 +44,7 @@ const commissionRoutes = require('./routes/commissionRoutes');
 const amcRoutes = require('./routes/amcRoutes');
 const arnRoutes = require('./routes/arnRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 // 3. Global Middleware (CRITICAL ORDER)
 
@@ -111,6 +112,7 @@ app.use('/api/commissions', commissionRoutes);
 app.use('/api/amcs', amcRoutes);
 app.use('/api/arns', arnRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.get('/health', (req, res) => res.status(200).send('Server is Up'));
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, Fragment } from 'react';
-import { X, Search, Mic, Lock, ChevronDown, Check, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { X, Search, Mic, Lock, ChevronDown, Check, Calendar as CalendarIcon, Clock, Sparkles, Loader2, RotateCcw } from 'lucide-react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useApi } from '../hooks/useApi';
 
@@ -8,6 +8,8 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
   const [clients, setClients] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isRefining, setIsRefining] = useState(false);
+  const [originalSummary, setOriginalSummary] = useState('');
   const dropdownRef = useRef(null);
 
   // Helper for today's date in YYYY-MM-DD
@@ -17,7 +19,7 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
   const [formData, setFormData] = useState({
     client: initialClient?._id || '',
     clientName: initialClient?.name || '',
-    date: getToday(), // Added new date field
+    date: getToday(),
     type: 'In-Person',
     discussionPoints: [],
     summary: '',
@@ -27,6 +29,7 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
 
   const isClientLocked = !!initialClient;
 
+  // Handle Initial Client Prop Changes
   const [prevClient, setPrevClient] = useState(initialClient);
   if (initialClient?._id !== prevClient?._id) {
     setPrevClient(initialClient);
@@ -38,6 +41,7 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
     }));
   }
 
+  // Fetch Clients for Search
   useEffect(() => {
     if (isOpen && !isClientLocked) {
       const fetchClients = async () => {
@@ -50,6 +54,7 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
     }
   }, [isOpen, request, isClientLocked]);
 
+  // Click Outside Dropdown Handler
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setIsDropdownOpen(false);
@@ -57,6 +62,31 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // AI Refinement Logic
+  const handleAiRefine = async () => {
+    if (!formData.summary || formData.summary.trim().length < 5) return;
+    
+    setIsRefining(true);
+    setOriginalSummary(formData.summary);
+
+    try {
+      // Endpoint logic: This sends the text to your Gemini-powered backend route
+      const data = await request('/ai/refine-notes', 'POST', { text: formData.summary });
+      if (data?.refinedText) {
+        setFormData(prev => ({ ...prev, summary: data.refinedText }));
+      }
+    } catch (err) {
+      console.error("AI Refinement failed", err);
+    } finally {
+      setIsRefining(false);
+    }
+  };
+
+  const handleUndoRefinement = () => {
+    setFormData(prev => ({ ...prev, summary: originalSummary }));
+    setOriginalSummary('');
+  };
 
   const handleVoiceInput = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -88,6 +118,7 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isRefining) return;
     try {
       const { clientName: _unused, ...payload } = formData;
       await request('/interactions', 'POST', payload);
@@ -100,13 +131,14 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
     setFormData({ 
       client: initialClient?._id || '', 
       clientName: initialClient?.name || '', 
-      date: getToday(), // Reset to today
+      date: getToday(),
       type: 'In-Person', 
       discussionPoints: [], 
       summary: '', 
       followUpRequired: false, 
       followUpDate: '' 
     });
+    setOriginalSummary('');
     setSearchTerm(initialClient?.name || '');
     onClose();
   };
@@ -123,6 +155,7 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
             <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enterTo="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-200" leaveFrom="opacity-100 translate-y-0 sm:scale-100" leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
               <Dialog.Panel className="w-full max-w-4xl transform text-left align-middle transition-all bg-white dark:bg-[#1e293b] sm:rounded-xl shadow-2xl border-t sm:border border-slate-200 dark:border-slate-700 flex flex-col max-h-screen sm:max-h-[90vh]">
                 
+                {/* Header */}
                 <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-between items-center shrink-0">
                   <div>
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Interaction Log</h2>
@@ -136,6 +169,7 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-10 space-y-12">
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                     
+                    {/* Left Column: Client & Metadata */}
                     <div className="lg:col-span-5 space-y-10">
                       <div className="relative" ref={dropdownRef}>
                         <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Client Record</label>
@@ -165,7 +199,6 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
                         )}
                       </div>
 
-                      {/* NEW: Date of Interaction Field */}
                       <div className="space-y-6">
                         <div className="min-w-0">
                           <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Date of Interaction</label>
@@ -248,34 +281,66 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
                       </div>
                     </div>
 
+                    {/* Right Column: Notes with AI Refiner */}
                     <div className="lg:col-span-7 flex flex-col min-h-87.5">
-                      <div className="flex justify-between items-center mb-3">
-                        <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Notes & Summary</label>
-                        <button 
-                          type="button" 
-                          onClick={handleVoiceInput}
-                          className={`flex items-center gap-1.5 px-3 py-1 rounded text-[10px] font-bold transition-all ${
-                            isListening ? 'bg-red-50 text-red-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-                          }`}
-                        >
-                          <Mic size={12} className={isListening ? 'animate-pulse' : ''} />
-                          {isListening ? 'LISTENING' : 'DICTATE'}
-                        </button>
+                      <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Notes & Summary</label>
+                      
+                      <div className="relative flex-1 group">
+                        <textarea 
+                          required
+                          className="w-full h-full min-h-[300px] p-5 pb-16 bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-slate-400 dark:focus:border-emerald-500/50 leading-relaxed placeholder:text-slate-400 transition-all resize-none"
+                          placeholder="Detail the key takeaways and proposed actions..."
+                          value={formData.summary}
+                          onChange={(e) => setFormData({...formData, summary: e.target.value})}
+                        />
+
+                        {/* Floating Action Bar - Bottom Right */}
+                        <div className="absolute bottom-4 right-4 flex items-center gap-2">
+                          {originalSummary && !isRefining && (
+                            <button 
+                              type="button" 
+                              onClick={handleUndoRefinement}
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[10px] font-bold bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
+                            >
+                              <RotateCcw size={12} />
+                              UNDO
+                            </button>
+                          )}
+
+                          <div className="flex bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 rounded-md shadow-sm overflow-hidden">
+                            <button 
+                              type="button" 
+                              onClick={handleAiRefine}
+                              disabled={isRefining || !formData.summary}
+                              className="flex items-center gap-1.5 px-4 py-2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all border-r border-slate-200 dark:border-slate-700 disabled:opacity-40"
+                            >
+                              {isRefining ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                              {isRefining ? 'POLISHING...' : 'REFINE WITH AI'}
+                            </button>
+
+                            <button 
+                              type="button" 
+                              onClick={handleVoiceInput}
+                              className={`flex items-center gap-1.5 px-4 py-2 text-[10px] font-bold transition-all ${
+                                isListening 
+                                  ? 'bg-red-50 text-red-600 animate-pulse' 
+                                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                              }`}
+                            >
+                              <Mic size={12} />
+                              {isListening ? 'LISTENING' : 'DICTATE'}
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <textarea 
-                        required
-                        className="w-full flex-1 p-5 bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-slate-400 leading-relaxed placeholder:text-slate-400"
-                        placeholder="Detail the key takeaways and proposed actions..."
-                        value={formData.summary}
-                        onChange={(e) => setFormData({...formData, summary: e.target.value})}
-                      />
                     </div>
                   </div>
 
+                  {/* Submit Button */}
                   <div className="flex justify-end pt-4 shrink-0">
                     <button
                       type="submit"
-                      disabled={loading || !formData.client}
+                      disabled={loading || !formData.client || isRefining}
                       className="w-full sm:w-auto px-12 py-3.5 bg-slate-900 dark:bg-emerald-600 hover:bg-black dark:hover:bg-emerald-700 text-white rounded-lg text-xs font-bold uppercase tracking-[0.2em] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                     >
                       {loading ? 'Processing...' : 'Save Interaction'}
@@ -302,6 +367,10 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient }) => {
             margin: 0;
             opacity: 0;
           }
+          .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+          .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+          .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+          .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
         `}</style>
       </Dialog>
     </Transition.Root>

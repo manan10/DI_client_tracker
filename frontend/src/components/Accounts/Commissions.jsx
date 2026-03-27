@@ -27,7 +27,7 @@ const Commissions = () => {
         fetch('/api/arns'),
         fetch('/api/amcs'),
         fetch('/api/commissions/dashboard-summary'),
-        fetch('/api/analytics/global-summary') // New Analytics Route
+        fetch('/api/analytics/global-summary')
       ]);
       
       const arnJson = await arnRes.json();
