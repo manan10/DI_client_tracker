@@ -107,7 +107,7 @@ const Settings = () => {
     if (tab.locked) {
       toast.info("Module Locked", {
         description: `${tab.fullLabel} is currently under maintenance.`,
-        icon: <Lock size={16} className="text-amber-500" />
+        icon: <Lock size={16} className="text-emerald-500" />
       });
       return;
     }
@@ -118,7 +118,7 @@ const Settings = () => {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="animate-spin text-amber-500" size={40} />
+          <Loader2 className="animate-spin text-emerald-500" size={40} />
           <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Initializing Portal</span>
         </div>
       </div>
@@ -132,7 +132,7 @@ const Settings = () => {
       <main className="max-w-[98%] mx-auto px-3 sm:px-6 lg:py-12 py-6">
         <div className="lg:hidden mb-6 px-2">
           <h2 className="text-3xl font-[1000] text-slate-900 dark:text-slate-100 uppercase tracking-tighter italic leading-none">Settings</h2>
-          <p className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mt-1">Portal Configuration</p>
+          <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mt-1">Portal Configuration</p>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start">
@@ -140,7 +140,7 @@ const Settings = () => {
           <aside className="w-full lg:w-72 lg:sticky lg:top-28 z-40">
             <div className="hidden lg:block mb-8 px-2">
               <h2 className="text-4xl font-[1000] text-slate-900 dark:text-slate-100 uppercase tracking-tighter italic">Settings</h2>
-              <p className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mt-1">Portal Configuration</p>
+              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mt-1">Portal Configuration</p>
             </div>
 
             <nav className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-col gap-2 w-full">
@@ -149,10 +149,10 @@ const Settings = () => {
                   key={tab.id}
                   disabled={tab.locked}
                   onClick={() => handleTabClick(tab)}
-                  className={`flex items-center gap-3 lg:gap-4 px-4 lg:px-6 py-4 rounded-2xl text-[10px] lg:text-[11px] font-[1000] uppercase tracking-widest transition-all duration-300 relative group
+                  className={`flex items-center gap-3 lg:gap-4 px-4 lg:px-6 py-4 rounded-md text-[10px] lg:text-[11px] font-[1000] uppercase tracking-widest transition-all duration-300 relative group
                     ${tab.locked ? 'opacity-40 grayscale cursor-not-allowed bg-slate-100 dark:bg-slate-900/50' : ''}
                     ${!tab.locked && activeTab === tab.id 
-                      ? 'bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-950 shadow-xl scale-[1.02]' 
+                      ? 'bg-slate-900 dark:bg-emerald-500 text-white dark:text-slate-950 shadow-xl scale-[1.02]' 
                       : !tab.locked ? 'bg-white lg:bg-transparent dark:bg-slate-900 lg:dark:bg-transparent text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-100 lg:border-transparent dark:border-slate-800' : ''
                     }`}
                 >
@@ -161,14 +161,14 @@ const Settings = () => {
                   <span className="hidden lg:inline">{tab.fullLabel}</span>
                   
                   {tab.locked && (
-                    <Lock size={12} className="ml-auto text-slate-400 group-hover:text-amber-500 transition-colors" />
+                    <Lock size={12} className="ml-auto text-slate-400 group-hover:text-emerald-500 transition-colors" />
                   )}
                 </button>
               ))}
             </nav>
           </aside>
 
-          <div className="flex-1 w-full bg-white dark:bg-slate-900 rounded-4xl lg:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl relative min-h-125 flex flex-col overflow-hidden">
+          <div className="flex-1 w-full bg-white dark:bg-slate-900 rounded-4xl lg:rounded-md border border-slate-100 dark:border-slate-800 shadow-2xl relative min-h-125 flex flex-col overflow-hidden">
             <div className="flex-1 p-5 sm:p-10 lg:p-16">
               {renderContent()}
             </div>
@@ -176,7 +176,7 @@ const Settings = () => {
             {(activeTab === 'business' || activeTab === 'compliance') && (
               <div className="sticky bottom-0 left-0 right-0 p-6 lg:p-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-100 dark:border-slate-800 flex justify-between items-center z-50">
                 <div className="hidden lg:flex items-center gap-3 text-slate-400">
-                  <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                   <span className="text-[10px] font-black uppercase tracking-widest">
                     Live logic synchronization enabled
                   </span>
@@ -185,7 +185,7 @@ const Settings = () => {
                 <button 
                   disabled={loading}
                   onClick={handleGlobalSave}
-                  className="w-full lg:w-auto flex items-center justify-center gap-4 bg-emerald-600 hover:bg-emerald-700 text-white px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.25em] transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 shadow-xl shadow-emerald-500/20"
+                  className="w-full lg:w-auto flex items-center justify-center gap-4 bg-emerald-600 hover:bg-emerald-700 text-white px-12 py-5 rounded-md font-black text-xs uppercase tracking-[0.25em] transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 shadow-xl shadow-emerald-500/20"
                 >
                   {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                   Save Changes

@@ -9,9 +9,9 @@ const AppearanceConfig = ({ isDark, onToggleTheme }) => (
     </header>
 
     <div className="space-y-6">
-      <div className="p-8 bg-slate-50 dark:bg-slate-800/40 rounded-4xl border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="p-8 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-6">
-          <div className="h-16 w-16 bg-white dark:bg-slate-900 rounded-2xl shadow-sm flex items-center justify-center text-amber-600">
+          <div className="h-16 w-16 bg-white dark:bg-slate-900 rounded-lg shadow-sm flex items-center justify-center text-emerald-600">
             {isDark ? <Moon size={32} /> : <Sun size={32} />}
           </div>
           <div>
@@ -21,13 +21,13 @@ const AppearanceConfig = ({ isDark, onToggleTheme }) => (
         </div>
         <button 
           onClick={onToggleTheme}
-          className="w-20 h-10 bg-slate-200 dark:bg-amber-600 rounded-full p-1 relative transition-colors duration-500"
+          className="w-20 h-10 bg-slate-200 dark:bg-emerald-600 rounded-full p-1 relative transition-colors duration-500"
         >
           <div className={`absolute top-1 bottom-1 w-8 bg-white rounded-full shadow-lg transition-all duration-500 ${isDark ? 'left-11' : 'left-1'}`} />
         </button>
       </div>
 
-      <div className="p-8 bg-slate-50 dark:bg-slate-800/40 rounded-4xl border border-slate-100 dark:border-slate-800">
+      <div className="p-8 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-slate-100 dark:border-slate-800">
          <div className="flex items-center gap-4 mb-6">
            <Globe size={18} className="text-slate-400" />
            <p className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Regional Settings</p>

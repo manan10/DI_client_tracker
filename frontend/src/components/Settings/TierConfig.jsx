@@ -19,7 +19,7 @@ const TierConfig = ({ thresholds, setThresholds }) => (
               type="number"
               value={value}
               onChange={(e) => setThresholds({...thresholds, [tier]: e.target.value})}
-              className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-5 text-lg font-black text-slate-800 dark:text-slate-100 outline-none focus:border-amber-600 transition-all"
+              className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-md px-6 py-5 text-lg font-black text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-600 transition-all"
             />
             <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase">Cr</div>
           </div>
@@ -27,11 +27,11 @@ const TierConfig = ({ thresholds, setThresholds }) => (
       ))}
     </div>
 
-    <div className="mt-12 p-8 bg-amber-50 dark:bg-amber-900/10 rounded-4xl border border-amber-100 dark:border-amber-900/20 flex gap-5 items-start">
-      <Info className="text-amber-600 mt-1" size={20} />
+    <div className="mt-12 p-8 bg-emerald-50 dark:bg-emerald-900/10 rounded-md border border-emerald-100 dark:border-emerald-900/20 flex gap-5 items-start">
+      <Info className="text-emerald-600 mt-1" size={20} />
       <div>
-        <p className="text-xs font-bold text-amber-900 dark:text-amber-400 uppercase tracking-tight mb-1">Warning</p>
-        <p className="text-[11px] font-medium text-amber-800/70 dark:text-amber-500/70 leading-relaxed">
+        <p className="text-xs font-bold text-emerald-900 dark:text-emerald-400 uppercase tracking-tight mb-1">Warning</p>
+        <p className="text-[11px] font-medium text-emerald-800/70 dark:text-emerald-500/70 leading-relaxed">
           Adjusting these values will re-classify all families in your directory immediately after saving.
         </p>
       </div>

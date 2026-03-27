@@ -26,7 +26,7 @@ const DataSync = () => {
       desc: "Assets Under Management", 
       info: "Requires 'Client Name', 'AUM Value', and 'Folio Number'.",
       icon: BarChart3,
-      colorClass: "amber"
+      colorClass: "emerald"
     }, 
     { 
       id: "family", 
@@ -92,12 +92,12 @@ const DataSync = () => {
     <div className="w-full space-y-12 animate-in fade-in duration-700 pb-10">
       
       {/* 1. GOLDEN GLASS HEADER */}
-      <div className="relative overflow-hidden bg-white dark:bg-slate-900 border border-amber-200/50 dark:border-amber-500/10 p-8 rounded-[2.5rem] shadow-2xl shadow-amber-500/5">
-        <div className="absolute -top-24 -left-24 w-64 h-64 bg-amber-500/10 blur-[80px] pointer-events-none" />
+      <div className="relative overflow-hidden bg-white dark:bg-slate-900 border border-emerald-200/50 dark:border-emerald-500/10 p-8 rounded-lg shadow-2xl shadow-emerald-500/5">
+        <div className="absolute -top-24 -left-24 w-64 h-64 bg-emerald-500/10 blur-[80px] pointer-events-none" />
         
         <div className="relative flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex items-center gap-6">
-            <div className="p-4 bg-linear-to-br from-amber-400 to-amber-600 text-white rounded-3xl shadow-lg shadow-amber-500/40 transform -rotate-3">
+            <div className="p-4 bg-linear-to-br from-emerald-400 to-emerald-600 text-white rounded-lg shadow-lg shadow-emerald-500/40 transform -rotate-3">
               <Database size={24} strokeWidth={3} />
             </div>
             <div>
@@ -105,18 +105,18 @@ const DataSync = () => {
                 Master Ledger Sync
               </h3>
               <div className="flex items-center gap-2 mt-2">
-                <Sparkles size={12} className="text-amber-500 animate-pulse" />
-                <span className="text-[10px] font-black text-amber-600 dark:text-amber-500 uppercase tracking-[0.3em]">
+                <Sparkles size={12} className="text-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-[0.3em]">
                   Premium Intelligence Node
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-5 bg-amber-50/50 dark:bg-amber-900/10 px-8 py-4 rounded-3xl border border-amber-100 dark:border-amber-800/20">
+          <div className="flex items-center gap-5 bg-emerald-50/50 dark:bg-emerald-900/10 px-8 py-4 rounded-sm border border-emerald-100 dark:border-emerald-800/20">
             <div className="text-right">
               <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Status: Active</p>
-              <p className="text-[11px] font-[1000] text-amber-900 dark:text-amber-200 uppercase italic">
+              <p className="text-[11px] font-[1000] text-emerald-900 dark:text-emerald-200 uppercase italic">
                 {lastSync ? `Last Sync: ${new Date(lastSync).toLocaleString("en-IN")}` : "Initial Sync Required"}
               </p>
             </div>
@@ -127,7 +127,7 @@ const DataSync = () => {
 
       {/* 2. ERROR CONSOLE (Fixes no-unused-vars) */}
       {fileError && (
-        <div className="mx-2 p-5 bg-red-50 dark:bg-red-950/20 border-l-4 border-red-600 rounded-2xl flex items-center gap-4 animate-in slide-in-from-top-4">
+        <div className="mx-2 p-5 bg-red-50 dark:bg-red-950/20 border-l-4 border-red-600 rounded-lg flex items-center gap-4 animate-in slide-in-from-top-4">
           <AlertCircle size={20} className="text-red-600 shrink-0" strokeWidth={3} />
           <div className="flex-1">
             <p className="text-[10px] font-black text-red-800 dark:text-red-400 uppercase tracking-widest leading-none">System Validation Error</p>
@@ -152,19 +152,19 @@ const DataSync = () => {
           return (
             <label
               key={cfg.id}
-              className={`flex flex-col p-8 border-2 rounded-[3rem] cursor-pointer transition-all duration-500 relative group
+              className={`flex flex-col p-8 border-2 rounded-lg cursor-pointer transition-all duration-500 relative group
                 ${isUploaded 
                   ? "bg-emerald-50/40 dark:bg-emerald-500/10 border-emerald-500 shadow-2xl shadow-emerald-500/20 scale-[1.02]" 
-                  : `bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 hover:border-amber-400 hover:shadow-2xl hover:-translate-y-2`
+                  : `bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 hover:border-emerald-400 hover:shadow-2xl hover:-translate-y-2`
                 }`}
             >
               <input type="file" className="hidden" accept=".xlsx, .xls" onChange={(e) => handleFile(cfg.id, e.target.files[0])} />
               
               <div className="absolute top-8 right-8 opacity-40 group-hover:opacity-100">
-                <HelpCircle size={18} className="text-slate-400 group-hover:text-amber-500" />
+                <HelpCircle size={18} className="text-slate-400 group-hover:text-emerald-500" />
               </div>
 
-              <div className={`w-16 h-16 rounded-3xl flex items-center justify-center transition-all duration-700 mb-8 shadow-md
+              <div className={`w-16 h-16 rounded-lg flex items-center justify-center transition-all duration-700 mb-8 shadow-md
                 ${isUploaded 
                   ? "bg-emerald-600 text-white shadow-emerald-500/40 rotate-360" 
                   : `${baseStyles[cfg.colorClass]} group-hover:scale-110 shadow-inner`}`}>
@@ -184,7 +184,7 @@ const DataSync = () => {
                 <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isUploaded ? "text-emerald-600 italic" : "text-slate-400"}`}>
                   {isUploaded ? "Verified" : "Pending Selection"}
                 </span>
-                <div className={`p-2 rounded-lg transition-colors ${isUploaded ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-50 text-amber-600 group-hover:bg-amber-500 group-hover:text-white'}`}>
+                <div className={`p-2 rounded-sm transition-colors ${isUploaded ? 'bg-emerald-100 text-emerald-600' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white'}`}>
                   <FilePlus size={18} />
                 </div>
               </div>
@@ -198,10 +198,10 @@ const DataSync = () => {
         <button
           onClick={handleSync}
           disabled={filesAttachedCount < 3 || loading}
-          className={`group flex items-center gap-8 px-24 py-7 rounded-[2.5rem] font-black text-[13px] uppercase tracking-[0.5em] transition-all relative overflow-hidden
+          className={`group flex items-center gap-8 px-24 py-7 rounded-xl font-black text-[13px] uppercase tracking-[0.5em] transition-all relative overflow-hidden
             ${loading || filesAttachedCount < 3
               ? "bg-slate-100 text-slate-300 cursor-not-allowed border-2 border-slate-200"
-              : "bg-linear-to-br from-amber-500 to-orange-600 text-white hover:scale-[1.05] shadow-[0_25px_60px_rgba(245,158,11,0.35)] active:scale-95"
+              : "bg-linear-to-br from-emerald-500 to-orange-600 text-white hover:scale-[1.05] shadow-[0_25px_60px_rgba(245,158,11,0.35)] active:scale-95"
           }`}
         >
           {loading ? (
