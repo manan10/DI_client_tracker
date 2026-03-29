@@ -89,25 +89,27 @@ exports.getDashboardSummary = async (req, res) => {
 };
 
 /**
- * @desc    Get Trend + AMC Distribution for the Workspace Charts
- * @route   GET /api/commissions/workspace-analytics/:arnId
+ * @desc    Get Trend + AMC Distribution (SAFE VERSION)
  */
 exports.getWorkspaceAnalytics = async (req, res) => {
     try {
         const { arnId } = req.params;
-        
+
+        // 1. Validate ID to prevent BSON casting errors
+        if (!mongoose.Types.ObjectId.isValid(arnId)) {
+            return res.status(400).json({ success: false, error: "Invalid ARN ID" });
+        }
+
         const analytics = await Commission.aggregate([
             { $match: { arnId: new mongoose.Types.ObjectId(arnId) } },
             {
                 $facet: {
-                    // 12-Month Revenue Trend
                     trend: [
                         { $sort: { accountingMonth: -1 } },
                         { $limit: 12 },
                         { $project: { month: "$accountingMonth", amount: "$totalGross" } },
                         { $sort: { month: 1 } } 
                     ],
-                    // AMC Contribution Share (Donut Chart)
                     amcBreakdown: [
                         { $unwind: "$entries" },
                         {
@@ -117,9 +119,8 @@ exports.getWorkspaceAnalytics = async (req, res) => {
                             }
                         },
                         { $sort: { value: -1 } },
-                        { $limit: 8 } // Top 8 AMCs, others can be 'Other' in frontend
+                        { $limit: 8 }
                     ],
-                    // High-level workspace KPIs
                     kpis: [
                         {
                             $group: {
@@ -134,32 +135,43 @@ exports.getWorkspaceAnalytics = async (req, res) => {
             }
         ]);
 
+        // 2. SAFE ACCESS: Handle empty arrays if no data is found
+        const result = analytics[0] || {};
+        
         res.status(200).json({ 
             success: true, 
             data: {
-                trend: analytics[0].trend,
-                amcBreakdown: analytics[0].amcBreakdown,
-                stats: analytics[0].kpis[0] || { allTimeTotal: 0, avgMonthly: 0, monthCount: 0 }
+                trend: result.trend || [],
+                amcBreakdown: result.amcBreakdown || [],
+                // Ensure kpis[0] exists, otherwise return defaults
+                stats: (result.kpis && result.kpis[0]) ? result.kpis[0] : { allTimeTotal: 0, avgMonthly: 0, monthCount: 0 }
             } 
         });
     } catch (err) {
+        console.error("Analytics Backend Error:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 };
 
 /**
- * @desc    Get all historical records for a specific ARN (The Ledger Table)
- * @route   GET /api/commissions/history/:arnId
+ * @desc    Get Historical Records (SAFE VERSION)
  */
 exports.getArnHistory = async (req, res) => {
     try {
-        const records = await Commission.find({ arnId: req.params.arnId })
-            .sort({ accountingMonth: -1 }); 
+        const { arnId } = req.params;
+        
+        // Validate ID
+        if (!mongoose.Types.ObjectId.isValid(arnId)) {
+            return res.status(200).json({ success: true, count: 0, data: [] });
+        }
+
+        const records = await Commission.find({ arnId }).sort({ accountingMonth: -1 }); 
             
+        // Always return success: true even if data is []
         res.status(200).json({ 
             success: true, 
             count: records.length, 
-            data: records 
+            data: records // Mongoose returns [] by default if no matches, which is perfect
         });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
