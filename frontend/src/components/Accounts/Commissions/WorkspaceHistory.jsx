@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Search, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import HistoryRow from './HistoryRow';
-import { useApi } from '../../hooks/useApi';
+import { useApi } from '../../../hooks/useApi';
 
 const WorkspaceHistory = ({ arnId }) => {
   const [history, setHistory] = useState([]);

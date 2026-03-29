@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, PieChart, Trophy, Calendar, Zap, Loader2 } from 'lucide-react';
-import { useApi } from '../../hooks/useApi'; // Ensure correct path
+import { useApi } from '../../../hooks/useApi'; // Ensure correct path
 
 const WorkspaceAnalytics = ({ arnId }) => {
   const [data, setData] = useState(null);
