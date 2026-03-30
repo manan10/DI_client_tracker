@@ -1,26 +1,34 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, PieChart, Trophy, Calendar, Zap, Loader2 } from 'lucide-react';
-import { useApi } from '../../../hooks/useApi'; // Ensure correct path
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
+  ResponsiveContainer, BarChart, Bar, Cell, LabelList 
+} from 'recharts';
+import { TrendingUp, BarChart3, Trophy, Calendar, Zap, Loader2 } from 'lucide-react';
+import { useApi } from '../../../hooks/useApi';
 
 const WorkspaceAnalytics = ({ arnId }) => {
   const [data, setData] = useState(null);
   const { request, loading: apiLoading } = useApi();
   const [isSyncing, setIsSyncing] = useState(true);
 
+  const formatCurrency = (val) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(val);
+  };
+
+  const COLORS = ['#3B82F6', '#10B981', '#F97316', '#8B5CF6', '#EF4444', '#64748B'];
+
   const fetchAnalytics = useCallback(async () => {
     if (!arnId) return;
-    
     setIsSyncing(true);
     try {
-      // useApi handles production URL and Auth automatically
       const json = await request(`/commissions/workspace-analytics/${arnId}`);
-      if (json.success) {
-        setData(json.data);
-      }
+      if (json.success) setData(json.data);
     } catch (err) {
       console.error("Analytics Sync Error:", err);
-      // We don't toast here to avoid spamming the UI if data is just missing
     } finally {
       setIsSyncing(false);
     }
@@ -28,27 +36,30 @@ const WorkspaceAnalytics = ({ arnId }) => {
 
   useEffect(() => {
     let isMounted = true;
-
     const loadData = async () => {
       if (isMounted) await fetchAnalytics();
     };
-
     loadData();
-
     return () => { isMounted = false; };
   }, [fetchAnalytics]);
 
-  const isLoading = isSyncing || apiLoading;
-
-  if (isLoading && !data) return (
+  if ((isSyncing || apiLoading) && !data) return (
     <div className="h-64 flex flex-col items-center justify-center gap-4 bg-slate-50/50 dark:bg-slate-900/20 rounded-lg border border-dashed border-slate-200 dark:border-slate-800">
       <Loader2 className="animate-spin text-emerald-500/40" size={32} />
       <div className="text-slate-400 font-black uppercase tracking-[0.3em] text-[9px]">Analyzing Revenue Data...</div>
     </div>
   );
 
-  // Fallback for no data
   if (!data) return null;
+
+  const chartData = data.amcBreakdown
+    ?.filter(amc => amc.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .map(amc => ({
+      name: amc._id,
+      value: amc.value,
+      percentage: ((amc.value / data.stats.allTimeTotal) * 100).toFixed(1) + '%'
+    })) || [];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 animate-in fade-in duration-700">
@@ -67,14 +78,14 @@ const WorkspaceAnalytics = ({ arnId }) => {
             <div className="min-w-0">
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">{stat.label}</p>
               <p className="text-lg font-[1000] text-slate-900 dark:text-white leading-tight">
-                {typeof stat.val === 'number' && stat.val > 999 ? `₹${(stat.val/1000).toFixed(1)}K` : stat.val}
+                {typeof stat.val === 'number' ? formatCurrency(stat.val) : stat.val}
               </p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* 2. Revenue Trend Chart */}
+      {/* 2. Central Stepped Area Chart */}
       <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 rounded-lg shadow-sm">
         <div className="flex items-center gap-3 mb-8">
           <div className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-500 rounded-lg">
@@ -83,9 +94,9 @@ const WorkspaceAnalytics = ({ arnId }) => {
           <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Revenue Performance (12M)</h4>
         </div>
 
-        <div className="h-56 w-full">
+        <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data.trend} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+            <AreaChart data={data.trend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
@@ -102,66 +113,67 @@ const WorkspaceAnalytics = ({ arnId }) => {
               />
               <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 700, fill: '#94a3b8'}} />
               <Tooltip 
-                cursor={{ stroke: '#10b981', strokeWidth: 1, strokeDasharray: '4 4' }}
-                contentStyle={{ 
-                  borderRadius: '8px', 
-                  border: '1px solid #f1f5f9', 
-                  boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', 
-                  backgroundColor: '#fff', 
-                  padding: '10px' 
-                }}
+                cursor={{ stroke: '#10b981', strokeWidth: 1 }}
+                contentStyle={{ borderRadius: '8px', border: '1px solid #f1f5f9', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', backgroundColor: '#fff', padding: '10px' }}
                 itemStyle={{ fontSize: '10px', fontWeight: 900, color: '#0f172a' }}
                 labelStyle={{ fontSize: '8px', fontWeight: 800, color: '#94a3b8', marginBottom: '4px', textTransform: 'uppercase' }}
-                formatter={(value) => [`₹${value.toLocaleString()}`, 'NET PAYOUT']}
+                formatter={(value) => [formatCurrency(value), 'NET PAYOUT']}
               />
               <Area 
-                type="monotone" 
+                type="stepAfter" // This creates the "Stepped" effect
                 dataKey="amount" 
                 stroke="#10b981" 
-                strokeWidth={3}
+                strokeWidth={3} 
                 fillOpacity={1} 
                 fill="url(#chartGradient)" 
-                activeDot={{ r: 5, strokeWidth: 0, fill: '#10b981' }}
+                activeDot={{ r: 5, strokeWidth: 0, fill: '#10b981' }} 
               />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* 3. AMC Distribution */}
-      <div className="lg:col-span-1 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 rounded-lg shadow-sm">
+      {/* 3. AMC Contribution */}
+      <div className="lg:col-span-1 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 rounded-lg shadow-sm flex flex-col">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-500 rounded-lg">
-            <PieChart size={16} strokeWidth={3} />
+            <BarChart3 size={16} strokeWidth={3} />
           </div>
-          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Distribution</h4>
+          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">AMC Contribution</h4>
         </div>
 
-        <div className="space-y-4">
-          {data.amcBreakdown && data.amcBreakdown.length > 0 ? (
-            data.amcBreakdown.slice(0, 5).map((amc, idx) => (
-              <div key={idx} className="relative">
-                <div className="flex justify-between items-center mb-1.5">
-                  <span className="text-[10px] font-black uppercase tracking-tight text-slate-700 dark:text-slate-300 truncate pr-2">
-                    {amc._id.split(' ')[0]}
-                  </span>
-                  <span className="text-[10px] font-mono font-bold text-slate-500 shrink-0">
-                    {data.stats.allTimeTotal > 0 ? ((amc.value / data.stats.allTimeTotal) * 100).toFixed(1) : 0}%
-                  </span>
-                </div>
-                <div className="w-full h-1.5 bg-slate-50 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
-                    style={{ width: `${data.amcBreakdown[0]?.value > 0 ? (amc.value / data.amcBreakdown[0].value) * 100 : 0}%` }}
-                  />
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="py-10 text-center">
-               <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">No breakdown available</p>
-            </div>
-          )}
+        <div className="flex-1 w-full overflow-hidden">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart layout="vertical" data={chartData} margin={{ left: -20, right: 45 }}>
+              <XAxis type="number" hide />
+              <YAxis 
+                dataKey="name" 
+                type="category" 
+                axisLine={false} 
+                tickLine={false}
+                tick={{ fontSize: 9, fontWeight: 800, fill: '#64748b' }}
+                width={80}
+              />
+              <Tooltip 
+                cursor={{ fill: 'transparent' }}
+                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                formatter={(value) => formatCurrency(value)}
+              />
+              <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={12}>
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} opacity={0.8} />
+                ))}
+                <LabelList 
+                  dataKey="percentage" 
+                  position="right" 
+                  style={{ fontSize: '9px', fontWeight: 900, fill: '#94a3b8' }} 
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="pt-4 border-t border-slate-50 dark:border-slate-800 mt-2">
+            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest text-center">Relative weighted share per amc</p>
         </div>
       </div>
     </div>

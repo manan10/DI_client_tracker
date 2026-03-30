@@ -306,7 +306,7 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient, editingDa
                       <div className="relative flex-1 group">
                         <textarea 
                           required
-                          className="w-full h-full min-h-[300px] p-5 pb-16 bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-slate-400 dark:focus:border-emerald-500/50 leading-relaxed placeholder:text-slate-400 transition-all resize-none font-medium"
+                          className="w-full h-full min-h-75 p-5 pb-16 bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-slate-400 dark:focus:border-emerald-500/50 leading-relaxed placeholder:text-slate-400 transition-all resize-none font-medium"
                           placeholder="Detail the key takeaways and proposed actions..."
                           value={formData.summary}
                           onChange={(e) => setFormData({...formData, summary: e.target.value})}

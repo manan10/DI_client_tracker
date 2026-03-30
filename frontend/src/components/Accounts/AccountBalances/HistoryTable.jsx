@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { Edit3, History, Landmark } from 'lucide-react';
+import { Edit3, History, Landmark, Hash } from 'lucide-react';
 
 const HistoryTable = ({ accounts, history, onEdit }) => {
   
-  // 1. Sort accounts alphabetically by name (User)
+  // 1. Sort accounts alphabetically by name (User/Account Name)
   const sortedAccounts = useMemo(() => {
     return [...accounts].sort((a, b) => a.name.localeCompare(b.name));
   }, [accounts]);
@@ -60,7 +60,6 @@ const HistoryTable = ({ accounts, history, onEdit }) => {
                     onClick={() => onEdit(snap)} 
                     className="p-6 text-[11px] font-black uppercase cursor-pointer hover:bg-white dark:hover:bg-slate-800/20 transition-all border-l border-slate-100 dark:border-slate-900/50 group"
                   >
-                    {/* Aligned items-end to match the numbers below */}
                     <div className="flex flex-col items-end justify-center gap-1.5 text-right pr-2">
                       <div className="h-3">
                         <Edit3 size={12} className="text-emerald-600 dark:text-emerald-500 opacity-0 group-hover:opacity-100 transition-all transform group-hover:-translate-y-1" />
@@ -80,14 +79,25 @@ const HistoryTable = ({ accounts, history, onEdit }) => {
                   key={acc._id} 
                   className="hover:bg-slate-500/3 dark:hover:bg-slate-400/2 dark:bg-slate-800 transition-colors group"
                 >
-                  <td className="p-5 text-sm font-bold text-slate-700 dark:text-slate-400 uppercase tracking-tight pl-8">
-                    {acc.name}
+                  <td className="p-5 pl-8">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight">
+                        {acc.name}
+                      </span>
+                      {acc.accountNumber && (
+                        <div className="flex items-center gap-1 mt-1 opacity-60">
+                          <Hash size={10} className="text-slate-400" />
+                          <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-500 tracking-wider">
+                            {acc.accountNumber}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </td>
                   {limitedHistory.map(snap => {
                     const balance = snap.balances.find(b => b.accountId?._id === acc._id || b.accountId === acc._id)?.amount || 0;
                     return (
                       <td key={snap._id} className="p-5 border-l border-slate-50 dark:border-slate-900/10">
-                        {/* Flex container ensures horizontal alignment with header text above */}
                         <div className="flex items-center justify-end font-black text-sm text-slate-950 dark:text-white pr-2">
                           <span className="text-slate-800/30 dark:text-slate-400/20 text-[10px] mr-1.5 italic">₹</span>
                           {formatCurrency(balance)}

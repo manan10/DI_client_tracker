@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, LayoutDashboard, ReceiptText, ArrowRight, Loader2, RefreshCcw } from 'lucide-react';
+import { Plus, LayoutDashboard, ReceiptText, ArrowRight, Loader2, RefreshCcw, PersonStanding, BookUser } from 'lucide-react';
 import ARNCommissionCard from './Commissions/ARNCommissionCard';
 import CommissionForm from './Commissions/CommissionForm';
 import WorkspaceAnalytics from './Commissions/WorkspaceAnalytics'; 
 import WorkspaceHistory from './Commissions/WorkspaceHistory'; 
 import GlobalCommissionAggregator from './Commissions/GlobalCommissionAggregator'; 
-import { useApi } from '../../hooks/useApi'; // Adjusted path to your hook
+import { useApi } from '../../hooks/useApi';
 import { toast } from 'sonner';
 
 const Commissions = () => {
-  // Use your custom hook
   const { request, loading: apiLoading } = useApi();
   
   const [arns, setArns] = useState([]);
@@ -19,16 +18,15 @@ const Commissions = () => {
   const [selectedARN, setSelectedARN] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   
-  // Local state for "Silent" refreshes (spinning the icon only)
+  // Key to force-refresh sub-components on data change
+  const [refreshKey, setRefreshKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  // Initial load state
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const fetchMasterData = useCallback(async (isSilent = false) => {
     if (isSilent) setRefreshing(true);
 
     try {
-      // Your useApi hook handles the Base URL and Auth Headers automatically
       const [arnRes, amcRes, summaryRes, globalRes] = await Promise.all([
         request('/arns'),
         request('/amcs'),
@@ -36,7 +34,6 @@ const Commissions = () => {
         request('/analytics/global-summary')
       ]);
       
-      // Axios (via useApi) returns data directly
       if (arnRes.success) setArns(arnRes.data);
       if (amcRes.success) setAmcs(amcRes.data);
       if (globalRes.success) setGlobalData(globalRes.data);
@@ -71,6 +68,7 @@ const Commissions = () => {
       if (result.success) {
         toast.success(`Records committed for ${payload.accountingMonth}`);
         setIsFormOpen(false);
+        setRefreshKey(prev => prev + 1);
         fetchMasterData(true);
       }
     } catch (err) {
@@ -79,7 +77,6 @@ const Commissions = () => {
     }
   };
 
-  // Use either the hook's loading state (for first load) or the silent refresh state
   if (isInitialLoad && apiLoading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-4">
@@ -140,7 +137,7 @@ const Commissions = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
               <div className="flex items-center gap-5">
                 <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center text-slate-950 shadow-lg rotate-3">
-                  <ReceiptText size={28} strokeWidth={2.5} />
+                  <BookUser size={28} strokeWidth={2.5} />
                 </div>
                 <div>
                   <h2 className="text-2xl font-[1000] text-slate-950 dark:text-white uppercase italic tracking-tighter">
@@ -161,13 +158,22 @@ const Commissions = () => {
             </div>
 
             <div className="space-y-12">
-              <WorkspaceAnalytics key={`stats-${selectedARN.id}`} arnId={selectedARN.id} />
+              {/* Added refreshKey to these components to force update on Save */}
+              <WorkspaceAnalytics 
+                key={`stats-${selectedARN.id}-${refreshKey}`} 
+                arnId={selectedARN.id} 
+              />
+              
               <div className="relative py-4">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
                   <div className="w-full border-t border-slate-100 dark:border-slate-800"></div>
                 </div>
               </div>
-              <WorkspaceHistory key={`history-${selectedARN.id}`} arnId={selectedARN.id} />
+              
+              <WorkspaceHistory 
+                key={`history-${selectedARN.id}-${refreshKey}`} 
+                arnId={selectedARN.id} 
+              />
             </div>
           </div>
         ) : (
@@ -192,7 +198,7 @@ const Commissions = () => {
           arnId={selectedARN.id}
           amcList={amcs}
           onSave={handleSaveCommission}
-          saving={apiLoading} // Pass hook's loading state to disable form buttons
+          saving={apiLoading} 
         />
       )}
     </div>

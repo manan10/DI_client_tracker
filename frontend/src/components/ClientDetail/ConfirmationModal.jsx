@@ -5,7 +5,7 @@ import { AlertTriangle, Trash2, X } from 'lucide-react';
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, loading }) => {
   return (
     <Transition.Root show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-[120]" onClose={onClose}>
+      <Dialog as="div" className="relative z-120" onClose={onClose}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
