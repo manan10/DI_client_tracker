@@ -114,7 +114,8 @@ app.use('/api/arns', arnRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/ai', aiRoutes);
 
-app.get('/health', (req, res) => res.status(200).send('Server is Up'));
+// This sends 0 bytes of body data, only the headers.
+app.get('/health', (req, res) => res.sendStatus(200));
 
 // 5. Global Error Handler
 app.use((err, req, res, next) => {
