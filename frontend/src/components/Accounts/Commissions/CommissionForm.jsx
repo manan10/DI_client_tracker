@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, Calendar, Landmark, CheckCircle2, IndianRupee, ChevronLeft, ChevronRight, ChevronDown, Loader2 } from 'lucide-react';
+// Added Activity to imports
+import { X, Calendar, Landmark, CheckCircle2, IndianRupee, ChevronLeft, ChevronRight, ChevronDown, Loader2, Activity } from 'lucide-react';
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -18,22 +19,16 @@ const unformatNumber = (formattedStr) => {
   return formattedStr.toString().replace(/,/g, '');
 };
 
-const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList, onSave, saving }) => {
+const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList = [], onSave, saving }) => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [activeDayPicker, setActiveDayPicker] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
+  const [formData, setFormData] = useState({});
 
-  const [formData, setFormData] = useState(() => {
-    const baseData = {};
-    if (amcList) {
-      amcList.forEach(amc => {
-        baseData[amc.name] = { amount: '', day: null };
-      });
-    }
-    return baseData;
-  });
+  // LOG FOR DEBUGGING
+  console.log("🛠️ Form received amcList:", amcList);
 
   useEffect(() => {
     if (!isOpen || !arnId) return;
@@ -47,20 +42,28 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList,
 
         const newFormData = {};
         amcList.forEach(amc => {
-            newFormData[amc.name] = { amount: '', day: null };
+          const name = typeof amc === 'string' ? amc : amc.name;
+          if (name) newFormData[name] = { amount: '', day: null };
         });
 
         if (result.success && result.data?.entries) {
           result.data.entries.forEach(entry => {
-            newFormData[entry.amcName] = { 
+            if (Object.hasOwn(newFormData, entry.amcName)) {
+              newFormData[entry.amcName] = { 
                 amount: entry.amount.toString(), 
                 day: entry.payoutDay 
-            };
+              };
+            }
           });
         }
         setFormData(newFormData);
-      } catch (error) {
-        console.error("Error fetching existing records:", error);
+      } catch  {
+        const fallback = {};
+        amcList.forEach(amc => {
+          const name = typeof amc === 'string' ? amc : amc.name;
+          if (name) fallback[name] = { amount: '', day: null };
+        });
+        setFormData(fallback);
       } finally {
         setIsFetching(false);
       }
@@ -77,202 +80,159 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList,
     return Object.values(formData).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
   }, [formData]);
 
-  if (!isOpen) return null;
-
   const handleDaySelect = (amcName, day) => {
     setFormData(prev => ({ ...prev, [amcName]: { ...prev[amcName], day: day } }));
     setActiveDayPicker(null);
   };
 
   const handleAmountChange = (amcName, e) => {
-    const target = e.target;
-    const originalValue = target.value;
-    const unformattedValue = unformatNumber(originalValue);
+    const unformattedValue = unformatNumber(e.target.value);
     if (!/^\d*\.?\d*$/.test(unformattedValue)) return;
-
     setFormData(prev => ({ ...prev, [amcName]: { ...prev[amcName], amount: unformattedValue } }));
-    
-    const formattedValue = formatIndianNumber(unformattedValue);
-    const cursorPosition = target.selectionStart;
-    const digitsBeforeCursor = unformatNumber(originalValue.slice(0, cursorPosition)).length;
-
-    requestAnimationFrame(() => {
-      target.value = formattedValue;
-      let newCursorPos = 0;
-      let digitsCount = 0;
-      for (let i = 0; i < formattedValue.length; i++) {
-        if (formattedValue[i] !== ',') digitsCount++;
-        if (digitsCount === digitsBeforeCursor) {
-          newCursorPos = i + 1;
-          break;
-        }
-      }
-      target.setSelectionRange(newCursorPos, newCursorPos);
-    });
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 w-full h-full z-9999 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-0 md:p-6">
-      {/* Inline style for scrollbar only */}
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #64748b; border-radius: 10px; }
-      `}</style>
-
-      {/* Removed ledger-paper-slate class */}
-      <div className="bg-white dark:bg-slate-950 w-full md:max-w-6xl h-full md:h-[92vh] md:rounded-lg border-0 md:border-2 border-slate-200 dark:border-slate-800 flex flex-col shadow-2xl relative">
+      <div className="bg-white dark:bg-slate-950 w-full md:max-w-6xl h-full md:h-[92vh] md:rounded-lg border-0 md:border-2 border-slate-200 dark:border-slate-800 flex flex-col shadow-2xl relative overflow-hidden">
         
         {/* Header */}
-        <div className="px-6 md:px-12 py-6 md:py-8 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0 z-100">
-          <div className="flex items-center gap-5">
-            <div className="w-12 h-12 md:w-14 md:h-14 bg-slate-900 dark:bg-emerald-500 rounded-lg flex items-center justify-center text-white dark:text-slate-900 shadow-lg rotate-3">
-              <Landmark size={24} strokeWidth={2.5} />
+        <div className="px-6 py-6 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center text-slate-900 shadow-lg">
+              <Landmark size={20} strokeWidth={2.5} />
             </div>
             <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-xl md:text-3xl font-[1000] text-slate-950 dark:text-white uppercase tracking-tighter italic">{ arnName } </h2>
-                <span className="px-3 py-1 bg-slate-100 dark:bg-emerald-500/10 text-slate-600 dark:text-emerald-500 text-[10px] font-black rounded-full border border-slate-200 dark:border-emerald-500/20 tracking-widest uppercase italic">{arnNickname}</span>
-              </div>
-              <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Financial Reconciliation Matrix</p>
+              <h2 className="text-xl font-[1000] dark:text-white uppercase italic tracking-tighter">{arnName}</h2>
+              <p className="text-[10px] text-emerald-500 uppercase font-black tracking-widest">{arnNickname}</p>
             </div>
           </div>
+          
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <button 
+                onClick={() => setShowMonthPicker(!showMonthPicker)}
+                className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 px-4 py-2 text-[10px] font-black uppercase rounded-lg border border-slate-200 dark:border-slate-800 dark:text-white transition-all hover:border-emerald-500"
+              >
+                <Calendar size={14} className="text-emerald-500" />
+                {MONTHS[selectedMonth]} {selectedYear}
+                <ChevronDown size={14} />
+              </button>
 
-          <div className="flex items-center gap-4 w-full md:w-auto">
-             <div className="relative flex-1 md:flex-none">
-                <button 
-                  onClick={() => setShowMonthPicker(!showMonthPicker)}
-                  className="w-full flex items-center justify-center gap-3 bg-slate-100 dark:bg-slate-900 px-5 py-3 rounded-sm text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest ring-2 ring-slate-200 dark:ring-slate-800 transition-all hover:ring-emerald-500/50"
-                >
-                  <Calendar size={14} className="text-emerald-500" />
-                  {MONTHS[selectedMonth]} {selectedYear}
-                  <ChevronDown size={14} className={showMonthPicker ? 'rotate-180' : ''} />
-                </button>
-
-                {showMonthPicker && (
-                  <div className="absolute top-full right-0 mt-3 w-64 bg-white dark:bg-[#0f172a] border-2 border-slate-800 rounded-lg shadow-2xl p-5 z-1001 animate-in fade-in zoom-in-95">
-                    <div className="flex justify-between items-center mb-4 px-2">
-                      <button onClick={() => setSelectedYear(y => y-1)}><ChevronLeft size={18}/></button>
-                      <span className="font-black text-slate-900 dark:text-white">{selectedYear}</span>
-                      <button onClick={() => setSelectedYear(y => y+1)}><ChevronRight size={18}/></button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {MONTHS.map((m, idx) => (
-                        <button
-                          刻ey={m}
-                          onClick={() => { setSelectedMonth(idx); setShowMonthPicker(false); }}
-                          className={`py-2 text-[10px] font-black uppercase rounded-lg transition-all ${selectedMonth === idx ? 'bg-emerald-500 text-slate-950' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500'}`}
-                        >
-                          {m}
-                        </button>
-                      ))}
-                    </div>
+              {showMonthPicker && (
+                <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-4 z-[100] animate-in fade-in zoom-in-95">
+                  <div className="flex justify-between items-center mb-4">
+                    <button onClick={() => setSelectedYear(y => y - 1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md"><ChevronLeft size={16}/></button>
+                    <span className="font-black text-xs dark:text-white">{selectedYear}</span>
+                    <button onClick={() => setSelectedYear(y => y + 1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md"><ChevronRight size={16}/></button>
                   </div>
-                )}
-             </div>
-             <button onClick={onClose} className="p-3 bg-slate-100 dark:bg-slate-900 text-slate-400 hover:text-rose-500 rounded-lg transition-all"><X size={20} strokeWidth={3} /></button>
+                  <div className="grid grid-cols-3 gap-1">
+                    {MONTHS.map((m, idx) => (
+                      <button
+                        key={m}
+                        onClick={() => { setSelectedMonth(idx); setShowMonthPicker(false); }}
+                        className={`py-2 text-[9px] font-black uppercase rounded-md transition-all ${selectedMonth === idx ? 'bg-emerald-500 text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400'}`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <button onClick={onClose} className="p-2 text-slate-400 hover:text-rose-500 transition-colors"><X size={20}/></button>
           </div>
         </div>
 
-        {/* Content Area with Loading Overlay */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-slate-50 dark:bg-[#010413]">
-          {isFetching && (
-            <div className="absolute inset-0 z-50 bg-white/40 dark:bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
-                <div className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-slate-200 dark:border-slate-800">
-                    <Loader2 className="animate-spin text-emerald-500" size={20} />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300">Synchronizing...</span>
-                </div>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-10 bg-slate-50 dark:bg-[#010413]">
+          {amcList.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-3">
+              <Activity size={40} className="opacity-20" />
+              <p className="font-black uppercase text-[10px] tracking-[0.3em] text-center">No AMCs mapped to this ARN.<br/><span className="text-[8px] opacity-50 tracking-normal">Go to Settings &gt; AMC Registry to link AMCs.</span></p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 max-w-5xl mx-auto">
+              {amcList.map((amc) => {
+                const amcName = typeof amc === 'string' ? amc : amc.name;
+                const amcId = typeof amc === 'string' ? amc : amc._id;
+                if (!amcName) return null;
+
+                return (
+                  <div key={amcId} className="flex flex-col md:flex-row md:items-center gap-4 p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl group hover:border-emerald-500/30 transition-all shadow-sm">
+                    <div className="flex-1">
+                      <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight italic">{amcName}</h3>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <button 
+                          onClick={() => setActiveDayPicker(activeDayPicker === amcName ? null : amcName)}
+                          className={`w-32 md:w-40 px-4 py-3 rounded-xl text-[11px] font-black transition-all border-2 ${
+                            formData[amcName]?.day 
+                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-500' 
+                            : 'bg-slate-50 dark:bg-slate-900 border-transparent text-slate-400'
+                          }`}
+                        >
+                          {formData[amcName]?.day ? `${formData[amcName].day} ${MONTHS[selectedMonth]}` : 'Set Day'}
+                        </button>
+
+                        {activeDayPicker === amcName && (
+                          <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-4 z-[100] animate-in slide-in-from-bottom-2">
+                            <div className="grid grid-cols-7 gap-1">
+                              {[...Array(daysInMonth)].map((_, i) => (
+                                <button
+                                  key={i+1}
+                                  onClick={() => handleDaySelect(amcName, i+1)}
+                                  className={`h-7 w-7 text-[9px] font-black rounded-md transition-all ${
+                                    formData[amcName]?.day === i+1 ? 'bg-emerald-500 text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400'
+                                  }`}
+                                >
+                                  {i+1}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₹</span>
+                        <input 
+                          type="text"
+                          value={formData[amcName] ? formatIndianNumber(formData[amcName].amount) : ''}
+                          onChange={(e) => handleAmountChange(amcName, e)}
+                          className="w-40 md:w-48 pl-8 pr-4 py-3 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-right font-black dark:text-white outline-none focus:border-emerald-500 transition-all text-lg"
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
-          
-          <div className="p-4 md:p-10 grid grid-cols-1 gap-3 max-w-5xl mx-auto">
-            {amcList.map((amc) => (
-              <div 
-                key={amc._id} 
-                className={`group relative flex flex-col md:flex-row md:items-center gap-4 p-5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 transition-all duration-300 ${activeDayPicker === amc.name ? 'z-90' : 'z-10'} hover:border-slate-400 dark:hover:border-slate-700`}
-              >
-                <div className="flex-1 pl-4">
-                  <h3 className="text-base font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight italic">{amc.name}</h3>
-                </div>
-
-                <div className="grid grid-cols-2 md:flex items-center gap-3 w-full md:w-auto">
-                  <div className="relative">
-                    <button 
-                      onClick={() => setActiveDayPicker(activeDayPicker === amc.name ? null : amc.name)}
-                      className={`w-full md:w-48 flex items-center justify-between px-5 py-3.5 rounded-lg text-[13px] font-black transition-all border-2 ${
-                        formData[amc.name]?.day 
-                        ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
-                        : 'bg-slate-50 dark:bg-slate-900 border-transparent text-slate-400'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Calendar size={14} className={formData[amc.name]?.day ? 'text-emerald-500' : 'text-slate-400/60'} />
-                        <span>{formData[amc.name]?.day ? `${formData[amc.name].day} ${MONTHS[selectedMonth]}` : 'Set Date'}</span>
-                      </div>
-                      <ChevronDown size={14} className={activeDayPicker === amc.name ? 'rotate-180' : ''} />
-                    </button>
-
-                    {activeDayPicker === amc.name && (
-                      <div className="absolute top-full left-0 mt-3 w-64 bg-white dark:bg-[#0f172a] border-2 border-slate-800 rounded-lg shadow-2xl p-4 z-1000 animate-in slide-in-from-top-2">
-                        <div className="grid grid-cols-7 gap-1">
-                          {[...Array(daysInMonth)].map((_, i) => (
-                            <button
-                              key={i+1}
-                              onClick={() => handleDaySelect(amc.name, i+1)}
-                              className={`h-8 w-8 text-[11px] font-black rounded-sm transition-all ${
-                                formData[amc.name]?.day === i+1 ? 'bg-emerald-500 text-slate-950' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500'
-                              }`}
-                            >
-                              {i+1}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-500/40 dark:text-indigo-400/30 font-black italic text-sm">₹</span>
-                    <input 
-                      type="text"
-                      placeholder="0.00"
-                      value={formData[amc.name] ? formatIndianNumber(formData[amc.name].amount) : ''}
-                      onChange={(e) => handleAmountChange(amc.name, e)}
-                      className="w-full md:w-56 pl-10 pr-6 py-4 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-lg text-right text-xl font-black text-slate-900 dark:text-white outline-none focus:border-indigo-500 dark:focus:border-emerald-500 transition-all shadow-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 md:px-12 py-8 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-8 shrink-0 z-100">
-          <div className="flex items-center gap-6">
-            <div className="p-4 bg-slate-50 dark:bg-indigo-500/5 rounded-lg border border-slate-200 dark:border-indigo-500/20">
-               <IndianRupee className="text-slate-900 dark:text-indigo-400 w-6 h-6" />
+        <div className="p-6 md:px-12 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-emerald-500/10 rounded-lg text-emerald-500">
+               <IndianRupee size={24} />
             </div>
             <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Monthly Liquidity</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-indigo-500 dark:text-emerald-500 font-black italic text-xl">₹</span>
-                <span className="text-4xl font-[1000] text-slate-950 dark:text-white tracking-tighter italic">
-                  {totalGross.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                </span>
-              </div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Monthly Liquidity</p>
+              <p className="text-3xl font-[1000] dark:text-white italic tracking-tighter">₹{totalGross.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
             </div>
           </div>
           <button 
-            onClick={() => onSave({ 
-              arnId, 
-              accountingMonth: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`, 
-              data: formData,
-              totalGross
-            })}
-            disabled={saving || isFetching}
-            className="w-full md:w-auto flex items-center justify-center gap-4 px-16 py-5 bg-slate-950 dark:bg-emerald-500 text-white dark:text-slate-950 rounded-lg font-black uppercase text-xs tracking-widest shadow-2xl hover:bg-slate-800 dark:hover:bg-emerald-400 hover:scale-[1.02] transition-all disabled:opacity-50"
+            onClick={() => onSave({ arnId, accountingMonth: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`, data: formData, totalGross })}
+            disabled={saving || isFetching || amcList.length === 0}
+            className="w-full md:w-auto bg-emerald-600 text-white px-12 py-4 rounded-xl font-[1000] uppercase text-xs tracking-[0.2em] shadow-xl hover:bg-emerald-500 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
           >
-            {saving ? "Processing..." : <><CheckCircle2 size={18} /> Authorize Ledger</>}
+            {saving ? <Loader2 className="animate-spin inline mr-2" size={16}/> : <CheckCircle2 className="inline mr-2" size={16}/>}
+            Authorize Ledger
           </button>
         </div>
       </div>

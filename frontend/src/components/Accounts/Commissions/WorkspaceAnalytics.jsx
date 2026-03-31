@@ -3,7 +3,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, BarChart, Bar, Cell, LabelList 
 } from 'recharts';
-import { TrendingUp, BarChart3, Trophy, Calendar, Zap, Loader2 } from 'lucide-react';
+import { TrendingUp, BarChart3, Trophy, Calendar, Zap, Loader2, AlertCircle } from 'lucide-react';
 import { useApi } from '../../../hooks/useApi';
 
 const WorkspaceAnalytics = ({ arnId }) => {
@@ -25,6 +25,7 @@ const WorkspaceAnalytics = ({ arnId }) => {
     if (!arnId) return;
     setIsSyncing(true);
     try {
+      // The backend must use the arnId to aggregate ONLY relevant commissions
       const json = await request(`/commissions/workspace-analytics/${arnId}`);
       if (json.success) setData(json.data);
     } catch (err) {
@@ -36,29 +37,36 @@ const WorkspaceAnalytics = ({ arnId }) => {
 
   useEffect(() => {
     let isMounted = true;
-    const loadData = async () => {
-      if (isMounted) await fetchAnalytics();
-    };
-    loadData();
+    if (isMounted) fetchAnalytics();
     return () => { isMounted = false; };
   }, [fetchAnalytics]);
 
   if ((isSyncing || apiLoading) && !data) return (
     <div className="h-64 flex flex-col items-center justify-center gap-4 bg-slate-50/50 dark:bg-slate-900/20 rounded-lg border border-dashed border-slate-200 dark:border-slate-800">
       <Loader2 className="animate-spin text-emerald-500/40" size={32} />
-      <div className="text-slate-400 font-black uppercase tracking-[0.3em] text-[9px]">Analyzing Revenue Data...</div>
+      <div className="text-slate-400 font-black uppercase tracking-[0.3em] text-[9px]">Analyzing Workspace Revenue...</div>
     </div>
   );
 
-  if (!data) return null;
+  // Handle case where ARN has no data yet
+  if (!data || !data.amcBreakdown || data.amcBreakdown.length === 0) {
+    return (
+      <div className="h-32 flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-100 dark:border-slate-800">
+        <AlertCircle className="text-slate-300" size={20} />
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Revenue Data for this ARN</p>
+      </div>
+    );
+  }
 
   const chartData = data.amcBreakdown
     ?.filter(amc => amc.value > 0)
     .sort((a, b) => b.value - a.value)
     .map(amc => ({
-      name: amc._id,
+      name: amc._id, // This should be the AMC name from your aggregation
       value: amc.value,
-      percentage: ((amc.value / data.stats.allTimeTotal) * 100).toFixed(1) + '%'
+      percentage: data.stats.allTimeTotal > 0 
+        ? ((amc.value / data.stats.allTimeTotal) * 100).toFixed(1) + '%'
+        : '0%'
     })) || [];
 
   return (
@@ -67,9 +75,9 @@ const WorkspaceAnalytics = ({ arnId }) => {
       {/* 1. Tactical KPI Sidebar */}
       <div className="lg:col-span-1 space-y-3">
         {[
-          { label: 'Avg Monthly', val: data.stats.avgMonthly, icon: Calendar, color: 'text-emerald-500', bg: 'bg-emerald-500/5' },
-          { label: 'Cumulative', val: data.stats.allTimeTotal, icon: Trophy, color: 'text-amber-500', bg: 'bg-amber-500/5' },
-          { label: 'Total Periods', val: data.stats.monthCount, icon: Zap, color: 'text-blue-500', bg: 'bg-blue-500/5' }
+          { label: 'Avg Monthly', val: data.stats.avgMonthly || 0, icon: Calendar, color: 'text-emerald-500', bg: 'bg-emerald-500/5', isCurrency: true },
+          { label: 'Cumulative', val: data.stats.allTimeTotal || 0, icon: Trophy, color: 'text-amber-500', bg: 'bg-amber-500/5', isCurrency: true },
+          { label: 'Months Recorded', val: data.stats.monthCount || 0, icon: Zap, color: 'text-blue-500', bg: 'bg-blue-500/5', isCurrency: false }
         ].map((stat, i) => (
           <div key={i} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-lg flex items-center gap-4 hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-sm">
             <div className={`w-10 h-10 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center shrink-0`}>
@@ -78,7 +86,7 @@ const WorkspaceAnalytics = ({ arnId }) => {
             <div className="min-w-0">
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">{stat.label}</p>
               <p className="text-lg font-[1000] text-slate-900 dark:text-white leading-tight">
-                {typeof stat.val === 'number' ? formatCurrency(stat.val) : stat.val}
+                {stat.isCurrency ? formatCurrency(stat.val) : stat.val}
               </p>
             </div>
           </div>
@@ -91,7 +99,7 @@ const WorkspaceAnalytics = ({ arnId }) => {
           <div className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-500 rounded-lg">
             <TrendingUp size={16} strokeWidth={3} />
           </div>
-          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Revenue Performance (12M)</h4>
+          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 italic">Workspace Performance Trend</h4>
         </div>
 
         <div className="h-64 w-full">
@@ -117,10 +125,10 @@ const WorkspaceAnalytics = ({ arnId }) => {
                 contentStyle={{ borderRadius: '8px', border: '1px solid #f1f5f9', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', backgroundColor: '#fff', padding: '10px' }}
                 itemStyle={{ fontSize: '10px', fontWeight: 900, color: '#0f172a' }}
                 labelStyle={{ fontSize: '8px', fontWeight: 800, color: '#94a3b8', marginBottom: '4px', textTransform: 'uppercase' }}
-                formatter={(value) => [formatCurrency(value), 'NET PAYOUT']}
+                formatter={(value) => [formatCurrency(value), 'PAYOUT']}
               />
               <Area 
-                type="stepAfter" // This creates the "Stepped" effect
+                type="stepAfter" 
                 dataKey="amount" 
                 stroke="#10b981" 
                 strokeWidth={3} 
@@ -133,13 +141,13 @@ const WorkspaceAnalytics = ({ arnId }) => {
         </div>
       </div>
 
-      {/* 3. AMC Contribution */}
+      {/* 3. AMC Contribution (Workspace-Specific) */}
       <div className="lg:col-span-1 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 rounded-lg shadow-sm flex flex-col">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-500 rounded-lg">
             <BarChart3 size={16} strokeWidth={3} />
           </div>
-          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">AMC Contribution</h4>
+          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Portfolio Mix</h4>
         </div>
 
         <div className="flex-1 w-full overflow-hidden">
@@ -172,8 +180,8 @@ const WorkspaceAnalytics = ({ arnId }) => {
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="pt-4 border-t border-slate-50 dark:border-slate-800 mt-2">
-            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest text-center">Relative weighted share per amc</p>
+        <div className="pt-4 border-t border-slate-50 dark:border-slate-800 mt-2 text-center">
+            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Revenue split for {arnId.substring(0, 8)}...</p>
         </div>
       </div>
     </div>

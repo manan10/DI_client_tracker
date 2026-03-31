@@ -14,7 +14,7 @@ const GlobalStatsGrid = ({ data, isExpanded, loading }) => {
   const avgMonthly = monthsRecorded > 0 ? fyTotal / monthsRecorded : 0;
 
   return (
-    <div className={`relative overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all rounded-t-[2.5rem] ${isExpanded ? '' : 'rounded-b-[2.5rem]'}`}>
+    <div className={`relative overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all rounded-lg ${isExpanded ? '' : 'rounded-lg'}`}>
       
       {/* Loading Overlay */}
       {loading && (

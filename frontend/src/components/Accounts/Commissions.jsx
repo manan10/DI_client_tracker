@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, LayoutDashboard, ReceiptText, ArrowRight, Loader2, RefreshCcw, PersonStanding, BookUser } from 'lucide-react';
+import { Plus, LayoutDashboard, ArrowRight, Loader2, RefreshCcw, BookUser } from 'lucide-react';
 import ARNCommissionCard from './Commissions/ARNCommissionCard';
 import CommissionForm from './Commissions/CommissionForm';
 import WorkspaceAnalytics from './Commissions/WorkspaceAnalytics'; 
@@ -12,13 +12,11 @@ const Commissions = () => {
   const { request, loading: apiLoading } = useApi();
   
   const [arns, setArns] = useState([]);
-  const [amcs, setAmcs] = useState([]);
   const [stats, setStats] = useState({}); 
   const [globalData, setGlobalData] = useState(null);
   const [selectedARN, setSelectedARN] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   
-  // Key to force-refresh sub-components on data change
   const [refreshKey, setRefreshKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -27,15 +25,14 @@ const Commissions = () => {
     if (isSilent) setRefreshing(true);
 
     try {
-      const [arnRes, amcRes, summaryRes, globalRes] = await Promise.all([
+      // We no longer fetch global /amcs here because we use populated arns instead
+      const [arnRes, summaryRes, globalRes] = await Promise.all([
         request('/arns'),
-        request('/amcs'),
         request('/commissions/dashboard-summary'),
         request('/analytics/global-summary')
       ]);
       
       if (arnRes.success) setArns(arnRes.data);
-      if (amcRes.success) setAmcs(amcRes.data);
       if (globalRes.success) setGlobalData(globalRes.data);
       
       if (summaryRes.success) {
@@ -68,7 +65,7 @@ const Commissions = () => {
       if (result.success) {
         toast.success(`Records committed for ${payload.accountingMonth}`);
         setIsFormOpen(false);
-        setRefreshKey(prev => prev + 1);
+        setRefreshKey(prev => prev.id + 1);
         fetchMasterData(true);
       }
     } catch (err) {
@@ -158,7 +155,6 @@ const Commissions = () => {
             </div>
 
             <div className="space-y-12">
-              {/* Added refreshKey to these components to force update on Save */}
               <WorkspaceAnalytics 
                 key={`stats-${selectedARN.id}-${refreshKey}`} 
                 arnId={selectedARN.id} 
@@ -196,7 +192,8 @@ const Commissions = () => {
           arnName={selectedARN.nickname}
           arnNickname={selectedARN.name}
           arnId={selectedARN.id}
-          amcList={amcs}
+          // Passing only the AMCs allowed for this specific ARN
+          amcList={arns.find(a => a._id === selectedARN.id)?.allowedAmcs || []}
           onSave={handleSaveCommission}
           saving={apiLoading} 
         />

@@ -19,9 +19,14 @@ const SnapshotForm = ({
 
   const toIndianCSV = (val) => {
     if (val === undefined || val === null || val === "") return "";
-    const cleanVal = val.toString().replace(/,/g, "");
-    if (isNaN(cleanVal)) return "";
-    return new Intl.NumberFormat('en-IN').format(cleanVal);
+    
+    const parts = val.toString().split('.');
+    // Format the integer part with Indian commas
+    const integerPart = parts[0].replace(/,/g, "");
+    const formattedInteger = new Intl.NumberFormat('en-IN').format(integerPart);
+    
+    // If there's a decimal part, append it back (up to 2 decimal places)
+    return parts.length > 1 ? `${formattedInteger}.${parts[1].slice(0, 2)}` : formattedInteger;
   };
 
   const totalAbsolute = Object.values(inputValues).reduce((sum, v) => {
@@ -33,16 +38,23 @@ const SnapshotForm = ({
   const isFormValid = entryDate && totalAbsolute > 0;
 
   const handleInputChange = (id, rawValue) => {
-    const digits = rawValue.replace(/\D/g, "");
-    setInputValues({ ...inputValues, [id]: digits });
+    // Allow digits and a single decimal point
+    let cleanValue = rawValue.replace(/[^0-9.]/g, "");
+    
+    // Ensure only one decimal point exists
+    const parts = cleanValue.split('.');
+    if (parts.length > 2) {
+      cleanValue = parts[0] + '.' + parts.slice(1).join('');
+    }
+    
+    setInputValues({ ...inputValues, [id]: cleanValue });
   };
 
   return (
     <div className="fixed inset-0 w-full h-full z-9999 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-0 md:p-6 lg:p-10">
-      {/* Container - Removed ledger-paper-sage grid classes */}
       <div className="w-full md:max-w-6xl h-full md:h-auto md:max-h-[90vh] md:rounded-xl border-0 md:border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden bg-white dark:bg-slate-950 shadow-2xl transition-all">
         
-        {/* Header - More Compact */}
+        {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-950 shrink-0 z-20">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-slate-900 dark:bg-emerald-500/10 rounded-lg flex items-center justify-center shadow-sm">
@@ -52,7 +64,7 @@ const SnapshotForm = ({
               <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight italic">
                 {editingId ? "Modify Ledger" : "Treasury Snapshot"}
               </h2>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Absolute INR Mode</p>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Decimal INR Mode</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all">
@@ -84,7 +96,7 @@ const SnapshotForm = ({
                             type="text"
                             value={toIndianCSV(inputValues[acc._id])}
                             onChange={(e) => handleInputChange(acc._id, e.target.value)}
-                            placeholder="0"
+                            placeholder="0.00"
                             className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 pl-9 pr-4 text-right text-base font-black text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                           />
                         </div>
@@ -96,7 +108,7 @@ const SnapshotForm = ({
             </div>
           </div>
 
-          {/* Sidebar - Compact and Tighter */}
+          {/* Sidebar */}
           <div className="flex flex-col w-full md:w-80 shrink-0 p-6 gap-6 border-l border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-y-auto custom-scrollbar">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
@@ -125,7 +137,7 @@ const SnapshotForm = ({
           </div>
         </div>
 
-        {/* Footer - Optimized Height */}
+        {/* Footer */}
         <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-950 shrink-0">
           <div className="flex flex-col">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Snapshot Total</span>
