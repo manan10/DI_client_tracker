@@ -4,6 +4,8 @@ const cors = require("cors");
 const morgan = require('morgan'); 
 const admin = require("firebase-admin");
 require("dotenv").config();
+const cron = require('node-cron');
+const axios = require('axios');
 
 const app = express();
 
@@ -95,6 +97,26 @@ app.use((req, res, next) => {
     next();
   }
 });
+
+if (process.env.NODE_ENV === 'production') {
+  const SERVER_URL = process.env.BASE_URL;
+
+  // Ping every 10 minutes (*/10 * * * *)
+  // This provides a 5-minute safety buffer before Render's 15-minute timeout.
+  cron.schedule('*/10 * * * *', async () => {
+    try {
+      if (!SERVER_URL) {
+        console.error('Heartbeat Error: BASE_URL is not defined in environment.');
+        return;
+      }
+      
+      const response = await axios.get(`${SERVER_URL}/health`);
+      console.log(`[${new Date().toISOString()}] Heartbeat Success: Status ${response.status}`);
+    } catch (err) {
+      console.error(`[${new Date().toISOString()}] Heartbeat Failed:`, err.message);
+    }
+  });
+}
 
 // Standard JSON parser for all other methods (POST, PUT, etc.)
 app.use(express.json());
