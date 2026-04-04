@@ -47,6 +47,7 @@ const amcRoutes = require('./routes/amcRoutes');
 const arnRoutes = require('./routes/arnRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const accountingRoutes = require('./routes/accountingRoutes');
 
 // 3. Global Middleware (CRITICAL ORDER)
 
@@ -135,6 +136,7 @@ app.use('/api/amcs', amcRoutes);
 app.use('/api/arns', arnRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/accounting', accountingRoutes);
 
 // This sends 0 bytes of body data, only the headers.
 app.get('/health', (req, res) => res.sendStatus(200));

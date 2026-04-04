@@ -57,19 +57,18 @@ const DocumentUploadForm = ({ client, onUploadSuccess, onCancel }) => {
         await signInWithCustomToken(auth, authData.token);
       }
 
-      // --- IMPROVED STORAGE PATH LOGIC ---
-      const timestamp = Date.now();
+      // --- SIMPLIFIED STORAGE PATH LOGIC ---
+      // 1. Family folder named ONLY by familyId
       const familyFolder = client.familyId || "unassigned";
-      const safeName = (client.name || "CLIENT")
-        .replace(/\s+/g, "_")
-        .toUpperCase();
-      const clientFolderName = `${safeName}_${client._id}`;
+      
+      // 2. Client folder named ONLY by clientId
+      const clientFolderName = client._id;
 
-      // The directory where the file lives (The Parent)
+      // The directory structure: families/ID/ID
       const parentDir = `families/${familyFolder}/${clientFolderName}`;
 
-      // Full Path of the actual file
-      const storagePath = `${parentDir}/${timestamp}_${file.name}`;
+      // 3. File saved EXACTLY as named by user (no timestamp)
+      const storagePath = `${parentDir}/${file.name}`;
       const storageRef = ref(storage, storagePath);
 
       const uploadTask = uploadBytesResumable(storageRef, file);
@@ -91,7 +90,7 @@ const DocumentUploadForm = ({ client, onUploadSuccess, onCancel }) => {
           try {
             const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
 
-            // 1. Add to Client's Private Document List
+            // Add to Client's Private Document List
             await request(`/clients/${client._id}/documents`, "POST", {
               name: file.name,
               docType,
@@ -100,15 +99,14 @@ const DocumentUploadForm = ({ client, onUploadSuccess, onCancel }) => {
               uploadedBy: "Admin",
             });
 
-            // 2. Sync to Global Vault (The "Documents" Tab)
-            // This ensures it shows up in the file browser tree
+            // Sync to Global Vault
             await request("/vault/sync", "POST", {
               name: file.name,
               type: "file",
               storagePath,
               downloadUrl,
               size: (file.size / 1024).toFixed(1) + " KB",
-              parentPath: parentDir, // Points to the folder it belongs in
+              parentPath: parentDir,
             });
 
             setUploading(false);
@@ -137,7 +135,7 @@ const DocumentUploadForm = ({ client, onUploadSuccess, onCancel }) => {
             value={docType}
             onChange={(e) => setDocType(e.target.value)}
             disabled={uploading}
-            className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-amber-500 outline-none transition-all appearance-none cursor-pointer"
+            className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-amber-500 outline-none transition-all appearance-none cursor-pointer dark:text-white"
           >
             {docTypes.map((type) => (
               <option key={type} value={type}>
@@ -163,7 +161,7 @@ const DocumentUploadForm = ({ client, onUploadSuccess, onCancel }) => {
                 Browse local drive
               </p>
               <p className="text-[8px] text-slate-300 font-bold uppercase mt-1">
-                PDF, JPG, PNG (Max 10MB)
+                Raw filename preservation active
               </p>
             </div>
             <input
@@ -211,7 +209,7 @@ const DocumentUploadForm = ({ client, onUploadSuccess, onCancel }) => {
         <div className="space-y-3 px-1">
           <div className="flex justify-between text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
             <span className="animate-pulse">
-              Transferring to Mumbai Vault...
+              Syncing to Client Vault...
             </span>
             <span className="text-amber-600">{progress}%</span>
           </div>
@@ -250,4 +248,4 @@ const DocumentUploadForm = ({ client, onUploadSuccess, onCancel }) => {
   );
 };
 
-export default DocumentUploadForm;
+export default DocumentUploadForm;  

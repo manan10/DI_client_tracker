@@ -59,8 +59,8 @@ function App() {
               path="/documents"
               element={
                 <ProtectedRoute>
-                  {/* <Documents /> */}
-                  <MaintenanceView />
+                  <Documents />
+                  {/* <MaintenanceView /> */}
                 </ProtectedRoute>
               } 
             />

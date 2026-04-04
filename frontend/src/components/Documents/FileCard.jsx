@@ -6,12 +6,15 @@ import {
 } from "lucide-react";
 
 const FileCard = ({ 
-  item, viewMode, isSelected, onSelect, onMenuToggle, isMenuOpen, onRename, 
+  item, displayName, viewMode, isSelected, onSelect, onMenuToggle, isMenuOpen, onRename, 
   isRenaming, editValue, setEditValue, onRenameConfirm, onRenameCancel,
   onMove, onDownload, onDeleteClick, onDeleteConfirm, onDeleteCancel, 
   isDeleting, onNavigate, isSearchMode, onGoToFolder, isLoading
 }) => {
   
+  // Fallback to item.name if displayName isn't provided
+  const title = displayName || item.name;
+
   const menuContent = isMenuOpen && (
     <div className={`absolute ${viewMode === 'list' ? 'right-0 top-10' : 'top-10 right-2'} w-44 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-xl p-1.5 z-50 animate-in fade-in zoom-in-95`} onClick={e => e.stopPropagation()}>
         {isSearchMode && (
@@ -57,7 +60,7 @@ const FileCard = ({
             {isRenaming ? (
               <input autoFocus value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={onRenameCancel} onKeyDown={(e) => e.key === 'Enter' && onRenameConfirm()} className="text-[11px] font-black uppercase bg-white dark:bg-slate-800 border border-emerald-500 px-2 py-1 rounded outline-none w-full" onClick={e => e.stopPropagation()} />
             ) : (
-              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 uppercase truncate break-all">{item.name}</span>
+              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 uppercase truncate break-all">{title}</span>
             )}
             {isSearchMode && <span className="text-[8px] text-slate-400 font-bold uppercase truncate">In: /{item.parentPath || 'Root'}</span>}
           </div>
@@ -91,7 +94,7 @@ const FileCard = ({
         {isRenaming ? (
           <input autoFocus value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={onRenameCancel} onKeyDown={(e) => e.key === 'Enter' && onRenameConfirm()} className="text-[10px] font-black uppercase w-full bg-emerald-50 dark:bg-emerald-900/20 text-center rounded p-1 outline-none border border-emerald-500" onClick={(e) => e.stopPropagation()} />
         ) : (
-          <p className="text-[10px] font-[1000] uppercase line-clamp-2 w-full px-1 text-slate-700 dark:text-slate-200 leading-tight break-all">{item.name}</p>
+          <p className="text-[10px] font-[1000] uppercase line-clamp-2 w-full px-1 text-slate-700 dark:text-slate-200 leading-tight break-all">{title}</p>
         )}
         {isSearchMode && <p className="text-[8px] text-slate-400 font-bold uppercase mt-1">In: /{item.parentPath || 'Root'}</p>}
       </div>

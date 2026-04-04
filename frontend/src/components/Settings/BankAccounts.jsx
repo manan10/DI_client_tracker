@@ -1,192 +1,300 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, Check, X, Wallet, Loader2, AlertTriangle, Landmark } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { 
+  Plus, Trash2, Edit2, Check, X, Wallet, Loader2, 
+  AlertTriangle, Landmark, ShieldCheck, Hash, User, ChevronDown, ShieldAlert, RefreshCw
+} from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
 import { toast } from 'sonner';
 
 const BankAccounts = () => {
   const { request } = useApi();
   const [accounts, setAccounts] = useState([]);
-  const [formData, setFormData] = useState({ accountName: '', accountNumber: '' });
-  const [editingId, setEditingId] = useState(null);
-  const [editData, setEditData] = useState({ accountName: '', accountNumber: '' });
+  const [arns, setArns] = useState([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  
+  const dropdownRef = useRef(null);
+  const editDropdownRef = useRef(null);
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isEditDropdownOpen, setIsEditDropdownOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchAccounts = async () => {
-      try {
-        const res = await request('/accounts');
-        if (isMounted && res?.data) setAccounts(res.data);
-      } catch {
-        toast.error("Account Sync Failed");
-      } finally {
-        if (isMounted) setIsInitialLoading(false);
+  const [formData, setFormData] = useState({ accountName: '', accountNumber: '', arn: null });
+  const [editData, setEditData] = useState({ accountName: '', accountNumber: '', arn: null });
+
+  // Helper to sort accounts alphabetically by name
+  const sortAccounts = (data) => {
+    return [...data].sort((a, b) => a.name.localeCompare(b.name));
+  };
+
+  const initRegistry = useCallback(async () => {
+    try {
+      const [arnRes, accRes] = await Promise.all([request('/arns'), request('/accounts')]);
+      if (arnRes?.data) setArns(arnRes.data);
+      if (accRes?.data) {
+        // Sort initial fetch
+        setAccounts(sortAccounts(accRes.data));
       }
-    };
-    fetchAccounts();
-    return () => { isMounted = false; };
+    } catch {
+      toast.error("Registry Sync Failed");
+    } finally {
+      setIsInitialLoading(false);
+    }
   }, [request]);
 
+  useEffect(() => { 
+    initRegistry();
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setIsDropdownOpen(false);
+      if (editDropdownRef.current && !editDropdownRef.current.contains(e.target)) setIsEditDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [initRegistry]);
+
+  const simulateReload = async (callback) => {
+    setIsSyncing(true);
+    await callback();
+    setTimeout(() => setIsSyncing(false), 600);
+  };
+
   const handleAdd = async () => {
-    if (!formData.accountName) return toast.warning("Bank Name is required");
+    if (!formData.accountName) return toast.warning("Bank Name Required");
+    const payload = { 
+      accountName: formData.accountName,
+      accountNumber: formData.accountNumber,
+      arn: formData.arn?.arnCode || null 
+    };
     
-    const res = await request('/accounts', 'POST', formData);
-    if (res?.data) {
-      setAccounts(prev => [...prev, res.data]);
-      setFormData({ accountName: '', accountNumber: '' });
-      toast.success("Bank Account Registered");
-    }
+    await simulateReload(async () => {
+      const res = await request('/accounts', 'POST', payload);
+      if (res?.data) {
+        // Add and re-sort
+        setAccounts(prev => sortAccounts([...prev, res.data]));
+        setFormData({ accountName: '', accountNumber: '', arn: null });
+        toast.success("Account Registered");
+      }
+    });
   };
 
   const handleUpdate = async (id) => {
-    if (!editData.accountName) return toast.warning("Bank Name is required");
+    if (!editData.accountName) return toast.warning("Name Required");
+    const payload = {
+      accountName: editData.accountName,
+      accountNumber: editData.accountNumber,
+      arn: editData.arn?.arnCode || null
+    };
 
-    const res = await request(`/accounts/${id}`, 'PUT', editData);
-    if (res?.data) {
-      setAccounts(prev => prev.map(a => a._id === id ? res.data : a));
-      setEditingId(null);
-      toast.success("Account Details Updated");
-    }
+    await simulateReload(async () => {
+      const res = await request(`/accounts/${id}`, 'PUT', payload);
+      if (res?.data) {
+        // Update and re-sort
+        setAccounts(prev => sortAccounts(prev.map(a => a._id === id ? res.data : a)));
+        setEditingId(null);
+        toast.success("Updated Successfully");
+      }
+    });
   };
 
   const executeDelete = async () => {
-    if (!deleteConfirm) return;
-    const res = await request(`/accounts/${deleteConfirm.id}`, 'DELETE');
-    if (res?.success) {
-      setAccounts(prev => prev.filter(a => a._id !== deleteConfirm.id));
-      toast.success("Account Removed");
-      setDeleteConfirm(null);
-    }
+    await simulateReload(async () => {
+      const res = await request(`/accounts/${deleteConfirm.id}`, 'DELETE');
+      if (res?.success) {
+        setAccounts(prev => prev.filter(a => a._id !== deleteConfirm.id));
+        setDeleteConfirm(null);
+        toast.success("Account Removed");
+      }
+    });
   };
 
   if (isInitialLoading) return (
-    <div className="flex flex-col items-center justify-center py-24 gap-4">
-      <Loader2 className="animate-spin text-emerald-500" size={40} />
-      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Ledgers</span>
+    <div className="flex flex-col items-center justify-center min-h-[60vh]">
+      <Loader2 className="animate-spin text-emerald-500" size={32} />
     </div>
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 relative">
-      {/* Delete Confirmation Overlay */}
+    <div className="w-full min-h-screen bg-[#FDFDFD] dark:bg-slate-950 pb-20 relative">
+      
+      {/* SYNC OVERLAY */}
+      {isSyncing && (
+        <div className="fixed inset-0 z-300 bg-white/60 dark:bg-slate-950/60 backdrop-blur-[2px] flex flex-col items-center justify-center animate-in fade-in duration-200">
+           <div className="flex flex-col items-center gap-4">
+              <RefreshCw className="animate-spin text-slate-950 dark:text-white" size={40} />
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-950 dark:text-white">Syncing Registry...</span>
+           </div>
+        </div>
+      )}
+
+      {/* HEADER */}
+      <div className="px-6 py-10 md:px-12 md:pt-16 md:pb-10 border-b border-slate-100 dark:border-slate-800">
+        <div className="max-w-5xl mx-auto">
+          <h1 className="text-4xl md:text-6xl font-[1000] text-slate-950 dark:text-white uppercase tracking-tighter italic">
+            Bank <span className="text-emerald-500">Registry</span>
+          </h1>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-2">Multi-ARN Treasury Manager</p>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-6 py-10">
+        
+        {/* ADD FORM */}
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-2 border-slate-950 dark:border-slate-800 shadow-[8px_8px_0px_rgba(0,0,0,0.05)] mb-12 space-y-4 lg:space-y-0 lg:flex lg:items-center lg:gap-4">
+          <input 
+            placeholder="BANK NAME"
+            value={formData.accountName}
+            onChange={e => setFormData({...formData, accountName: e.target.value})}
+            className="w-full lg:flex-1 h-14 bg-slate-50 dark:bg-slate-800 px-6 text-[11px] font-black uppercase tracking-widest outline-none transition-all"
+          />
+          <input 
+            placeholder="A/C NUMBER"
+            value={formData.accountNumber}
+            onChange={e => setFormData({...formData, accountNumber: e.target.value})}
+            className="w-full lg:w-44 h-14 bg-slate-50 dark:bg-slate-800 px-6 text-[11px] font-black outline-none transition-all"
+          />
+
+          {/* Add Dropdown */}
+          <div className="w-full lg:w-64 relative" ref={dropdownRef}>
+            <button 
+              type="button"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="w-full h-14 bg-slate-50 dark:bg-slate-800 px-6 flex items-center justify-between text-[10px] font-black uppercase tracking-widest group"
+            >
+              <span className={formData.arn ? 'text-slate-900 dark:text-white' : 'text-slate-400'}>
+                {formData.arn ? formData.arn.arnCode : 'LINK ARN'}
+              </span>
+              <ChevronDown className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} size={16} />
+            </button>
+            {isDropdownOpen && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border-2 border-slate-950 z-100 shadow-2xl max-h-60 overflow-y-auto py-2">
+                <div onClick={() => { setFormData({...formData, arn: null}); setIsDropdownOpen(false); }} className="px-6 py-4 hover:bg-slate-50 text-[10px] font-black text-rose-500 uppercase cursor-pointer italic border-b">No ARN</div>
+                {arns?.map(arn => (
+                  <div key={arn._id} onClick={() => { setFormData({...formData, arn: arn}); setIsDropdownOpen(false); }} className="px-6 py-4 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 cursor-pointer border-b last:border-0">
+                    <p className="text-[11px] font-black uppercase">{arn.arnCode}</p>
+                    <p className="text-[9px] font-bold text-slate-400 italic">{arn.nickname}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button onClick={handleAdd} className="w-full lg:w-auto h-14 px-10 bg-slate-950 dark:bg-emerald-600 text-white font-black uppercase text-[10px] tracking-[0.2em] transition-all">
+            ADD
+          </button>
+        </div>
+
+        {/* REGISTRY LIST */}
+        <div className="space-y-6">
+           {accounts?.map((acc) => {
+             const arnInfo = acc.arn ? arns.find(a => a.arnCode === acc.arn) : null;
+             const isEditing = editingId === acc._id;
+
+             return (
+               <div key={acc._id} className={`bg-white dark:bg-slate-900 border-2 transition-all p-6 ${isEditing ? 'border-emerald-500 shadow-xl' : 'border-slate-100 dark:border-slate-800'}`}>
+                  {isEditing ? (
+                    <div className="space-y-6">
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                             <label className="text-[9px] font-black text-emerald-500 uppercase ml-1">Bank Nickname</label>
+                             <input value={editData.accountName} onChange={e => setEditData(p => ({...p, accountName: e.target.value}))} className="w-full bg-slate-50 dark:bg-slate-800 p-4 text-sm font-black uppercase outline-none border-b-2 border-emerald-500" />
+                          </div>
+                          <div className="space-y-1">
+                             <label className="text-[9px] font-black text-emerald-500 uppercase ml-1">A/C Number</label>
+                             <input value={editData.accountNumber} onChange={e => setEditData(p => ({...p, accountNumber: e.target.value}))} className="w-full bg-slate-50 dark:bg-slate-800 p-4 text-sm font-black outline-none border-b-2 border-emerald-500" />
+                          </div>
+                       </div>
+                       
+                       <div className="relative space-y-1" ref={editDropdownRef}>
+                          <label className="text-[9px] font-black text-emerald-500 uppercase ml-1">Linked ARN Entity</label>
+                          <button type="button" onClick={() => setIsEditDropdownOpen(!isEditDropdownOpen)} className="w-full h-14 flex items-center justify-between bg-slate-50 dark:bg-slate-800 px-4 text-xs font-black uppercase border-b-2 border-emerald-500">
+                             {editData.arn ? editData.arn.arnCode : 'NO ARN LINKED'}
+                             <ChevronDown size={16} />
+                          </button>
+                          {isEditDropdownOpen && (
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border-2 border-slate-950 z-110 shadow-2xl max-h-48 overflow-y-auto py-2">
+                               <div onClick={() => { setEditData(p => ({...p, arn: null})); setIsEditDropdownOpen(false); }} className="px-6 py-3 hover:bg-slate-50 text-[10px] font-black text-rose-500 uppercase italic cursor-pointer border-b">Unlink ARN</div>
+                               {arns?.map(arn => (
+                                 <div key={arn._id} onClick={() => { setEditData(p => ({...p, arn: arn})); setIsEditDropdownOpen(false); }} className="px-6 py-3 hover:bg-emerald-50 cursor-pointer border-b last:border-0">
+                                   <p className="text-[11px] font-black uppercase">{arn.arnCode}</p>
+                                   <p className="text-[9px] font-bold text-slate-400 italic">{arn.nickname}</p>
+                                 </div>
+                               ))}
+                            </div>
+                          )}
+                       </div>
+
+                       <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                          <button onClick={() => handleUpdate(acc._id)} className="flex-1 h-12 bg-emerald-600 text-white font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">
+                             <Check size={16} strokeWidth={3} /> SAVE CHANGES
+                          </button>
+                          <button onClick={() => setEditingId(null)} className="px-6 h-12 bg-slate-100 text-slate-500 font-black text-[10px] uppercase tracking-widest">
+                             CANCEL
+                          </button>
+                       </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                       <div className="flex items-center gap-6">
+                          <div className="w-12 h-12 flex items-center justify-center bg-slate-950 text-white shrink-0">
+                             <Landmark size={20} />
+                          </div>
+                          <div className="min-w-0">
+                             <h4 className="text-xl font-[1000] text-slate-950 dark:text-white uppercase italic tracking-tighter leading-none mb-2 truncate">{acc.name}</h4>
+                             <div className="flex items-center gap-3 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">
+                                <Hash size={12} className="text-emerald-500" /> {acc.accountNumber || '—— —— ——'}
+                             </div>
+                          </div>
+                       </div>
+
+                       <div className="flex items-center justify-between md:justify-end gap-10 border-t md:border-t-0 border-slate-50 pt-4 md:pt-0">
+                          <div className="text-right">
+                             {acc.arn ? (
+                               <div className="flex flex-col items-end">
+                                  <div className="flex items-center gap-2 text-emerald-600 font-black text-[11px] uppercase tracking-widest italic">
+                                     <ShieldCheck size={14} strokeWidth={3} /> {acc.arn}
+                                  </div>
+                                  <p className="text-[9px] font-bold text-slate-300 uppercase mt-0.5">{arnInfo?.nickname}</p>
+                               </div>
+                             ) : (
+                               <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest italic opacity-50">No ARN Link</span>
+                             )}
+                          </div>
+                          
+                          <div className="flex gap-1">
+                             <button onClick={() => {
+                               setEditingId(acc._id);
+                               const currentArn = acc.arn ? arns.find(a => a.arnCode === acc.arn) : null;
+                               setEditData({ accountName: acc.name, accountNumber: acc.accountNumber || '', arn: currentArn || null });
+                             }} className="p-3 text-slate-300 hover:text-emerald-500 transition-colors"><Edit2 size={18} /></button>
+                             <button onClick={() => setDeleteConfirm({id: acc._id, name: acc.name})} className="p-3 text-slate-300 hover:text-rose-500 transition-colors"><Trash2 size={18} /></button>
+                          </div>
+                       </div>
+                    </div>
+                  )}
+               </div>
+             )
+           })}
+        </div>
+      </div>
+
+      {/* DELETE MODAL */}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-xl p-8 border border-slate-200 dark:border-slate-800 shadow-2xl scale-in-center">
-            <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/30 text-rose-600 rounded-lg flex items-center justify-center mx-auto mb-6">
-              <AlertTriangle size={32} />
-            </div>
-            <h4 className="text-xl font-black text-center text-slate-900 dark:text-white uppercase italic tracking-tighter text-balance">Remove Account?</h4>
-            <p className="text-sm text-slate-500 text-center mt-2 font-medium">This will remove <span className="font-black text-slate-900 dark:text-slate-200 uppercase">{deleteConfirm.name}</span> from the active registry.</p>
-            <div className="flex gap-3 mt-8">
-              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-4 rounded-lg font-black text-[10px] uppercase tracking-widest text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
-              <button onClick={executeDelete} className="flex-1 py-4 bg-rose-600 text-white rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-rose-700 shadow-lg shadow-rose-600/20 transition-all">Confirm</button>
+        <div className="fixed inset-0 z-200 flex items-center justify-center p-6 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-sm p-8 border-4 border-slate-950 shadow-[12px_12px_0px_rgba(0,0,0,0.1)]">
+            <AlertTriangle className="text-rose-600 mb-6 mx-auto" size={40} />
+            <h4 className="text-xl font-[1000] uppercase tracking-tighter italic text-center mb-4 leading-tight">Confirm Removal?</h4>
+            <p className="text-[10px] font-black text-slate-400 uppercase text-center mb-8 tracking-widest leading-relaxed">
+              Unlinking <span className="text-slate-950 underline">{deleteConfirm.name}</span> will clear its registry entry.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button onClick={executeDelete} className="w-full py-4 bg-rose-600 text-white font-black uppercase text-[10px] tracking-widest">REMOVE ACCOUNT</button>
+              <button onClick={() => setDeleteConfirm(null)} className="w-full py-4 bg-slate-100 text-slate-500 font-black uppercase text-[10px] tracking-widest">CANCEL</button>
             </div>
           </div>
         </div>
       )}
-
-      <div>
-        <h3 className="text-2xl font-[1000] text-slate-900 dark:text-white uppercase italic tracking-tighter">Bank Accounts</h3>
-        <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Financial Buckets</p>
-      </div>
-
-      {/* Registration Header / Input */}
-      <div className="grid grid-cols-1 lg:grid-cols-7 gap-3 bg-white dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm focus-within:border-emerald-500/40 transition-all">
-        <div className="lg:col-span-3">
-          <input 
-            placeholder="Account Nickname (Required)"
-            value={formData.accountName}
-            onChange={e => setFormData({...formData, accountName: e.target.value})}
-            className="w-full bg-slate-50 dark:bg-slate-900 rounded-lg px-5 py-4 text-sm font-black outline-none dark:text-white placeholder:text-slate-400"
-          />
-        </div>
-        <div className="lg:col-span-2">
-          <input 
-            placeholder="A/C Number (Optional)"
-            value={formData.accountNumber}
-            onChange={e => setFormData({...formData, accountNumber: e.target.value})}
-            className="w-full bg-slate-50 dark:bg-slate-900 rounded-lg px-5 py-4 text-sm font-black outline-none dark:text-white placeholder:text-slate-400"
-          />
-        </div>
-        <button onClick={handleAdd} className="lg:col-span-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all shadow-lg shadow-emerald-600/20 active:scale-95">
-          <Landmark size={18} /> Add Account
-        </button>
-      </div>
-
-      {/* Accounts List */}
-      <div className="grid grid-cols-1 gap-4">
-        {accounts.length === 0 ? (
-           <div className="py-20 text-center border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-xl">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">No bank accounts configured</p>
-           </div>
-        ) : accounts.map((acc) => (
-          <div key={acc._id} className="flex items-center justify-between p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl hover:border-emerald-500/30 transition-all group">
-            <div className="flex items-center gap-6 flex-1">
-              <div className={`w-14 h-14 rounded-lg flex items-center justify-center transition-all ${editingId === acc._id ? 'bg-emerald-600 text-white animate-pulse' : 'bg-emerald-600/10 text-emerald-600'}`}>
-                <Wallet size={28} />
-              </div>
-              
-              {editingId === acc._id ? (
-                <div className="flex gap-4 flex-1 pr-4">
-                  <input 
-                    value={editData.accountName} 
-                    onChange={e => setEditData({...editData, accountName: e.target.value})} 
-                    className="bg-slate-50 dark:bg-slate-800 border-2 border-emerald-500 rounded-lg px-4 py-2 text-sm font-black dark:text-white w-1/2 outline-none" 
-                  />
-                  <input 
-                    placeholder="Account Number (Optional)"
-                    value={editData.accountNumber} 
-                    onChange={e => setEditData({...editData, accountNumber: e.target.value})} 
-                    className="bg-slate-50 dark:bg-slate-800 border-2 border-emerald-500 rounded-lg px-4 py-2 text-sm font-black dark:text-white w-1/2 outline-none" 
-                  />
-                </div>
-              ) : (
-                <div className="flex-1">
-                  <p className="text-lg font-[1000] text-slate-800 dark:text-white uppercase italic leading-none">
-                    {acc.name}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    {acc.accountNumber && (
-                      <span className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                        A/C: {acc.accountNumber}
-                      </span>
-                    )}
-                    <span className="text-[9px] font-bold text-emerald-500/50 uppercase tracking-widest">{acc.category || 'Bank'}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex gap-2">
-              {editingId === acc._id ? (
-                <>
-                  <button onClick={() => handleUpdate(acc._id)} className="p-3 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg transition-all hover:bg-emerald-100"><Check size={20}/></button>
-                  <button onClick={() => setEditingId(null)} className="p-3 text-rose-600 bg-rose-50 dark:bg-rose-900/30 rounded-lg transition-all hover:bg-rose-100"><X size={20}/></button>
-                </>
-              ) : (
-                <>
-                  <button 
-                    onClick={() => {
-                      setEditingId(acc._id); 
-                      setEditData({accountName: acc.name, accountNumber: acc.accountNumber || ''});
-                    }} 
-                    className="p-3 text-slate-400 hover:text-amber-500 hover:bg-amber-100/50 dark:hover:bg-amber-900/20 rounded-lg transition-all"
-                  >
-                    <Edit2 size={20}/>
-                  </button>
-                  <button 
-                    onClick={() => setDeleteConfirm({id: acc._id, name: acc.name})} 
-                    className="p-3 text-slate-400 hover:text-rose-500 hover:bg-rose-100/50 dark:hover:bg-rose-900/20 rounded-lg transition-all"
-                  >
-                    <Trash2 size={20}/>
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 };

@@ -121,7 +121,7 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
               </button>
 
               {showMonthPicker && (
-                <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-4 z-[100] animate-in fade-in zoom-in-95">
+                <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-4 z-100 animate-in fade-in zoom-in-95">
                   <div className="flex justify-between items-center mb-4">
                     <button onClick={() => setSelectedYear(y => y - 1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md"><ChevronLeft size={16}/></button>
                     <span className="font-black text-xs dark:text-white">{selectedYear}</span>
@@ -179,7 +179,7 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
                         </button>
 
                         {activeDayPicker === amcName && (
-                          <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-4 z-[100] animate-in slide-in-from-bottom-2">
+                          <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-4 z-100 animate-in slide-in-from-bottom-2">
                             <div className="grid grid-cols-7 gap-1">
                               {[...Array(daysInMonth)].map((_, i) => (
                                 <button

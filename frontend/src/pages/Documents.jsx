@@ -26,10 +26,12 @@ const Documents = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [moveStatus, setMoveStatus] = useState(null);
 
+  // Destructure nameMap from the hook
   const { 
     items, activities, totalSizeMB, uploading, uploadProgress, uploadQueue, activeUploadName, 
     loadingStates, fetchFilesAndActivity, fetchAllFolders, folderTree, handleCreateFolder, 
-    handleRename, handleMove, handleDeleteItem, startBatchUpload, handleReSync, handleDownload 
+    handleRename, handleMove, handleDeleteItem, startBatchUpload, handleReSync, handleDownload,
+    nameMap 
   } = useDocuments(currentPath);
 
   useEffect(() => {
@@ -83,15 +85,28 @@ const Documents = () => {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div>
                 <h1 className="text-2xl font-[1000] text-slate-950 dark:text-white uppercase tracking-tight">Documents</h1>
+                
+                {/* 1. PRETTIFIED BREADCRUMBS */}
                 <div className="flex items-center gap-1 mt-1">
-                    {["Main Folder", ...currentPath].map((name, i) => (
-                        <button key={i} onClick={() => i === 0 ? setCurrentPath([]) : setCurrentPath(currentPath.slice(0, i))} className={`text-[10px] font-black uppercase px-2 py-1 rounded-md transition-all ${i === currentPath.length ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30" : "text-slate-400 hover:text-slate-950"}`}>{name}</button>
-                    ))}
+                    {["Main Folder", ...currentPath].map((name, i) => {
+                        // Look up display name if inside families directory branch
+                        const isFamilyBranch = currentPath[0] === "families";
+                        const displayName = (isFamilyBranch && nameMap[name]) ? nameMap[name] : name;
+                        
+                        return (
+                            <button 
+                                key={i} 
+                                onClick={() => i === 0 ? setCurrentPath([]) : setCurrentPath(currentPath.slice(0, i))} 
+                                className={`text-[10px] font-black uppercase px-2 py-1 rounded-md transition-all ${i === currentPath.length ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30" : "text-slate-400 hover:text-slate-950"}`}
+                            >
+                                {i === 0 ? "Main Folder" : displayName}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
             
           <div className="flex flex-wrap items-stretch gap-2 w-full lg:w-auto">
-              {/* New Folder Button */}
               {!searchTerm && (
                   <button 
                       onClick={() => { setEditValue(""); setIsCreatingFolder(true); }} 
@@ -101,7 +116,6 @@ const Documents = () => {
                   </button>
               )}
 
-              {/* Re-Sync Button */}
               <button 
                   onClick={handleReSync} 
                   className="flex items-center justify-center w-10 h-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-400 hover:text-emerald-600 transition-colors active:bg-slate-50"
@@ -109,7 +123,6 @@ const Documents = () => {
                   <RefreshCw size={18} />
               </button>
 
-              {/* Selection and View Mode Toggle */}
               <div className="flex items-center gap-1 px-2 h-10 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-800">
                   <button 
                       onClick={handleSelectAll} 
@@ -134,7 +147,6 @@ const Documents = () => {
                   </div>
               </div>
 
-              {/* Search Input */}
               <div className="relative flex-1 lg:w-64 group h-10">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={14} />
                   <input 
@@ -183,13 +195,40 @@ const Documents = () => {
                   </div>
               )}
               {filteredItems.map(item => (
-                <FileCard key={item.id} item={item} viewMode={viewMode} isSearchMode={!!searchTerm} isSelected={selectedIds.includes(item.id)} isLoading={loadingStates[item.id]} onSelect={() => setSelectedIds(prev => prev.includes(item.id) ? prev.filter(id => id !== item.id) : [...prev, item.id])} onMenuToggle={() => setActiveMenuId(activeMenuId === item.id ? null : item.id)} isMenuOpen={activeMenuId === item.id} onRename={() => { setEditValue(item.name); setIsRenaming(item.id); setActiveMenuId(null); }} isRenaming={isRenaming === item.id} editValue={editValue} setEditValue={setEditValue} onRenameConfirm={() => { handleRename(item, editValue); setIsRenaming(null); }} onRenameCancel={() => setIsRenaming(null)} onMove={() => { setMoveModal({ items: [item] }); setActiveMenuId(null); }} onDownload={() => handleDownload(item)} onDeleteClick={() => { setDeleteConfirmId(item.id); setActiveMenuId(null); }} onDeleteConfirm={() => { handleDeleteItem(item); setDeleteConfirmId(null); }} onDeleteCancel={() => setDeleteConfirmId(null)} isDeleting={deleteConfirmId === item.id} onNavigate={() => item.type === 'folder' ? setCurrentPath([...currentPath, item.name]) : setPreviewFile(item)} onGoToFolder={() => setCurrentPath(item.parentPath ? item.parentPath.split("/") : [])} />
+                <FileCard 
+                  key={item.id} 
+                  item={item} 
+                  // Pass displayName to ensure the card shows the readable name
+                  displayName={item.displayName || item.name}
+                  viewMode={viewMode} 
+                  isSearchMode={!!searchTerm} 
+                  isSelected={selectedIds.includes(item.id)} 
+                  isLoading={loadingStates[item.id]} 
+                  onSelect={() => setSelectedIds(prev => prev.includes(item.id) ? prev.filter(id => id !== item.id) : [...prev, item.id])} 
+                  onMenuToggle={() => setActiveMenuId(activeMenuId === item.id ? null : item.id)} 
+                  isMenuOpen={activeMenuId === item.id} 
+                  onRename={() => { setEditValue(item.name); setIsRenaming(item.id); setActiveMenuId(null); }} 
+                  isRenaming={isRenaming === item.id} 
+                  editValue={editValue} 
+                  setEditValue={setEditValue} 
+                  onRenameConfirm={() => { handleRename(item, editValue); setIsRenaming(null); }} 
+                  onRenameCancel={() => setIsRenaming(null)} 
+                  onMove={() => { setMoveModal({ items: [item] }); setActiveMenuId(null); }} 
+                  onDownload={() => handleDownload(item)} 
+                  onDeleteClick={() => { setDeleteConfirmId(item.id); setActiveMenuId(null); }} 
+                  onDeleteConfirm={() => { handleDeleteItem(item); setDeleteConfirmId(null); }} 
+                  onDeleteCancel={() => setDeleteConfirmId(null)} 
+                  isDeleting={deleteConfirmId === item.id} 
+                  onNavigate={() => item.type === 'folder' ? setCurrentPath([...currentPath, item.name]) : setPreviewFile(item)} 
+                  onGoToFolder={() => setCurrentPath(item.parentPath ? item.parentPath.split("/") : [])} 
+                />
               ))}
             </>
           )}
         </div>
       </main>
 
+      {/* MODALS AND FOOTER STAYS SAME */}
       {moveModal && (
         <MoveModal 
           isOpen={!!moveModal} 

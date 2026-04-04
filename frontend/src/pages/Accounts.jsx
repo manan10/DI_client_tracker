@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
 import AccountBalances from '../components/Accounts/AccountBalances';
-import Commissions from '../components/Accounts/Commissions'; // Import the new component
-import { Wallet, PieChart } from 'lucide-react';
+import Commissions from '../components/Accounts/Commissions'; 
+import StatementReview from '../components/Accounts/StatementReview'; // Import the new tool
+import { Wallet, PieChart, FileText } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Accounts = () => {
   const [activeTab, setActiveTab] = useState('balances');
@@ -10,7 +12,19 @@ const Accounts = () => {
   const tabs = [
     { id: 'balances', name: 'Account Balances', icon: Wallet },
     { id: 'commissions', name: 'Commissions', icon: PieChart },
+    { id: 'ledger', name: 'Digital Ledger', icon: FileText }, // New Tab
   ];
+
+  const handleLedgerComplete = (fileGroups) => {
+    // APPROACH: Instead of permanent DB storage, we trigger the "Tally Export"
+    console.log("Finalized Data for Export:", fileGroups);
+    
+    // Logic for generating Tally-friendly Excel would go here
+    toast.success("Ledger Exported successfully for Tally!");
+    
+    // Optional: You could still send a 'log' to MongoDB just to say 
+    // "Statement processed on X date" without saving every transaction.
+  };
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] dark:bg-slate-950 transition-colors duration-300">
@@ -23,11 +37,10 @@ const Accounts = () => {
               Treasury <span className="text-emerald-500 italic">&</span> Performance
             </h1>
             <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">
-              Liquidity Tracking & Commission Analytics
+              Liquidity Tracking & Digital Accounting
             </p>
           </div>
 
-          {/* Tab Switcher */}
           <div className="flex bg-slate-100 dark:bg-slate-900/50 p-1 rounded-sm border border-slate-200 dark:border-slate-800 backdrop-blur-sm">
             {tabs.map((tab) => (
               <button
@@ -47,10 +60,10 @@ const Accounts = () => {
         </div>
 
         <div className="animate-in fade-in slide-in-from-bottom-6 duration-700 ease-out">
-          {activeTab === 'balances' ? (
-            <AccountBalances />
-          ) : (
-            <Commissions />
+          {activeTab === 'balances' && <AccountBalances />}
+          {activeTab === 'commissions' && <Commissions />}
+          {activeTab === 'ledger' && (
+            <StatementReview onComplete={handleLedgerComplete} />
           )}
         </div>
       </main>
