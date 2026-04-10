@@ -5,49 +5,30 @@ import GlobalStatsGrid from './GlobalStatsGrid';
 import GlobalRiskAnalysis from './GlobalRiskAnalysis';
 import GlobalCommissionMatrix from './GlobalCommissionMatrix';
 
-const GlobalCommissionAggregator = ({ data, loading }) => {
+const GlobalCommissionAggregator = ({ data, loading, selectedFY, setSelectedFY }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const dropdownRef = useRef(null);
 
-  /**
-   * Helper: Determine Current FY String (YYYY-YY)
-   * Standard Indian Fiscal Cycle: April - March
-   */
   const getCurrentFYString = () => {
     const now = new Date();
-    const month = now.getMonth(); // 0-indexed (Jan=0, Mar=2)
+    const month = now.getMonth();
     const year = now.getFullYear();
     const startYear = month <= 2 ? year - 1 : year;
     const endYearShort = (startYear + 1).toString().slice(-2);
     return `${startYear}-${endYearShort}`;
   };
 
-  /**
-   * Lazy Initializer for Selected FY
-   */
-  const [selectedFY, setSelectedFY] = useState(() => getCurrentFYString());
-
-  /**
-   * Dynamic Years List
-   * Ensures the picker is populated with years available in the database
-   */
   const availableYears = useMemo(() => {
     const years = data?.fiscalYearTotals?.map(f => f.fiscalYear) || [];
     const current = getCurrentFYString();
     
     if (years.length === 0) return [current];
-    // Ensure current year is always at the top if not already present
     if (!years.includes(current)) return [current, ...years];
     return years;
   }, [data]);
 
-  /**
-   * Filtered Data Logic
-   * Bridges the gap between Backend naming ("total") and StatsGrid naming ("totalFY")
-   */
   const filteredData = useMemo(() => {
-    // 1. Safe Fallback
     if (!data) {
       return {
         monthlyAggregates: [],
@@ -58,19 +39,16 @@ const GlobalCommissionAggregator = ({ data, loading }) => {
       };
     }
 
-    // 2. Extract specific stats for the selected year from backend array
     const fyStats = data.fiscalYearTotals?.find(f => f.fiscalYear === selectedFY) || { 
       total: 0, 
       yoyGrowth: 0 
     };
 
-    // 3. Filter monthly aggregates based on FY Date Logic
     const [startYear, endYearShort] = selectedFY.split('-');
     const endYear = `20${endYearShort}`;
 
     const filteredMonthly = (data.monthlyAggregates || []).filter(item => {
       const [y, m] = item._id.split('-').map(Number);
-      // Logic: April (4) of startYear to March (3) of endYear
       if (y === parseInt(startYear) && m >= 4) return true;
       if (y === parseInt(endYear) && m <= 3) return true;
       return false;
@@ -79,7 +57,6 @@ const GlobalCommissionAggregator = ({ data, loading }) => {
     return {
       ...data,
       monthlyAggregates: filteredMonthly,
-      // Map backend keys to what GlobalStatsGrid expects
       currentFYStats: {
         totalFY: fyStats.total,
         growth: fyStats.yoyGrowth,
@@ -89,7 +66,6 @@ const GlobalCommissionAggregator = ({ data, loading }) => {
     };
   }, [data, selectedFY]);
 
-  // Handle outside click for dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -101,13 +77,12 @@ const GlobalCommissionAggregator = ({ data, loading }) => {
   }, []);
 
   const handleYearChange = (year) => {
-    setSelectedFY(year);
+    setSelectedFY(year); // Updates parent state, which ripples to Analytics/History
     setIsOpen(false);
   };
 
   return (
     <div className="space-y-8">
-      {/* --- PERIOD SELECTOR --- */}
       <div className="flex flex-col md:flex-row justify-between items-center px-0 gap-6">
         <div className="flex flex-col">
           <div className="flex items-center gap-2 mb-1">
@@ -161,12 +136,10 @@ const GlobalCommissionAggregator = ({ data, loading }) => {
         </div>
       </div>
 
-      {/* Grid Summary (Accordion Toggle) */}
       <div className="relative group cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
         <GlobalStatsGrid data={filteredData} isExpanded={isExpanded} loading={loading} />
       </div>
 
-      {/* Expanded Sections */}
       {isExpanded && (
         <div className="space-y-6 animate-in slide-in-from-top-4 fade-in duration-700">
           <section>

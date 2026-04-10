@@ -6,7 +6,7 @@ import {
 import { TrendingUp, BarChart3, Trophy, Calendar, Zap, Loader2, AlertCircle } from 'lucide-react';
 import { useApi } from '../../../hooks/useApi';
 
-const WorkspaceAnalytics = ({ arnId }) => {
+const WorkspaceAnalytics = ({ arnId, fiscalYear }) => {
   const [data, setData] = useState(null);
   const { request, loading: apiLoading } = useApi();
   const [isSyncing, setIsSyncing] = useState(true);
@@ -25,15 +25,15 @@ const WorkspaceAnalytics = ({ arnId }) => {
     if (!arnId) return;
     setIsSyncing(true);
     try {
-      // The backend must use the arnId to aggregate ONLY relevant commissions
-      const json = await request(`/commissions/workspace-analytics/${arnId}`);
+      // FIXED: Passing fiscalYear as a query parameter to ensure data is scoped correctly
+      const json = await request(`/commissions/workspace-analytics/${arnId}?fiscalYear=${fiscalYear}`);
       if (json.success) setData(json.data);
     } catch (err) {
       console.error("Analytics Sync Error:", err);
     } finally {
       setIsSyncing(false);
     }
-  }, [arnId, request]);
+  }, [arnId, fiscalYear, request]); // Added fiscalYear to dependencies
 
   useEffect(() => {
     let isMounted = true;
@@ -48,12 +48,14 @@ const WorkspaceAnalytics = ({ arnId }) => {
     </div>
   );
 
-  // Handle case where ARN has no data yet
   if (!data || !data.amcBreakdown || data.amcBreakdown.length === 0) {
     return (
       <div className="h-32 flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-100 dark:border-slate-800">
         <AlertCircle className="text-slate-300" size={20} />
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Revenue Data for this ARN</p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center px-4">
+          No Revenue Data for FY {fiscalYear} <br/>
+          <span className="text-[8px] opacity-50 tracking-normal">Select a different year or add records.</span>
+        </p>
       </div>
     );
   }
@@ -62,7 +64,7 @@ const WorkspaceAnalytics = ({ arnId }) => {
     ?.filter(amc => amc.value > 0)
     .sort((a, b) => b.value - a.value)
     .map(amc => ({
-      name: amc._id, // This should be the AMC name from your aggregation
+      name: amc._id, 
       value: amc.value,
       percentage: data.stats.allTimeTotal > 0 
         ? ((amc.value / data.stats.allTimeTotal) * 100).toFixed(1) + '%'
@@ -76,7 +78,7 @@ const WorkspaceAnalytics = ({ arnId }) => {
       <div className="lg:col-span-1 space-y-3">
         {[
           { label: 'Avg Monthly', val: data.stats.avgMonthly || 0, icon: Calendar, color: 'text-emerald-500', bg: 'bg-emerald-500/5', isCurrency: true },
-          { label: 'Cumulative', val: data.stats.allTimeTotal || 0, icon: Trophy, color: 'text-amber-500', bg: 'bg-amber-500/5', isCurrency: true },
+          { label: `FY Total (${fiscalYear})`, val: data.stats.allTimeTotal || 0, icon: Trophy, color: 'text-amber-500', bg: 'bg-amber-500/5', isCurrency: true },
           { label: 'Months Recorded', val: data.stats.monthCount || 0, icon: Zap, color: 'text-blue-500', bg: 'bg-blue-500/5', isCurrency: false }
         ].map((stat, i) => (
           <div key={i} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-lg flex items-center gap-4 hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-sm">
@@ -99,7 +101,7 @@ const WorkspaceAnalytics = ({ arnId }) => {
           <div className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-500 rounded-lg">
             <TrendingUp size={16} strokeWidth={3} />
           </div>
-          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 italic">Workspace Performance Trend</h4>
+          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 italic">FY {fiscalYear} Revenue Trend</h4>
         </div>
 
         <div className="h-64 w-full">
@@ -181,7 +183,9 @@ const WorkspaceAnalytics = ({ arnId }) => {
           </ResponsiveContainer>
         </div>
         <div className="pt-4 border-t border-slate-50 dark:border-slate-800 mt-2 text-center">
-            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Revenue split for {arnId.substring(0, 8)}...</p>
+            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
+              Revenue split for FY {fiscalYear}
+            </p>
         </div>
       </div>
     </div>

@@ -17,18 +17,29 @@ const Commissions = () => {
   const [selectedARN, setSelectedARN] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   
+  const getCurrentFYString = () => {
+    const now = new Date();
+    const month = now.getMonth(); 
+    const year = now.getFullYear();
+    const startYear = month <= 2 ? year - 1 : year;
+    const endYearShort = (startYear + 1).toString().slice(-2);
+    return `${startYear}-${endYearShort}`;
+  };
+  const [selectedFY, setSelectedFY] = useState(getCurrentFYString());
+
   const [refreshKey, setRefreshKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+  // FIXED: fetchMasterData now depends on selectedFY
   const fetchMasterData = useCallback(async (isSilent = false) => {
     if (isSilent) setRefreshing(true);
 
     try {
-      // We no longer fetch global /amcs here because we use populated arns instead
       const [arnRes, summaryRes, globalRes] = await Promise.all([
         request('/arns'),
-        request('/commissions/dashboard-summary'),
+        // API UPDATE: Pass the selected year to get year-specific card stats
+        request(`/commissions/dashboard-summary?fiscalYear=${selectedFY}`),
         request('/analytics/global-summary')
       ]);
       
@@ -53,11 +64,12 @@ const Commissions = () => {
       setRefreshing(false);
       setIsInitialLoad(false);
     }
-  }, [request]);
+  }, [request, selectedFY]); // Now reactive to year changes
 
+  // Re-fetch everything when the Fiscal Year changes
   useEffect(() => {
-    fetchMasterData();
-  }, [fetchMasterData]);
+    fetchMasterData(true);
+  }, [selectedFY, fetchMasterData]);
 
   const handleSaveCommission = async (payload) => {
     try {
@@ -65,12 +77,11 @@ const Commissions = () => {
       if (result.success) {
         toast.success(`Records committed for ${payload.accountingMonth}`);
         setIsFormOpen(false);
-        setRefreshKey(prev => prev.id + 1);
+        setRefreshKey(prev => prev + 1);
         fetchMasterData(true);
       }
-    } catch (err) {
+    } catch {
       toast.error("System failed to commit records");
-      console.error("Save Error:", err);
     }
   };
 
@@ -89,7 +100,7 @@ const Commissions = () => {
         <div>
           <h2 className="text-4xl font-[1000] text-slate-950 dark:text-white uppercase italic tracking-tighter">Commissions</h2>
           <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
-            Recorded as of {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+            Audit View: FY {selectedFY}
           </p>
         </div>
         <button 
@@ -102,18 +113,23 @@ const Commissions = () => {
       </div>
 
       <section className="bg-slate-50/50 dark:bg-slate-950/20 p-2 rounded-[3rem]">
-         <GlobalCommissionAggregator data={globalData} loading={refreshing} />
+         <GlobalCommissionAggregator 
+            data={globalData} 
+            loading={refreshing} 
+            selectedFY={selectedFY} 
+            setSelectedFY={setSelectedFY} 
+          />
       </section>
 
       <div className="flex flex-col gap-1 px-4">
         <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 leading-none">Individual Workspace Selection</h4>
-        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest italic opacity-60">Pick an ARN to view granular records and historical ledger</span>
+        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest italic opacity-60">Displaying data for FY {selectedFY}</span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {arns.map((arn) => (
           <ARNCommissionCard 
-            key={arn._id} 
+            key={`${arn._id}-${selectedFY}`} // KEY CHANGE: Re-mount cards when year changes
             arn={{
                 id: arn._id,
                 name: arn.arnCode,
@@ -156,19 +172,19 @@ const Commissions = () => {
 
             <div className="space-y-12">
               <WorkspaceAnalytics 
-                key={`stats-${selectedARN.id}-${refreshKey}`} 
+                key={`stats-${selectedARN.id}-${selectedFY}-${refreshKey}`} 
                 arnId={selectedARN.id} 
+                fiscalYear={selectedFY}
               />
-              
               <div className="relative py-4">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
                   <div className="w-full border-t border-slate-100 dark:border-slate-800"></div>
                 </div>
               </div>
-              
               <WorkspaceHistory 
-                key={`history-${selectedARN.id}-${refreshKey}`} 
+                key={`history-${selectedARN.id}-${selectedFY}-${refreshKey}`} 
                 arnId={selectedARN.id} 
+                fiscalYear={selectedFY}
               />
             </div>
           </div>
@@ -192,7 +208,6 @@ const Commissions = () => {
           arnName={selectedARN.nickname}
           arnNickname={selectedARN.name}
           arnId={selectedARN.id}
-          // Passing only the AMCs allowed for this specific ARN
           amcList={arns.find(a => a._id === selectedARN.id)?.allowedAmcs || []}
           onSave={handleSaveCommission}
           saving={apiLoading} 

@@ -108,7 +108,7 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 w-full h-full z-[9999] flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-0 md:p-6">
+    <div className="fixed inset-0 w-full h-full z-9999 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-0 md:p-6">
       <div className="bg-white dark:bg-slate-950 w-full md:max-w-6xl h-full md:h-[92vh] md:rounded-lg border-0 md:border-2 border-slate-200 dark:border-slate-800 flex flex-col shadow-2xl relative overflow-hidden">
         
         {/* Header */}
@@ -135,7 +135,7 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
               </button>
 
               {showMonthPicker && (
-                <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-4 z-[100] animate-in fade-in zoom-in-95">
+                <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-4 z-100 animate-in fade-in zoom-in-95">
                   <div className="flex justify-between items-center mb-4">
                     <button onClick={() => setSelectedYear(y => y - 1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md"><ChevronLeft size={16}/></button>
                     <span className="font-black text-xs dark:text-white">{selectedYear}</span>
@@ -201,7 +201,7 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
                         </button>
 
                         {isPickerActive && (
-                          <div className="absolute top-full mt-2 left-0 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-4 z-[200] animate-in slide-in-from-top-2">
+                          <div className="absolute top-full mt-2 left-0 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-4 z-200 animate-in slide-in-from-top-2">
                             <div className="grid grid-cols-7 gap-1">
                               {[...Array(daysInMonth)].map((_, i) => (
                                 <button

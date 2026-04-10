@@ -2,28 +2,32 @@ import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
 import AccountBalances from '../components/Accounts/AccountBalances';
 import Commissions from '../components/Accounts/Commissions'; 
-import StatementReview from '../components/Accounts/StatementReview'; // Import the new tool
-import { Wallet, PieChart, FileText } from 'lucide-react';
+import StatementReview from '../components/Accounts/StatementReview';
+import { Wallet, PieChart, FileText, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Accounts = () => {
   const [activeTab, setActiveTab] = useState('balances');
 
   const tabs = [
-    { id: 'balances', name: 'Account Balances', icon: Wallet },
-    { id: 'commissions', name: 'Commissions', icon: PieChart },
-    { id: 'ledger', name: 'Digital Ledger', icon: FileText }, // New Tab
+    { id: 'balances', name: 'Account Balances', icon: Wallet, isLocked: false },
+    { id: 'commissions', name: 'Commissions', icon: PieChart, isLocked: false },
+    { id: 'ledger', name: 'Audit & Tally Sync', icon: FileText, isLocked: true }, // Logic-locked
   ];
 
+  const handleTabClick = (tab) => {
+    if (tab.isLocked) {
+      toast.info("Tally Sync module is currently in final audit.", {
+        description: "This feature will be enabled following system verification."
+      });
+      return;
+    }
+    setActiveTab(tab.id);
+  };
+
   const handleLedgerComplete = (fileGroups) => {
-    // APPROACH: Instead of permanent DB storage, we trigger the "Tally Export"
     console.log("Finalized Data for Export:", fileGroups);
-    
-    // Logic for generating Tally-friendly Excel would go here
     toast.success("Ledger Exported successfully for Tally!");
-    
-    // Optional: You could still send a 'log' to MongoDB just to say 
-    // "Statement processed on X date" without saving every transaction.
   };
 
   return (
@@ -45,14 +49,20 @@ const Accounts = () => {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-3 px-8 py-3.5 rounded-md text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
-                  activeTab === tab.id
+                onClick={() => handleTabClick(tab)}
+                className={`flex items-center gap-3 px-8 py-3.5 rounded-md text-[11px] font-black uppercase tracking-widest transition-all duration-300 relative
+                  ${activeTab === tab.id
                     ? 'bg-white dark:bg-slate-800 text-emerald-600 shadow-lg shadow-emerald-500/5 scale-[1.02]'
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-                }`}
+                    : tab.isLocked 
+                      ? 'text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-60' 
+                      : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                  }`}
               >
-                <tab.icon size={14} strokeWidth={2.5} />
+                {tab.isLocked ? (
+                  <Lock size={12} className="text-slate-300 dark:text-slate-700" />
+                ) : (
+                  <tab.icon size={14} strokeWidth={2.5} />
+                )}
                 {tab.name}
               </button>
             ))}
@@ -62,6 +72,7 @@ const Accounts = () => {
         <div className="animate-in fade-in slide-in-from-bottom-6 duration-700 ease-out">
           {activeTab === 'balances' && <AccountBalances />}
           {activeTab === 'commissions' && <Commissions />}
+          {/* Even if activeTab were 'ledger', it wouldn't be accessible via the UI */}
           {activeTab === 'ledger' && (
             <StatementReview onComplete={handleLedgerComplete} />
           )}

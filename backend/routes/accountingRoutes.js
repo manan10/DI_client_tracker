@@ -9,5 +9,6 @@ router.post('/upload-bulk', upload.array('files', 10), accountingController.proc
 router.get('/staged', accountingController.getStagedTransactions);
 router.delete('/clear-staged', accountingController.clearStagedTransactions);
 router.delete('/staged/:accountId', accountingController.clearStagedByAccount);
+router.patch('/staged/:id', accountingController.updateStagedTransaction);
 
 module.exports = router;

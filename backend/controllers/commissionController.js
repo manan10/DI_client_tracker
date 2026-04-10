@@ -50,34 +50,49 @@ exports.getMonthlyRecord = async (req, res) => {
 
 /**
  * @desc    Get Summary Stats for all ARN cards (FY Total & Last Payout)
- * @route   GET /api/commissions/dashboard-summary
+ * @route   GET /api/commissions/dashboard-summary?fiscalYear=2024-25
  */
 exports.getDashboardSummary = async (req, res) => {
     try {
-        const now = new Date();
-        const currentMonth = now.getMonth(); 
-        const currentYear = now.getFullYear();
+        const { fiscalYear } = req.query;
 
-        // Financial Year Logic: Starts April (3)
-        let fyStartYear = currentMonth >= 3 ? currentYear : currentYear - 1;
-        const fyStartString = `${fyStartYear}-04`; 
+        // 1. Calculate the start and end month strings for the requested FY
+        // Logic: If FY is 2024-25, range is "2024-04" to "2025-03"
+        let fyStartString;
+        let fyEndString;
+
+        if (fiscalYear) {
+            const [startYear, endYearShort] = fiscalYear.split('-');
+            const endYear = `20${endYearShort}`;
+            fyStartString = `${startYear}-04`;
+            fyEndString = `${endYear}-03`;
+        } else {
+            // Fallback to real-time current FY if no param provided
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            const startYear = currentMonth >= 3 ? currentYear : currentYear - 1;
+            fyStartString = `${startYear}-04`;
+            fyEndString = `${startYear + 1}-03`;
+        }
 
         const summary = await Commission.aggregate([
+            // 2. Filter early to only include months within the selected Fiscal Year
+            {
+                $match: {
+                    accountingMonth: { $gte: fyStartString, $lte: fyEndString }
+                }
+            },
+            // 3. Sort so that we can grab the "Latest" payout within that specific year
             { $sort: { accountingMonth: -1 } },
             {
                 $group: {
                     _id: "$arnId",
+                    // The latest entry found WITHIN the selected FY range
                     lastPayout: { $first: "$totalGross" },
                     lastMonthName: { $first: "$accountingMonth" },
-                    totalFY: {
-                        $sum: {
-                            $cond: [
-                                { $gte: ["$accountingMonth", fyStartString] },
-                                "$totalGross",
-                                0
-                            ]
-                        }
-                    }
+                    // Sum of all entries for that specific year
+                    totalFY: { $sum: "$totalGross" }
                 }
             }
         ]);
@@ -89,26 +104,46 @@ exports.getDashboardSummary = async (req, res) => {
 };
 
 /**
- * @desc    Get Trend + AMC Distribution (SAFE VERSION)
+ * @desc    Get Trend + AMC Distribution (FY SCOPED)
+ * @route   GET /api/commissions/workspace-analytics/:arnId?fiscalYear=2024-25
  */
 exports.getWorkspaceAnalytics = async (req, res) => {
     try {
         const { arnId } = req.params;
+        const { fiscalYear } = req.query;
 
-        // 1. Validate ID to prevent BSON casting errors
         if (!mongoose.Types.ObjectId.isValid(arnId)) {
             return res.status(400).json({ success: false, error: "Invalid ARN ID" });
         }
 
+        // 1. Determine FY Range Strings
+        let fyStartString, fyEndString;
+        if (fiscalYear) {
+            const [startYear, endYearShort] = fiscalYear.split('-');
+            const endYear = `20${endYearShort}`;
+            fyStartString = `${startYear}-04`;
+            fyEndString = `${endYear}-03`;
+        } else {
+            // Default to current FY logic if no param provided
+            const now = new Date();
+            const startYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+            fyStartString = `${startYear}-04`;
+            fyEndString = `${startYear + 1}-03`;
+        }
+
         const analytics = await Commission.aggregate([
-            { $match: { arnId: new mongoose.Types.ObjectId(arnId) } },
+            // 2. Filter by ARN AND selected Fiscal Year
+            { 
+                $match: { 
+                    arnId: new mongoose.Types.ObjectId(arnId),
+                    accountingMonth: { $gte: fyStartString, $lte: fyEndString }
+                } 
+            },
             {
                 $facet: {
                     trend: [
-                        { $sort: { accountingMonth: -1 } },
-                        { $limit: 12 },
-                        { $project: { month: "$accountingMonth", amount: "$totalGross" } },
-                        { $sort: { month: 1 } } 
+                        { $sort: { accountingMonth: 1 } }, // Chronological for trend line
+                        { $project: { month: "$accountingMonth", amount: "$totalGross" } }
                     ],
                     amcBreakdown: [
                         { $unwind: "$entries" },
@@ -135,7 +170,6 @@ exports.getWorkspaceAnalytics = async (req, res) => {
             }
         ]);
 
-        // 2. SAFE ACCESS: Handle empty arrays if no data is found
         const result = analytics[0] || {};
         
         res.status(200).json({ 
@@ -143,35 +177,46 @@ exports.getWorkspaceAnalytics = async (req, res) => {
             data: {
                 trend: result.trend || [],
                 amcBreakdown: result.amcBreakdown || [],
-                // Ensure kpis[0] exists, otherwise return defaults
                 stats: (result.kpis && result.kpis[0]) ? result.kpis[0] : { allTimeTotal: 0, avgMonthly: 0, monthCount: 0 }
             } 
         });
     } catch (err) {
-        console.error("Analytics Backend Error:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 };
 
 /**
- * @desc    Get Historical Records (SAFE VERSION)
+ * @desc    Get Historical Records (FY SCOPED)
+ * @route   GET /api/commissions/history/:arnId?fiscalYear=2024-25
  */
 exports.getArnHistory = async (req, res) => {
     try {
         const { arnId } = req.params;
+        const { fiscalYear } = req.query;
         
-        // Validate ID
         if (!mongoose.Types.ObjectId.isValid(arnId)) {
             return res.status(200).json({ success: true, count: 0, data: [] });
         }
 
-        const records = await Commission.find({ arnId }).sort({ accountingMonth: -1 }); 
+        // 1. Build Query Object
+        const query = { arnId };
+
+        // 2. Add FY Filtering if provided
+        if (fiscalYear) {
+            const [startYear, endYearShort] = fiscalYear.split('-');
+            const endYear = `20${endYearShort}`;
+            query.accountingMonth = { 
+                $gte: `${startYear}-04`, 
+                $lte: `${endYear}-03` 
+            };
+        }
+
+        const records = await Commission.find(query).sort({ accountingMonth: -1 }); 
             
-        // Always return success: true even if data is []
         res.status(200).json({ 
             success: true, 
             count: records.length, 
-            data: records // Mongoose returns [] by default if no matches, which is perfect
+            data: records 
         });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });

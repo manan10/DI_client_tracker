@@ -4,11 +4,10 @@ import { toast } from 'sonner';
 import HistoryRow from './HistoryRow';
 import { useApi } from '../../../hooks/useApi';
 
-const WorkspaceHistory = ({ arnId }) => {
+const WorkspaceHistory = ({ arnId, fiscalYear }) => {
   const [history, setHistory] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const { request, loading: apiLoading } = useApi();
-  // Local loading state to manage the skeleton/spinner UI specifically for history
   const [isSyncing, setIsSyncing] = useState(false);
 
   const fetchHistory = useCallback(async () => {
@@ -16,7 +15,8 @@ const WorkspaceHistory = ({ arnId }) => {
     
     setIsSyncing(true);
     try {
-      const json = await request(`/commissions/history/${arnId}`);
+      // FIXED: Added fiscalYear query parameter to the history endpoint
+      const json = await request(`/commissions/history/${arnId}?fiscalYear=${fiscalYear}`);
       if (json.success) {
         setHistory(json.data);
       } else {
@@ -31,10 +31,8 @@ const WorkspaceHistory = ({ arnId }) => {
     } finally {
       setIsSyncing(false);
     }
-  }, [arnId, request]);
+  }, [arnId, fiscalYear, request]); // Added fiscalYear to dependencies
 
-  // Clean effect: The linter prefers defining the logic or 
-  // calling the stable memoized function like this.
   useEffect(() => {
     let active = true;
 
@@ -44,7 +42,6 @@ const WorkspaceHistory = ({ arnId }) => {
 
     loadData();
 
-    // Cleanup function prevents state updates if component unmounts
     return () => { active = false; };
   }, [fetchHistory]);
 
@@ -52,7 +49,6 @@ const WorkspaceHistory = ({ arnId }) => {
     item.accountingMonth.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Use the combined loading state
   const isLoading = isSyncing || apiLoading;
 
   if (isLoading && history.length === 0) return (
@@ -69,7 +65,7 @@ const WorkspaceHistory = ({ arnId }) => {
         <div className="flex flex-col gap-1">
           <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 leading-none">History Ledger</h4>
           <span className="text-[9px] font-bold text-emerald-600/60 uppercase tracking-widest">
-            {isLoading ? "Syncing..." : `Showing ${filteredHistory.length} recorded periods`}
+            {isLoading ? "Syncing..." : `FY ${fiscalYear} | ${filteredHistory.length} Periods`}
           </span>
         </div>
         
@@ -111,7 +107,7 @@ const WorkspaceHistory = ({ arnId }) => {
                       <AlertCircle className="mx-auto text-slate-200 mb-3" size={32} />
                     )}
                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                      {isLoading ? "Updating Ledger..." : "No historical data found"}
+                      {isLoading ? "Updating Ledger..." : `No records found for FY ${fiscalYear}`}
                     </p>
                   </td>
                 </tr>

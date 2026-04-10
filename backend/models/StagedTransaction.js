@@ -1,11 +1,15 @@
 const mongoose = require('mongoose');
 
 const StagedTransactionSchema = new mongoose.Schema({
-  // THE MISSING LINK:
   accountId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Account', 
     required: true 
+  },
+  // Added to link specifically to the entity's ledger universe
+  arnId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Arn'
   },
   
   date: String,
@@ -18,6 +22,17 @@ const StagedTransactionSchema = new mongoose.Schema({
     required: true 
   },
   balance: Number,
+  
+  // NEW FIELDS FOR THE MATCHING ENGINE
+  suggestedLedger: {
+    type: String,
+    default: ""
+  },
+  confidence: {
+    type: Number,
+    default: 0
+  },
+  
   category: { 
     type: String, 
     default: 'Uncategorized' 
@@ -25,7 +40,6 @@ const StagedTransactionSchema = new mongoose.Schema({
   sourceFile: String,
   bank: String,
   
-  // STATUS FLAGS:
   isStaged: { 
     type: Boolean, 
     default: true 
@@ -41,7 +55,6 @@ const StagedTransactionSchema = new mongoose.Schema({
   }
 });
 
-// Indexing accountId makes fetching the checklist much faster
 StagedTransactionSchema.index({ accountId: 1, date: -1 });
 
 module.exports = mongoose.model('StagedTransaction', StagedTransactionSchema);
