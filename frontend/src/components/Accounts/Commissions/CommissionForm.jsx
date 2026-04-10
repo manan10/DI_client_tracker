@@ -1,5 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
-// Added Activity to imports
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { X, Calendar, Landmark, CheckCircle2, IndianRupee, ChevronLeft, ChevronRight, ChevronDown, Loader2, Activity } from 'lucide-react';
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -26,9 +25,11 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
   const [activeDayPicker, setActiveDayPicker] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
   const [formData, setFormData] = useState({});
-
-  // LOG FOR DEBUGGING
-  console.log("🛠️ Form received amcList:", amcList);
+  
+  // Ref to track the scrollable content area
+  const scrollContainerRef = useRef(null);
+  // Ref to track the currently active picker's button
+  const activePickerRef = useRef(null);
 
   useEffect(() => {
     if (!isOpen || !arnId) return;
@@ -50,14 +51,14 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
           result.data.entries.forEach(entry => {
             if (Object.hasOwn(newFormData, entry.amcName)) {
               newFormData[entry.amcName] = { 
-                amount: entry.amount.toString(), 
+                amount: entry.amount > 0 ? entry.amount.toString() : '', 
                 day: entry.payoutDay 
               };
             }
           });
         }
         setFormData(newFormData);
-      } catch  {
+      } catch {
         const fallback = {};
         amcList.forEach(amc => {
           const name = typeof amc === 'string' ? amc : amc.name;
@@ -71,6 +72,19 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
 
     fetchExistingRecord();
   }, [selectedMonth, selectedYear, arnId, isOpen, amcList]);
+
+  // AUTO-SCROLL LOGIC
+  useEffect(() => {
+    if (activeDayPicker && activePickerRef.current) {
+      // Small timeout to allow the dropdown to render before measuring
+      setTimeout(() => {
+        activePickerRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }, 50);
+    }
+  }, [activeDayPicker]);
 
   const daysInMonth = useMemo(() => {
     return new Date(selectedYear, selectedMonth + 1, 0).getDate();
@@ -94,11 +108,11 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 w-full h-full z-9999 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-0 md:p-6">
+    <div className="fixed inset-0 w-full h-full z-[9999] flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-0 md:p-6">
       <div className="bg-white dark:bg-slate-950 w-full md:max-w-6xl h-full md:h-[92vh] md:rounded-lg border-0 md:border-2 border-slate-200 dark:border-slate-800 flex flex-col shadow-2xl relative overflow-hidden">
         
         {/* Header */}
-        <div className="px-6 py-6 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 shrink-0">
+        <div className="px-6 py-6 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 shrink-0 z-50">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center text-slate-900 shadow-lg">
               <Landmark size={20} strokeWidth={2.5} />
@@ -121,7 +135,7 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
               </button>
 
               {showMonthPicker && (
-                <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-4 z-100 animate-in fade-in zoom-in-95">
+                <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-4 z-[100] animate-in fade-in zoom-in-95">
                   <div className="flex justify-between items-center mb-4">
                     <button onClick={() => setSelectedYear(y => y - 1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md"><ChevronLeft size={16}/></button>
                     <span className="font-black text-xs dark:text-white">{selectedYear}</span>
@@ -145,30 +159,38 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-10 bg-slate-50 dark:bg-[#010413]">
+        {/* Content Area with Ref */}
+        <div 
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto p-4 md:p-10 bg-slate-50 dark:bg-[#010413]"
+        >
           {amcList.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-3">
               <Activity size={40} className="opacity-20" />
               <p className="font-black uppercase text-[10px] tracking-[0.3em] text-center">No AMCs mapped to this ARN.<br/><span className="text-[8px] opacity-50 tracking-normal">Go to Settings &gt; AMC Registry to link AMCs.</span></p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 gap-3 max-w-5xl mx-auto pb-64"> {/* Added padding bottom to ensure scroll room */}
               {amcList.map((amc) => {
                 const amcName = typeof amc === 'string' ? amc : amc.name;
                 const amcId = typeof amc === 'string' ? amc : amc._id;
                 if (!amcName) return null;
 
+                const isPickerActive = activeDayPicker === amcName;
+
                 return (
-                  <div key={amcId} className="flex flex-col md:flex-row md:items-center gap-4 p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl group hover:border-emerald-500/30 transition-all shadow-sm">
+                  <div 
+                    key={amcId} 
+                    className="flex flex-col md:flex-row md:items-center gap-4 p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl group hover:border-emerald-500/30 transition-all shadow-sm"
+                  >
                     <div className="flex-1">
                       <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight italic">{amcName}</h3>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <div className="relative">
+                      <div className="relative" ref={isPickerActive ? activePickerRef : null}>
                         <button 
-                          onClick={() => setActiveDayPicker(activeDayPicker === amcName ? null : amcName)}
+                          onClick={() => setActiveDayPicker(isPickerActive ? null : amcName)}
                           className={`w-32 md:w-40 px-4 py-3 rounded-xl text-[11px] font-black transition-all border-2 ${
                             formData[amcName]?.day 
                             ? 'bg-emerald-500/10 border-emerald-500 text-emerald-500' 
@@ -178,8 +200,8 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
                           {formData[amcName]?.day ? `${formData[amcName].day} ${MONTHS[selectedMonth]}` : 'Set Day'}
                         </button>
 
-                        {activeDayPicker === amcName && (
-                          <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-4 z-100 animate-in slide-in-from-bottom-2">
+                        {isPickerActive && (
+                          <div className="absolute top-full mt-2 left-0 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-4 z-[200] animate-in slide-in-from-top-2">
                             <div className="grid grid-cols-7 gap-1">
                               {[...Array(daysInMonth)].map((_, i) => (
                                 <button
@@ -198,12 +220,12 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
                       </div>
 
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₹</span>
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₹</span>
                         <input 
                           type="text"
-                          value={formData[amcName] ? formatIndianNumber(formData[amcName].amount) : ''}
+                          value={formData[amcName]?.amount ? formatIndianNumber(formData[amcName].amount) : ''}
                           onChange={(e) => handleAmountChange(amcName, e)}
-                          className="w-40 md:w-48 pl-8 pr-4 py-3 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-right font-black dark:text-white outline-none focus:border-emerald-500 transition-all text-lg"
+                          className="w-40 md:w-48 pl-10 pr-4 py-3 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-right font-black dark:text-white outline-none focus:border-emerald-500 transition-all text-lg"
                           placeholder="0.00"
                         />
                       </div>
@@ -216,7 +238,7 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
         </div>
 
         {/* Footer */}
-        <div className="p-6 md:px-12 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6 shrink-0">
+        <div className="p-6 md:px-12 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6 shrink-0 z-50">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-emerald-500/10 rounded-lg text-emerald-500">
                <IndianRupee size={24} />
