@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const { importTallyLedgers, getLedgersByArn } = require('../controllers/ledgerController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authmiddleware');
 
 const router = express.Router();
 
