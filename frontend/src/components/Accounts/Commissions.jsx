@@ -17,6 +17,7 @@ const Commissions = () => {
   const [selectedARN, setSelectedARN] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   
+  // SHARED STATE: Current Fiscal Year Logic
   const getCurrentFYString = () => {
     const now = new Date();
     const month = now.getMonth(); 
@@ -31,19 +32,22 @@ const Commissions = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // FIXED: fetchMasterData now depends on selectedFY
   const fetchMasterData = useCallback(async (isSilent = false) => {
     if (isSilent) setRefreshing(true);
 
     try {
       const [arnRes, summaryRes, globalRes] = await Promise.all([
         request('/arns'),
-        // API UPDATE: Pass the selected year to get year-specific card stats
         request(`/commissions/dashboard-summary?fiscalYear=${selectedFY}`),
         request('/analytics/global-summary')
       ]);
       
-      if (arnRes.success) setArns(arnRes.data);
+      // FILTER: Remove Dummy ARNs from the list
+      if (arnRes.success) {
+        const activeArns = arnRes.data.filter(arn => !arn?.isDummy);
+        setArns(activeArns);
+      }
+
       if (globalRes.success) setGlobalData(globalRes.data);
       
       if (summaryRes.success) {
@@ -64,9 +68,8 @@ const Commissions = () => {
       setRefreshing(false);
       setIsInitialLoad(false);
     }
-  }, [request, selectedFY]); // Now reactive to year changes
+  }, [request, selectedFY]);
 
-  // Re-fetch everything when the Fiscal Year changes
   useEffect(() => {
     fetchMasterData(true);
   }, [selectedFY, fetchMasterData]);
@@ -129,7 +132,7 @@ const Commissions = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {arns.map((arn) => (
           <ARNCommissionCard 
-            key={`${arn._id}-${selectedFY}`} // KEY CHANGE: Re-mount cards when year changes
+            key={`${arn._id}-${selectedFY}`} 
             arn={{
                 id: arn._id,
                 name: arn.arnCode,
@@ -176,11 +179,13 @@ const Commissions = () => {
                 arnId={selectedARN.id} 
                 fiscalYear={selectedFY}
               />
+              
               <div className="relative py-4">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
                   <div className="w-full border-t border-slate-100 dark:border-slate-800"></div>
                 </div>
               </div>
+              
               <WorkspaceHistory 
                 key={`history-${selectedARN.id}-${selectedFY}-${refreshKey}`} 
                 arnId={selectedARN.id} 
