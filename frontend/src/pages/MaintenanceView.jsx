@@ -56,7 +56,7 @@ const MaintenanceView = () => {
 
           {/* Quick Navigation Button */}
           <button 
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
             className="group flex items-center justify-center gap-2 mx-auto px-8 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black uppercase tracking-widest text-[10px] hover:shadow-xl active:scale-95 transition-all"
           >
             Go to Dashboard <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />

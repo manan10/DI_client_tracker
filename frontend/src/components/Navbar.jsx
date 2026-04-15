@@ -12,7 +12,8 @@ import {
   X, 
   Files,
   BarChart3,
-  Lock
+  Lock,
+  Grid // Using Grid icon for the AppPicker link
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import Logo from '../assets/logo_nobrand.png';
@@ -46,7 +47,7 @@ const Navbar = () => {
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Directory', path: '/directory', icon: Users },
     { name: 'Documents', path: '/documents', icon: Files, isLocked: true },
     { name: 'Accounts', path: '/accounts', icon: BarChart3 },
@@ -58,21 +59,36 @@ const Navbar = () => {
       <div className="max-w-[98%] mx-auto px-4 md:px-6 h-20">
         <div className="flex justify-between items-center h-20">
           
-          {/* Logo Section */}
-          <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 group shrink-0 transition-transform active:scale-95">
-            <div className="relative">
-              <img src={Logo} alt="Logo" className="h-9 md:h-11 w-auto drop-shadow-md" />
-              <div className="absolute -inset-1 bg-emerald-500/10 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-            <div className="flex flex-col">
-              <span className="block text-sm md:text-base font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter leading-none">
-                Dalal Investment
-              </span>
-              <span className="text-[9px] md:text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-[0.2em] mt-1 italic">
-                Distributor Portal
-              </span>
-            </div>
-          </Link>
+          {/* Logo & Switcher Section */}
+          <div className="flex items-center gap-4">
+            <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 group shrink-0 transition-transform active:scale-95">
+              <div className="relative">
+                <img src={Logo} alt="Logo" className="h-9 md:h-11 w-auto drop-shadow-md" />
+                <div className="absolute -inset-1 bg-emerald-500/10 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <div className="flex flex-col">
+                <span className="block text-sm md:text-base font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter leading-none">
+                  Dalal Investment
+                </span>
+                <span className="text-[9px] md:text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-[0.2em] mt-1 italic">
+                  Distributor Portal
+                </span>
+              </div>
+            </Link>
+
+            {/* --- THE APP SWITCHER LINK --- */}
+            {/* Visually separated but close to branding to indicate "Hierarchy" */}
+            <div className="hidden sm:block h-8 w-px bg-slate-200 dark:bg-slate-800 mx-2" />
+            
+            <Link 
+              to="/app-picker" 
+              className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-emerald-600 transition-all group"
+              title="Switch Workspace"
+            >
+              <Grid size={18} className="group-hover:rotate-90 transition-transform duration-300" />
+              <span className="hidden lg:block text-[10px] font-black uppercase tracking-widest">Hub</span>
+            </Link>
+          </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-lg border border-slate-200/50 dark:border-slate-700/50">
@@ -141,6 +157,16 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden absolute top-20 left-0 w-full bg-slate-50 dark:bg-slate-900 border-b-2 border-emerald-500/50 animate-in slide-in-from-top-4 duration-300 z-50 shadow-2xl">
           <div className="flex flex-col p-6 gap-3">
+            {/* Added App Picker to mobile menu as the top priority item */}
+            <Link
+              to="/app-picker"
+              onClick={() => setIsMenuOpen(false)}
+              className="flex items-center gap-4 p-5 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-black uppercase tracking-widest shadow-xl"
+            >
+              <Grid size={20} />
+              Switch Workspace
+            </Link>
+
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;

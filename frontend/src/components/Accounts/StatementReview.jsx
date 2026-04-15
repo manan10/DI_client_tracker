@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { Loader2, Landmark } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
+import { exportToTallyExcel } from '../../utils/tallyExport'; // NEW IMPORT
+
 import LandingView from './StatementReview/LandingView';
 import Sidebar from './StatementReview/Sidebar';
 import WorkbenchHeader from './StatementReview/WorkbenchHeader';
@@ -74,7 +76,7 @@ const StatementReview = ({ onComplete }) => {
       if (res?.success) {
         const stagedUpdate = await request('/accounting/staged');
         setStagedData(stagedUpdate?.groups || []);
-        setShowWorkbench(true); // Ensure workbench shows if upload happens from LandingView
+        setShowWorkbench(true);
         toast.success("Sync complete");
       }
     } catch { toast.error("Upload failed"); } finally { setIsUploading(null); }
@@ -83,19 +85,25 @@ const StatementReview = ({ onComplete }) => {
   const finalizeBatch = async () => {
     setIsFinalizing(true);
     try {
-      // API call to clear the staged data on the server
+      // 1. Trigger Excel Download
+      const success = exportToTallyExcel(stagedData, checkedIds, accounts);
+      
+      if (!success) {
+        toast.error("Nothing to export. Check items first.");
+        return;
+      }
+
+      // 2. Clear server-side staging
       await request('/accounting/clear-staged', 'DELETE');
       
-      // Clear local state
+      // 3. Clear local state
       setCheckedIds([]); 
       setStagedData([]);
       localStorage.removeItem('tally_checked_items');
-      
-      // CRITICAL: Hide workbench to display LandingView (instruction screen)
       setShowWorkbench(false);
       
       if (onComplete) onComplete();
-      toast.success("Batch reset successful");
+      toast.success("Excel generated & Batch cleared");
     } catch { 
       toast.error("Process error"); 
     } finally { 
@@ -123,7 +131,6 @@ const StatementReview = ({ onComplete }) => {
     </div>
   );
 
-  // This handles the toggle between instructions and the workbench
   if (!showWorkbench) return <LandingView onLaunch={() => setShowWorkbench(true)} />;
 
   return (

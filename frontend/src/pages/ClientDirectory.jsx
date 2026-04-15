@@ -84,7 +84,7 @@ const ClientDirectory = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/dashboard")}
               className="flex items-center text-emerald-600 text-[10px] font-black uppercase tracking-[0.2em] mb-3 hover:text-emerald-700 transition-colors"
             >
               <ArrowLeft size={14} className="mr-2" /> Back to Dashboard

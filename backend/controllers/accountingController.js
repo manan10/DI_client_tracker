@@ -212,13 +212,22 @@ exports.processBulkStatements = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Get all staged transactions grouped by Account
+ * @route   GET /api/accounting/staged
+ */
 exports.getStagedTransactions = async (req, res) => {
     try {
         const data = await StagedTransaction.find().sort({ uploadedAt: -1 }).lean();
+        
         const groupsMap = data.reduce((acc, curr) => {
             const key = String(curr.accountId || 'unlinked');
             if (!acc[key]) {
-                acc[key] = { accountId: key, bank: curr.bank, transactions: [] };
+                acc[key] = { 
+                    accountId: key, 
+                    bank: curr.bank, 
+                    transactions: [] 
+                };
             }
             acc[key].transactions.push(curr);
             return acc;
@@ -230,19 +239,24 @@ exports.getStagedTransactions = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Update a single transaction (Ledger mapping or Custom Narration)
+ * @route   PATCH /api/accounting/staged/:id
+ */
 exports.updateStagedTransaction = async (req, res) => {
     try {
-        const { id } = req.params; // This gets '69d77e7a80b66f78f266a9ee'
-        const { suggestedLedger, confidence } = req.body;
+        const { id } = req.params;
+        const { suggestedLedger, confidence, customNarration } = req.body;
+
+        // Build dynamic update object
+        const updateData = {};
+        if (suggestedLedger !== undefined) updateData.suggestedLedger = suggestedLedger;
+        if (confidence !== undefined) updateData.confidence = confidence;
+        if (customNarration !== undefined) updateData.customNarration = customNarration;
 
         const updated = await StagedTransaction.findByIdAndUpdate(
             id, 
-            { 
-                suggestedLedger, 
-                confidence,
-                // Optional: mark as manually verified
-                isStaged: true 
-            }, 
+            { $set: updateData }, 
             { new: true }
         );
 
@@ -256,10 +270,14 @@ exports.updateStagedTransaction = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Clear all staged data after successful Tally Export
+ * @route   DELETE /api/accounting/clear-staged
+ */
 exports.clearStagedTransactions = async (req, res) => {
     try {
         await StagedTransaction.deleteMany({});
-        res.json({ success: true });
+        res.json({ success: true, message: "Workbench cleared successfully" });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

@@ -91,7 +91,7 @@ const CommandBar = ({
             ) : (
               <AlertCircle size={16} />
             )}
-            {isEverythingChecked ? 'Export Tally XML' : 'Verification Required'}
+            {isEverythingChecked ? 'Export Tally Excel' : 'Verification Required'}
           </button>
         </div>
 

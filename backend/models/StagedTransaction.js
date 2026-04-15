@@ -6,14 +6,12 @@ const StagedTransactionSchema = new mongoose.Schema({
     ref: 'Account', 
     required: true 
   },
-  // Added to link specifically to the entity's ledger universe
   arnId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Arn'
   },
-  
   date: String,
-  narration: String,
+  narration: String,      // Original bank narration (readonly in UI)
   refNo: String,
   amount: Number,
   type: { 
@@ -22,9 +20,12 @@ const StagedTransactionSchema = new mongoose.Schema({
     required: true 
   },
   balance: Number,
-  
-  // NEW FIELDS FOR THE MATCHING ENGINE
   suggestedLedger: {
+    type: String,
+    default: ""
+  },
+  // NEW: Manual input for Tally Export
+  customNarration: {
     type: String,
     default: ""
   },
@@ -32,14 +33,12 @@ const StagedTransactionSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  
   category: { 
     type: String, 
     default: 'Uncategorized' 
   },
   sourceFile: String,
   bank: String,
-  
   isStaged: { 
     type: Boolean, 
     default: true 
@@ -48,7 +47,6 @@ const StagedTransactionSchema = new mongoose.Schema({
     type: Boolean, 
     default: false 
   },
-  
   uploadedAt: { 
     type: Date, 
     default: Date.now 
