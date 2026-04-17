@@ -26,10 +26,19 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
   const [isFetching, setIsFetching] = useState(false);
   const [formData, setFormData] = useState({});
   
-  // Ref to track the scrollable content area
   const scrollContainerRef = useRef(null);
-  // Ref to track the currently active picker's button
   const activePickerRef = useRef(null);
+
+  // NEW: Memoized and Alphabetically Sorted AMC List
+  const sortedAmcList = useMemo(() => {
+    if (!amcList || amcList.length === 0) return [];
+    
+    return [...amcList].sort((a, b) => {
+      const nameA = (typeof a === 'string' ? a : a.name || '').toLowerCase();
+      const nameB = (typeof b === 'string' ? b : b.name || '').toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+  }, [amcList]);
 
   useEffect(() => {
     if (!isOpen || !arnId) return;
@@ -42,7 +51,7 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
         const result = await response.json();
 
         const newFormData = {};
-        amcList.forEach(amc => {
+        sortedAmcList.forEach(amc => {
           const name = typeof amc === 'string' ? amc : amc.name;
           if (name) newFormData[name] = { amount: '', day: null };
         });
@@ -60,7 +69,7 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
         setFormData(newFormData);
       } catch {
         const fallback = {};
-        amcList.forEach(amc => {
+        sortedAmcList.forEach(amc => {
           const name = typeof amc === 'string' ? amc : amc.name;
           if (name) fallback[name] = { amount: '', day: null };
         });
@@ -71,12 +80,10 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
     };
 
     fetchExistingRecord();
-  }, [selectedMonth, selectedYear, arnId, isOpen, amcList]);
+  }, [selectedMonth, selectedYear, arnId, isOpen, sortedAmcList]);
 
-  // AUTO-SCROLL LOGIC
   useEffect(() => {
     if (activeDayPicker && activePickerRef.current) {
-      // Small timeout to allow the dropdown to render before measuring
       setTimeout(() => {
         activePickerRef.current?.scrollIntoView({
           behavior: 'smooth',
@@ -159,19 +166,19 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
           </div>
         </div>
 
-        {/* Content Area with Ref */}
+        {/* Content Area */}
         <div 
           ref={scrollContainerRef}
           className="flex-1 overflow-y-auto p-4 md:p-10 bg-slate-50 dark:bg-[#010413]"
         >
-          {amcList.length === 0 ? (
+          {sortedAmcList.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-3">
               <Activity size={40} className="opacity-20" />
               <p className="font-black uppercase text-[10px] tracking-[0.3em] text-center">No AMCs mapped to this ARN.<br/><span className="text-[8px] opacity-50 tracking-normal">Go to Settings &gt; AMC Registry to link AMCs.</span></p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3 max-w-5xl mx-auto pb-64"> {/* Added padding bottom to ensure scroll room */}
-              {amcList.map((amc) => {
+            <div className="grid grid-cols-1 gap-3 max-w-5xl mx-auto pb-64">
+              {sortedAmcList.map((amc) => {
                 const amcName = typeof amc === 'string' ? amc : amc.name;
                 const amcId = typeof amc === 'string' ? amc : amc._id;
                 if (!amcName) return null;
@@ -241,7 +248,7 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
         <div className="p-6 md:px-12 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6 shrink-0 z-50">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-emerald-500/10 rounded-lg text-emerald-500">
-               <IndianRupee size={24} />
+                <IndianRupee size={24} />
             </div>
             <div>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Monthly Liquidity</p>
@@ -250,7 +257,7 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
           </div>
           <button 
             onClick={() => onSave({ arnId, accountingMonth: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`, data: formData, totalGross })}
-            disabled={saving || isFetching || amcList.length === 0}
+            disabled={saving || isFetching || sortedAmcList.length === 0}
             className="w-full md:w-auto bg-emerald-600 text-white px-12 py-4 rounded-xl font-[1000] uppercase text-xs tracking-[0.2em] shadow-xl hover:bg-emerald-500 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
           >
             {saving ? <Loader2 className="animate-spin inline mr-2" size={16}/> : <CheckCircle2 className="inline mr-2" size={16}/>}
