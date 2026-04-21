@@ -6,7 +6,7 @@ const {
     updateCategory, 
     deleteCategory 
 } = require('../controllers/categoryController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authmiddleware');
 
 // Base Route: /api/categories
 
