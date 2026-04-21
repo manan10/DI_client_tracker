@@ -157,21 +157,34 @@ exports.processMonthlyAllowance = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        // 1. Fetch Drawer and Member Wallets
         const drawer = await Wallet.findOne({ isGeneralPool: true }).session(session);
         const memberWallets = await Wallet.find({ isGeneralPool: false }).session(session);
 
         if (!drawer) throw new Error("General Pool (Drawer) not found");
 
+        // --- PHASE 0: FIND OR CREATE SYSTEM CATEGORY ---
+        const Category = mongoose.model('Category'); 
+        let systemCategory = await Category.findOne({ label: 'System' }).session(session);
+        
+        // If it doesn't exist, create it on the fly so the script doesn't crash
+        if (!systemCategory) {
+            systemCategory = new Category({
+                label: 'System',
+                icon: 'Settings', // Lucide icon name
+                color: '#10b981', // Emerald
+                isParent: false
+            });
+            await systemCategory.save({ session });
+        }
+
         // --- PHASE 1: REPLENISH THE DRAWER ---
         const drawerInflow = drawer.targetAllowance;
         drawer.balance += drawerInflow;
 
-        // Log the Drawer's replenishment
         const drawerLog = new Spending({
             amount: drawerInflow,
             type: 'MONTHLY_RESET',
-            category: 'System Refill',
+            category: systemCategory._id, // Now guaranteed to be an ObjectId
             description: `Master Fund replenished by monthly target`,
             sourceWallet: drawer._id,
             recordedBy: req.user.id
@@ -183,15 +196,12 @@ exports.processMonthlyAllowance = async (req, res) => {
 
         for (let wallet of memberWallets) {
             const allowance = wallet.targetAllowance;
-
-            // Credit the member
             wallet.balance += allowance;
             
-            // Log the member credit
             const allowanceLog = new Spending({
                 amount: allowance,
                 type: 'MONTHLY_RESET',
-                category: 'Monthly Allowance',
+                category: systemCategory._id,
                 description: `Monthly top-up received from ${drawer.walletName}`,
                 sourceWallet: wallet._id,
                 recordedBy: req.user.id
@@ -209,6 +219,7 @@ exports.processMonthlyAllowance = async (req, res) => {
         await session.commitTransaction();
         
         res.status(200).json({ 
+            success: true,
             message: "Sequential refill protocol executed successfully", 
             inflow: drawerInflow,
             outflow: totalDistributed,
@@ -217,12 +228,12 @@ exports.processMonthlyAllowance = async (req, res) => {
         
     } catch (error) {
         await session.abortTransaction();
+        console.error("Allowance Error:", error);
         res.status(500).json({ message: error.message });
     } finally {
         session.endSession();
     }
 };
-
 exports.deleteSpending = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();

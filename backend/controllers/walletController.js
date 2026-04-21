@@ -8,12 +8,40 @@ const getSystemCategory = async () => {
     return await Category.findOne({ label: 'System' });
 };
 
-// CREATE: Add a new family member wallet
 exports.createWallet = async (req, res) => {
     try {
-        // Ensure new wallets start at 0 as per UI requirements
-        const walletData = { ...req.body, balance: 0 };
-        const wallet = new Wallet(walletData);
+        const { isGeneralPool, walletName, targetAllowance, balance } = req.body;
+
+        // 1. Check if a General Pool already exists
+        if (isGeneralPool) {
+            const existingPool = await Wallet.findOne({ isGeneralPool: true });
+            if (existingPool) {
+                return res.status(400).json({ message: "A Master Pool already exists." });
+            }
+
+            // --- SELF-HEALING: Ensure System Category exists for logs ---
+            const Category = mongoose.model('Category');
+            let systemCat = await Category.findOne({ label: 'System' });
+            if (!systemCat) {
+                systemCat = new Category({
+                    label: 'System',
+                    icon: 'Settings',
+                    color: '#10b981',
+                    isParent: false
+                });
+                await systemCat.save();
+            }
+        }
+
+        // 2. Create the wallet
+        // In Prod, we might want to allow an initial balance for the General Pool
+        const wallet = new Wallet({
+            walletName,
+            targetAllowance,
+            isGeneralPool: isGeneralPool || false,
+            balance: isGeneralPool ? (Number(balance) || 0) : 0 // Allow initial deposit for Master Pool
+        });
+
         await wallet.save();
         res.status(201).json(wallet);
     } catch (error) {

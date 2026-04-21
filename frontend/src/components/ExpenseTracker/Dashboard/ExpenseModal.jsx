@@ -13,18 +13,16 @@ const IconRenderer = ({ iconName, size = 16, className = "" }) => {
 
 const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, onSubmit, loading }) => {
   const { request } = useApi();
-  
-  // FIX: Determine initial step without useEffect to avoid cascading renders
   const isEditMode = !!expenseData?._id;
-  const [step, setStep] = useState(isEditMode ? 4 : 1);
-  
+
+  // 1. Fixed: Initialize state based on mode to avoid immediate setStep in effect
+  const [step, setStep] = useState(1);
   const [categoryTree, setCategoryTree] = useState([]);
   const [selectedParent, setSelectedParent] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [localError, setLocalError] = useState("");
 
-  // SYNCHRONIZE STEP ON OPEN: 
-  // We only set the step when the modal transitions from closed to open
+  // 2. Fixed: Use effect only for side effects (like timers) or external sync
   useEffect(() => {
     if (isOpen) {
       setStep(isEditMode ? 4 : 1);
@@ -45,17 +43,25 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
       }, 300);
       return () => clearTimeout(timer);
     }
-    // We strictly want this to run when isOpen changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen]); 
 
-  // Fetch Category Tree
+  // 3. Sorted Category Fetching
   useEffect(() => {
     const fetchTree = async () => {
       try {
         const res = await request("/categories/tree");
-        if (res?.success) setCategoryTree(res.data);
-        else if (Array.isArray(res)) setCategoryTree(res);
+        let rawData = res?.success ? res.data : Array.isArray(res) ? res : [];
+        
+        // SORTING: Ascending display order for Parents and Children
+        const sortedTree = rawData
+          .sort((a, b) => a.label.localeCompare(b.label))
+          .map(parent => ({
+            ...parent,
+            subCategories: (parent.subCategories || []).sort((a, b) => a.label.localeCompare(b.label))
+          }));
+
+        setCategoryTree(sortedTree);
       } catch (err) { console.error(err); }
     };
     if (isOpen) fetchTree();
@@ -95,7 +101,8 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
         }
       });
     });
-    return results;
+    // Ensure search results are also alphabetical
+    return results.sort((a, b) => a.label.localeCompare(b.label));
   }, [searchQuery, categoryTree]);
 
   const currentSub = useMemo(() => {
@@ -317,7 +324,7 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Add Note (Optional)</label>
                  <textarea rows="2" placeholder="Describe this purchase..." className="w-full bg-slate-50 dark:bg-slate-900 p-5 rounded-2xl text-xs font-bold text-slate-900 dark:text-white outline-none border border-slate-100 dark:border-slate-800 focus:border-emerald-500/20 no-scrollbar" value={expenseData.description} onChange={(e) => setExpenseData({...expenseData, description: e.target.value})} />
                </div>
-               <button onClick={handleFinalSubmit} disabled={loading} className={`w-full text-white h-20 rounded-2xl font-[1000] uppercase text-xs tracking-[0.5em] shadow-xl active:scale-[0.98] flex items-center justify-center gap-3 transition-all disabled:opacity-50 ${isEditMode ? 'bg-indigo-600' : 'bg-emerald-500'}`}>
+               <button onClick={handleFinalSubmit} disabled={loading} className={`w-full text-white h-20 rounded-2xl font-[1000] uppercase text-xs tracking-[0.5em] shadow-xl active:scale-[0.98] flex items-center justify-center gap-3 transition-all duration-300 disabled:opacity-50 ${isEditMode ? 'bg-indigo-600' : 'bg-emerald-500'}`}>
                   {loading ? <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white" /> : <>{isEditMode ? "Save Changes" : "Commit to Ledger"} <Check size={18} strokeWidth={4}/></>}
                </button>
             </div>
