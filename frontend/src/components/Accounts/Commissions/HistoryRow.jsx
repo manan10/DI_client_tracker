@@ -131,7 +131,7 @@ const HistoryRow = ({ row, onDeleteSuccess }) => {
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="text-[9px] font-black text-slate-400 bg-slate-200/50 dark:bg-slate-800 px-2 py-0.5 rounded tabular-nums">D{entry.payoutDay || '--'}</span>
-                        <span className="text-[13.5px] font-[1000] text-slate-900 dark:text-white tracking-tighter font-mono min-w-[100px] text-right">
+                        <span className="text-[13.5px] font-[1000] text-slate-900 dark:text-white tracking-tighter font-mono min-w-25 text-right">
                           ₹{formatINR(entry.amount)}
                         </span>
                       </div>

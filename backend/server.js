@@ -50,6 +50,9 @@ const aiRoutes = require('./routes/aiRoutes');
 const accountingRoutes = require('./routes/accountingRoutes');
 const ledgerRoutes = require('./routes/ledgerRoutes');
 const userRoutes = require('./routes/userRoutes');
+const spendingRoutes = require('./routes/spendingRoutes');
+const walletRoutes = require('./routes/walletRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 
 // 3. Global Middleware (CRITICAL ORDER)
 
@@ -141,6 +144,9 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/accounting', accountingRoutes);
 app.use('/api/ledgers', ledgerRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/spending', spendingRoutes);
+app.use('/api/wallets', walletRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // This sends 0 bytes of body data, only the headers.
 app.get('/health', (req, res) => res.sendStatus(200));

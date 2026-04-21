@@ -1,21 +1,31 @@
 import React, { lazy, Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { Toaster } from 'sonner';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { Toaster } from "sonner";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 
 // --- Lazy Loaded Pages ---
 // Client Tracker App Components
-const Home = lazy(() => import("./pages/Home"));
-const ClientDirectory = lazy(() => import("./pages/ClientDirectory"));
-const Settings = lazy(() => import("./pages/Settings"));
-const Accounts = lazy(() => import("./pages/Accounts"));
-const ClientDetail = lazy(() => import("./pages/ClientDetail"));
-const MaintenanceView = lazy(() => import("./pages/MaintenanceView"));
+const Home = lazy(() => import("./pages/ClientTracker/Home"));
+const ClientDirectory = lazy(() => import("./pages/ClientTracker/ClientDirectory"));
+const Settings = lazy(() => import("./pages/ClientTracker/Settings"));
+const Accounts = lazy(() => import("./pages/ClientTracker/Accounts"));
+const ClientDetail = lazy(() => import("./pages/ClientTracker/ClientDetail"));
+const TaskBoard = lazy(() => import("./pages/ClientTracker/TaskBoard"));
+const MaintenanceView = lazy(() => import("./pages/ClientTracker/MaintenanceView"));
 
 // Home Expense Tracker App Components
-const ExpenseTracker = lazy(() => import("./pages/ExpenseTracker"));
-const MaintenanceViewExpenses = lazy(() => import("./pages/MaintenanceViewExpenses"));
+const ExpenseDashboard = lazy(() => import("./pages/ExpenseTracker/ExpenseDashboard"));
+const MaintenanceViewExpenses = lazy(() => import("./pages/ExpenseTracker/MaintenanceViewExpenses"));
+const ExpenseSettings = lazy(() => import("./pages/ExpenseTracker/ExpenseSettings"));
+const ExpenseAnalytics = lazy(() => import("./pages/ExpenseTracker/ExpenseAnalytics"));
+const ExpenseHistory = lazy(() => import("./pages/ExpenseTracker/ExpenseHistory"));
+
 
 // Shared Components
 const Auth = lazy(() => import("./pages/Auth"));
@@ -25,7 +35,9 @@ const AppPicker = lazy(() => import("./pages/AppPicker"));
 const PageLoader = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
     <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-    <p className="font-black uppercase text-xs tracking-[0.3em] text-slate-400">Loading Module...</p>
+    <p className="font-black uppercase text-xs tracking-[0.3em] text-slate-400">
+      Loading Module...
+    </p>
   </div>
 );
 
@@ -33,8 +45,13 @@ const PageLoader = () => (
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center font-black uppercase text-slate-400 tracking-widest">Verifying Session...</div>;
-  
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center font-black uppercase text-slate-400 tracking-widest">
+        Verifying Session...
+      </div>
+    );
+
   return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
@@ -63,29 +80,56 @@ function App() {
                 path="/expenses"
                 element={
                   <ProtectedRoute>
-                    {/* <ExpenseTracker /> */}
+                    {/* <ExpenseDashboard /> */}
                     <MaintenanceViewExpenses />
                   </ProtectedRoute>
                 }
               />
 
+              <Route
+                path="/expenses/settings"
+                element={
+                  <ProtectedRoute>
+                    <ExpenseSettings />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/expenses/analytics"
+                element={
+                  <ProtectedRoute>
+                    <ExpenseAnalytics />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/expenses/history"
+                element={
+                  <ProtectedRoute>
+                    <ExpenseHistory />
+                  </ProtectedRoute>
+                }
+              />  
+
               {/* --- CLIENT TRACKER APP ROUTES --- */}
-              <Route 
-                path="/dashboard" 
+              <Route
+                path="/dashboard"
                 element={
                   <ProtectedRoute>
                     <Home />
                   </ProtectedRoute>
-                } 
+                }
               />
 
-              <Route 
-                path="/directory" 
+              <Route
+                path="/directory"
                 element={
                   <ProtectedRoute>
                     <ClientDirectory />
                   </ProtectedRoute>
-                } 
+                }
               />
               <Route
                 path="/settings"
@@ -93,7 +137,7 @@ function App() {
                   <ProtectedRoute>
                     <Settings />
                   </ProtectedRoute>
-                } 
+                }
               />
               <Route
                 path="/documents"
@@ -101,7 +145,7 @@ function App() {
                   <ProtectedRoute>
                     <MaintenanceView />
                   </ProtectedRoute>
-                } 
+                }
               />
 
               <Route
@@ -110,7 +154,16 @@ function App() {
                   <ProtectedRoute>
                     <Accounts />
                   </ProtectedRoute>
-                } 
+                }
+              />
+
+              <Route
+                path="/tasks"
+                element={
+                  <ProtectedRoute>
+                    <TaskBoard />
+                  </ProtectedRoute>
+                }
               />
 
               <Route
@@ -119,7 +172,7 @@ function App() {
                   <ProtectedRoute>
                     <ClientDetail />
                   </ProtectedRoute>
-                } 
+                }
               />
 
               <Route path="*" element={<Navigate to="/" />} />

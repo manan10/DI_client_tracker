@@ -1,25 +1,25 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
-import { Activity, Files, Lock } from 'lucide-react';
-import { useApi } from '../hooks/useApi';
-import Navbar from '../components/Navbar';
-import InteractionModal from '../components/InteractionModal';
-import ConfirmationModal from '../components/ClientDetail/ConfirmationModal';
-import ClientDocumentManager from '../components/ClientDetail/ClientDocumentManager';
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams } from "react-router-dom";
+import { Activity, Files, Lock } from "lucide-react";
+import { useApi } from "../../hooks/useApi";
+import Navbar from "../../components/Navbar";
+import InteractionModal from "../../components/InteractionModal";
+import ConfirmationModal from "../../components/ClientDetail/ConfirmationModal";
+import ClientDocumentManager from "../../components/ClientDetail/ClientDocumentManager";
 
 // Split Components
-import ClientProfileHeader from '../components/ClientDetail/ClientProfileHeader';
-import AccountIntelligence from '../components/ClientDetail/AccountIntelligence';
-import AuditTrail from '../components/ClientDetail/AuditTrail';
+import ClientProfileHeader from "../../components/ClientDetail/ClientProfileHeader";
+import AccountIntelligence from "../../components/ClientDetail/AccountIntelligence";
+import AuditTrail from "../../components/ClientDetail/AuditTrail";
 
 const ClientDetail = () => {
   const { id } = useParams();
   const { request, loading } = useApi();
-  
+
   // Core States
   const [client, setClient] = useState(null);
-  const [activeTab, setActiveTab] = useState('interactions');
-  
+  const [activeTab, setActiveTab] = useState("interactions");
+
   // Interaction/Modal States
   const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
   const [editingInteraction, setEditingInteraction] = useState(null);
@@ -61,7 +61,9 @@ const ClientDetail = () => {
 
     loadData();
 
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [id, request]);
 
   /**
@@ -78,14 +80,17 @@ const ClientDetail = () => {
     if (!interactionToDelete) return;
     setIsDeleting(true);
     try {
-      const res = await request(`/interactions/${interactionToDelete}`, 'DELETE');
+      const res = await request(
+        `/interactions/${interactionToDelete}`,
+        "DELETE",
+      );
       if (res.success) {
         await refreshClientData();
         setIsDeleteModalOpen(false);
         setInteractionToDelete(null);
       }
-    } catch (err) { 
-      console.error("Deletion failed", err); 
+    } catch (err) {
+      console.error("Deletion failed", err);
     } finally {
       setIsDeleting(false);
     }
@@ -123,36 +128,42 @@ const ClientDetail = () => {
 
       <div className="max-w-360 mx-auto px-6 lg:px-12 -mt-8 relative z-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-          
           <AccountIntelligence client={client} />
 
           <div className="lg:col-span-8">
             {/* Nav Tabs */}
             <div className="flex items-center gap-8 border-b border-slate-200 dark:border-slate-800 mb-8 overflow-x-auto custom-scrollbar">
               {[
-                { id: 'interactions', label: 'Audit Trail', icon: <Activity size={14} /> },
-                { id: 'documents', label: 'Vault', icon: <Files size={14} /> }
-              ].map(tab => (
-                <button 
+                {
+                  id: "interactions",
+                  label: "Audit Trail",
+                  icon: <Activity size={14} />,
+                },
+                { id: "documents", label: "Vault", icon: <Files size={14} /> },
+              ].map((tab) => (
+                <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 pb-4 text-[11px] font-black uppercase tracking-widest transition-all border-b-2 ${
-                    activeTab === tab.id 
-                      ? 'border-emerald-500 text-slate-900 dark:text-white' 
-                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                    activeTab === tab.id
+                      ? "border-emerald-500 text-slate-900 dark:text-white"
+                      : "border-transparent text-slate-400 hover:text-slate-600"
                   }`}
                 >
                   {tab.icon} {tab.label}
                 </button>
               ))}
-              <button disabled className="flex items-center gap-2 pb-4 text-[11px] font-black uppercase tracking-widest text-slate-300 dark:text-slate-700 cursor-not-allowed">
+              <button
+                disabled
+                className="flex items-center gap-2 pb-4 text-[11px] font-black uppercase tracking-widest text-slate-300 dark:text-slate-700 cursor-not-allowed"
+              >
                 Portfolio <Lock size={10} className="ml-1" />
               </button>
             </div>
 
             {/* Content Switcher */}
-            {activeTab === 'interactions' && (
-              <AuditTrail 
+            {activeTab === "interactions" && (
+              <AuditTrail
                 interactions={client.interactions}
                 filterDate={filterDate}
                 setFilterDate={setFilterDate}
@@ -162,40 +173,42 @@ const ClientDetail = () => {
               />
             )}
 
-            {activeTab === 'documents' && (
-              <ClientDocumentManager client={client} onRefresh={refreshClientData} />
+            {activeTab === "documents" && (
+              <ClientDocumentManager
+                client={client}
+                onRefresh={refreshClientData}
+              />
             )}
           </div>
         </div>
       </div>
 
       {/* Global Modals */}
-      
+
       {/* 1. Log/Edit Interaction Modal */}
-      <InteractionModal 
-        isOpen={isInteractionModalOpen} 
-        onClose={() => { 
-          setIsInteractionModalOpen(false); 
-          setEditingInteraction(null); 
-        }} 
-        onRefresh={refreshClientData} 
+      <InteractionModal
+        isOpen={isInteractionModalOpen}
+        onClose={() => {
+          setIsInteractionModalOpen(false);
+          setEditingInteraction(null);
+        }}
+        onRefresh={refreshClientData}
         initialClient={client}
         editingData={editingInteraction}
       />
 
       {/* 2. Custom Deletion Confirmation */}
-      <ConfirmationModal 
+      <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => {
-            setIsDeleteModalOpen(false);
-            setInteractionToDelete(null);
+          setIsDeleteModalOpen(false);
+          setInteractionToDelete(null);
         }}
         onConfirm={confirmDelete}
         loading={isDeleting}
         title="Redact Audit Entry"
         message="Are you sure you want to permanently remove this interaction from the corporate ledger? This will automatically recalculate the client's 'Last Met' date."
       />
-
     </div>
   );
 };

@@ -3,15 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
 // Components
-import Navbar from "../components/Navbar";
-import DirectoryFilters from "../components/Directory/DirectoryFilters";
-import ClientTableRow from "../components/Directory/ClientTableRow";
-import TierSummary from "../components/Directory/TierSummary";
-import SortableHeader from "../components/Directory/SortableHeader";
+import Navbar from "../../components/Navbar";
+import DirectoryFilters from "../../components/Directory/DirectoryFilters";
+import ClientTableRow from "../../components/Directory/ClientTableRow";
+import TierSummary from "../../components/Directory/TierSummary";
+import SortableHeader from "../../components/Directory/SortableHeader";
 
 // Hooks
-import { useApi } from "../hooks/useApi";
-import { useClientData } from "../hooks/useClientData";
+import { useApi } from "../../hooks/useApi";
+import { useClientData } from "../../hooks/useClientData";
 
 const ClientDirectory = () => {
   const [clients, setClients] = useState([]);
