@@ -13,32 +13,49 @@ const IconRenderer = ({ iconName, size = 16, className = "" }) => {
 
 const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, onSubmit, loading }) => {
   const { request } = useApi();
-  const [step, setStep] = useState(1);
+  
+  // FIX: Determine initial step without useEffect to avoid cascading renders
+  const isEditMode = !!expenseData?._id;
+  const [step, setStep] = useState(isEditMode ? 4 : 1);
+  
   const [categoryTree, setCategoryTree] = useState([]);
   const [selectedParent, setSelectedParent] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [localError, setLocalError] = useState("");
 
-  // Revert back to original states whenever the modal is closed
+  // SYNCHRONIZE STEP ON OPEN: 
+  // We only set the step when the modal transitions from closed to open
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      setStep(isEditMode ? 4 : 1);
+    } else {
       const timer = setTimeout(() => {
-        setStep(1);
         setSelectedParent(null);
         setSearchQuery("");
         setLocalError("");
-        setExpenseData({ amount: "", category: "", description: "", sourceWallet: expenseData.sourceWallet, type: "DEBIT" });
+        if (!isEditMode) {
+          setExpenseData({ 
+            amount: "", 
+            category: "", 
+            description: "", 
+            sourceWallet: expenseData.sourceWallet, 
+            type: "DEBIT" 
+          });
+        }
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, setExpenseData]);
+    // We strictly want this to run when isOpen changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   // Fetch Category Tree
   useEffect(() => {
     const fetchTree = async () => {
       try {
-        const data = await request("/categories/tree");
-        if (data) setCategoryTree(data);
+        const res = await request("/categories/tree");
+        if (res?.success) setCategoryTree(res.data);
+        else if (Array.isArray(res)) setCategoryTree(res);
       } catch (err) { console.error(err); }
     };
     if (isOpen) fetchTree();
@@ -69,10 +86,10 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
   };
 
   const filteredResults = useMemo(() => {
-    if (!searchQuery) return null;
+    if (!searchQuery || !categoryTree) return [];
     const results = [];
     categoryTree.forEach(parent => {
-      parent.subCategories.forEach(sub => {
+      parent.subCategories?.forEach(sub => {
         if (sub.label.toLowerCase().includes(searchQuery.toLowerCase())) {
           results.push({ ...sub, parentLabel: parent.label });
         }
@@ -81,11 +98,16 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
     return results;
   }, [searchQuery, categoryTree]);
 
+  const currentSub = useMemo(() => {
+    if (!categoryTree || !expenseData.category) return null;
+    return categoryTree
+      .flatMap(p => p.subCategories || [])
+      .find(s => s._id === expenseData.category);
+  }, [categoryTree, expenseData.category]);
+
   if (!isOpen) return null;
 
-  const currentWallet = wallets.find(w => w._id === expenseData.sourceWallet);
-  const allSubs = categoryTree.flatMap(p => p.subCategories);
-  const currentSub = allSubs.find(s => s._id === expenseData.category);
+  const currentWallet = wallets?.find(w => w._id === expenseData.sourceWallet);
 
   return (
     <div className="fixed inset-0 z-100 flex items-end sm:items-center justify-center p-0 sm:p-4 text-left">
@@ -99,7 +121,7 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
             {[1, 2, 3, 4].map((s) => (
               <button
                 key={s}
-                disabled={step < s || loading}
+                disabled={(step < s && !isEditMode) || loading}
                 onClick={() => setStep(s)}
                 className={`flex items-center gap-2 transition-all ${step === s ? 'opacity-100' : 'opacity-30'}`}
               >
@@ -137,33 +159,36 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
           {step === 1 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
               <div className="text-left">
-                <h2 className="text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">Source of Funds</h2>
-                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-1">Where is the money coming from?</p>
+                <h2 className="text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">
+                  {isEditMode ? "Switch Account" : "Source of Funds"}
+                </h2>
+                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-1">
+                  Current: {currentWallet?.walletName || "None selected"}
+                </p>
               </div>
               <div className="grid grid-cols-1 gap-2 pb-6">
-                {wallets.map(w => (
+                {wallets?.map(w => (
                   <button 
                     key={w._id} 
-                    onClick={() => { setExpenseData({...expenseData, sourceWallet: w._id}); nextStep(); }}
+                    onClick={() => { setExpenseData({...expenseData, sourceWallet: w._id}); isEditMode ? setStep(4) : nextStep(); }}
                     className={`flex items-center justify-between p-5 rounded-2xl border transition-all active:scale-[0.98] ${
-                      w.isGeneralPool 
-                      ? 'bg-slate-900 border-slate-800 text-white dark:bg-white dark:text-slate-900 shadow-xl' 
+                      expenseData.sourceWallet === w._id 
+                      ? 'bg-emerald-500 border-emerald-600 text-white shadow-xl' 
                       : 'bg-slate-50 border-slate-100 dark:bg-slate-900/50 dark:border-slate-800 text-slate-900 dark:text-white'
                     } hover:border-emerald-500`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className={`p-2 rounded-lg shadow-sm ${w.isGeneralPool ? 'bg-emerald-500' : 'bg-white dark:bg-slate-800'}`}>
-                        {w.isGeneralPool ? <Landmark size={18} className="text-white" /> : <Wallet size={18} className="text-emerald-500"/>}
+                      <div className={`p-2 rounded-lg shadow-sm ${expenseData.sourceWallet === w._id ? 'bg-white/20' : 'bg-white dark:bg-slate-800'}`}>
+                        {w.isGeneralPool ? <Landmark size={18} className={expenseData.sourceWallet === w._id ? "text-white" : "text-emerald-500"} /> : <Wallet size={18} className="text-emerald-500"/>}
                       </div>
                       <div className="text-left">
-                        <span className={`text-xs font-black uppercase tracking-widest ${w.isGeneralPool ? 'text-white dark:text-slate-900' : ''}`}>
+                        <span className="text-xs font-black uppercase tracking-widest">
                           {w.walletName}
                         </span>
-                        {w.isGeneralPool && <p className="text-[8px] font-black uppercase opacity-40">Main Liquidity Pool</p>}
                       </div>
                     </div>
-                    <span className={`text-[11px] font-bold ${w.isGeneralPool ? 'text-white/60 dark:text-slate-400' : 'text-slate-400'}`}>
-                      ₹{w.balance.toLocaleString('en-IN')}
+                    <span className="text-[11px] font-bold">
+                      ₹{w.balance?.toLocaleString('en-IN')}
                     </span>
                   </button>
                 ))}
@@ -181,8 +206,8 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{currentWallet?.walletName}</span>
               </div>
               <div className="text-left">
-                <h2 className="text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">Transaction Amount</h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">How much did you spend?</p>
+                <h2 className="text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">Adjust Amount</h2>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Modify the value of this transaction</p>
               </div>
               <div className="relative border-b-2 border-slate-100 dark:border-slate-800 focus-within:border-emerald-500 transition-colors">
                 <span className="absolute left-0 bottom-6 text-4xl font-[1000] text-slate-300 dark:text-slate-700 italic">₹</span>
@@ -196,10 +221,10 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
               </div>
               <button 
                 disabled={!expenseData.amount || expenseData.amount <= 0}
-                onClick={nextStep}
+                onClick={() => isEditMode ? setStep(4) : nextStep()}
                 className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 h-16 rounded-2xl font-black uppercase text-[11px] tracking-[0.4em] flex items-center justify-center gap-2 active:scale-95 disabled:opacity-20 transition-all shadow-xl"
               >
-                Proceed to Details <ArrowRight size={16} strokeWidth={3}/>
+                {isEditMode ? "Update Amount" : "Proceed to Details"} <ArrowRight size={16} strokeWidth={3}/>
               </button>
             </div>
           )}
@@ -209,13 +234,13 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 flex flex-col h-full min-h-0">
                <div className="flex items-center justify-between">
                  <button onClick={prevStep} className="text-[10px] font-black text-emerald-500 uppercase flex items-center gap-1 hover:opacity-70 transition-opacity">
-                   <ArrowLeft size={14} strokeWidth={3}/> Adjust Amount
+                   <ArrowLeft size={14} strokeWidth={3}/> Back
                  </button>
                  <span className="text-[11px] font-[1000] text-slate-900 dark:text-white italic">₹{Number(expenseData.amount).toLocaleString('en-IN')}</span>
               </div>
               <div className="text-left">
                 <h2 className="text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">Categorization</h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">What was this spend for?</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Currently: {currentSub?.label || "None"}</p>
               </div>
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -229,17 +254,17 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                 {searchQuery ? (
                   <div className="grid grid-cols-1 gap-1">
                     {filteredResults.map(res => (
-                      <button key={res._id} onClick={() => { setExpenseData({...expenseData, category: res._id}); nextStep(); }} className="w-full flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl hover:bg-emerald-500 hover:text-white transition-all group">
-                        <div className="text-left"><p className="text-[10px] font-black uppercase tracking-widest">{res.label}</p><p className="text-[8px] font-bold opacity-60 uppercase">{res.parentLabel}</p></div>
-                        <ChevronRight size={14} className="opacity-0 group-hover:opacity-100" />
+                      <button key={res._id} onClick={() => { setExpenseData({...expenseData, category: res._id}); isEditMode ? setStep(4) : nextStep(); }} className={`w-full flex items-center justify-between p-4 rounded-xl transition-all group ${expenseData.category === res._id ? 'bg-emerald-500 text-white' : 'bg-slate-50 dark:bg-slate-900/50'}`}>
+                        <div className="text-left"><p className="text-[10px] font-black uppercase tracking-widest">{res.label}</p><p className={`text-[8px] font-bold uppercase ${expenseData.category === res._id ? 'text-white/70' : 'opacity-60'}`}>{res.parentLabel}</p></div>
+                        <Check size={14} className={expenseData.category === res._id ? "opacity-100" : "opacity-0"} />
                       </button>
                     ))}
                   </div>
                 ) : !selectedParent ? (
                   <div className="grid grid-cols-2 gap-2">
-                    {categoryTree.map(parent => (
+                    {categoryTree?.map(parent => (
                       <button key={parent._id} onClick={() => setSelectedParent(parent)} className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-transparent hover:border-emerald-500/30 transition-all active:scale-95">
-                        <div className="p-2 bg-white dark:bg-slate-800 rounded-lg text-slate-400 shadow-sm shrink-0"><IconRenderer iconName={parent.icon} size={18} /></div>
+                        <div className="p-2 bg-white dark:bg-slate-800 rounded-lg text-slate-400 shadow-sm shrink-0" style={{ color: parent.color }}><IconRenderer iconName={parent.icon} size={18} /></div>
                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 text-left leading-tight">{parent.label}</span>
                       </button>
                     ))}
@@ -250,10 +275,10 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                       <ArrowLeft size={14} strokeWidth={3} /> Change Group
                     </button>
                     <div className="grid grid-cols-1 gap-1">
-                      {selectedParent.subCategories.map(sub => (
-                        <button key={sub._id} onClick={() => { setExpenseData({...expenseData, category: sub._id}); nextStep(); }} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-xl text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-slate-100 dark:border-slate-800">
-                           <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">{sub.label}</span>
-                           <CornerDownRight size={12} className="text-slate-300"/>
+                      {selectedParent.subCategories?.map(sub => (
+                        <button key={sub._id} onClick={() => { setExpenseData({...expenseData, category: sub._id}); isEditMode ? setStep(4) : nextStep(); }} className={`flex items-center justify-between p-4 rounded-xl text-left transition-all border ${expenseData.category === sub._id ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800'}`}>
+                           <span className={`text-[10px] font-black uppercase tracking-widest ${expenseData.category === sub._id ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>{sub.label}</span>
+                           {expenseData.category === sub._id ? <Check size={12} /> : <CornerDownRight size={12} className="text-slate-300"/>}
                         </button>
                       ))}
                     </div>
@@ -267,10 +292,12 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
           {step === 4 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
                <button onClick={prevStep} disabled={loading} className="text-[10px] font-black text-emerald-500 uppercase flex items-center gap-1 hover:opacity-70 transition-opacity">
-                 <ArrowLeft size={14} strokeWidth={3}/> Go Back
+                 <ArrowLeft size={14} strokeWidth={3}/> Edit Details
                </button>
                <div className="text-left">
-                <h2 className="text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">Review & Save</h2>
+                <h2 className="text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">
+                    {isEditMode ? "Confirm Changes" : "Review & Save"}
+                </h2>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Verify details before committing</p>
               </div>
                <div className="p-6 bg-slate-900 dark:bg-white rounded-3xl space-y-4 shadow-2xl shadow-emerald-500/10 border border-white/5 dark:border-slate-100">
@@ -282,16 +309,16 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                     <p className="text-4xl font-[1000] text-white dark:text-slate-900 italic tracking-tighter">₹{Number(expenseData.amount).toLocaleString('en-IN')}</p>
                   </div>
                   <div className="flex justify-between items-center text-[8px] font-black text-white/40 dark:text-slate-400 uppercase tracking-widest pt-1 leading-none">
-                    <span>Source: {currentWallet?.walletName} (₹{currentWallet?.balance.toLocaleString('en-IN')})</span>
-                    <span className="flex items-center gap-1 uppercase font-black text-emerald-500">Secure Protocol</span>
+                    <span>Source: {currentWallet?.walletName}</span>
+                    <span className="flex items-center gap-1 uppercase font-black text-emerald-500">{isEditMode ? "Modification" : "Secure Protocol"}</span>
                   </div>
                </div>
                <div className="space-y-2 text-left">
                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Add Note (Optional)</label>
                  <textarea rows="2" placeholder="Describe this purchase..." className="w-full bg-slate-50 dark:bg-slate-900 p-5 rounded-2xl text-xs font-bold text-slate-900 dark:text-white outline-none border border-slate-100 dark:border-slate-800 focus:border-emerald-500/20 no-scrollbar" value={expenseData.description} onChange={(e) => setExpenseData({...expenseData, description: e.target.value})} />
                </div>
-               <button onClick={handleFinalSubmit} disabled={loading} className="w-full bg-emerald-500 text-white h-20 rounded-2xl font-[1000] uppercase text-xs tracking-[0.5em] shadow-xl active:scale-[0.98] flex items-center justify-center gap-3 transition-all disabled:opacity-50">
-                  {loading ? <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white" /> : <>Commit to Ledger <Check size={18} strokeWidth={4}/></>}
+               <button onClick={handleFinalSubmit} disabled={loading} className={`w-full text-white h-20 rounded-2xl font-[1000] uppercase text-xs tracking-[0.5em] shadow-xl active:scale-[0.98] flex items-center justify-center gap-3 transition-all disabled:opacity-50 ${isEditMode ? 'bg-indigo-600' : 'bg-emerald-500'}`}>
+                  {loading ? <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white" /> : <>{isEditMode ? "Save Changes" : "Commit to Ledger"} <Check size={18} strokeWidth={4}/></>}
                </button>
             </div>
           )}

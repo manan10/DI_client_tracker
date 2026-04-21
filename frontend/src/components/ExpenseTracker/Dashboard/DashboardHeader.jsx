@@ -18,8 +18,8 @@ export const DashboardHeader = ({ summary, loading, loadDashboardData }) => {
         </h1>
       </div>
 
-      <div className="max-w-6xl mx-auto relative z-10">
-        <div className="flex flex-col gap-10">
+      <div className="max-w-7xl mx-auto relative z-10">
+        <div className="flex flex-col gap-8">
           
           {/* TOP SECTION: Floating Command Strip */}
           <div className="flex flex-wrap items-center justify-between gap-4">

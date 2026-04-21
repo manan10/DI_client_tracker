@@ -11,17 +11,16 @@ exports.addSpending = async (req, res) => {
         const { amount, category, description, sourceWallet, date, type = 'DEBIT' } = req.body;
         const spendAmount = Number(amount);
 
-        // 1. Fetch the Wallet to check balance
         const wallet = await Wallet.findById(sourceWallet).session(session);
         if (!wallet) throw new Error("Wallet not found");
 
-        // --- NEW: BALANCE VALIDATION ---
+        // Fetch the Drawer (General Pool)
+        const generalPool = await Wallet.findOne({ isGeneralPool: true }).session(session);
+
         if (type === 'DEBIT' && wallet.balance < spendAmount) {
-            // Throwing an error here triggers the catch block and aborts transaction
-            throw new Error(`Insufficient funds in ${wallet.walletName}. Current balance: ₹${wallet.balance.toLocaleString('en-IN')}`);
+            throw new Error(`Insufficient funds in ${wallet.walletName}.`);
         }
 
-        // 2. Create the spending record
         const newSpending = new Spending({
             amount: spendAmount,
             type,
@@ -32,25 +31,29 @@ exports.addSpending = async (req, res) => {
             date: date || Date.now()
         });
 
-        // 3. Update the Wallet balance
+        // --- DUAL UPDATE LOGIC ---
         if (type === 'DEBIT') {
             wallet.balance -= spendAmount;
+            // Subtract from drawer if the current wallet is NOT the drawer itself 
+            // (to avoid double subtraction if sourceWallet IS the drawer)
+            if (!wallet.isGeneralPool && generalPool) {
+                generalPool.balance -= spendAmount;
+            }
         } else if (type === 'TOP_UP' || type === 'MONTHLY_RESET') {
             wallet.balance += spendAmount;
+            if (!wallet.isGeneralPool && generalPool) {
+                generalPool.balance += spendAmount;
+            }
         }
 
+        if (generalPool) await generalPool.save({ session });
         await wallet.save({ session });
         await newSpending.save({ session });
 
         await session.commitTransaction();
-        res.status(201).json({ 
-            message: "Transaction successful", 
-            spending: newSpending, 
-            newBalance: wallet.balance 
-        });
+        res.status(201).json({ success: true, message: "Transaction successful" });
     } catch (error) {
         await session.abortTransaction();
-        // Return 400 for validation errors so frontend can display the message
         res.status(400).json({ message: error.message });
     } finally {
         session.endSession();
@@ -228,16 +231,80 @@ exports.deleteSpending = async (req, res) => {
         if (!spending) throw new Error("Transaction record not found");
 
         const wallet = await Wallet.findById(spending.sourceWallet).session(session);
+        const generalPool = await Wallet.findOne({ isGeneralPool: true }).session(session);
+
         if (wallet) {
-            // Refund the money
-            wallet.balance += spending.amount;
+            // Calculate adjustment: If we delete a DEBIT, we ADD back.
+            const adjustment = spending.type === 'DEBIT' ? spending.amount : -spending.amount;
+            
+            wallet.balance += adjustment;
+            
+            // Refund the drawer too if this wallet isn't the drawer itself
+            if (!wallet.isGeneralPool && generalPool) {
+                generalPool.balance += adjustment;
+            }
+
             await wallet.save({ session });
+            if (generalPool) await generalPool.save({ session });
         }
 
         await spending.deleteOne({ session });
 
         await session.commitTransaction();
-        res.status(200).json({ message: "Transaction undone and balance restored" });
+        res.status(200).json({ success: true, message: "Transaction undone and drawer updated" });
+    } catch (error) {
+        await session.abortTransaction();
+        res.status(500).json({ message: error.message });
+    } finally {
+        session.endSession();
+    }
+};
+exports.editSpending = async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        const { amount, description, category, date, sourceWallet } = req.body;
+        const spending = await Spending.findById(req.params.id).session(session);
+        if (!spending) throw new Error("Transaction not found");
+
+        const newAmount = Number(amount);
+        const newWalletId = sourceWallet || spending.sourceWallet;
+
+        // 1. REVERT OLD TRANSACTION IMPACT
+        const oldWallet = await Wallet.findById(spending.sourceWallet).session(session);
+        if (!oldWallet) throw new Error("Original wallet not found");
+        
+        // If it was a debit, give money back. If credit, take it away.
+        const revertAmount = spending.type === 'DEBIT' ? spending.amount : -spending.amount;
+        oldWallet.balance += revertAmount;
+        await oldWallet.save({ session });
+
+        // 2. APPLY NEW TRANSACTION IMPACT
+        const targetWallet = (spending.sourceWallet.toString() === newWalletId.toString()) 
+            ? oldWallet 
+            : await Wallet.findById(newWalletId).session(session);
+
+        if (!targetWallet) throw new Error("Target wallet not found");
+
+        // If new type is debit, take money. If credit, add money.
+        // Assuming type stays the same as original for now
+        const applyAmount = spending.type === 'DEBIT' ? newAmount : -newAmount;
+        targetWallet.balance -= applyAmount;
+
+        if (targetWallet.balance < 0) throw new Error("Insufficient funds for this adjustment");
+        await targetWallet.save({ session });
+
+        // 3. UPDATE RECORD
+        spending.amount = newAmount;
+        spending.description = description || spending.description;
+        spending.category = category || spending.category;
+        spending.date = date || spending.date;
+        spending.sourceWallet = newWalletId;
+
+        await spending.save({ session });
+        await session.commitTransaction();
+        
+        res.status(200).json({ success: true, message: "Updated", updatedSpending: spending });
     } catch (error) {
         await session.abortTransaction();
         res.status(500).json({ message: error.message });
@@ -246,48 +313,43 @@ exports.deleteSpending = async (req, res) => {
     }
 };
 
-exports.editSpending = async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+// @desc    Get transaction history with Month/Year/Wallet filters
+// @route   GET /api/spending/history
+exports.getSpendingHistory = async (req, res) => {
     try {
-        const { amount, description, category, date } = req.body;
-        const spending = await Spending.findById(req.params.id).session(session);
-        
-        if (!spending) throw new Error("Transaction not found");
+        const { month, year, walletId, search } = req.query;
 
-        const wallet = await Wallet.findById(spending.sourceWallet).session(session);
-        if (!wallet) throw new Error("Associated wallet not found");
+        // 1. Create a date range for the selected month/year
+        // month is 0-indexed (Jan = 0) from the frontend
+        const startDate = new Date(year, month, 1);
+        const endDate = new Date(year, parseInt(month) + 1, 0, 23, 59, 59);
 
-        // --- MATH LOGIC ---
-        // If old amount was 1000 and new is 100:
-        // difference = 1000 - 100 = 900 (Refund 900)
-        // If old was 100 and new is 1000:
-        // difference = 100 - 1000 = -900 (Deduct 900)
-        const difference = spending.amount - Number(amount);
-        
-        // Update wallet balance
-        wallet.balance += difference;
+        let query = {
+            // Assuming you have auth middleware: user: req.user.id,
+            date: { $gte: startDate, $lte: endDate }
+        };
 
-        // Check if the wallet has enough for this change (if increasing the expense)
-        if (wallet.balance < 0) {
-            throw new Error("Insufficient funds in wallet for this adjustment");
+        // 2. Apply Wallet Filter
+        if (walletId && walletId !== 'All') {
+            query.sourceWallet = walletId;
         }
 
-        // Update the spending record
-        spending.amount = Number(amount);
-        spending.description = description || spending.description;
-        spending.category = category || spending.category;
-        spending.date = date || spending.date;
+        // 3. Apply Search Filter (Search in description or label)
+        if (search && search.trim() !== "") {
+            query.description = { $regex: search, $options: 'i' };
+        }
 
-        await wallet.save({ session });
-        await spending.save({ session });
+        // 4. Fetch and Populate
+        const history = await Spending.find(query)
+            .populate('category') // To get color and label
+            .populate('sourceWallet', 'walletName') // To get the name of the bank/wallet
+            .sort({ date: -1 });
 
-        await session.commitTransaction();
-        res.status(200).json({ message: "Transaction updated", updatedSpending: spending });
+        res.status(200).json({
+            success: true,
+            data: history
+        });
     } catch (error) {
-        await session.abortTransaction();
-        res.status(500).json({ message: error.message });
-    } finally {
-        session.endSession();
+        res.status(500).json({ success: false, message: error.message });
     }
 };

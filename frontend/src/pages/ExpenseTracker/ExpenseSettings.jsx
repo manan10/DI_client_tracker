@@ -74,8 +74,8 @@ const ExpenseSettings = () => {
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] transition-colors duration-500 font-sans pb-20 text-left">
       <ExpenseNavbar />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-8 py-8 md:py-16">
-        <div className="flex flex-col md:flex-row gap-10">
+      <main className="mx-auto px-4 sm:px-8 py-8 md:py-16">
+        <div className="flex flex-col md:flex-row gap-6">
           
           <aside className={`w-full md:w-80 shrink-0 ${activeSection !== 'main' ? 'hidden md:block' : 'block'}`}>
             <div className="border-l-[6px] border-emerald-500 pl-6 mb-12">
@@ -88,7 +88,7 @@ const ExpenseSettings = () => {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center justify-between p-6 rounded-3xl border transition-all active:scale-[0.98] ${
+                  className={`w-full flex items-center justify-between p-6 rounded-xl border transition-all active:scale-[0.98] ${
                     activeSection === item.id 
                     ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-transparent shadow-2xl' 
                     : 'bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 text-slate-400 hover:border-emerald-500/50 shadow-sm'
@@ -107,7 +107,7 @@ const ExpenseSettings = () => {
             </nav>
           </aside>
 
-          <div className={`flex-1 bg-white dark:bg-[#0B1120] rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-sm min-h-[65vh] flex flex-col ${activeSection === 'main' ? 'hidden md:flex' : 'flex'}`}>
+          <div className={`flex-1 bg-white dark:bg-[#0B1120] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm min-h-[65vh] flex flex-col ${activeSection === 'main' ? 'hidden md:flex' : 'flex'}`}>
             <div className="md:hidden p-6 border-b border-slate-100 dark:border-slate-800 text-left">
                <button onClick={() => setActiveSection("main")} className="flex items-center gap-2 text-[10px] font-black text-emerald-500 uppercase tracking-widest">
                   <ArrowLeft size={18} /> Back

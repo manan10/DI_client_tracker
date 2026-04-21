@@ -80,8 +80,8 @@ function App() {
                 path="/expenses"
                 element={
                   <ProtectedRoute>
-                    {/* <ExpenseDashboard /> */}
-                    <MaintenanceViewExpenses />
+                    <ExpenseDashboard />
+                    {/* <MaintenanceViewExpenses /> */}
                   </ProtectedRoute>
                 }
               />

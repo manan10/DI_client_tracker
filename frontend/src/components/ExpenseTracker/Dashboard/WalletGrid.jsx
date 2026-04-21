@@ -21,7 +21,7 @@ const WalletGrid = ({ wallets }) => {
         <div className="flex items-center gap-3">
           <div className="w-1 h-5 bg-emerald-500" />
           <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
-            Available Capital
+            Available Balances
           </h2>
         </div>
         <div className="flex items-center gap-2 text-slate-400">
@@ -31,7 +31,7 @@ const WalletGrid = ({ wallets }) => {
       </div>
 
       {/* CONSOLIDATED PORTFOLIO CARD */}
-      <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
         
         <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-slate-100 dark:divide-slate-800">
           
@@ -50,7 +50,7 @@ const WalletGrid = ({ wallets }) => {
           </div>
 
           {/* SECTION B: ACCOUNT BREAKDOWN */}
-          <div className="p-4 md:p-6 lg:flex-1 bg-slate-50/30 dark:bg-white/[0.01]">
+          <div className="p-4 md:p-6 lg:flex-1 bg-slate-50/30 dark:bg-white/1">
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
               {wallets.map((wallet) => (
                 <div 
