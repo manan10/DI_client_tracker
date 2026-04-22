@@ -13,7 +13,7 @@ const WalletGrid = ({ wallets }) => {
   return (
     <div className="w-full mb-8">
       {/* COMPACT HUB CONTAINER */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 bg-white dark:bg-[#0B1120] rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-12 bg-white dark:bg-[#0B1120] rounded-4xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
         
         {/* LEFT: THE CASH VAULT (7/12) */}
         <div className="lg:col-span-7 p-6 md:p-8 flex flex-col justify-between bg-white dark:bg-[#0B1120]">
@@ -47,7 +47,7 @@ const WalletGrid = ({ wallets }) => {
         </div>
 
         {/* RIGHT: THE DIGITAL PIPELINE (5/12) */}
-        <div className="lg:col-span-5 p-6 md:p-8 bg-slate-50/50 dark:bg-white/[0.02] border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 flex flex-col">
+        <div className="lg:col-span-5 p-6 md:p-8 bg-slate-50/50 dark:bg-white/2 border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-500">
@@ -78,7 +78,7 @@ const WalletGrid = ({ wallets }) => {
             ))}
 
             {virtualWallets.length === 0 && (
-              <div className="h-full min-h-[80px] border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-center opacity-40">
+              <div className="h-full min-h-20 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-center opacity-40">
                 <p className="text-[8px] font-black uppercase tracking-widest">No Digital Streams</p>
               </div>
             )}

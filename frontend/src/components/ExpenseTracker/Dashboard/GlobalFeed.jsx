@@ -64,7 +64,7 @@ const GlobalFeed = ({ history, wallets }) => {
             const isVirt = sourceInfo.isVirtual;
 
             return (
-              <div key={item._id} className="group relative flex items-center justify-between p-4 sm:p-5 hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-all">
+              <div key={item._id} className="group relative flex items-center justify-between p-4 sm:p-5 hover:bg-slate-50/50 dark:hover:bg-white/2 transition-all">
                 
                 {/* 1. THE VERTICAL CUE: Indigo (Virtual) vs Emerald (Cash) */}
                 <div className={`absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r-full transition-all ${

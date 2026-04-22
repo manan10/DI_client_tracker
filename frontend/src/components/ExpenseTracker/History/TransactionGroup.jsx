@@ -37,7 +37,7 @@ const TransactionGroup = ({ date, transactions, onEdit, onDelete }) => {
           return (
             <div 
               key={t._id} 
-              className={`group relative flex flex-col sm:flex-row items-center gap-5 p-5 bg-white dark:bg-slate-900/40 rounded-[1.5rem] border transition-all duration-300 hover:shadow-xl ${
+              className={`group relative flex flex-col sm:flex-row items-center gap-5 p-5 bg-white dark:bg-slate-900/40 rounded-3xl border transition-all duration-300 hover:shadow-xl ${
                 isVirt 
                 ? 'border-indigo-100 dark:border-indigo-900/40 hover:border-indigo-500/30' 
                 : 'border-slate-100 dark:border-slate-800/60 hover:border-emerald-500/30'

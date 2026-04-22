@@ -157,7 +157,7 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 gap-2 pb-6 min-h-[300px]">
+              <div className="grid grid-cols-1 gap-2 pb-6 min-h-75">
                 {filteredWallets[activeTab].map(w => (
                   <button 
                     key={w._id} 

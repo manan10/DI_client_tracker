@@ -54,7 +54,7 @@ const FilterBar = ({ wallets, activeWallet, setActiveWallet }) => {
             <>
               <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
               
-              <div className="absolute top-16 left-0 z-30 w-[300px] sm:w-[450px] bg-white dark:bg-[#0B1120] border border-slate-100 dark:border-slate-800 rounded-[2rem] shadow-[0_30px_100px_rgba(0,0,0,0.3)] p-4 animate-in fade-in zoom-in-95 duration-300">
+              <div className="absolute top-16 left-0 z-30 w-75 sm:w-112.5 bg-white dark:bg-[#0B1120] border border-slate-100 dark:border-slate-800 rounded-4xl shadow-[0_30px_100px_rgba(0,0,0,0.3)] p-4 animate-in fade-in zoom-in-95 duration-300">
                 <div className="space-y-6">
                   
                   {/* GLOBAL SECTION */}
