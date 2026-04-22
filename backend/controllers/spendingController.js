@@ -2,8 +2,6 @@ const Spending = require('../models/Spending');
 const Wallet = require('../models/Wallet');
 const mongoose = require('mongoose');
 
-// @desc    Add a new spending entry and update wallet balance
-// @route   POST /api/spending
 exports.addSpending = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -14,11 +12,32 @@ exports.addSpending = async (req, res) => {
         const wallet = await Wallet.findById(sourceWallet).session(session);
         if (!wallet) throw new Error("Wallet not found");
 
-        // Fetch the Drawer (General Pool)
-        const generalPool = await Wallet.findOne({ isGeneralPool: true }).session(session);
+        if (type === 'DEBIT') {
+            // Check balance of ONLY the used wallet
+            if (wallet.balance < spendAmount) {
+                throw new Error(`Insufficient funds in ${wallet.walletName}.`);
+            }
+            
+            // --- EXCLUSIVE DEBIT ---
+            // We only subtract from the wallet used. 
+            // If it's a member wallet, the Drawer stays untouched.
+            wallet.balance -= spendAmount;
 
-        if (type === 'DEBIT' && wallet.balance < spendAmount) {
-            throw new Error(`Insufficient funds in ${wallet.walletName}.`);
+        } else if (type === 'TOP_UP' || type === 'MONTHLY_RESET') {
+            // If we are topping up a member wallet, money MUST come from somewhere.
+            // In your system, TOP_UP implies money moving FROM Drawer TO Wallet.
+            if (!wallet.isGeneralPool) {
+                const drawer = await Wallet.findOne({ isGeneralPool: true }).session(session);
+                if (!drawer) throw new Error("Master Pool not found for top-up");
+                if (drawer.balance < spendAmount) throw new Error("Drawer has insufficient funds to top-up this wallet");
+
+                drawer.balance -= spendAmount; // Remove from Master
+                wallet.balance += spendAmount; // Add to Member
+                await drawer.save({ session });
+            } else {
+                // If we are topping up the Drawer itself (External Inflow)
+                wallet.balance += spendAmount;
+            }
         }
 
         const newSpending = new Spending({
@@ -31,22 +50,6 @@ exports.addSpending = async (req, res) => {
             date: date || Date.now()
         });
 
-        // --- DUAL UPDATE LOGIC ---
-        if (type === 'DEBIT') {
-            wallet.balance -= spendAmount;
-            // Subtract from drawer if the current wallet is NOT the drawer itself 
-            // (to avoid double subtraction if sourceWallet IS the drawer)
-            if (!wallet.isGeneralPool && generalPool) {
-                generalPool.balance -= spendAmount;
-            }
-        } else if (type === 'TOP_UP' || type === 'MONTHLY_RESET') {
-            wallet.balance += spendAmount;
-            if (!wallet.isGeneralPool && generalPool) {
-                generalPool.balance += spendAmount;
-            }
-        }
-
-        if (generalPool) await generalPool.save({ session });
         await wallet.save({ session });
         await newSpending.save({ session });
 
@@ -59,7 +62,6 @@ exports.addSpending = async (req, res) => {
         session.endSession();
     }
 };
-
 // @desc    Get dashboard summary (Total spent, member balances)
 // @route   GET /api/spending/summary
 exports.getFinanceSummary = async (req, res) => {
@@ -234,6 +236,7 @@ exports.processMonthlyAllowance = async (req, res) => {
         session.endSession();
     }
 };
+
 exports.deleteSpending = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -242,83 +245,93 @@ exports.deleteSpending = async (req, res) => {
         if (!spending) throw new Error("Transaction record not found");
 
         const wallet = await Wallet.findById(spending.sourceWallet).session(session);
-        const generalPool = await Wallet.findOne({ isGeneralPool: true }).session(session);
-
-        if (wallet) {
-            // Calculate adjustment: If we delete a DEBIT, we ADD back.
-            const adjustment = spending.type === 'DEBIT' ? spending.amount : -spending.amount;
-            
-            wallet.balance += adjustment;
-            
-            // Refund the drawer too if this wallet isn't the drawer itself
-            if (!wallet.isGeneralPool && generalPool) {
-                generalPool.balance += adjustment;
+        
+        if (spending.type === 'DEBIT') {
+            // REVERSE EXPENSE: Money goes back to the specific wallet used
+            if (wallet) {
+                wallet.balance += spending.amount;
+                await wallet.save({ session });
             }
-
-            await wallet.save({ session });
-            if (generalPool) await generalPool.save({ session });
+        } 
+        else if (spending.type === 'TOP_UP' || spending.type === 'MONTHLY_RESET') {
+            // REVERSE TRANSFER: Money leaves the member wallet and returns to Drawer
+            if (wallet && !wallet.isGeneralPool) {
+                const drawer = await Wallet.findOne({ isGeneralPool: true }).session(session);
+                
+                wallet.balance -= spending.amount; // Member loses the top-up
+                if (drawer) {
+                    drawer.balance += spending.amount; // Drawer gets it back
+                    await drawer.save({ session });
+                }
+                await wallet.save({ session });
+            } else if (wallet && wallet.isGeneralPool) {
+                // Reversing an external deposit into the Drawer
+                wallet.balance -= spending.amount;
+                await wallet.save({ session });
+            }
         }
 
         await spending.deleteOne({ session });
-
         await session.commitTransaction();
-        res.status(200).json({ success: true, message: "Transaction undone and drawer updated" });
+        res.status(200).json({ success: true, message: "Transaction reversed successfully" });
     } catch (error) {
         await session.abortTransaction();
-        res.status(500).json({ message: error.message });
+        res.status(400).json({ message: error.message });
     } finally {
         session.endSession();
     }
 };
+
 exports.editSpending = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        const { amount, description, category, date, sourceWallet } = req.body;
+        const { amount, description, category, date } = req.body;
         const spending = await Spending.findById(req.params.id).session(session);
         if (!spending) throw new Error("Transaction not found");
 
+        const wallet = await Wallet.findById(spending.sourceWallet).session(session);
+        const oldAmount = spending.amount;
         const newAmount = Number(amount);
-        const newWalletId = sourceWallet || spending.sourceWallet;
+        const difference = oldAmount - newAmount; // Positive if price decreased (refund)
 
-        // 1. REVERT OLD TRANSACTION IMPACT
-        const oldWallet = await Wallet.findById(spending.sourceWallet).session(session);
-        if (!oldWallet) throw new Error("Original wallet not found");
-        
-        // If it was a debit, give money back. If credit, take it away.
-        const revertAmount = spending.type === 'DEBIT' ? spending.amount : -spending.amount;
-        oldWallet.balance += revertAmount;
-        await oldWallet.save({ session });
+        if (spending.type === 'DEBIT') {
+            // Adjust the balance of the wallet that paid
+            if (wallet) {
+                wallet.balance += difference; 
+                // If 500 -> 400, diff is 100, wallet gets +100
+                // If 500 -> 600, diff is -100, wallet gets -100
+                if (wallet.balance < 0) throw new Error("Insufficient funds for this adjustment");
+                await wallet.save({ session });
+            }
+        } else if (spending.type === 'TOP_UP') {
+            // Adjust a Transfer: Wallet and Drawer both change
+            if (wallet && !wallet.isGeneralPool) {
+                const drawer = await Wallet.findOne({ isGeneralPool: true }).session(session);
+                
+                wallet.balance -= difference; // If top-up was 1000->1200, wallet gets +200
+                if (drawer) {
+                    drawer.balance += difference; // Drawer loses 200
+                    await drawer.save({ session });
+                }
+                await wallet.save({ session });
+            } else if (wallet) {
+                wallet.balance -= difference;
+                await wallet.save({ session });
+            }
+        }
 
-        // 2. APPLY NEW TRANSACTION IMPACT
-        const targetWallet = (spending.sourceWallet.toString() === newWalletId.toString()) 
-            ? oldWallet 
-            : await Wallet.findById(newWalletId).session(session);
-
-        if (!targetWallet) throw new Error("Target wallet not found");
-
-        // If new type is debit, take money. If credit, add money.
-        // Assuming type stays the same as original for now
-        const applyAmount = spending.type === 'DEBIT' ? newAmount : -newAmount;
-        targetWallet.balance -= applyAmount;
-
-        if (targetWallet.balance < 0) throw new Error("Insufficient funds for this adjustment");
-        await targetWallet.save({ session });
-
-        // 3. UPDATE RECORD
         spending.amount = newAmount;
         spending.description = description || spending.description;
         spending.category = category || spending.category;
         spending.date = date || spending.date;
-        spending.sourceWallet = newWalletId;
 
         await spending.save({ session });
         await session.commitTransaction();
-        
-        res.status(200).json({ success: true, message: "Updated", updatedSpending: spending });
+        res.status(200).json({ success: true, updatedSpending: spending });
     } catch (error) {
         await session.abortTransaction();
-        res.status(500).json({ message: error.message });
+        res.status(400).json({ message: error.message });
     } finally {
         session.endSession();
     }
