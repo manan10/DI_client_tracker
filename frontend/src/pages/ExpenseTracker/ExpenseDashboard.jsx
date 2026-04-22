@@ -38,16 +38,26 @@ const ExpenseDashboard = () => {
     async (isMounted = true) => {
       try {
         const data = await request("/spending/summary");
+        
         if (data?.wallets && isMounted) {
-          setSummary(data);
+          setSummary({
+            wallets: data.wallets,
+            monthlyTotal: data.analytics?.total ?? data.monthlyTotal ?? 0,
+            analytics: data.analytics || { total: 0, cash: 0, digital: 0 }
+          });
+
           const historyData = await request(`/spending/history/all`);
           if (isMounted) {
-            setHistory(historyData || []);
+            setHistory(historyData?.data || historyData || []); // Handle { success, data } wrap
+            
             const userWallet = data.wallets.find(
               (w) =>
-                w.walletName.toLowerCase().includes(user?.name?.toLowerCase()) || !w.isGeneralPool,
+                w.walletName.toLowerCase().includes(user?.name?.toLowerCase()) || 
+                (!w.isGeneralPool && !w.isVirtual) // Prioritize physical wallets for spending
             );
+            
             const activeWallet = userWallet || data.wallets.find((w) => !w.isGeneralPool);
+            
             if (activeWallet) {
               setExpenseData((prev) => ({
                 ...prev,
@@ -74,7 +84,7 @@ const ExpenseDashboard = () => {
     return () => { isMounted = false; };
   }, [loadDashboardData]);
 
-const handleExpenseSubmit = async (e) => {
+  const handleExpenseSubmit = async (e) => {
     if (e) e.preventDefault();
     try {
       const response = await request("/spending", "POST", { 

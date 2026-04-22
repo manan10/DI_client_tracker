@@ -1,7 +1,7 @@
 import React from "react";
 import { 
   Edit3, Trash2, Tag, Wallet, 
-  ArrowUpRight, ArrowDownLeft, Hash, Clock 
+  ArrowUpRight, ArrowDownLeft, Hash, Clock, Globe 
 } from "lucide-react";
 
 const TransactionGroup = ({ date, transactions, onEdit, onDelete }) => {
@@ -9,7 +9,7 @@ const TransactionGroup = ({ date, transactions, onEdit, onDelete }) => {
   
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-16 relative">
-      {/* SIDEBAR DATE - Clean & Minimal */}
+      {/* SIDEBAR DATE */}
       <div className="lg:col-span-2 lg:sticky lg:top-32 relative z-10">
         <div className="flex lg:flex-col items-baseline lg:items-end gap-1 px-2">
           <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500 italic opacity-80 leading-none">
@@ -29,20 +29,36 @@ const TransactionGroup = ({ date, transactions, onEdit, onDelete }) => {
         {transactions.map((t) => {
           const isInflow = t.type === 'CREDIT' || t.type === 'TOP_UP';
           const isNeutral = t.type === 'MONTHLY_RESET';
-          const colorClass = isNeutral ? 'text-blue-500' : isInflow ? 'text-emerald-500' : 'text-rose-500';
-          const bgClass = isNeutral ? 'bg-blue-500/5' : isInflow ? 'bg-emerald-500/5' : 'bg-rose-500/5';
+          const isVirt = t.sourceWallet?.isVirtual; // HYBRID CHECK
+
+          const colorClass = isNeutral ? 'text-blue-500' : isInflow ? 'text-emerald-500' : isVirt ? 'text-indigo-500' : 'text-rose-500';
+          const bgClass = isNeutral ? 'bg-blue-500/5' : isInflow ? 'bg-emerald-500/5' : isVirt ? 'bg-indigo-500/5' : 'bg-rose-500/5';
           
           return (
             <div 
               key={t._id} 
-              className="group relative flex flex-col sm:flex-row items-center gap-5 p-5 bg-white dark:bg-slate-900/40 rounded-[1.5rem] border border-slate-100 dark:border-slate-800/60 hover:border-emerald-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-none"
+              className={`group relative flex flex-col sm:flex-row items-center gap-5 p-5 bg-white dark:bg-slate-900/40 rounded-[1.5rem] border transition-all duration-300 hover:shadow-xl ${
+                isVirt 
+                ? 'border-indigo-100 dark:border-indigo-900/40 hover:border-indigo-500/30' 
+                : 'border-slate-100 dark:border-slate-800/60 hover:border-emerald-500/30'
+              }`}
             >
+              {/* SOURCE INDICATOR STRIP */}
+              <div className={`absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r-full transition-all ${
+                isVirt ? "bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" : "bg-transparent group-hover:bg-emerald-500"
+              }`} />
+
               {/* Category Icon */}
               <div 
-                className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner"
+                className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner relative"
                 style={{ backgroundColor: `${t.category?.color || '#10b981'}15`, color: t.category?.color || '#10b981' }}
               >
                 <Hash size={20} strokeWidth={2.5} />
+                {isVirt && (
+                  <div className="absolute -top-1 -right-1 p-1 bg-indigo-500 rounded-lg text-white shadow-lg">
+                    <Globe size={8} />
+                  </div>
+                )}
               </div>
 
               {/* Info Section */}
@@ -63,11 +79,14 @@ const TransactionGroup = ({ date, transactions, onEdit, onDelete }) => {
                     {t.category?.label}
                   </div>
                   
-                  {/* Wallet & Time */}
-                  <div className="flex items-center gap-1.5 text-[8px] font-bold text-slate-400 uppercase tracking-widest px-2.5 py-1 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                    <Wallet size={10} />
+                  {/* Wallet Context - Color Coded */}
+                  <div className={`flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-lg ${
+                    isVirt ? 'bg-indigo-500/10 text-indigo-500' : 'bg-slate-50 dark:bg-slate-800/50 text-slate-400'
+                  }`}>
+                    {isVirt ? <Globe size={10} /> : <Wallet size={10} />}
                     {t.sourceWallet?.walletName}
                   </div>
+
                   <div className="flex items-center gap-1.5 text-[8px] font-bold text-slate-400 uppercase tracking-widest px-2.5 py-1 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
                     <Clock size={10} />
                     {new Date(t.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
@@ -83,7 +102,7 @@ const TransactionGroup = ({ date, transactions, onEdit, onDelete }) => {
                     ₹{t.amount.toLocaleString('en-IN')}
                   </div>
                   <p className="text-[7px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-[0.4em] mt-1.5 leading-none">
-                    {t.type.replace('_', ' ')}
+                    {t.type.replace('_', ' ')} {isVirt ? '• DIGITAL' : ''}
                   </p>
                 </div>
 

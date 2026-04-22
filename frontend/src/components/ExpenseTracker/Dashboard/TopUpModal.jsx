@@ -104,7 +104,7 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
                 <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-1">Which account are you adding funds to?</p>
               </div>
               <div className="grid grid-cols-1 gap-2 pb-4">
-                {wallets.map(w => (
+                {wallets.filter(w => !w.isVirtual).map(w => (
                   <button 
                     key={w._id} 
                     onClick={() => { setTopUpData({...topUpData, targetWallet: w._id}); nextStep(); }}

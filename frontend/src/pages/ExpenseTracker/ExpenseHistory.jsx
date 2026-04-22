@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import ExpenseNavbar from "../../components/ExpenseNavbar";
 import ExpenseModal from "../../components/ExpenseTracker/Dashboard/ExpenseModal";
 import { useApi } from "../../hooks/useApi";
+import { Globe, Coins } from "lucide-react";
 
 // Sub-components
 import HistoryHeader from "../../components/ExpenseTracker/History/HeaderHistory";
@@ -22,7 +23,12 @@ const ExpenseHistory = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editData, setEditData] = useState({ amount: "", category: "", description: "", sourceWallet: "", type: "DEBIT" });
 
-  // FETCH HISTORY (Effect-contained to fix cascading render error)
+  const activeWalletData = useMemo(() => 
+    wallets.find(w => w._id === activeWallet), 
+    [wallets, activeWallet]
+  );
+
+  // FETCH HISTORY
   useEffect(() => {
     let isMounted = true;
     const fetchHistoryData = async () => {
@@ -64,7 +70,7 @@ const ExpenseHistory = () => {
     const res = await request(`/spending/${editData._id}`, "PUT", { ...editData, amount: Number(editData.amount) });
     if (res) {
       setIsEditModalOpen(false);
-      // Trigger local state update to avoid full refresh
+      // Fast refresh of history list
       const query = `month=${selectedMonth}&year=${selectedYear}&walletId=${activeWallet}&search=${searchQuery}`;
       const refreshRes = await request(`/spending/history?${query}`, "GET");
       if (refreshRes?.success) setTransactions(refreshRes.data);
@@ -96,11 +102,34 @@ const ExpenseHistory = () => {
         />
         <FilterBar wallets={wallets} activeWallet={activeWallet} setActiveWallet={setActiveWallet} />
         
-        <div className="mt-16 space-y-12">
+        {/* CONTEXT STAT STRIP: Connects FilterBar to the List */}
+        {!loading && activeWallet !== "All" && (
+          <div className="mb-10 p-5 bg-slate-50 dark:bg-slate-900/40 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-2xl ${activeWalletData?.isVirtual ? 'bg-indigo-500/10 text-indigo-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+                {activeWalletData?.isVirtual ? <Globe size={20}/> : <Coins size={20}/>}
+              </div>
+              <div className="text-left">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Focus Point</p>
+                <h3 className="text-lg font-[1000] text-slate-900 dark:text-white uppercase italic leading-none">{activeWalletData?.walletName}</h3>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                {activeWalletData?.isVirtual ? "Link Status" : "Active Balance"}
+              </p>
+              <p className={`text-xl font-[1000] italic leading-none ${activeWalletData?.isVirtual ? 'text-indigo-500' : 'text-emerald-500'}`}>
+                {activeWalletData?.isVirtual ? "LIVE SYNC" : `₹${activeWalletData?.balance?.toLocaleString('en-IN')}`}
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-8 space-y-12">
           {loading && transactions.length === 0 ? (
-            <div className="py-20 text-center text-[10px] font-bold uppercase tracking-[0.4em] text-slate-300">Synchronizing Ledger...</div>
+            <div className="py-20 text-center text-[10px] font-black uppercase tracking-[0.4em] text-slate-300">Synchronizing Ledger...</div>
           ) : Object.keys(groupedTransactions).length === 0 ? (
-            <div className="py-20 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">No records for this selection</div>
+            <div className="py-20 text-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">No records for this node</div>
           ) : Object.keys(groupedTransactions).map(date => (
             <TransactionGroup 
               key={date} date={date} transactions={groupedTransactions[date]} 
@@ -109,7 +138,9 @@ const ExpenseHistory = () => {
           ))}
         </div>
 
+        {/* MODAL with Unique Key to prevent state bleeding */}
         <ExpenseModal 
+          key={isEditModalOpen ? `edit-${editData._id}` : "closed"}
           isOpen={isEditModalOpen} setOpen={setIsEditModalOpen}
           wallets={wallets} expenseData={editData} setExpenseData={setEditData} 
           onSubmit={handleEditSubmit} loading={loading}

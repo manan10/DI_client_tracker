@@ -118,54 +118,63 @@ exports.updateCategory = async (req, res) => {
     }
 };
 
-// @desc    SMART DELETE: Re-parent spending before deletion
 exports.deleteCategory = async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
         const { id } = req.params;
         const { migrateToId } = req.query; 
 
-        // 1. Check usage in spending
-        const usageCount = await Spending.countDocuments({ category: id });
+        // 1. Check total usage (Parent + all its Sub-categories)
+        const subCategories = await Category.find({ parent: id }).session(session);
+        const subIds = subCategories.map(s => s._id);
+        const allTargetIds = [id, ...subIds];
 
-        if (usageCount > 0) {
-            if (!migrateToId) {
-                return res.status(409).json({ 
-                    success: false,
-                    message: "Category in use", 
-                    usageCount,
-                    needsMigration: true 
-                });
-            }
+        const usageCount = await Spending.countDocuments({ 
+            category: { $in: allTargetIds } 
+        }).session(session);
 
-            // 2. Move all spends to the new category
+        // 2. The Handshake: If in use and no migration target provided, stop.
+        if (usageCount > 0 && !migrateToId) {
+            await session.abortTransaction();
+            return res.status(409).json({ 
+                success: false,
+                message: "Category or sub-categories in use", 
+                usageCount,
+                needsMigration: true 
+            });
+        }
+
+        // 3. Perform Migration if required
+        if (usageCount > 0 && migrateToId) {
             await Spending.updateMany(
-                { category: id },
-                { $set: { category: migrateToId } }
+                { category: { $in: allTargetIds } },
+                { $set: { category: migrateToId } },
+                { session }
             );
+        } else if (usageCount > 0 && !migrateToId) {
+            // This block is technically unreachable due to step 2, 
+            // but for absolute safety in high-load prod:
+            throw new Error("Critical: Migration ID required for non-empty category purging.");
         }
 
-        // 3. HANDLE CHILDREN: 
-        // If this is a parent category, we should delete its sub-categories 
-        // to keep the dashboard clean. Orphan sub-categories cause UI crashes.
-        const subCategories = await Category.find({ parent: id });
-        
-        if (subCategories.length > 0) {
-            const subIds = subCategories.map(s => s._id);
-            // Move any spending from sub-categories too if needed
-            if (migrateToId) {
-                await Spending.updateMany(
-                    { category: { $in: subIds } },
-                    { $set: { category: migrateToId } }
-                );
-            }
-            // Delete all sub-categories belonging to this parent
-            await Category.deleteMany({ parent: id });
-        }
+        // 4. PURGE CATEGORY HIERARCHY
+        // Delete all children first
+        await Category.deleteMany({ parent: id }).session(session);
+        // Delete the parent
+        await Category.findByIdAndDelete(id).session(session);
 
-        await Category.findByIdAndDelete(id);
-        res.json({ success: true, message: "Category and linked sub-categories purged successfully." });
+        await session.commitTransaction();
+        res.json({ 
+            success: true, 
+            message: "Category tree purged and funds re-categorized successfully." 
+        });
+
     } catch (error) {
+        await session.abortTransaction();
         res.status(500).json({ success: false, message: error.message });
+    } finally {
+        session.endSession();
     }
 };
 
