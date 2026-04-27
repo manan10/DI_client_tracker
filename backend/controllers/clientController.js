@@ -41,10 +41,25 @@ exports.createClient = async (req, res) => {
 
 exports.getAllClients = async (req, res) => {
   try {
-    const clients = await Client.find({}).sort({ name: 1 });
-    res.status(200).json(clients);
+    const { search } = req.query;
+    let query = { arnId: req.user.arnId };
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { pan: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    const clients = await Client.find(query).sort({ name: 1 });
+    
+    res.status(200).json({
+      success: true,
+      count: clients.length,
+      data: clients,
+    });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch client directory" });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -70,25 +85,35 @@ exports.getClientById = async (req, res) => {
 
 
 exports.getDormantClients = async (req, res) => {
-    try {
-        const threshold = new Date();
-        threshold.setDate(threshold.getDate() - 180); 
+  try {
+      // Calculate the date for 6 months ago (180 days)
+      const threshold = new Date();
+      threshold.setDate(threshold.getDate() - 180); 
 
-        const dormantClients = await Client.find({
-            $or: [
-                { lastMet: { $lt: threshold } },
-                { lastMet: { $exists: false } },
-                { lastMet: null }
-            ]
-        })
-        .sort({ aum: -1 })
-        .limit(5);
+      const dormantClients = await Client.find({
+          $or: [
+              { lastMet: { $lt: threshold } },
+              { lastMet: { $exists: false } },
+              { lastMet: null }
+          ]
+      })
+      .sort({ aum: -1 }) // Sorting by highest AUM (Wealthiest dormant clients)
+      .limit(5)
+      .lean(); // Faster performance for dashboard widgets
 
-        res.status(200).json(dormantClients);
-    } catch (error) {
-        console.error("DORMANCY CONTROLLER ERROR:", error);
-        res.status(500).json({ error: error.message });
-    }
+      // Always return an array, even if empty
+      res.status(200).json(dormantClients || []);
+
+  } catch (error) {
+      // Log the SPECIFIC Mongoose error to your terminal for debugging
+      console.error("DORMANCY QUERY FAILURE:", error.message);
+      
+      res.status(500).json({ 
+          success: false, 
+          message: "Error retrieving client details", 
+          error: error.message 
+      });
+  }
 };
 
 // @desc    Add a document record to a client

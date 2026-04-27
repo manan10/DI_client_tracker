@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import StatCards from "../../components/Home/StatCards";
 import UniversalSearch from "../../components/Home/UniversalSearch";
@@ -11,7 +11,7 @@ import InteractionModal from "../../components/InteractionModal";
 import { Plus, Activity, Zap, BookOpen } from "lucide-react";
 
 const Home = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [selectedClient, setSelectedClient] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -78,9 +78,9 @@ const Home = () => {
 
             <div className="space-y-6">
               <FollowUpWidget />
-              <DormancyWidget
+              {/* <DormancyWidget
                 onClientClick={(c) => navigate(`/clients/${c._id}`)}
-              />
+              /> */}
             </div>
           </div>
         </aside>

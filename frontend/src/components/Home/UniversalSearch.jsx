@@ -15,10 +15,16 @@ const UniversalSearch = () => { // REMOVED onClientSelect prop
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const data = await request("/clients/");
-        setClients(data || []);
+        const res = await request("/clients/");
+        // FIX: Extract 'data' from the response object
+        if (res?.success) {
+          setClients(res.data || []);
+        } else {
+          setClients([]);
+        }
       } catch (err) { 
         console.error("Search fetch error:", err); 
+        setClients([]); // Fallback to empty array on error
       }
     };
     fetchClients();
@@ -44,7 +50,7 @@ const UniversalSearch = () => { // REMOVED onClientSelect prop
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredClients = clients.filter(c => 
+  const filteredClients = clients?.filter(c => 
     c.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     c.pan?.toLowerCase().includes(searchTerm.toLowerCase())
   ).slice(0, 6);

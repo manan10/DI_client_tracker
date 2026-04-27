@@ -12,6 +12,8 @@ import {
   Wallet,
   Terminal,
   ChevronRight,
+  Users, // New Icon
+  GitBranch, // New Icon
 } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 import { useAuth } from "../../hooks/useAuth";
@@ -27,11 +29,15 @@ import BankAccounts from "../../components/Settings/BankAccounts";
 import DataSync from "../../components/Settings/DataSync";
 import TallyLedgerImport from "../../components/Settings/TallyLedgerImport";
 
+// New Component Imports
+import UserManagement from "../../components/Settings/UserManagement";
+import WorkflowManagement from "../../components/Settings/WorkflowManagement";
+
 const Settings = () => {
   const { request, loading } = useApi();
   const { user, setUser } = useAuth();
 
-  const [activeTab, setActiveTab] = useState("business");
+  const [activeTab, setActiveTab] = useState("users");
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const [thresholds, setThresholds] = useState({
@@ -97,20 +103,13 @@ const Settings = () => {
 
   const tabs = [
     {
-      id: "business",
-      label: "Logic",
-      fullLabel: "AUM Thresholds",
-      icon: BarChart3,
+      id: "users", // New Tab
+      label: "Users",
+      fullLabel: "User Management",
+      icon: Users,
       locked: false,
     },
-    {
-      id: "tally",
-      label: "Tally",
-      fullLabel: "Import Ledgers",
-      icon: Terminal,
-      locked: false,
-    },
-    {
+        {
       id: "amcs",
       label: "AMCs",
       fullLabel: "AMC Registry",
@@ -131,11 +130,11 @@ const Settings = () => {
       icon: Wallet,
       locked: false,
     },
-    {
-      id: "system",
-      label: "Theme",
-      fullLabel: "Appearance",
-      icon: Bell,
+   {
+      id: "business",
+      label: "Logic",
+      fullLabel: "AUM Thresholds",
+      icon: BarChart3,
       locked: false,
     },
     {
@@ -145,6 +144,28 @@ const Settings = () => {
       icon: History,
       locked: false,
     },
+    {
+      id: "workflows", // New Tab
+      label: "Process",
+      fullLabel: "Workflow Engine",
+      icon: GitBranch,
+      locked: false,
+    },
+    {
+      id: "tally",
+      label: "Tally",
+      fullLabel: "Tally Ledgers",
+      icon: Terminal,
+      locked: false,
+    },
+    {
+      id: "system",
+      label: "Theme",
+      fullLabel: "Appearance",
+      icon: Bell,
+      locked: false,
+    },
+
     {
       id: "compliance",
       label: "Compliance",
@@ -160,6 +181,10 @@ const Settings = () => {
         return (
           <TierConfig thresholds={thresholds} setThresholds={setThresholds} />
         );
+      case "users":
+        return <UserManagement />;
+      case "workflows":
+        return <WorkflowManagement />;
       case "tally":
         return <TallyLedgerImport />;
       case "compliance":

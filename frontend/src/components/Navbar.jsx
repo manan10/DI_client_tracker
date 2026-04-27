@@ -48,10 +48,10 @@ const Navbar = () => {
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { name: 'Home', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Directory', path: '/directory', icon: Users },
-    { name: 'Tasks', path: '/tasks', icon: ListTodo, isLocked: true },
-    { name: 'Documents', path: '/documents', icon: Files, isLocked: true },
+    { name: 'Ops', path: '/tasks', icon: ListTodo },
+    { name: 'Docs', path: '/documents', icon: Files, isLocked: true },
     { name: 'Accounts', path: '/accounts', icon: BarChart3 },
     { name: 'Settings', path: '/settings', icon: SettingsIcon },
   ];

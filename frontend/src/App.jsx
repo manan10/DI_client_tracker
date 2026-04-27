@@ -16,7 +16,7 @@ const ClientDirectory = lazy(() => import("./pages/ClientTracker/ClientDirectory
 const Settings = lazy(() => import("./pages/ClientTracker/Settings"));
 const Accounts = lazy(() => import("./pages/ClientTracker/Accounts"));
 const ClientDetail = lazy(() => import("./pages/ClientTracker/ClientDetail"));
-const TaskBoard = lazy(() => import("./pages/ClientTracker/TaskBoard"));
+const Operations = lazy(() => import("./pages/ClientTracker/Operations"));
 const MaintenanceView = lazy(() => import("./pages/ClientTracker/MaintenanceView"));
 
 // Home Expense Tracker App Components
@@ -61,7 +61,6 @@ function App() {
       <Toaster position="top-right" richColors expand={true} />
       <Router>
         <div className="min-h-screen bg-gray-50">
-          {/* Suspense handles the loading state for lazy components */}
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/login" element={<Auth />} />
@@ -75,13 +74,11 @@ function App() {
                 }
               />
 
-              {/* --- HOME EXPENSE APP ROUTE --- */}
               <Route
                 path="/expenses"
                 element={
                   <ProtectedRoute>
                     <ExpenseDashboard />
-                    {/* <MaintenanceViewExpenses /> */}
                   </ProtectedRoute>
                 }
               />
@@ -161,7 +158,7 @@ function App() {
                 path="/tasks"
                 element={
                   <ProtectedRoute>
-                    <TaskBoard />
+                    <Operations />
                   </ProtectedRoute>
                 }
               />

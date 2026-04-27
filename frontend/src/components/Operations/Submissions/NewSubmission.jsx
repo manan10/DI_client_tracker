@@ -1,0 +1,451 @@
+import React, { useState, useEffect } from "react";
+import {
+  X, Check, Loader2, Search, ChevronRight, User, 
+  Landmark, IndianRupee, ShieldCheck, Hash, 
+  Activity, CreditCard, Send, ChevronDown, FileText, Settings
+} from "lucide-react";
+import { useApi } from "../../../hooks/useApi";
+import { toast } from "sonner";
+
+const NewSubmission = ({ isOpen, onClose, onCreated }) => {
+  const { request } = useApi();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [clients, setClients] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [blueprint, setBlueprint] = useState(null);
+  
+  // Custom Dropdown States
+  const [showTypeDrop, setShowTypeDrop] = useState(false);
+  const [showPayDrop, setShowPayDrop] = useState(false);
+  const [category, setCategory] = useState("FINANCIAL"); // FINANCIAL | SERVICE
+
+  const [formData, setFormData] = useState({
+    client: "",
+    clientName: "",
+    type: "PURCHASE_SIP",
+    subType: "",
+    schemeName: "",
+    amount: "",
+    folioNumber: "NEW",
+    submissionMode: "DIGITAL",
+    paymentMode: "UPI",
+    paymentStatus: "WAITING"
+  });
+
+  // 1. Debounced Client Search
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (isOpen && searchTerm.length > 1 && !formData.client) {
+        setIsSearching(true);
+        const res = await request(`/clients?search=${searchTerm}`);
+        if (res?.success) setClients(res.data);
+        setIsSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, isOpen, request, formData.client]);
+
+  // 2. Fetch Workflow: Uses Type for Financial, subType for Service
+  useEffect(() => {
+    let isMounted = true;
+    const syncWorkflow = async () => {
+      if (!isOpen) return;
+      const lookupKey = category === "SERVICE" ? formData.subType : formData.type;
+      if (!lookupKey) {
+        setBlueprint(null);
+        return;
+      }
+
+      try {
+        const res = await request(`/workflows/${lookupKey}`);
+        if (res?.success && isMounted) setBlueprint(res.data);
+      } catch {
+        console.error("Workflow sync failed");
+      }
+    };
+    syncWorkflow();
+    return () => { isMounted = false; };
+  }, [formData.type, formData.subType, category, isOpen, request]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Updated Validation Logic: 
+    // If Financial: needs Client, Scheme, and Amount.
+    // If Service: needs Client and subType.
+    const isFinancialValid = category === "FINANCIAL" && formData.client && formData.schemeName && formData.amount;
+    const isServiceValid = category === "SERVICE" && formData.client && formData.subType;
+
+    if (!isFinancialValid && !isServiceValid) {
+      return toast.error("Required fields missing");
+    }
+
+    setIsSubmitting(true);
+    
+    // Prepare the payload for the API
+    const payload = { ...formData };
+    if (category === "SERVICE") {
+      payload.type = "NON_FINANCIAL";
+      // Ensure amount is 0 so the backend doesn't throw a validation error
+      payload.amount = 0; 
+      // If no subject was typed, the backend/registry will use the subType as the title
+    }
+
+    const res = await request("/submissions", "POST", payload);
+
+    if (res?.success) {
+      toast.success("Entry Logged Successfully");
+      onCreated(res.data);
+      handleClose();
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleClose = () => {
+    setFormData({ 
+      client: "", clientName: "", type: "PURCHASE_SIP", subType: "",
+      schemeName: "", amount: "", folioNumber: "NEW", 
+      submissionMode: "DIGITAL", paymentMode: "UPI",
+      paymentStatus: "WAITING"
+    });
+    setCategory("FINANCIAL");
+    setSearchTerm("");
+    setBlueprint(null);
+    onClose();
+  };
+    
+  const formatIndianNumber = (val) => {
+    if (!val) return "";
+    let x = val.toString().replace(/\D/g, "");
+    let lastThree = x.substring(x.length - 3);
+    let otherNumbers = x.substring(0, x.length - 3);
+    if (otherNumbers !== "") lastThree = "," + lastThree;
+    return otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + lastThree;
+  };
+
+  const FINANCIAL_TYPES = [
+    { id: 'PURCHASE_SIP', label: 'Purchase (SIP)' },
+    { id: 'PURCHASE_LUMPSUM', label: 'Purchase (Lumpsum)' },
+    { id: 'REDEMPTION', label: 'Redemption' },
+    { id: 'SWP', label: 'Withdrawal (SWP)' }
+  ];
+
+  const SERVICE_TYPES = [
+    { id: 'CHANGE_OF_CONTACT', label: 'Change Contact Detail' },
+    { id: 'CHANGE_OF_NAME', label: 'Change of Name' },
+    { id: 'CHANGE_OF_BANK', label: 'Change of Bank' },
+    { id: 'UNIT_TRANSFER', label: 'Unit Transfer' },
+    { id: 'MINOR_TO_MAJOR', label: 'Minor to Major' },
+    { id: 'NEW_KYC', label: 'New KYC' },
+    { id: 'PAN_KYC_UPDATE', label: 'PAN/KYC Update' },
+    { id: 'OTHERS', label: 'Others' }
+  ];
+
+  const PAY_OPTIONS = [
+    { id: 'UPI', label: 'UPI' },
+    { id: 'NET_BANKING', label: 'Net Banking' },
+    { id: 'CHEQUE', label: 'Physical Cheque' },
+    { id: 'MANDATE', label: 'Existing Mandate' },
+    { id: 'OTHER', label: 'Other Channel' }
+  ];
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-2000 flex justify-end">
+      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity" onClick={handleClose} />
+
+      <div className="relative w-full max-w-162.5 bg-white dark:bg-[#090A0C] h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-500">
+        
+        {/* Header */}
+        <div className="px-10 pt-12 pb-8 flex justify-between items-start border-b border-slate-100 dark:border-white/5 bg-slate-50/30 dark:bg-white/1">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 mb-1">
+               <Activity size={14} className="text-emerald-500" />
+               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Create a new Submission</span>
+            </div>
+            <h1 className="text-3xl font-[1000] tracking-tighter text-slate-900 dark:text-white uppercase italic">
+              New <span className="text-emerald-500 underline decoration-slate-200 underline-offset-8">Submission</span>
+            </h1>
+          </div>
+          <button onClick={handleClose} className="p-2 text-slate-300 hover:text-rose-500 transition-colors">
+            <X size={24} strokeWidth={1.5} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-10 py-10 space-y-10 no-scrollbar">
+          
+          {/* CATEGORY SELECTOR */}
+          <div className="space-y-4">
+             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Submission Category</label>
+             <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-100 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10">
+                <button 
+                  type="button"
+                  onClick={() => setCategory("FINANCIAL")}
+                  className={`flex items-center justify-center gap-3 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${category === 'FINANCIAL' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xl' : 'text-slate-400'}`}
+                >
+                  <IndianRupee size={14} /> Financial
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setCategory("SERVICE")}
+                  className={`flex items-center justify-center gap-3 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${category === 'SERVICE' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xl' : 'text-slate-400'}`}
+                >
+                  <Settings size={14} /> Service Request
+                </button>
+             </div>
+          </div>
+
+          {/* DYNAMIC FORM SECTION 1 */}
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-3 relative">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <Hash size={12} strokeWidth={3} /> {category === 'FINANCIAL' ? 'Submission Type' : 'Service Sub-Type'}
+              </label>
+              <button 
+                type="button"
+                onClick={() => setShowTypeDrop(!showTypeDrop)}
+                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-4 text-[11px] font-black uppercase flex justify-between items-center"
+              >
+                {category === 'FINANCIAL' 
+                  ? FINANCIAL_TYPES.find(o => o.id === formData.type)?.label 
+                  : (SERVICE_TYPES.find(o => o.id === formData.subType)?.label || "SELECT SERVICE...")}
+                <ChevronDown size={14} className={`transition-transform duration-300 ${showTypeDrop ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {showTypeDrop && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#121418] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl z-100 overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-200">
+                  {(category === 'FINANCIAL' ? FINANCIAL_TYPES : SERVICE_TYPES).map(opt => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => { 
+                        if (category === 'FINANCIAL') setFormData({...formData, type: opt.id});
+                        else setFormData({...formData, subType: opt.id});
+                        setShowTypeDrop(false); 
+                      }}
+                      className="w-full px-5 py-3 text-left text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-colors"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <Send size={12} strokeWidth={3} /> Submission Mode
+              </label>
+              <div className="flex p-1 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10">
+                {["DIGITAL", "PHYSICAL"].map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setFormData({...formData, submissionMode: m})}
+                    className={`flex-1 py-2.5 rounded text-[9px] font-black uppercase transition-all ${formData.submissionMode === m ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 2: CLIENT SEARCH */}
+          <div className="space-y-3">
+            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <User size={12} strokeWidth={3} /> Select Client
+            </label>
+            <div className="relative group">
+              <div className={`flex items-center gap-4 px-5 py-4 rounded-xl border transition-all duration-300 ${formData.client ? "border-emerald-500 bg-emerald-500/3 ring-4 ring-emerald-500/5" : "border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/2"}`}>
+                {isSearching ? <Loader2 size={18} className="animate-spin text-emerald-500" /> : <Search size={18} className="text-slate-300" />}
+                <input
+                  placeholder={formData.clientName || "SEARCH BY NAME OR PAN..."}
+                  className="bg-transparent border-none outline-none text-xs font-black w-full uppercase placeholder:text-slate-300 tracking-wider"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    if (formData.client) setFormData({ ...formData, client: "", clientName: "" });
+                  }}
+                />
+              </div>
+
+              {searchTerm && !formData.client && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#121418] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden divide-y divide-slate-50 dark:divide-white/5">
+                  {clients.map((c) => (
+                    <button
+                      key={c._id}
+                      type="button"
+                      onClick={() => { setFormData({ ...formData, client: c._id, clientName: c.name }); setSearchTerm(""); }}
+                      className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                    >
+                      <div className="text-left">
+                        <div className="text-xs font-black uppercase tracking-tight">{c.name}</div>
+                        <div className="text-[9px] font-mono font-bold text-slate-400">{c.pan}</div>
+                      </div>
+                      <ChevronRight size={14} className="text-slate-300" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* SECTION 3: SPECIFICATIONS */}
+          <div className="bg-slate-50 dark:bg-white/1 p-8 rounded-xl border border-slate-100 dark:border-white/5 space-y-6">
+            <div className="space-y-3">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <Landmark size={12} strokeWidth={3} /> 
+                {category === 'SERVICE' ? 'Request Subject (Optional)' : 'Fund Name'}
+              </label>
+              <input
+                // Only required if it's a financial transaction
+                required={category === 'FINANCIAL'}
+                placeholder={category === 'SERVICE' ? "E.G. ALL FOLIOS / SPECIFIC FUND..." : "E.G. SBI BLUECHIP FUND..."}
+                className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-5 py-4 text-xs font-black outline-none focus:border-emerald-500 transition-all uppercase"
+                value={formData.schemeName}
+                onChange={(e) => setFormData({ ...formData, schemeName: e.target.value.toUpperCase() })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+                {/* Only show amount if category is FINANCIAL */}
+                {category === 'FINANCIAL' ? (
+                  <div className="space-y-3">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <IndianRupee size={12} strokeWidth={3} /> Value (INR)
+                    </label>
+                    <input
+                        type="text"
+                        required
+                        placeholder="0.00"
+                        className="w-full px-5 py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-2xl font-[1000] outline-none focus:border-emerald-500 transition-all tabular-nums tracking-tighter"
+                        value={formatIndianNumber(formData.amount)}
+                        onChange={(e) => {
+                          const rawValue = e.target.value.replace(/,/g, "");
+                          if (!isNaN(rawValue)) setFormData({ ...formData, amount: rawValue });
+                        }}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <FileText size={12} strokeWidth={3} /> Service Type
+                    </label>
+                    <div className="w-full px-5 py-5 bg-slate-200/20 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 rounded-lg text-[10px] font-black uppercase text-emerald-500 tracking-widest">
+                       {formData.subType?.replace(/_/g, ' ') || "SELECT FROM DROP..."}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Hash size={12} strokeWidth={3} /> Folio Reference
+                </label>
+                <input
+                  placeholder="NEW / FOLIO NO..."
+                  className="w-full px-5 py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-black outline-none focus:border-emerald-500 transition-all uppercase"
+                  value={formData.folioNumber}
+                  onChange={(e) => setFormData({ ...formData, folioNumber: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 4: PAYMENT (Hidden for NFT) */}
+          {category === 'FINANCIAL' && !formData.type.includes('REDEMPTION') && !formData.type.includes('SWP') && (
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-3 relative">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <CreditCard size={12} strokeWidth={3} /> Payment Channel
+                </label>
+                <button 
+                  type="button"
+                  onClick={() => setShowPayDrop(!showPayDrop)}
+                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-4 text-[11px] font-black uppercase flex justify-between items-center"
+                >
+                  {PAY_OPTIONS.find(o => o.id === formData.paymentMode)?.label}
+                  <ChevronDown size={14} className={`transition-transform duration-300 ${showPayDrop ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showPayDrop && (
+                  <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-[#121418] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl z-100 overflow-hidden py-1 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                    {PAY_OPTIONS.map(opt => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => { setFormData({...formData, paymentMode: opt.id}); setShowPayDrop(false); }}
+                        className="w-full px-5 py-3 text-left text-[10px] font-black uppercase hover:bg-emerald-500 hover:text-white transition-colors"
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Initial Status</label>
+                <div className="flex p-1 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10">
+                  {["WAITING", "PAID"].map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setFormData({...formData, paymentStatus: s})}
+                      className={`flex-1 py-2.5 rounded text-[9px] font-black uppercase transition-all ${formData.paymentStatus === s ? "bg-emerald-500 text-white shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* BLUEPRINT PREVIEW */}
+          {blueprint && (
+            <div className="pt-6 border-t border-slate-100 dark:border-white/5 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">General Worklow Checklist</span>
+                <ShieldCheck size={14} className="text-emerald-500" />
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                {blueprint.defaultSteps.map((step, idx) => (
+                  <div key={idx} className="flex items-center gap-4 px-4 py-3 bg-slate-50 dark:bg-white/2 border border-slate-100 dark:border-white/5 rounded-md">
+                    <span className="text-[8px] font-black text-slate-400 w-4">{idx + 1}.</span>
+                    <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wide">{step}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </form>
+
+        {/* Footer */}
+        <div className="p-10 border-t border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-white/2">
+          <button onClick={handleClose} className="text-[10px] font-black text-slate-400 hover:text-rose-600 uppercase tracking-[0.2em] transition-colors">Discard</button>
+          <button
+            onClick={handleSubmit}
+            disabled={
+              isSubmitting || 
+              !formData.client || 
+              (category === 'FINANCIAL' && (!formData.schemeName || !formData.amount)) ||
+              (category === 'SERVICE' && !formData.subType)
+            }
+            className="group relative flex items-center gap-4 bg-slate-950 dark:bg-white text-white dark:text-black px-12 py-4 rounded-lg transition-all active:scale-95 disabled:opacity-20 overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-emerald-600 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+            <div className="relative z-10 flex items-center gap-3">
+                <span className="text-[11px] font-black uppercase tracking-[0.2em]">{isSubmitting ? "SYNCING..." : "Create"}</span>
+                {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={3} />}
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default NewSubmission;

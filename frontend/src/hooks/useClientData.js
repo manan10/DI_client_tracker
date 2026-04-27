@@ -1,17 +1,24 @@
 import { useMemo } from 'react';
 
-export const useClientData = (clients, searchTerm, filterTier, sortConfig, thresholds) => {
+export const useClientData = (clients = [], searchTerm = "", filterTier = "All", sortConfig = {}, thresholds = null) => {
   return useMemo(() => {
+    // Data Guard
+    if (!Array.isArray(clients) || clients.length === 0) {
+      return { allFamilies: [], filteredFamilies: [] };
+    }
+
+    // Default thresholds in case state is still hydrating
     const limits = thresholds || { diamond: 5, gold: 2, silver: 0.5, bronze: 0.1 };
 
     const getDynamicCategory = (aum) => {
-      const aumInCr = aum / 10000000;
+      const aumInCr = (Number(aum) || 0) / 10000000;
       if (aumInCr >= limits.diamond) return 'Diamond';
       if (aumInCr >= limits.gold) return 'Gold';
       if (aumInCr >= limits.silver) return 'Silver';
       return 'Bronze';
     };
 
+    // 1. Group Clients by Family
     const groups = {};
     clients.forEach(client => {
       const fid = client.familyId || client._id;
@@ -29,7 +36,7 @@ export const useClientData = (clients, searchTerm, filterTier, sortConfig, thres
       group.allParticipants.push(client);
     });
 
-    // 2. Generate All Families with Dynamic Categorization
+    // 2. Generate Family View
     const allFamilies = Object.values(groups).map(group => {
       const head = group.head || group.allParticipants[0];
       if (!head) return null;
@@ -40,19 +47,18 @@ export const useClientData = (clients, searchTerm, filterTier, sortConfig, thres
         ...head,
         members: group.allParticipants,
         familyAum: group.totalFamilyAum,
-        // Using our new dynamic logic here
         category: getDynamicCategory(group.totalFamilyAum),
         latestUpdate: group.latestUpdate,
         isQuiet: daysSinceUpdate > 90
       };
     }).filter(Boolean);
 
-    // 3. Filtering Logic (Stays largely same)
+    // 3. Filtering
     let filtered = allFamilies.filter((f) => {
       const searchStr = searchTerm.toLowerCase();
       const headMatches = f.name?.toLowerCase().includes(searchStr) || f.pan?.toLowerCase().includes(searchStr);
       const memberMatches = f.members.some(m => 
-        m.name.toLowerCase().includes(searchStr) || (m.pan && m.pan.toLowerCase().includes(searchStr))
+        m.name?.toLowerCase().includes(searchStr) || (m.pan && m.pan.toLowerCase().includes(searchStr))
       );
       
       f.shouldAutoExpand = searchTerm.length > 0 && memberMatches;
@@ -64,13 +70,15 @@ export const useClientData = (clients, searchTerm, filterTier, sortConfig, thres
       return (headMatches || memberMatches) && matchesTier;
     });
 
-    // 4. Sorting Logic
+    // 4. Sorting
     if (sortConfig.key) {
       filtered.sort((a, b) => {
         let aValue = a[sortConfig.key];
         let bValue = b[sortConfig.key];
+        
         if (sortConfig.key === 'aum') { aValue = a.familyAum; bValue = b.familyAum; }
         if (sortConfig.key === "updatedAt") { aValue = new Date(a.latestUpdate); bValue = new Date(b.latestUpdate); }
+        
         if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
         if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;

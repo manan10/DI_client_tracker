@@ -6,6 +6,8 @@ const admin = require("firebase-admin");
 exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
+    
+    // Normalize username to match how it's stored
     const user = await User.findOne({ username: username.toLowerCase().trim() });
     
     if (!user) {
@@ -17,18 +19,22 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: "Access Denied: Invalid Distributor Credentials" });
     }
 
+    // Generate JWT
     const token = jwt.sign(
       { id: user._id, role: 'admin' }, 
       process.env.JWT_SECRET, 
       { expiresIn: '7d' }
     );
 
+    // Return the user object WITH allowedApps
     res.status(200).json({
       token,
       user: { 
+        _id: user._id,
         name: user.name, 
         username: user.username,
-        email: user.email 
+        email: user.email,
+        allowedApps: user.allowedApps || [] // CRITICAL: This was missing
       }
     });
   } catch (err) {
@@ -37,15 +43,12 @@ exports.login = async (req, res) => {
   }
 };
 
-
 // @desc    Generate a Firebase Custom Token for Storage Access
 // @route   GET /api/auth/firebase-token
 exports.getFirebaseToken = async (req, res) => {
   try {
-    // This is the UID you hardcoded in your Firebase Storage Rules
     const uid = "QuG96wUfsLa9X9Cyx6HzFssCfQr1";
 
-    // Optional: You can add custom claims if you want to use them in Rules later
     const additionalClaims = {
       premiumUser: true,
     };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Lock, Loader2, ChevronRight, Eye, EyeOff, User, Check, ShieldCheck } from 'lucide-react';
+import { Lock, Loader2, ChevronRight, Eye, EyeOff, User, Check, ShieldCheck, Monitor, Wallet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useApi } from '../hooks/useApi';
@@ -59,9 +59,20 @@ const Auth = () => {
         username: formData.username,
         password: formData.password
       });
+
       if (data && data.token) {
         login(data.user, data.token);
-        navigate('/');
+
+        // --- SMART REDIRECT BASED ON APP ACCESS ---
+        const apps = data.user.allowedApps || [];
+        console.log("User Apps:", data.user);
+        if (apps.length === 1 && apps.includes('EXPENSE_TRACKER')) {
+          navigate('/expenses');
+        } else if (apps.length === 1 && apps.includes('CLIENT_TRACKER')) {
+          navigate('/dashboard');
+        } else {
+          navigate('/');
+        }
       }
     } catch (err) {
       console.error("Auth Error:", err);
@@ -73,9 +84,8 @@ const Auth = () => {
   return (
     <div className="min-h-screen w-full flex flex-col lg:flex-row bg-white font-sans overflow-hidden">
       
-      {/* --- LEFT PANEL: IMAGE & BRANDING (Visible on Laptop/Desktop) --- */}
+      {/* --- LEFT PANEL: BRANDING --- */}
       <div className="hidden lg:flex lg:w-[50%] xl:w-[60%] relative flex-col items-center justify-center p-12 overflow-hidden bg-[#0F172A]">
-        {/* High-end Financial Operations Background */}
         <div className="absolute inset-0 z-0">
           <img 
             src="https://images.unsplash.com/photo-1611974714013-3c8b06032a7e?q=80&w=2070&auto=format&fit=crop" 
@@ -96,10 +106,9 @@ const Auth = () => {
         </div>
       </div>
 
-      {/* --- RIGHT PANEL: THE LOGIN FORM (Highly Optimized for Mobile) --- */}
+      {/* --- RIGHT PANEL: LOGIN --- */}
       <div className="w-full lg:w-[50%] xl:w-[40%] flex flex-col justify-center items-center p-6 sm:p-12 bg-slate-50 relative min-h-screen lg:min-h-0">
         
-        {/* Mobile Header (Hidden on Desktop) */}
         <div className="lg:hidden w-full max-w-sm mb-8 text-center flex flex-col items-center">
            <img src={Logo} alt="Logo" className="h-14 w-auto mb-4" />
            <h2 className="text-2xl font-[1000] text-slate-900 uppercase tracking-tighter leading-tight">
@@ -113,11 +122,10 @@ const Auth = () => {
             <p className="text-slate-500 mt-1.5 font-medium">Sign in to access your family dashboard.</p>
           </div>
 
-          {/* Form Container with White background for contrast */}
           <div className="bg-white p-6 sm:p-0 rounded-2xl shadow-xl shadow-slate-200/50 sm:shadow-none border border-slate-100 sm:border-0">
             <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-8">
               
-              {/* Member Selector */}
+              {/* Member Selector with App Badges */}
               <div className="relative group" ref={dropdownRef}>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Member Profile</label>
                 <button
@@ -133,7 +141,7 @@ const Auth = () => {
                 </button>
 
                 {isOpen && (
-                  <div className="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-48 overflow-y-auto animate-in fade-in zoom-in-95">
+                  <div className="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-64 overflow-y-auto animate-in fade-in zoom-in-95">
                     {users.map((u) => (
                       <button
                         key={u._id}
@@ -141,9 +149,21 @@ const Auth = () => {
                         onClick={() => handleSelect(u)}
                         className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 text-left"
                       >
-                        <div>
-                          <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{u.name}</p>
-                          <p className="text-[10px] text-slate-500 font-bold lowercase">@{u.username}</p>
+                        <div className="flex-1 min-w-0 mr-4">
+                          <p className="text-sm font-black text-slate-900 uppercase tracking-tight truncate">{u.name}</p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <p className="text-[9px] text-slate-500 font-bold lowercase">@{u.username}</p>
+                            
+                            {/* APP BADGES - VISUAL FEEDBACK */}
+                            <div className="flex gap-1 ml-2">
+                              {u.allowedApps?.includes('CLIENT_TRACKER') && (
+                                <Monitor size={8} className="text-emerald-500" />
+                              )}
+                              {u.allowedApps?.includes('EXPENSE_TRACKER') && (
+                                <Wallet size={8} className="text-blue-500" />
+                              )}
+                            </div>
+                          </div>
                         </div>
                         {selectedUser?.username === u.username && <Check size={18} className="text-emerald-600" />}
                       </button>

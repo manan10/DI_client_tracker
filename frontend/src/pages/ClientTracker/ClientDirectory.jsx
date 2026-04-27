@@ -32,17 +32,26 @@ const ClientDirectory = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [clientData, settingsData] = await Promise.all([
+        const [clientRes, settingsRes] = await Promise.all([
           request("/clients/"),
           request("/settings"),
         ]);
 
-        setClients(clientData || []);
-        if (settingsData?.business?.thresholds) {
-          setThresholds(settingsData.business.thresholds);
+        // FIX: Extracting the data array from the response object
+        if (clientRes?.success) {
+          setClients(clientRes.data || []);
+        } else {
+          setClients([]);
+        }
+
+        // FIX: Extracting thresholds correctly from the business settings object
+        const incomingThresholds = settingsRes?.data?.business?.thresholds || settingsRes?.business?.thresholds;
+        if (incomingThresholds) {
+          setThresholds(incomingThresholds);
         }
       } catch (err) {
         console.error("Directory data fetch failed", err);
+        setClients([]); 
       }
     };
     fetchData();
@@ -56,7 +65,6 @@ const ClientDirectory = () => {
     thresholds,
   );
 
-  // Directly route to the new ClientDetail page
   const handleClientClick = (client) => {
     navigate(`/client/${client._id}`);
   };
@@ -110,8 +118,8 @@ const ClientDirectory = () => {
           />
         </div>
 
-        {/* Global Business Summary with dynamic thresholds */}
-        {!loading && thresholds && (
+        {/* Global Business Summary - Rendered as soon as data exists */}
+        {thresholds && allFamilies.length > 0 && (
           <TierSummary
             families={allFamilies}
             activeTier={filterTier}

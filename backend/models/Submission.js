@@ -1,0 +1,124 @@
+const mongoose = require('mongoose');
+
+const SubmissionSchema = new mongoose.Schema({
+  client: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Client',
+    required: true
+  },
+  // --- IDENTIFICATION ---
+  type: {
+    type: String,
+    enum: [
+      'PURCHASE_LUMPSUM', 
+      'PURCHASE_SIP', 
+      'REDEMPTION', 
+      'SWP', 
+      'NON_FINANCIAL' // New Master Category
+    ],
+    required: true
+  },
+  subType: {
+    type: String,
+    enum: [
+      'CHANGE_OF_CONTACT',
+      'CHANGE_OF_NAME',
+      'CHANGE_OF_BANK',
+      'UNIT_TRANSFER',
+      'MINOR_TO_MAJOR',
+      'NEW_KYC',
+      'PAN_KYC_UPDATE',
+      'OTHERS'
+    ],
+    // Only required if type is NON_FINANCIAL
+    required: function() { return this.type === 'NON_FINANCIAL'; }
+  },
+  schemeName: { 
+    type: String, 
+    // Only required for money-moving transactions
+    required: function() { return this.type !== 'NON_FINANCIAL'; },
+    uppercase: true 
+  },
+  folioNumber: { 
+    type: String, 
+    default: 'NEW' 
+  },
+
+  // --- FINANCIALS ---
+  amount: {
+    type: Number,
+    // Set required to false if it's a Non-Financial transaction
+    required: function() { return this.type !== 'NON_FINANCIAL'; },
+    default: 0
+  },
+  
+  // --- TRACKING LOGIC ---
+  submissionMode: {
+    type: String,
+    enum: ['DIGITAL', 'PHYSICAL'],
+    default: 'DIGITAL'
+  },
+  rtaReference: { 
+    type: String, 
+    description: "CAMS/Karvy/Platform Transaction ID or Request No." 
+  },
+
+  // --- WORKFLOW ENGINE ---
+  checklist: [{
+    text: String,
+    isCompleted: { type: Boolean, default: false },
+    completedAt: Date
+  }],
+  status: {
+    type: String,
+    enum: ['DRAFT', 'PENDING', 'SUBMITTED', 'REJECTED', 'SETTLED'],
+    default: 'DRAFT'
+  },
+  isFinalized: {
+    type: Boolean,
+    default: false
+  },
+
+  // --- REJECTION & AUDIT ---
+  rejectionReason: {
+    type: String,
+    enum: ['KYC_INCOMPLETE', 'SIGNATURE_MISMATCH', 'INFO_MISMATCH', 'BANK_REJECTED', 'OTHER']
+  },
+  rejectionNotes: String,
+  attachments: [{
+    fileName: String,
+    fileUrl: String,
+    uploadedAt: { type: Date, default: Date.now }
+  }],
+
+  // --- PAYMENT TRACKING ---
+  paymentStatus: {
+    type: String,
+    enum: ['NOT_APPLICABLE', 'WAITING', 'PAID', 'VERIFIED'],
+    default: function() {
+      // Redemptions, SWPs, and ALL Non-Financials don't need payment tracking
+      const noPaymentTypes = ['REDEMPTION', 'SWP', 'NON_FINANCIAL'];
+      return noPaymentTypes.includes(this.type) ? 'NOT_APPLICABLE' : 'WAITING';
+    }
+  },
+  paymentDate: Date,
+  paymentMode: {
+    type: String,
+    enum: ['UPI', 'NET_BANKING', 'CHEQUE', 'MANDATE', 'OTHER']
+  },
+  
+  // --- METADATA ---
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  auditTrail: [{
+    action: { type: String, uppercase: true },
+    note: String,
+    performedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    timestamp: { type: Date, default: Date.now }
+  }],
+  internalNotes: String
+}, { timestamps: true });
+
+module.exports = mongoose.model('Submission', SubmissionSchema);

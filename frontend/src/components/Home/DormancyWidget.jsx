@@ -8,11 +8,12 @@ const DormancyWidget = ({ onClientClick }) => {
 
   useEffect(() => {
     const fetchDormant = async () => {
-      try {
-        const data = await request('/clients/dormant');
-        setDormant(data || []);
-      } catch (err) {
-        console.error("Dormancy fetch error:", err);
+      const res = await request("/clients/dormant");
+      // Check if res is actually an array before setting it
+      if (Array.isArray(res)) {
+        setDormant(res);
+      } else {
+        setDormant([]);
       }
     };
     fetchDormant();
