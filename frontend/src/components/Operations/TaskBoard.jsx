@@ -17,6 +17,7 @@ import {
   LayoutDashboard,
   Filter,
   Loader2,
+  ListTodoIcon,
 } from "lucide-react";
 
 import { useTasks } from "../../hooks/useTasks";
@@ -40,7 +41,6 @@ const TaskBoard = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Sync data on mount
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
@@ -81,7 +81,6 @@ const TaskBoard = () => {
     setActiveId(null);
   };
 
-  // Filter tasks based on search
   const filteredTasks = tasks.filter(
     (t) =>
       t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -89,45 +88,32 @@ const TaskBoard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7] dark:bg-[#020303] dark:bg-[radial-gradient(circle_at_center,var(--tw-gradient-from)_0%,transparent_100%)] dark:from-[#08090a] transition-colors duration-500">
+    <div className="min-h-screen dark:bg-slate-950 transition-colors duration-300">
       <div className="w-full px-4 md:px-8 py-6 space-y-6">
-        {/* BREADCRUMBS & ACTION HEADER */}
         <div className="flex flex-col gap-4">
-          <nav className="flex items-center gap-2 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">
-            <span>Workspace</span>
-            <ChevronRight size={10} strokeWidth={3} />
-            <span className="text-emerald-500/80 font-black uppercase tracking-widest">
-              Operations Flow
-            </span>
-          </nav>
-
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-emerald-600/10 dark:bg-emerald-500/5 rounded-lg flex items-center justify-center border border-emerald-500/20 shadow-inner">
-                <LayoutDashboard size={20} className="text-emerald-500" />
+                <ListTodoIcon size={20} className="text-emerald-500" />
               </div>
-              <h1 className="text-2xl md:text-3xl font-[1000] dark:text-white uppercase italic tracking-tighter">
-                Ops <span className="text-emerald-500">Kanban</span>
+              <h1 className="text-2xl md:text-4xl font-[1000] dark:text-white uppercase italic tracking-tighter">
+                Ops <span className="text-emerald-500">Task Board</span>
               </h1>
             </div>
 
             <div className="flex items-center gap-2">
-              <button className="p-2.5 hover:bg-slate-200 dark:hover:bg-white/5 rounded-md transition-all hidden md:flex border border-transparent dark:border-white/5">
-                <Share2 size={16} className="text-slate-400" />
-              </button>
               <button
                 onClick={() => setIsPanelOpen(true)}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 md:px-8 py-3 rounded-sm font-black text-[10px] md:text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-emerald-900/30 active:scale-95 transition-all flex items-center gap-2"
               >
                 <Plus size={16} strokeWidth={4} />
-                <span className="hidden sm:inline">Create Ticket</span>
+                <span className="hidden sm:inline">Create New Ticket</span>
                 <span className="sm:hidden">New</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* RESTORED SEARCH & USER AVATARS */}
         <div className="flex flex-col md:flex-row md:items-center gap-4 border-b border-slate-200 dark:border-white/5 pb-6">
           <div className="relative group flex-1 md:flex-none">
             <Search
@@ -138,13 +124,13 @@ const TaskBoard = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search tasks or clients..."
-              className="w-full md:w-80 pl-10 pr-4 py-2.5 bg-white dark:bg-[#0B0C0E] border border-slate-300 dark:border-white/10 rounded-sm text-[12px] focus:ring-2 ring-emerald-500/20 outline-none transition-all placeholder:text-slate-400"
+              className="w-full md:w-80 pl-10 pr-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-white/10 rounded-sm text-[12px] focus:ring-2 ring-emerald-500/20 outline-none transition-all placeholder:text-slate-400"
             />
           </div>
 
           <div className="flex items-center justify-between md:justify-start gap-6">
             <div className="flex items-center -space-x-2.5 ml-0 md:ml-4">
-              {["RM", "AD", "SS"].map((initials, i) => (
+              {["AD", "MD", "UD", "PD"].map((initials, i) => (
                 <div
                   key={i}
                   className="w-9 h-9 rounded-full border-2 border-[#F4F5F7] dark:border-[#020303] bg-slate-800 flex items-center justify-center text-[10px] font-black text-white shadow-md cursor-pointer hover:-translate-y-1 transition-transform"
@@ -156,18 +142,17 @@ const TaskBoard = () => {
                 +4
               </div>
             </div>
-            <button className="md:hidden p-2.5 bg-white dark:bg-[#0B0C0E] border border-slate-300 dark:border-white/10 rounded-md">
+            <button className="md:hidden p-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-md">
               <Filter size={18} className="text-slate-400" />
             </button>
           </div>
         </div>
 
-        {/* LOADING & BOARD GRID */}
         {loading && tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
             <Loader2 className="animate-spin text-emerald-500" size={32} />
             <span className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.3em]">
-              Syncing Ledger...
+              Syncing Tasks...
             </span>
           </div>
         ) : (

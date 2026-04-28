@@ -113,13 +113,13 @@ const NewTicketPanel = ({ isOpen, onClose, onCreated }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[2000] flex justify-end">
+    <div className="fixed inset-0 z-2000 flex justify-end">
       <div
         className="absolute inset-0 bg-slate-900/40 dark:bg-black/80 backdrop-blur-sm transition-opacity"
         onClick={handleClose}
       />
 
-      <div className="relative w-full max-w-[550px] bg-white dark:bg-[#0F1115] h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-500 ease-out">
+      <div className="relative w-full max-w-137.5 bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-500 ease-out">
         {/* Header */}
         <div className="px-8 pt-10 pb-6 border-b border-slate-100 dark:border-white/5">
           <div className="flex justify-between items-start">
@@ -314,7 +314,7 @@ const NewTicketPanel = ({ isOpen, onClose, onCreated }) => {
         </form>
 
         {/* Footer */}
-        <div className="px-8 py-8 border-t border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/30 dark:bg-white/[0.01]">
+        <div className="px-8 py-8 border-t border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/30 dark:bg-white/1">
           <button
             type="button"
             onClick={handleClose}

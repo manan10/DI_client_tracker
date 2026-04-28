@@ -56,7 +56,7 @@ const Operations = () => {
           </div>
 
           {/* Premium Tab Switcher */}
-          <div className="flex bg-slate-100 dark:bg-white/3 p-1.5 rounded-xl border border-slate-200 dark:border-white/5 backdrop-blur-md shadow-inner">
+          <div className="flex bg-slate-100 dark:bg-white/10 p-1.5 rounded-xl border border-slate-200 dark:border-white/5 backdrop-blur-md shadow-inner">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -64,7 +64,7 @@ const Operations = () => {
                 className={`flex items-center gap-3 px-8 py-4 rounded-lg text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-500 relative
                   ${
                     activeTab === tab.id
-                      ? "bg-white dark:bg-emerald-600 text-emerald-600 dark:text-white shadow-2xl shadow-emerald-500/20 scale-[1.02] -translate-y-px"
+                      ? "bg-white dark:bg-emerald-700 text-emerald-600 dark:text-white shadow-2xl shadow-emerald-500/20 scale-[1.02] -translate-y-px"
                       : tab.isLocked
                         ? "text-slate-300 dark:text-slate-700 cursor-not-allowed"
                         : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
@@ -85,11 +85,9 @@ const Operations = () => {
           </div>
         </div>
 
-        {/* Dynamic Content Area */}
         <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000 ease-out-expo">
           {activeTab === "dashboard" && (
             <div className="space-y-6">
-              {/* This is your existing Kanban Dashboard component */}
               <OperationsDashboard />
             </div>
           )}

@@ -22,9 +22,9 @@ const Column = ({ id, title, tasks, onTaskClick, onQuickAdd }) => {
   };
 
   return (
-    <div className="flex flex-col w-full bg-[#EBECF0] dark:bg-[#0B0C0E] rounded-[4px] transition-colors duration-200 h-fit min-h-[300px] border border-transparent dark:border-white/[0.05] shadow-sm">
+    <div className="flex flex-col w-full bg-[#EBECF0] dark:bg-slate-800 rounded-sm transition-colors duration-200 h-fit min-h-75 border border-transparent dark:border-white/5 shadow-sm">
       <div className="p-3 md:p-4 flex items-center justify-between">
-        <h3 className="text-[10px] md:text-[11px] font-black text-slate-500 dark:text-slate-400 tracking-[0.1em] flex items-center gap-2">
+        <h3 className="text-[10px] md:text-[11px] font-black text-slate-500 dark:text-slate-400 tracking-widest flex items-center gap-2">
           {title} 
           <span className="py-0.5 px-2 bg-slate-200 dark:bg-white/5 rounded text-[10px] tabular-nums font-bold text-slate-500 italic">
             {tasks.length}
@@ -35,8 +35,8 @@ const Column = ({ id, title, tasks, onTaskClick, onQuickAdd }) => {
 
       <div 
         ref={setNodeRef}
-        className={`flex-1 flex flex-col gap-2 p-2 min-h-[150px] transition-all
-          ${isOver ? 'bg-slate-300/30 dark:bg-white/[0.03]' : ''}`}
+        className={`flex-1 flex flex-col gap-2 p-2 min-h-37.5 transition-all
+          ${isOver ? 'bg-slate-300/30 dark:bg-white/3' : ''}`}
       >
         <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (

@@ -59,15 +59,15 @@ const TaskCard = ({ task, isOverlay, onClick }) => {
       className={`
         relative p-4 rounded-sm transition-all duration-300 group cursor-grab active:cursor-grabbing border
         ${isOverlay 
-          ? 'bg-white dark:bg-[#1E2023] border-emerald-500/50 shadow-[0_30px_90px_rgba(0,0,0,0.6)] scale-[1.03] rotate-1' 
+          ? 'bg-white dark:bg-slate-800 border-emerald-500/50 shadow-[0_30px_90px_rgba(0,0,0,0.6)] scale-[1.03] rotate-1' 
           : isStale 
-            ? 'bg-white dark:bg-[#121417] border-rose-500/30 shadow-[inset_0_0_20px_rgba(244,63,94,0.03)]'
-            : 'bg-white dark:bg-[#0E1012] border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-emerald-500/30 hover:shadow-xl hover:shadow-black/20'
+            ? 'bg-white dark:bg-slate-800 border-rose-500/30 shadow-[inset_0_0_20px_rgba(244,63,94,0.03)]'
+            : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-emerald-500/30 hover:shadow-xl hover:shadow-black/20'
         }
       `}
     >
       {/* Priority Indicator Line */}
-      <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${priorityColors[task.priority] || 'bg-slate-600'}`} />
+      <div className={`absolute left-0 top-0 bottom-0 w-0.75 ${priorityColors[task.priority] || 'bg-slate-600'}`} />
 
       <div className="flex flex-col gap-3.5">
         <div className="flex justify-between items-center">
@@ -84,7 +84,7 @@ const TaskCard = ({ task, isOverlay, onClick }) => {
               </div>
             )}
           </div>
-          <div className="text-[8px] font-bold text-slate-400 dark:text-slate-500 px-1.5 py-0.5 bg-slate-100 dark:bg-white/[0.03] rounded-sm border border-slate-200 dark:border-white/[0.05]">
+          <div className="text-[8px] font-bold text-slate-400 dark:text-slate-500 px-1.5 py-0.5 bg-slate-100 dark:bg-white/3 rounded-sm border border-slate-200 dark:border-white/5">
             {task.category || 'GENERAL'}
           </div>
         </div>
@@ -103,7 +103,7 @@ const TaskCard = ({ task, isOverlay, onClick }) => {
                </div>
                <span className="tabular-nums text-emerald-500">{completedSteps}/{totalSteps}</span>
             </div>
-            <div className="w-full h-[3px] bg-slate-100 dark:bg-white/[0.03] rounded-full overflow-hidden">
+            <div className="w-full h-0.75 bg-slate-100 dark:bg-white/3 rounded-full overflow-hidden">
                <div 
                  className="h-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)] transition-all duration-700 ease-out" 
                  style={{ width: `${progressPercent}%` }}
@@ -112,13 +112,13 @@ const TaskCard = ({ task, isOverlay, onClick }) => {
           </div>
         )}
 
-        <div className="flex items-center justify-between mt-1 pt-3 border-t border-slate-100 dark:border-white/[0.05]">
+        <div className="flex items-center justify-between mt-1 pt-3 border-t border-slate-100 dark:border-white/5">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded-sm bg-gradient-to-br from-slate-100 to-slate-200 dark:from-white/[0.05] dark:to-white/[0.01] flex items-center justify-center text-[10px] font-black text-slate-600 dark:text-emerald-500 border border-slate-200 dark:border-white/[0.05]">
+            <div className="w-6 h-6 rounded-sm bg-linear-to-br from-slate-100 to-slate-200 dark:from-white/5 dark:to-white/1 flex items-center justify-center text-[10px] font-black text-slate-600 dark:text-emerald-500 border border-slate-200 dark:border-white/5">
               {clientInitial}
             </div>
             <div className="flex flex-col">
-               <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-tight truncate max-w-[100px]">
+               <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-tight truncate max-w-25">
                 {clientName}
                </span>
                <span className="text-[7px] font-bold text-slate-400 uppercase tracking-tighter">Verified Client</span>
@@ -131,7 +131,7 @@ const TaskCard = ({ task, isOverlay, onClick }) => {
                 <CheckCircle2 size={12} className="text-emerald-500" />
               </div>
             ) : (
-              <div className="p-1 rounded bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.05]">
+              <div className="p-1 rounded bg-slate-50 dark:bg-white/2 border border-slate-200 dark:border-white/5">
                 {getPriorityIcon(task.priority)}
               </div>
             )}
