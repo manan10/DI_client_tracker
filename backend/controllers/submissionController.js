@@ -99,7 +99,7 @@ exports.getSubmissionById = async (req, res) => {
 };
 
 /**
- * @desc    Update logic with "From -> To" status tracking and Feed support
+ * @desc    Update logic with manual Finalization control
  */
 exports.updateSubmission = async (req, res) => {
   try {
@@ -111,7 +111,7 @@ exports.updateSubmission = async (req, res) => {
     const updateData = { ...req.body };
     const auditLogs = [];
 
-    // 1. Log Status Transitions (From -> To)
+    // 1. Log Status Transitions (e.g., PENDING -> SETTLED)
     if (updateData.status && updateData.status !== oldDoc.status) {
       auditLogs.push({
         action: 'STATUS_CHANGE',
@@ -121,7 +121,17 @@ exports.updateSubmission = async (req, res) => {
       });
     }
 
-    // 2. Extract and format new comments for the stream
+    // 2. Log Manual Finalization (The "Fulfill" button click)
+    if (updateData.isFinalized === true && oldDoc.isFinalized === false) {
+      auditLogs.push({
+        action: 'FINALIZED',
+        note: `Operation marked as FULFILLED / FINALIZED`,
+        performedBy: req.user?._id || null,
+        timestamp: new Date()
+      });
+    }
+
+    // 3. Extract comments for the audit trail
     if (updateData.auditTrail && Array.isArray(updateData.auditTrail)) {
       const newEntries = updateData.auditTrail.filter(entry => !entry._id);
       newEntries.forEach(entry => {
@@ -134,9 +144,7 @@ exports.updateSubmission = async (req, res) => {
       delete updateData.auditTrail;
     }
 
-    if (updateData.status === 'SETTLED') {
-      updateData.isFinalized = true;
-    }
+    // REMOVED: Automatic isFinalized = true logic here
 
     const query = { $set: updateData };
     if (auditLogs.length > 0) {

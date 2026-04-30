@@ -96,9 +96,15 @@ const SubmissionDetail = ({ submissionId, isOpen, onClose, onUpdate }) => {
 
   const executeFulfillment = async () => {
     setIsExecuting(true);
-    const res = await request(`/submissions/${submissionId}`, 'PATCH', { status: 'SETTLED' });
+    
+    // We send isFinalized: true instead of status: 'SETTLED'
+    // This matches the manual finalization logic in our new controller
+    const res = await request(`/submissions/${submissionId}`, 'PATCH', { 
+      isFinalized: true 
+    });
+
     if (res?.success) {
-      toast.success("Registry Record Fulfilled");
+      toast.success("Submission Fulfilled & Finalized");
       onUpdate(res.data);
       onClose();
     }
