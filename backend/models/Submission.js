@@ -14,7 +14,7 @@ const SubmissionSchema = new mongoose.Schema({
       'PURCHASE_SIP', 
       'REDEMPTION', 
       'SWP', 
-      'NON_FINANCIAL' // New Master Category
+      'NON_FINANCIAL' 
     ],
     required: true
   },
@@ -30,8 +30,9 @@ const SubmissionSchema = new mongoose.Schema({
       'PAN_KYC_UPDATE',
       'OTHERS'
     ],
-    // Only required if type is NON_FINANCIAL
-    required: function() { return this.type === 'NON_FINANCIAL'; }
+    required: function() { return this.type === 'NON_FINANCIAL'; },
+    // SETTER: Convert empty strings to undefined to bypass Enum check
+    set: v => (v === "" || v === null) ? undefined : v
   },
   schemeName: { 
     type: String, 

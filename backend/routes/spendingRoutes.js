@@ -10,6 +10,7 @@ router.get('/summary', spendingController.getFinanceSummary);
 router.get('/history/:walletId', spendingController.getWalletHistory);
 router.post('/process-allowance', spendingController.processMonthlyAllowance);
 router.get('/history', spendingController.getSpendingHistory);
+router.get('/analytics', spendingController.getDetailedAnalytics);
 router.delete('/:id', spendingController.deleteSpending);
 router.put('/:id', spendingController.editSpending);
 

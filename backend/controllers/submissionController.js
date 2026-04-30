@@ -9,11 +9,22 @@ exports.createSubmission = async (req, res) => {
   try {
     const { type, subType } = req.body;
 
+    // --- FIX FOR EMPTY ENUM ERROR ---
+    // If subType is an empty string, delete it so Mongoose validation passes
+    if (req.body.subType === "") {
+        delete req.body.subType;
+    }
+
     // 1. Fetch the Blueprint
-    // For Non-Financial, we look up by subType (e.g., CHANGE_OF_BANK)
-    // For Financial, we look up by the master type (e.g., PURCHASE_LUMPSUM)
+    // For Non-Financial, we look up by subType
+    // For Financial, we look up by the master type
     const lookupKey = type === 'NON_FINANCIAL' ? subType : type;
     
+    // Safety check for lookupKey
+    if (!lookupKey) {
+        return res.status(400).json({ success: false, message: "Transaction type or subtype required" });
+    }
+
     const blueprint = await Workflow.findOne({ type: lookupKey.toUpperCase() });
     
     // 2. Transform blueprint strings into checklist structure
@@ -35,6 +46,7 @@ exports.createSubmission = async (req, res) => {
     
     res.status(201).json({ success: true, data: populated });
   } catch (err) {
+    console.error("CREATE_SUBMISSION_ERROR:", err.message);
     res.status(400).json({ success: false, message: err.message });
   }
 };

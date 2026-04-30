@@ -361,3 +361,62 @@ exports.getWalletHistory = async (req, res) => {
         });
     }
 };
+
+exports.getDetailedAnalytics = async (req, res) => {
+    try {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const today = now.getDate() || 1;
+
+        const wallets = await Wallet.find({ isVirtual: false }).populate('user', 'name');
+
+        // Aggregate current month's cash spend
+        const spendingAgg = await Spending.aggregate([
+            { 
+                $match: { 
+                    date: { $gte: startOfMonth },
+                    method: 'CASH',
+                    type: { $in: ['DEBIT', 'TOP_UP'] }
+                } 
+            },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+
+        const monthlyCashBurn = spendingAgg[0]?.total || 0;
+        const totalPhysicalBalance = wallets.reduce((acc, w) => acc + (w.balance || 0), 0);
+        const totalPhysicalTarget = wallets.reduce((acc, w) => acc + (w.targetAllowance || 0), 0);
+        
+        const dailyCashBurnAvg = monthlyCashBurn / today;
+
+        // --- SAFETY LOGIC FOR INFINITY ---
+        // If daily burn is 0, we show 'No Spend' instead of infinity
+        let runway = "No Spend";
+        if (dailyCashBurnAvg > 0) {
+            runway = Math.floor(totalPhysicalBalance / dailyCashBurnAvg);
+        }
+
+        const solvency = totalPhysicalTarget > 0 ? Math.round((totalPhysicalBalance / totalPhysicalTarget) * 100) : 0;
+
+        const refillPriority = wallets
+            .map(w => ({
+                name: w.walletName,
+                balance: w.balance || 0,
+                health: w.targetAllowance > 0 ? Math.round((w.balance / w.targetAllowance) * 100) : 100
+            }))
+            .sort((a, b) => a.health - b.health)[0];
+
+        res.status(200).json({
+            success: true,
+            survival: {
+                solvency,
+                runway,
+                priority: refillPriority,
+                totalCash: totalPhysicalBalance,
+                dailyBurn: dailyCashBurnAvg.toFixed(0)
+            }
+        });
+
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
