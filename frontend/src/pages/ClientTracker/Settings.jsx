@@ -239,7 +239,7 @@ const Settings = () => {
             </nav>
           </aside>
 
-          <div className="flex-1 w-full bg-white dark:bg-[#0E1012] border border-slate-100 dark:border-white/5 shadow-sm relative min-h-[70vh] flex flex-col overflow-hidden rounded-[2rem] lg:rounded-none">
+          <div className="flex-1 w-full bg-white dark:bg-[#0E1012] border border-slate-100 dark:border-white/5 shadow-sm relative min-h-[70vh] flex flex-col overflow-hidden rounded-4xl lg:rounded-none">
             <div className="flex-1 p-6 md:p-12 lg:p-20">{renderContent()}</div>
 
             {(activeTab === "business" || activeTab === "compliance") && (

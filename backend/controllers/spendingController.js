@@ -362,58 +362,69 @@ exports.getWalletHistory = async (req, res) => {
     }
 };
 
+
 exports.getDetailedAnalytics = async (req, res) => {
     try {
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const today = now.getDate() || 1;
+        // 1. Get month/year from query params (e.g., ?month=5&year=2026)
+        const { month, year } = req.query;
+        
+        const targetMonth = month ? parseInt(month) : new Date().getMonth() + 1;
+        const targetYear = year ? parseInt(year) : new Date().getFullYear();
 
-        const wallets = await Wallet.find({ isVirtual: false }).populate('user', 'name');
+        // 2. Define Time Boundaries
+        const startDate = new Date(targetYear, targetMonth - 1, 1);
+        const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59);
+        const startOfYear = new Date(targetYear, 0, 1);
 
-        // Aggregate current month's cash spend
-        const spendingAgg = await Spending.aggregate([
+        // 3. Get Wallets (Current Balances)
+        const wallets = await Wallet.find({}).populate('user', 'name');
+
+        // 4. Aggregate Spending for the Selected Period
+        const spendStats = await Spending.aggregate([
             { 
                 $match: { 
-                    date: { $gte: startOfMonth },
-                    method: 'CASH',
-                    type: { $in: ['DEBIT', 'TOP_UP'] }
+                    date: { $gte: startOfYear, $lte: endDate },
+                    type: 'DEBIT' 
                 } 
             },
-            { $group: { _id: null, total: { $sum: "$amount" } } }
+            {
+                $group: {
+                    _id: "$sourceWallet",
+                    yearSpend: { $sum: "$amount" },
+                    monthSpend: {
+                        $sum: {
+                            $cond: [
+                                { $and: [{ $gte: ["$date", startDate] }, { $lte: ["$date", endDate] }] },
+                                "$amount",
+                                0
+                            ]
+                        }
+                    }
+                }
+            }
         ]);
 
-        const monthlyCashBurn = spendingAgg[0]?.total || 0;
-        const totalPhysicalBalance = wallets.reduce((acc, w) => acc + (w.balance || 0), 0);
-        const totalPhysicalTarget = wallets.reduce((acc, w) => acc + (w.targetAllowance || 0), 0);
-        
-        const dailyCashBurnAvg = monthlyCashBurn / today;
-
-        // --- SAFETY LOGIC FOR INFINITY ---
-        // If daily burn is 0, we show 'No Spend' instead of infinity
-        let runway = "No Spend";
-        if (dailyCashBurnAvg > 0) {
-            runway = Math.floor(totalPhysicalBalance / dailyCashBurnAvg);
-        }
-
-        const solvency = totalPhysicalTarget > 0 ? Math.round((totalPhysicalBalance / totalPhysicalTarget) * 100) : 0;
-
-        const refillPriority = wallets
-            .map(w => ({
-                name: w.walletName,
-                balance: w.balance || 0,
-                health: w.targetAllowance > 0 ? Math.round((w.balance / w.targetAllowance) * 100) : 100
-            }))
-            .sort((a, b) => a.health - b.health)[0];
+        // 5. Build Wallet-wise Data
+        const walletData = wallets.map(wallet => {
+            const stats = spendStats.find(s => s._id.toString() === wallet._id.toString()) || { yearSpend: 0, monthSpend: 0 };
+            return {
+                name: wallet.walletName,
+                user: wallet.user?.name || 'General',
+                balance: wallet.isVirtual ? null : wallet.balance,
+                isVirtual: wallet.isVirtual,
+                monthSpend: stats.monthSpend,
+                yearSpend: stats.yearSpend
+            };
+        });
 
         res.status(200).json({
             success: true,
-            survival: {
-                solvency,
-                runway,
-                priority: refillPriority,
-                totalCash: totalPhysicalBalance,
-                dailyBurn: dailyCashBurnAvg.toFixed(0)
-            }
+            aggregated: {
+                totalCashBalance: wallets.filter(w => !w.isVirtual).reduce((acc, w) => acc + (w.balance || 0), 0),
+                monthNetSpend: walletData.reduce((acc, w) => acc + w.monthSpend, 0),
+                yearNetSpend: walletData.reduce((acc, w) => acc + w.yearSpend, 0)
+            },
+            walletWise: walletData.sort((a, b) => a.name.localeCompare(b.name))
         });
 
     } catch (error) {

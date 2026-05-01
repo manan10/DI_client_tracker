@@ -154,9 +154,9 @@ const SubmissionDetail = ({ submissionId, isOpen, onClose, onUpdate, onDelete })
 
   return (
     <>
-      <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[2000]" onClick={onClose} />
+      <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-2000" onClick={onClose} />
       
-      <div className="fixed inset-y-0 right-0 w-full max-w-[850px] bg-[#F1F5F9] dark:bg-[#08090A] shadow-[-50px_0_100px_rgba(0,0,0,0.5)] z-[2001] flex flex-col animate-in slide-in-from-right duration-500">
+      <div className="fixed inset-y-0 right-0 w-full max-w-212.5 bg-[#F1F5F9] dark:bg-[#08090A] shadow-[-50px_0_100px_rgba(0,0,0,0.5)] z-2001 flex flex-col animate-in slide-in-from-right duration-500">
         
         {/* HEADER */}
         <div className="bg-white dark:bg-[#0D0E12] px-10 py-8 border-b border-slate-200 dark:border-white/10 flex justify-between items-center">
@@ -416,10 +416,10 @@ const SubmissionDetail = ({ submissionId, isOpen, onClose, onUpdate, onDelete })
 
       {/* CUSTOM DELETE CONFIRMATION MODAL */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-[5000] flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-5000 flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={() => setShowDeleteConfirm(false)} />
           <div className="relative w-full max-w-sm bg-white dark:bg-[#0B1120] rounded-[2.5rem] p-10 border border-slate-200 dark:border-white/5 shadow-2xl text-center animate-in zoom-in-95 duration-300">
-            <div className="w-20 h-20 bg-rose-500/10 rounded-[2rem] flex items-center justify-center text-rose-500 mx-auto mb-8">
+            <div className="w-20 h-20 bg-rose-500/10 rounded-4xl flex items-center justify-center text-rose-500 mx-auto mb-8">
               <AlertTriangle size={40} strokeWidth={2.5} />
             </div>
             <h3 className="text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic leading-none mb-4">
