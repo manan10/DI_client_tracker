@@ -15,46 +15,46 @@ exports.getAllUsers = async (req, res) => {
 // @route   PUT /api/users/:id
 exports.updateUser = async (req, res) => {
     try {
-        const { name, email, username, phone, allowedApps } = req.body;
-        const user = await User.findById(req.params.id);
+        const { name, email, username, phone, allowedApps, isAdmin } = req.body;
+        const userId = req.params.id;
 
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
+        // 1. Fetch current user to check for changes
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: 'User not found' });
 
-        // Uniqueness Validations
+        // 2. Uniqueness Validations (only check if changed)
         if (username && username !== user.username) {
-            const usernameExists = await User.findOne({ username });
-            if (usernameExists) return res.status(400).json({ message: 'Username already taken' });
+            if (await User.findOne({ username })) return res.status(400).json({ message: 'Username already taken' });
         }
-
         if (email && email !== user.email) {
-            const emailExists = await User.findOne({ email });
-            if (emailExists) return res.status(400).json({ message: 'Email already registered' });
+            if (await User.findOne({ email })) return res.status(400).json({ message: 'Email already registered' });
         }
 
-        // Update Fields
-        user.name = name || user.name;
-        user.email = email || user.email;
-        user.username = username || user.username;
-        user.phone = phone || user.phone;
-        
-        // NEW: Update app access (defaults to current if not provided)
-        if (allowedApps && Array.isArray(allowedApps)) {
-            user.allowedApps = allowedApps;
+        // 3. Prepare Update Object
+        const updateFields = {
+            name: name || user.name,
+            email: email || user.email,
+            username: username || user.username,
+            phone: phone || user.phone,
+            allowedApps: (allowedApps && Array.isArray(allowedApps)) ? allowedApps : user.allowedApps,
+        };
+
+        // Explicitly handle isAdmin boolean
+        if (typeof isAdmin !== 'undefined') {
+            updateFields.isAdmin = isAdmin;
         }
 
-        const updatedUser = await user.save();
+        // 4. Use findByIdAndUpdate to bypass pre-save hooks
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { $set: updateFields },
+            { new: true, runValidators: true }
+        ).select('-password');
 
-        res.status(200).json({
-            _id: updatedUser._id,
-            name: updatedUser.name,
-            email: updatedUser.email,
-            username: updatedUser.username,
-            phone: updatedUser.phone,
-            allowedApps: updatedUser.allowedApps // Return the new access list
-        });
+        res.status(200).json(updatedUser);
+
     } catch (error) {
+        console.error("Update User Error:", error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -63,7 +63,7 @@ exports.updateUser = async (req, res) => {
 // @route   POST /api/users/register
 exports.registerUser = async (req, res) => {
     try {
-        const { name, email, password, username, phone, allowedApps } = req.body;
+        const { name, email, password, username, phone, allowedApps, isAdmin } = req.body;
 
         const finalUsername = username || email.split('@')[0];
 
@@ -78,8 +78,7 @@ exports.registerUser = async (req, res) => {
             password,
             username: finalUsername,
             phone,
-            // NEW: Assign specific apps during registration
-            // If none provided, defaults to EXPENSE_TRACKER via the Schema
+            isAdmin: isAdmin || false, // Support setting admin during creation
             allowedApps: allowedApps || ['EXPENSE_TRACKER']
         });
 
@@ -89,6 +88,7 @@ exports.registerUser = async (req, res) => {
             email: user.email,
             username: user.username,
             phone: user.phone,
+            isAdmin: user.isAdmin,
             allowedApps: user.allowedApps
         });
     } catch (error) {
@@ -100,16 +100,16 @@ exports.registerUser = async (req, res) => {
 // @route   PATCH /api/users/:id/toggle-app
 exports.toggleAppAccess = async (req, res) => {
     try {
-        const { appName } = req.body; // e.g., 'CLIENT_TRACKER'
+        const { appName } = req.body;
         const user = await User.findById(req.params.id);
 
         if (!user) return res.status(404).json({ message: 'User not found' });
 
         const index = user.allowedApps.indexOf(appName);
         if (index > -1) {
-            user.allowedApps.splice(index, 1); // Remove if exists
+            user.allowedApps.splice(index, 1);
         } else {
-            user.allowedApps.push(appName); // Add if doesn't
+            user.allowedApps.push(appName);
         }
 
         await user.save();

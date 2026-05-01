@@ -1,19 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  UserPlus,
-  Key,
-  X,
-  Shield,
-  Loader2,
-  User,
-  Trash2,
-  Mail,
-  Fingerprint,
-  Phone,
-  Edit3,
-  Check,
-  Monitor,
-  Wallet
+  UserPlus, Key, X, Shield, Loader2, User, Trash2, Edit3, 
+  Check, Monitor, Wallet, ShieldCheck, ShieldAlert,
+  Fingerprint, Mail, Phone
 } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 import { toast } from "sonner";
@@ -31,10 +20,14 @@ const UserManagement = () => {
     username: "", 
     phone: "", 
     password: "",
+    isAdmin: false, // NEW: Default admin state
     allowedApps: ["CLIENT_TRACKER"] 
   };
   const [formData, setFormData] = useState(initialForm);
 
+// ... inside UserManagement component
+
+  // 1. Keep this for manual refreshes (Delete, Update, Create)
   const refreshUsers = useCallback(async () => {
     try {
       const data = await request("/users");
@@ -46,17 +39,23 @@ const UserManagement = () => {
 
   useEffect(() => {
     let mounted = true;
-    const loadData = async () => {
+    
+    const loadInitialData = async () => {
       try {
         const data = await request("/users");
-        if (mounted) setUsers(data || []);
+        if (mounted) {
+          setUsers(data || []);
+        }
       } catch (err) {
         console.error("Initial Load Failure", err);
       }
     };
-    loadData();
+
+    loadInitialData();
+
     return () => { mounted = false; };
   }, [request]);
+
 
   const handleOpenEdit = (user) => {
     setUpdatingUser(user);
@@ -65,6 +64,7 @@ const UserManagement = () => {
       email: user.email,
       username: user.username,
       phone: user.phone || "",
+      isAdmin: user.isAdmin || false, // NEW: Hydrate from user data
       allowedApps: user.allowedApps || []
     });
     setIsModalOpen(true);
@@ -110,7 +110,7 @@ const UserManagement = () => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 text-left">
+    <div className="space-y-8 animate-in fade-in duration-500 text-left pb-10">
       
       {/* HEADER */}
       <div>
@@ -147,13 +147,20 @@ const UserManagement = () => {
             className="flex items-center justify-between p-6 md:p-8 bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-[2.5rem] hover:border-emerald-500/30 transition-all group"
           >
             <div className="flex items-center gap-6">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 border border-emerald-100 dark:border-emerald-500/20 shadow-inner">
-                <User size={28} strokeWidth={1.5} />
+              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border shadow-inner transition-colors duration-500 ${u.isAdmin ? 'bg-slate-950 dark:bg-emerald-500 text-emerald-500 dark:text-black border-emerald-500/20' : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 border-emerald-100 dark:border-emerald-500/20'}`}>
+                {u.isAdmin ? <ShieldCheck size={28} strokeWidth={2} /> : <User size={28} strokeWidth={1.5} />}
               </div>
               <div>
-                <h4 className="text-xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic leading-none">
-                  {u.name}
-                </h4>
+                <div className="flex items-center gap-3">
+                  <h4 className="text-xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic leading-none">
+                    {u.name}
+                  </h4>
+                  {u.isAdmin && (
+                    <span className="px-2 py-0.5 rounded-md bg-slate-900 dark:bg-emerald-500 text-white dark:text-black text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
+                      <Shield size={8} fill="currentColor" /> System Admin
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 mt-3 flex-wrap">
                   {u.allowedApps?.map(app => (
                     <span key={app} className="px-2 py-0.5 rounded bg-emerald-500/10 text-[8px] font-black text-emerald-600 uppercase tracking-widest border border-emerald-500/10">
@@ -217,15 +224,34 @@ const UserManagement = () => {
                  </div>
                </div>
 
-               {/* APP ACCESS SECTION - THE "FATHER-FRIENDLY" CONTROL CENTER */}
-               <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-white/5">
+               {/* ADMIN TOGGLE - NEW HIGH-LEVEL OVERRIDE */}
+               <div className="pt-4 border-t border-slate-100 dark:border-white/5">
+                 <button
+                   type="button"
+                   onClick={() => setFormData({ ...formData, isAdmin: !formData.isAdmin })}
+                   className={`w-full flex items-center justify-between p-6 rounded-3xl border-2 transition-all ${formData.isAdmin ? 'bg-slate-900 border-emerald-500 shadow-xl' : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/10'}`}
+                 >
+                   <div className="flex items-center gap-4">
+                     <div className={`p-3 rounded-2xl ${formData.isAdmin ? 'bg-emerald-500 text-black' : 'bg-slate-200 dark:bg-white/10 text-slate-400'}`}>
+                       <Shield size={20} strokeWidth={3} />
+                     </div>
+                     <div className="text-left">
+                       <p className={`text-[11px] font-black uppercase tracking-widest ${formData.isAdmin ? 'text-emerald-500' : 'text-slate-500'}`}>Administrator Status</p>
+                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Full System Overrides & Registry Control</p>
+                     </div>
+                   </div>
+                   <div className={`w-12 h-7 rounded-full relative transition-colors duration-500 ${formData.isAdmin ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}>
+                     <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all duration-300 ${formData.isAdmin ? 'left-6' : 'left-1'}`} />
+                   </div>
+                 </button>
+               </div>
+
+               {/* APP ACCESS SECTION */}
+               <div className="space-y-4 pt-4">
                  <div className="flex flex-col gap-1 ml-1 text-left">
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] font-mono">
                      Application Access Control
                    </label>
-                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight opacity-60 font-mono">
-                     Select the tools this member can use
-                   </p>
                  </div>
 
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

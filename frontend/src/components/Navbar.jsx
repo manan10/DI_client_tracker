@@ -13,7 +13,7 @@ import {
   Files,
   BarChart3,
   Lock,
-  Grid, // Using Grid icon for the AppPicker link
+  Grid, 
   ListTodo
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -47,12 +47,15 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  // --- DYNAMIC NAVIGATION LOGIC ---
+  // We filter the navItems array based on the user's isAdmin status
   const navItems = [
     { name: 'Home', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Directory', path: '/directory', icon: Users },
     { name: 'Ops', path: '/tasks', icon: ListTodo },
     { name: 'Docs', path: '/documents', icon: Files, isLocked: true },
-    { name: 'Accounts', path: '/accounts', icon: BarChart3 },
+    // Only spread the Accounts object if the user is an Admin
+    ...(user?.isAdmin ? [{ name: 'Accounts', path: '/accounts', icon: BarChart3 }] : []),
     { name: 'Settings', path: '/settings', icon: SettingsIcon },
   ];
 
@@ -68,7 +71,7 @@ const Navbar = () => {
                 <img src={Logo} alt="Logo" className="h-9 md:h-11 w-auto drop-shadow-md" />
                 <div className="absolute -inset-1 bg-emerald-500/10 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col text-left">
                 <span className="block text-sm md:text-base font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter leading-none">
                   Dalal Investment
                 </span>
@@ -78,8 +81,6 @@ const Navbar = () => {
               </div>
             </Link>
 
-            {/* --- THE APP SWITCHER LINK --- */}
-            {/* Visually separated but close to branding to indicate "Hierarchy" */}
             <div className="hidden sm:block h-8 w-px bg-slate-200 dark:bg-slate-800 mx-2" />
             
             <Link 
@@ -126,13 +127,18 @@ const Navbar = () => {
               {isDark ? <Sun size={19} strokeWidth={2.5} /> : <Moon size={19} strokeWidth={2.5} />}
             </button>
 
-            <div className="hidden lg:flex flex-col items-end border-l border-slate-200 dark:border-slate-800 pl-6 space-y-0.5">
+            {/* Profile Section with Dynamic Badge */}
+            <div className="hidden lg:flex flex-col items-end border-l border-slate-200 dark:border-slate-800 pl-6 space-y-0.5 text-right">
               <span className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                {user?.name || 'Administrator'}
+                {user?.name || 'User'}
               </span>
-              <div className="bg-emerald-100 dark:bg-emerald-950/40 px-2 py-0.5 rounded-sm border border-emerald-200 dark:border-emerald-900/50">
-                <span className="text-[8px] font-black text-emerald-700 dark:text-emerald-500 uppercase tracking-widest flex items-center gap-1.5">
-                  <Shield size={10} fill="currentColor" fillOpacity={0.2} /> Admin Session
+              <div className={`px-2 py-0.5 rounded-sm border ${user?.isAdmin ? 'bg-emerald-100 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50' : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10'}`}>
+                <span className={`text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 ${user?.isAdmin ? 'text-emerald-700 dark:text-emerald-500' : 'text-slate-500'}`}>
+                  {user?.isAdmin ? (
+                    <><Shield size={10} fill="currentColor" fillOpacity={0.2} /> Admin Session</>
+                  ) : (
+                    <><Users size={10} /> Staff Session</>
+                  )}
                 </span>
               </div>
             </div>
@@ -159,7 +165,6 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden absolute top-20 left-0 w-full bg-slate-50 dark:bg-slate-900 border-b-2 border-emerald-500/50 animate-in slide-in-from-top-4 duration-300 z-50 shadow-2xl">
           <div className="flex flex-col p-6 gap-3">
-            {/* Added App Picker to mobile menu as the top priority item */}
             <Link
               to="/app-picker"
               onClick={() => setIsMenuOpen(false)}

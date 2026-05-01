@@ -87,6 +87,10 @@ const Submissions = () => {
     );
   };
 
+  const handleRecordDelete = (deletedId) => {
+    setSubmissions(prev => prev.filter(s => s._id !== deletedId));
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20 md:pb-0">
       
@@ -308,6 +312,7 @@ const Submissions = () => {
         isOpen={isDetailOpen}
         onClose={() => { setIsDetailOpen(false); setSelectedSubmissionId(null); }}
         onUpdate={handleRecordUpdate}
+        onDelete={handleRecordDelete}
       />
     </div>
   );

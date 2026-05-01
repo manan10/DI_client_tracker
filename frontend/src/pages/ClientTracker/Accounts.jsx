@@ -3,10 +3,13 @@ import Navbar from "../../components/Navbar";
 import AccountBalances from "../../components/Accounts/AccountBalances";
 import Commissions from "../../components/Accounts/Commissions";
 import StatementReview from "../../components/Accounts/StatementReview";
+import AccessDenied from "../../components/AccessDenied"; // Import here
+import { useAuth } from "../../hooks/useAuth"; // Assuming your hook path
 import { Wallet, PieChart, FileText, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 const Accounts = () => {
+  const { user } = useAuth(); // Destructure user to get isAdmin
   const [activeTab, setActiveTab] = useState("balances");
 
   const tabs = [
@@ -17,14 +20,13 @@ const Accounts = () => {
       name: "Audit & Tally Sync",
       icon: FileText,
       isLocked: true,
-    }, // Logic-locked
+    },
   ];
 
   const handleTabClick = (tab) => {
     if (tab.isLocked) {
       toast.info("Tally Sync module is currently in final audit.", {
-        description:
-          "This feature will be enabled following system verification.",
+        description: "This feature will be enabled following system verification.",
       });
       return;
     }
@@ -35,6 +37,16 @@ const Accounts = () => {
     console.log("Finalized Data for Export:", fileGroups);
     toast.success("Ledger Exported successfully for Tally!");
   };
+
+  // --- SECURITY CHECK ---
+  if (user && !user.isAdmin) {
+    return (
+      <div className="min-h-screen bg-[#FDFDFD] dark:bg-slate-950">
+        <Navbar />
+        <AccessDenied />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] dark:bg-slate-950 transition-colors duration-300">
@@ -83,7 +95,6 @@ const Accounts = () => {
         <div className="animate-in fade-in slide-in-from-bottom-6 duration-700 ease-out">
           {activeTab === "balances" && <AccountBalances />}
           {activeTab === "commissions" && <Commissions />}
-          {/* Even if activeTab were 'ledger', it wouldn't be accessible via the UI */}
           {activeTab === "ledger" && (
             <StatementReview onComplete={handleLedgerComplete} />
           )}
