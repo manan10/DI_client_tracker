@@ -70,7 +70,6 @@ const ExpenseHistory = () => {
     const res = await request(`/spending/${editData._id}`, "PUT", { ...editData, amount: Number(editData.amount) });
     if (res) {
       setIsEditModalOpen(false);
-      // Fast refresh of history list
       const query = `month=${selectedMonth}&year=${selectedYear}&walletId=${activeWallet}&search=${searchQuery}`;
       const refreshRes = await request(`/spending/history?${query}`, "GET");
       if (refreshRes?.success) setTransactions(refreshRes.data);
@@ -94,17 +93,25 @@ const ExpenseHistory = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-[#020617] text-left">
       <ExpenseNavbar />
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        <HistoryHeader 
-          selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth}
-          selectedYear={selectedYear} setSelectedYear={setSelectedYear}
-          searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-        />
+      {/* MOBILE FIX: Changed px-6 to px-0 on mobile so components can handle their own edge padding. 
+          The content will now touch the screen edges correctly.
+      */}
+      <main className="max-w-7xl mx-auto px-0 sm:px-6 py-6 sm:py-12">
+        
+        {/* Padding added inside header and filter for mobile */}
+        <div className="px-4 sm:px-0">
+          <HistoryHeader 
+            selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth}
+            selectedYear={selectedYear} setSelectedYear={setSelectedYear}
+            searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+          />
+        </div>
+
         <FilterBar wallets={wallets} activeWallet={activeWallet} setActiveWallet={setActiveWallet} />
         
-        {/* CONTEXT STAT STRIP: Connects FilterBar to the List */}
+        {/* CONTEXT STAT STRIP: Full width on mobile, no rounded edges on mobile */}
         {!loading && activeWallet !== "All" && (
-          <div className="mb-10 p-5 bg-slate-50 dark:bg-slate-900/40 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="mt-4 sm:mt-10 mb-8 sm:mb-10 p-5 bg-slate-50 dark:bg-slate-900/40 rounded-none sm:rounded-3xl border-y sm:border border-slate-100 dark:border-slate-800 flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500">
             <div className="flex items-center gap-4">
               <div className={`p-3 rounded-2xl ${activeWalletData?.isVirtual ? 'bg-indigo-500/10 text-indigo-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
                 {activeWalletData?.isVirtual ? <Globe size={20}/> : <Coins size={20}/>}
@@ -125,7 +132,7 @@ const ExpenseHistory = () => {
           </div>
         )}
 
-        <div className="mt-8 space-y-12">
+        <div className="mt-8 space-y-12 px-4 sm:px-0">
           {loading && transactions.length === 0 ? (
             <div className="py-20 text-center text-[10px] font-black uppercase tracking-[0.4em] text-slate-300">Synchronizing Ledger...</div>
           ) : Object.keys(groupedTransactions).length === 0 ? (
@@ -138,7 +145,6 @@ const ExpenseHistory = () => {
           ))}
         </div>
 
-        {/* MODAL with Unique Key to prevent state bleeding */}
         <ExpenseModal 
           key={isEditModalOpen ? `edit-${editData._id}` : "closed"}
           isOpen={isEditModalOpen} setOpen={setIsEditModalOpen}

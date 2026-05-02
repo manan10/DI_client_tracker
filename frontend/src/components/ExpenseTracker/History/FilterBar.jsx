@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { 
-  ChevronDown, Landmark, Wallet as WalletIcon, 
-  Check, Globe, Coins, Activity 
+  ChevronDown, Landmark, Check, Globe, Coins, Activity 
 } from "lucide-react";
 
 const FilterBar = ({ wallets, activeWallet, setActiveWallet }) => {
@@ -20,14 +19,14 @@ const FilterBar = ({ wallets, activeWallet, setActiveWallet }) => {
   const isCurrentVirtual = currentWallet?.isVirtual;
 
   return (
-    <div className="relative mt-12 mb-8">
+    <div className="relative mt-8 mb-8 px-4 sm:px-0">
       <div className="flex items-center gap-4">
         
-        {/* ACTIVE SELECTOR PILL */}
-        <div className="relative group">
+        {/* ACTIVE SELECTOR PILL - Full width on mobile */}
+        <div className="relative group w-full md:w-auto">
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className={`flex items-center gap-4 pl-5 pr-4 py-4 rounded-lg shadow-xl hover:scale-[1.02] active:scale-95 transition-all cursor-pointer z-20 relative border-none ${
+            className={`w-full md:w-auto flex items-center justify-between md:justify-start gap-4 pl-5 pr-4 py-4 rounded-xl shadow-lg md:shadow-xl hover:scale-[1.01] md:hover:scale-[1.02] active:scale-95 transition-all cursor-pointer z-20 relative border-none ${
               isCurrentVirtual 
                 ? 'bg-indigo-600 dark:bg-white text-white dark:text-slate-950 shadow-indigo-500/20' 
                 : 'bg-emerald-700 dark:bg-white text-white dark:text-slate-950 shadow-emerald-500/20'
@@ -39,22 +38,24 @@ const FilterBar = ({ wallets, activeWallet, setActiveWallet }) => {
               ) : isCurrentVirtual ? (
                 <Globe size={16} className="animate-pulse" />
               ) : (
-                <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
               )}
-              <span className="text-[11px] font-black uppercase tracking-[0.2em]">
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] truncate max-w-37.5 md:max-w-none">
                 {currentWallet?.walletName}
               </span>
             </div>
-            <div className={`w-px h-4 ${isCurrentVirtual ? 'bg-white/20 dark:bg-slate-200' : 'bg-white/20 dark:bg-slate-200'}`} />
-            <ChevronDown size={14} className={`transition-transform duration-500 ${isOpen ? 'rotate-180' : ''}`} />
+            <div className="flex items-center gap-3">
+                <div className="w-px h-4 bg-white/20 dark:bg-slate-200/40" />
+                <ChevronDown size={14} className={`transition-transform duration-500 ${isOpen ? 'rotate-180' : ''}`} />
+            </div>
           </button>
 
-          {/* SPATIAL DROPDOWN MATRIX */}
+          {/* DROPDOWN MATRIX - Full width positioning on mobile */}
           {isOpen && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
               
-              <div className="absolute top-16 left-0 z-30 w-75 sm:w-112.5 bg-white dark:bg-[#0B1120] border border-slate-100 dark:border-slate-800 rounded-4xl shadow-[0_30px_100px_rgba(0,0,0,0.3)] p-4 animate-in fade-in zoom-in-95 duration-300">
+              <div className="absolute top-16 left-0 right-0 md:right-auto md:w-112.5 z-30 bg-white dark:bg-[#0B1120] border border-slate-100 dark:border-slate-800 rounded-2xl md:rounded-4xl shadow-[0_30px_100px_rgba(0,0,0,0.3)] p-4 animate-in fade-in zoom-in-95 duration-300">
                 <div className="space-y-6">
                   
                   {/* GLOBAL SECTION */}
@@ -96,7 +97,7 @@ const FilterBar = ({ wallets, activeWallet, setActiveWallet }) => {
                           }`}
                         >
                           <div className="text-left">
-                            <p className="text-[10px] font-black uppercase tracking-tight truncate w-24">{w.walletName}</p>
+                            <p className="text-[10px] font-black uppercase tracking-tight truncate w-32 md:w-24">{w.walletName}</p>
                             <p className="text-[8px] font-bold opacity-60">₹{w.balance.toLocaleString()}</p>
                           </div>
                           {activeWallet === w._id && <Check size={12} />}
@@ -124,7 +125,7 @@ const FilterBar = ({ wallets, activeWallet, setActiveWallet }) => {
                         >
                           <div className="text-left flex items-center gap-2">
                             <div className={`w-1.5 h-1.5 rounded-full ${activeWallet === w._id ? 'bg-indigo-500 animate-pulse' : 'bg-slate-300'}`} />
-                            <p className="text-[10px] font-black uppercase tracking-tight truncate w-24">{w.walletName}</p>
+                            <p className="text-[10px] font-black uppercase tracking-tight truncate w-32 md:w-24">{w.walletName}</p>
                           </div>
                           {activeWallet === w._id && <Check size={12} />}
                         </button>
