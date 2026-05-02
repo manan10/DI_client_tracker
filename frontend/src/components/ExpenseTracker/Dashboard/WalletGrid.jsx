@@ -11,12 +11,16 @@ const WalletGrid = ({ wallets }) => {
   const totalLiquidity = cashWallets.reduce((acc, curr) => acc + curr.balance, 0);
 
   return (
-    <div className="w-full mb-8">
-      {/* COMPACT HUB CONTAINER */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 bg-white dark:bg-[#0B1120] rounded-4xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
+    // Mobile: Full width with no margins. Desktop: Standard width with margin.
+    <div className="w-full lg:mb-8">
+      {/* 
+         Mobile: Sharp edges (rounded-none), no border-x. 
+         Desktop: Rounded-4xl, full border, shadow. 
+      */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 bg-white dark:bg-[#0B1120] rounded-none lg:rounded-4xl border-y lg:border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
         
         {/* LEFT: THE CASH VAULT (7/12) */}
-        <div className="lg:col-span-7 p-6 md:p-8 flex flex-col justify-between bg-white dark:bg-[#0B1120]">
+        <div className="lg:col-span-7 p-5 sm:p-6 md:p-8 flex flex-col justify-between bg-white dark:bg-[#0B1120]">
           <div>
             <div className="flex items-center gap-2 mb-4">
               <div className="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-500">
@@ -25,8 +29,9 @@ const WalletGrid = ({ wallets }) => {
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Cash Balance</p>
             </div>
 
-            <div className="flex items-baseline gap-2 mb-8">
-              <span className="text-4xl md:text-6xl font-[1000] text-slate-900 dark:text-white tracking-tighter italic tabular-nums leading-none">
+            <div className="flex items-baseline gap-2 mb-6 lg:mb-8">
+              {/* Responsive text scaling for the big balance */}
+              <span className="text-4xl sm:text-5xl md:text-6xl font-[1000] text-slate-900 dark:text-white tracking-tighter italic tabular-nums leading-none">
                 ₹{formatINR(totalLiquidity)}
               </span>
               <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 rounded text-[8px] font-black text-emerald-500 uppercase tracking-widest">
@@ -35,8 +40,8 @@ const WalletGrid = ({ wallets }) => {
             </div>
           </div>
 
-          {/* PHYSICAL NODES GRID */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {/* PHYSICAL NODES GRID: Responsive columns */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 lg:mt-0">
             {cashWallets.map((w) => (
               <div key={w._id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-800 transition-all hover:border-emerald-500/30">
                 <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase truncate pr-2">{w.walletName}</span>
@@ -47,7 +52,7 @@ const WalletGrid = ({ wallets }) => {
         </div>
 
         {/* RIGHT: THE DIGITAL PIPELINE (5/12) */}
-        <div className="lg:col-span-5 p-6 md:p-8 bg-slate-50/50 dark:bg-white/2 border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 flex flex-col">
+        <div className="lg:col-span-5 p-5 sm:p-6 md:p-8 bg-slate-50/50 dark:bg-white/2 border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-500">
@@ -62,7 +67,7 @@ const WalletGrid = ({ wallets }) => {
             {virtualWallets.map((w) => (
               <div key={w._id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-900/80 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm group">
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 shrink-0">
                     <Smartphone size={14} />
                   </div>
                   <div className="text-left">

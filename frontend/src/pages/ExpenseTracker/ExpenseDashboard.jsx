@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { History } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 import { useAuth } from "../../hooks/useAuth";
 import ExpenseNavbar from "../../components/ExpenseNavbar";
@@ -48,12 +47,12 @@ const ExpenseDashboard = () => {
 
           const historyData = await request(`/spending/history/all`);
           if (isMounted) {
-            setHistory(historyData?.data || historyData || []); // Handle { success, data } wrap
+            setHistory(historyData?.data || historyData || []); 
             
             const userWallet = data.wallets.find(
               (w) =>
                 w.walletName.toLowerCase().includes(user?.name?.toLowerCase()) || 
-                (!w.isGeneralPool && !w.isVirtual) // Prioritize physical wallets for spending
+                (!w.isGeneralPool && !w.isVirtual) 
             );
             
             const activeWallet = userWallet || data.wallets.find((w) => !w.isGeneralPool);
@@ -98,9 +97,8 @@ const ExpenseDashboard = () => {
         loadDashboardData(true);
       }
     } catch (err) {
-      // ESLint fix: Do something with the error before re-throwing
       console.error("Expense Submission Failed:", err.message);
-      throw err; // Re-throw so ExpenseModal can catch it and show localError
+      throw err; 
     }
   };
 
@@ -118,9 +116,8 @@ const ExpenseDashboard = () => {
         loadDashboardData(true);
       }
     } catch (err) {
-      // ESLint fix: Logging the error makes the catch 'useful'
       console.error("Top-Up Failed:", err.message);
-      throw err; // Re-throw so TopUpModal can catch it and show localError
+      throw err; 
     }
   };
   
@@ -133,17 +130,17 @@ const ExpenseDashboard = () => {
 
       <ExpenseNavbar />
 
-      <div className="pb-36">
+      <div className="pb-36 lg:pb-24">
         <DashboardHeader 
           summary={summary} 
           loading={loading} 
           loadDashboardData={loadDashboardData} 
         />
 
-        <div className="max-w-6xl mx-auto px-6 mt-10">
+        <div className="max-w-6xl mx-auto px-2 md:px-6 mt-6 md:mt-10">
           <WalletGrid wallets={summary.wallets} />
           
-          <div className="mt-12 text-left">
+          <div className="mt-12 md:mt-12 text-left">
             <GlobalFeed history={history} wallets={summary.wallets} />
           </div>
         </div>
