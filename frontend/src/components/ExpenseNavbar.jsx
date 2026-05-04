@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Wallet, History, PieChart, Settings as SettingsIcon, 
-  LogOut, Sun, Moon, Menu, X, Grid, Shield 
+  LogOut, Sun, Moon, Menu, X, Grid, Shield, 
+  HomeIcon
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import Logo from '../assets/logo_nobrand.png';
@@ -36,7 +37,7 @@ const ExpenseNavbar = () => {
   };
 
   const navItems = [
-    { name: 'Wallets', path: '/expenses', icon: Wallet },
+    { name: 'Home', path: '/expenses', icon: HomeIcon },
     { name: 'Analytics', path: '/expenses/analytics', icon: PieChart },
     { name: 'History', path: '/expenses/history', icon: History },
     { name: 'Settings', path: '/expenses/settings', icon: SettingsIcon }

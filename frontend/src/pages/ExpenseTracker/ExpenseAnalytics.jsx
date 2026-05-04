@@ -40,7 +40,7 @@ const ExpenseAnalytics = () => {
   };
 
   if (loading && !data) return (
-    <div className="fixed inset-0 bg-[#020617] z-[100] flex flex-col items-center justify-center p-6">
+    <div className="fixed inset-0 bg-[#020617] z-100 flex flex-col items-center justify-center p-6">
       <Fingerprint className="text-[#10b981] animate-pulse mb-4" size={56} />
       <p className="text-[10px] font-black uppercase tracking-[1em] text-[#10b981]/40 text-center">Authorizing Audit</p>
     </div>
@@ -120,10 +120,10 @@ const ExpenseAnalytics = () => {
             
             {/* Primary Analysis Slot */}
             <div className="lg:col-span-8 group order-2 lg:order-1">
-                <div className="relative h-64 sm:h-full sm:min-h-150 rounded-[2rem] sm:rounded-[4rem] bg-slate-50/50 dark:bg-white/1 border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center transition-all duration-700 hover:border-indigo-500/20">
+                <div className="relative h-64 sm:h-full sm:min-h-150 rounded-4xl sm:rounded-[4rem] bg-slate-50/50 dark:bg-white/1 border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center transition-all duration-700 hover:border-indigo-500/20">
                     <BarChart3 size={48} sm:size={64} className="text-slate-200 dark:text-slate-800 animate-pulse mb-6 sm:mb-10" />
                     <h4 className="text-slate-400 font-[1000] text-[10px] sm:text-xs uppercase tracking-[0.5em] sm:tracking-[0.8em] mb-2 sm:mb-4 leading-none">Computational Matrix</h4>
-                    <p className="text-slate-500 text-[9px] sm:text-[11px] uppercase font-bold italic tracking-[0.1em] sm:tracking-[0.2em] px-8 max-w-sm leading-relaxed">
+                    <p className="text-slate-500 text-[9px] sm:text-[11px] uppercase font-bold italic tracking-widest sm:tracking-[0.2em] px-8 max-w-sm leading-relaxed">
                         Synthesizing Category-Level Data Streams...
                     </p>
                 </div>
@@ -137,7 +137,7 @@ const ExpenseAnalytics = () => {
                     <p className="text-slate-400 text-xs sm:text-sm leading-relaxed italic pr-4 sm:pr-6 font-medium">
                       All physical vaults and digital payment gateways are synchronized for this cycle.
                     </p>
-                    <RefreshCcw size={160} className="absolute -bottom-10 -right-10 opacity-[0.03] text-white group-hover:rotate-180 transition-transform duration-[3000ms]" />
+                    <RefreshCcw size={160} className="absolute -bottom-10 -right-10 opacity-[0.03] text-white group-hover:rotate-180 transition-transform duration-3000" />
                 </div>
                 
                 <button 
