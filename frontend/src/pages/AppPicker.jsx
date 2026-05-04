@@ -21,20 +21,18 @@ const allApps = [
     icon: Users,
     bgColor: 'bg-emerald-500',
     accentColor: 'text-emerald-500',
-    shadowColor: 'shadow-emerald-500/20',
-    color: 'emerald' // Added for border utility
+    shadowColor: 'shadow-emerald-500/20'
   },
   {
     id: 'EXPENSE_TRACKER',
     title: 'Expense Logger',
     subtitle: 'Family',
-    description: 'Centralized household financial hub for tracking daily spending and managing liquid cash vaults.',
+    description: 'Centralized household financial hub for tracking daily spending and managing family liquid cash vaults.',
     path: '/expenses',
     icon: ReceiptIndianRupee,
     bgColor: 'bg-blue-500',
     accentColor: 'text-blue-500',
-    shadowColor: 'shadow-blue-500/20',
-    color: 'blue' // Added for border utility
+    shadowColor: 'shadow-blue-500/20'
   }
 ];
 
@@ -48,42 +46,48 @@ const AppPicker = () => {
     return allApps.filter(app => userPermissions.includes(app.id));
   }, [user]);
 
-  const activeApp = allApps.find(a => a.id === activeId);
+  // Find the current active app object
+  const activeApp = authorizedApps.find(a => a.id === activeId);
 
   return (
     <div className="min-h-screen w-full bg-white flex flex-col font-sans overflow-hidden select-none">
       
-      {/* --- RE-ENGINEERED NAVIGATION (FIXED OVERLAP) --- */}
-      <nav className="fixed top-0 left-0 w-full z-50 flex flex-col sm:flex-row justify-between items-end sm:items-center px-4 lg:px-16 py-4 lg:py-10 pointer-events-none gap-3">
-        
-        {/* Creative Logo Capsule */}
-        <div className={`flex items-center gap-3 lg:gap-4 bg-white/90 backdrop-blur-xl p-1.5 pr-5 lg:p-2 lg:pr-6 rounded-2xl border-2 transition-all duration-500 shadow-2xl pointer-events-auto self-start
-          ${activeApp ? `border-${activeApp.color}-500/30 ${activeApp.shadowColor}` : 'border-slate-100 shadow-slate-200/50'}`}>
-          <div className={`p-2 lg:p-3 rounded-xl transition-all duration-500 ${activeApp ? activeApp.bgColor : 'bg-slate-900'}`}>
-            <img src={Logo} alt="Logo" className="h-6 lg:h-9 w-auto brightness-0 invert" />
-          </div>
-          <div className="flex flex-col text-left">
-            <span className={`text-[11px] lg:text-[14px] font-[1000] uppercase tracking-[0.2em] lg:tracking-[0.3em] transition-colors duration-500 ${activeApp ? activeApp.accentColor : 'text-slate-900'}`}>
-              Dalal Central
-            </span>
-            <div className="flex items-center gap-1.5">
-              <div className={`w-1 h-1 rounded-full animate-pulse ${activeApp ? activeApp.bgColor : 'bg-slate-400'}`} />
-              <span className="text-[8px] lg:text-[11px] font-black text-slate-400 uppercase tracking-widest">Application Hub</span>
+      {/* --- INTEGRATED PREMIUM NAVIGATION (FULL WIDTH EDGE-TO-EDGE) --- */}
+      <nav className="fixed top-0 left-0 w-full z-50 px-6 lg:px-12 py-6 lg:py-10 pointer-events-none">
+        <div className="flex items-center justify-between w-full mx-auto">
+          
+          {/* Logo Capsule */}
+          <div className={`flex items-center gap-2.5 lg:gap-4 bg-white/90 backdrop-blur-xl p-1.5 pr-4 lg:p-2 lg:pr-6 rounded-2xl border transition-all duration-500 shadow-xl pointer-events-auto
+            ${activeApp 
+                ? `border-${activeApp.bgColor?.replace('bg-', '')}/30 ${activeApp.shadowColor}` 
+                : 'border-slate-100 shadow-slate-200/50'}`}>
+            
+            <div className={`p-1.5 lg:p-3 rounded-xl transition-all duration-500 ${activeApp ? activeApp.bgColor : 'bg-slate-900'}`}>
+              <img src={Logo} alt="Logo" className="h-5 lg:h-9 w-auto brightness-0 invert" />
+            </div>
+
+            <div className="flex flex-col text-left">
+              <span className={`text-[10px] lg:text-[14px] font-[1000] uppercase tracking-wider lg:tracking-[0.3em] transition-colors duration-500 ${activeApp ? activeApp.accentColor : 'text-slate-900'}`}>
+                Dalal Central
+              </span>
+              <span className="text-[7px] lg:text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                Application Hub
+              </span>
             </div>
           </div>
-        </div>
 
-        {/* Premium Sign Out Capsule */}
-        <button 
-          onClick={logout}
-          className="group flex items-center gap-2 lg:gap-3 px-5 lg:px-8 py-3 lg:py-4 bg-emerald-700 text-white rounded-2xl text-[9px] lg:text-[11px] font-black uppercase tracking-[0.2em] active:scale-95 shadow-2xl pointer-events-auto transition-all hover:bg-rose-600 hover:shadow-rose-500/30"
-        >
-          <LogOut size={14} className="transition-transform group-hover:-translate-x-1" /> 
-          <span className="text-white">Sign Out</span>
-        </button>
+          {/* Sign Out */}
+          <button 
+            onClick={logout}
+            className="group flex items-center gap-2 px-4 lg:px-8 py-3 lg:py-4 bg-slate-950/90 backdrop-blur-md text-white rounded-2xl text-[9px] lg:text-[11px] font-black uppercase tracking-widest active:scale-95 shadow-2xl pointer-events-auto transition-all hover:bg-rose-600"
+          >
+            <LogOut size={12} className="lg:w-4 lg:h-4 transition-transform group-hover:-translate-x-1" /> 
+            <span className="tracking-tighter lg:tracking-widest">Sign Out</span>
+          </button>
+        </div>
       </nav>
 
-      {/* --- MAIN CONTENT STRIPS --- */}
+      {/* --- FULL SCREEN INTERACTIVE STRIPS --- */}
       <main className="flex-1 flex flex-col lg:flex-row h-full">
         {authorizedApps.map((app, idx) => (
           <div
@@ -97,16 +101,18 @@ const AppPicker = () => {
                 setActiveId(app.id);
               }
             }}
-            // Added pt-24 pb-20 to prevent content overlap with Nav/Footer on mobile
-            className={`group relative flex-1 flex flex-col justify-center items-center p-6 pt-32 pb-24 lg:pt-6 lg:pb-6 transition-all duration-700 cursor-pointer overflow-hidden border-b lg:border-b-0 lg:border-r last:border-0 border-slate-50
+            className={`group relative flex-1 flex flex-col justify-center items-center p-6 transition-all duration-700 cursor-pointer overflow-hidden border-b lg:border-b-0 lg:border-r last:border-0 border-slate-50
               ${activeId === app.id ? app.bgColor : 'bg-white'}`}
           >
+            {/* Background Number Accent */}
             <span className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[45vw] lg:text-[22vw] font-[1000] uppercase transition-colors duration-700 pointer-events-none italic
               ${activeId === app.id ? 'text-white/10' : 'text-slate-50'}`}>
               {idx + 1}
             </span>
 
+            {/* Content Container */}
             <div className="relative z-10 flex flex-col items-center text-center max-w-lg w-full space-y-4 lg:space-y-10">
+              
               <div className={`w-24 h-24 lg:w-32 lg:h-32 rounded-full flex items-center justify-center transition-all duration-700 border-2 
                 ${activeId === app.id ? 'bg-white border-white scale-110 shadow-2xl' : 'bg-white border-slate-100 shadow-lg'}`}>
                 <app.icon 
@@ -132,13 +138,13 @@ const AppPicker = () => {
                 <p className="text-white text-[12px] lg:text-lg font-bold uppercase tracking-tight leading-relaxed max-w-xs lg:max-w-md mx-auto italic">
                   {app.description}
                 </p>
-                <div className="mt-8 lg:mt-12 inline-flex items-center gap-4 px-10 lg:px-12 py-4 lg:py-5 bg-white text-slate-900 rounded-full text-[10px] lg:text-xs font-[1000] uppercase tracking-[0.3em] shadow-2xl group-hover:scale-105 transition-transform">
+                <div className="mt-8 lg:mt-12 inline-flex items-center gap-4 px-10 lg:px-12 py-4 lg:py-5 bg-white text-slate-900 rounded-full text-[10px] lg:text-xs font-[1000] uppercase tracking-[0.3em] shadow-2xl transition-transform">
                   {window.innerWidth < 1024 ? 'Tap to Launch' : 'Go to Application'} <ArrowRight size={18} strokeWidth={3} className={app.accentColor} />
                 </div>
               </div>
             </div>
 
-            <div className="absolute bottom-16 lg:hidden flex flex-col items-center gap-3">
+            <div className="absolute bottom-12 lg:hidden flex flex-col items-center gap-3">
                <div className={`h-1.5 rounded-full transition-all duration-700 
                 ${activeId === app.id ? 'bg-white w-24' : 'bg-slate-200 w-12'}`} />
             </div>
@@ -146,12 +152,12 @@ const AppPicker = () => {
         ))}
       </main>
 
-      {/* --- FOOTER HUD --- */}
-      <footer className="fixed bottom-0 left-0 w-full z-40 px-6 py-4 lg:py-8 flex justify-between items-center pointer-events-none">
-         <div className="flex items-center gap-3 bg-white/70 backdrop-blur-md px-4 py-2 rounded-full border border-slate-100 shadow-sm">
-            <Activity size={14} className="text-emerald-500 animate-pulse" />
-            <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400">System Identity: {user?.name?.split(' ')[0]}</span>
+      <footer className="fixed bottom-0 left-0 w-full z-40 px-6 lg:px-12 py-6 lg:py-8 flex justify-between items-center pointer-events-none opacity-30">
+         <div className="flex items-center gap-2">
+            <ShieldCheck size={12} className="text-slate-900" />
+            <span className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-900">Secure Access</span>
          </div>
+         <p className="text-[8px] font-black uppercase tracking-widest text-slate-900 italic">{user?.name?.split(' ')[0]}</p>
       </footer>
     </div>
   );
