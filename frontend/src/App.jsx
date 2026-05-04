@@ -9,6 +9,9 @@ import { Toaster } from "sonner";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 
+// --- Layouts ---
+import ExpenseTrackerLayout from "./layouts/ExpenseTrackerLayout";
+
 // --- Lazy Loaded Pages ---
 // Client Tracker App Components
 const Home = lazy(() => import("./pages/ClientTracker/Home"));
@@ -25,7 +28,6 @@ const MaintenanceViewExpenses = lazy(() => import("./pages/ExpenseTracker/Mainte
 const ExpenseSettings = lazy(() => import("./pages/ExpenseTracker/ExpenseSettings"));
 const ExpenseAnalytics = lazy(() => import("./pages/ExpenseTracker/ExpenseAnalytics"));
 const ExpenseHistory = lazy(() => import("./pages/ExpenseTracker/ExpenseHistory"));
-
 
 // Shared Components
 const Auth = lazy(() => import("./pages/Auth"));
@@ -74,15 +76,20 @@ function App() {
                 }
               />
 
+              {/* --- EXPENSE TRACKER ROUTES WITH SHARED ACTION LAYOUT --- */}
               <Route
-                path="/expenses"
                 element={
                   <ProtectedRoute>
-                    <ExpenseDashboard />
+                    <ExpenseTrackerLayout />
                   </ProtectedRoute>
                 }
-              />
+              >
+                <Route path="/expenses" element={<ExpenseDashboard />} />
+                <Route path="/expenses/analytics" element={<ExpenseAnalytics />} />
+                <Route path="/expenses/history" element={<ExpenseHistory />} />
+              </Route>
 
+              {/* Expense Settings (Excluded from Global Floating Actions) */}
               <Route
                 path="/expenses/settings"
                 element={
@@ -91,24 +98,6 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-
-              <Route
-                path="/expenses/analytics"
-                element={
-                  <ProtectedRoute>
-                    <ExpenseAnalytics />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/expenses/history"
-                element={
-                  <ProtectedRoute>
-                    <ExpenseHistory />
-                  </ProtectedRoute>
-                }
-              />  
 
               {/* --- CLIENT TRACKER APP ROUTES --- */}
               <Route

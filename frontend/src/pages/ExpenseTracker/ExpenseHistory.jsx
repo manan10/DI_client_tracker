@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useOutletContext } from "react-router-dom"; // 🔥 Integrated for global sync
 import ExpenseNavbar from "../../components/ExpenseNavbar";
 import ExpenseModal from "../../components/ExpenseTracker/Dashboard/ExpenseModal";
 import { useApi } from "../../hooks/useApi";
@@ -12,8 +13,12 @@ import DeleteConfirmation from "../../components/ExpenseTracker/History/DeleteCo
 
 const ExpenseHistory = () => {
   const { request, loading } = useApi();
+  
+  // 🔥 Shared state from ExpenseTrackerLayout
+  const { wallets, refreshKey, fetchWallets } = useOutletContext();
+
   const [transactions, setTransactions] = useState([]);
-  const [wallets, setWallets] = useState([]);
+  // Wallets local state removed as it now comes from context
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [activeWallet, setActiveWallet] = useState("All");
@@ -28,7 +33,7 @@ const ExpenseHistory = () => {
     [wallets, activeWallet]
   );
 
-  // FETCH HISTORY
+  // FETCH HISTORY - Logic kept identical to original, only added refreshKey to trigger update
   useEffect(() => {
     let isMounted = true;
     const fetchHistoryData = async () => {
@@ -40,18 +45,9 @@ const ExpenseHistory = () => {
     };
     fetchHistoryData();
     return () => { isMounted = false; };
-  }, [request, selectedMonth, selectedYear, activeWallet, searchQuery]);
+  }, [request, selectedMonth, selectedYear, activeWallet, searchQuery, refreshKey]); // 🔥 refreshKey added
 
-  // FETCH WALLETS
-  useEffect(() => {
-    let isMounted = true;
-    const getWallets = async () => {
-      const res = await request("/spending/summary", "GET");
-      if (isMounted && res?.wallets) setWallets(res.wallets);
-    };
-    getWallets();
-    return () => { isMounted = false; };
-  }, [request]);
+  // FETCH WALLETS EFFECT REMOVED: Managed by Layout globally now
 
   const handleEditClick = (t) => {
     setEditData({
@@ -70,9 +66,12 @@ const ExpenseHistory = () => {
     const res = await request(`/spending/${editData._id}`, "PUT", { ...editData, amount: Number(editData.amount) });
     if (res) {
       setIsEditModalOpen(false);
+      // Fast refresh using the same logic as your original code
       const query = `month=${selectedMonth}&year=${selectedYear}&walletId=${activeWallet}&search=${searchQuery}`;
       const refreshRes = await request(`/spending/history?${query}`, "GET");
       if (refreshRes?.success) setTransactions(refreshRes.data);
+      // 🔥 Also trigger global wallet balance update
+      fetchWallets();
     }
   };
 
@@ -92,13 +91,7 @@ const ExpenseHistory = () => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#020617] text-left">
-      <ExpenseNavbar />
-      {/* MOBILE FIX: Changed px-6 to px-0 on mobile so components can handle their own edge padding. 
-          The content will now touch the screen edges correctly.
-      */}
       <main className="max-w-7xl mx-auto px-0 sm:px-6 py-6 sm:py-12">
-        
-        {/* Padding added inside header and filter for mobile */}
         <div className="px-4 sm:px-0">
           <HistoryHeader 
             selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth}
@@ -109,7 +102,6 @@ const ExpenseHistory = () => {
 
         <FilterBar wallets={wallets} activeWallet={activeWallet} setActiveWallet={setActiveWallet} />
         
-        {/* CONTEXT STAT STRIP: Full width on mobile, no rounded edges on mobile */}
         {!loading && activeWallet !== "All" && (
           <div className="mt-4 sm:mt-10 mb-8 sm:mb-10 p-5 bg-slate-50 dark:bg-slate-900/40 rounded-none sm:rounded-3xl border-y sm:border border-slate-100 dark:border-slate-800 flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500">
             <div className="flex items-center gap-4">
@@ -145,6 +137,7 @@ const ExpenseHistory = () => {
           ))}
         </div>
 
+        {/* Local Modal for Editing Transactions */}
         <ExpenseModal 
           key={isEditModalOpen ? `edit-${editData._id}` : "closed"}
           isOpen={isEditModalOpen} setOpen={setIsEditModalOpen}
@@ -160,6 +153,8 @@ const ExpenseHistory = () => {
               await request(`/spending/${deleteTarget._id}`, "DELETE");
               setTransactions(prev => prev.filter(t => t._id !== deleteTarget._id));
               setDeleteTarget(null);
+              // 🔥 Sync global wallets after deletion
+              fetchWallets();
             }} 
           />
         )}
