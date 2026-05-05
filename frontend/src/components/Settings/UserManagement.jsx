@@ -11,8 +11,8 @@ const UserManagement = () => {
   const { request, loading } = useApi();
   const [users, setUsers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-  const [updatingUser, setUpdatingUser] = useState(null);
+  const [editingUser, setEditingUser] = useState(null); // Used for Password Reset
+  const [updatingUser, setUpdatingUser] = useState(null); // Used for Profile Edit
 
   const initialForm = { 
     name: "", 
@@ -20,14 +20,11 @@ const UserManagement = () => {
     username: "", 
     phone: "", 
     password: "",
-    isAdmin: false, // NEW: Default admin state
+    isAdmin: false,
     allowedApps: ["CLIENT_TRACKER"] 
   };
   const [formData, setFormData] = useState(initialForm);
 
-// ... inside UserManagement component
-
-  // 1. Keep this for manual refreshes (Delete, Update, Create)
   const refreshUsers = useCallback(async () => {
     try {
       const data = await request("/users");
@@ -38,24 +35,27 @@ const UserManagement = () => {
   }, [request]);
 
   useEffect(() => {
-    let mounted = true;
-    
-    const loadInitialData = async () => {
+    let isMounted = true; // Prevents state updates if user navigates away fast
+
+    const loadUsers = async () => {
       try {
         const data = await request("/users");
-        if (mounted) {
+        if (isMounted) {
           setUsers(data || []);
         }
       } catch (err) {
-        console.error("Initial Load Failure", err);
+        if (isMounted) {
+          console.error("Initial Load Failure", err);
+        }
       }
     };
 
-    loadInitialData();
+    loadUsers();
 
-    return () => { mounted = false; };
-  }, [request]);
-
+    return () => {
+      isMounted = false; // Cleanup function
+    };
+  }, [request]); // Only depend on request, not refreshUsers
 
   const handleOpenEdit = (user) => {
     setUpdatingUser(user);
@@ -64,7 +64,7 @@ const UserManagement = () => {
       email: user.email,
       username: user.username,
       phone: user.phone || "",
-      isAdmin: user.isAdmin || false, // NEW: Hydrate from user data
+      isAdmin: user.isAdmin || false,
       allowedApps: user.allowedApps || []
     });
     setIsModalOpen(true);
@@ -78,23 +78,48 @@ const UserManagement = () => {
     setFormData({ ...formData, allowedApps: updated });
   };
 
+  // HANDLER 1: Save Profile Data (Create or Update)
   const handleSaveUser = async (e) => {
     e.preventDefault();
     try {
       if (updatingUser) {
+        // Only updates profile info, excludes password logic
         await request(`/users/${updatingUser._id}`, "PUT", formData);
         toast.success("User profile updated");
       } else {
         await request("/users/register", "POST", formData);
         toast.success("New member registered");
       }
-      setIsModalOpen(false);
-      setUpdatingUser(null);
-      setFormData(initialForm);
+      closeModals();
       refreshUsers();
     } catch {
       toast.error("Error saving user data");
     }
+  };
+
+  // HANDLER 2: Dedicated Password Reset (The fix you requested)
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (!formData.password) return toast.error("Please enter a new password");
+
+    try {
+      // Points to the correct route: PATCH /api/users/:id/reset-password
+      await request(`/users/${editingUser._id}/reset-password`, "PATCH", {
+        password: formData.password
+      });
+      
+      toast.success(`Credentials reset for ${editingUser.name}`);
+      closeModals();
+    } catch (err) {
+      toast.error(err.message || "Failed to reset password");
+    }
+  };
+
+  const closeModals = () => {
+    setIsModalOpen(false);
+    setEditingUser(null);
+    setUpdatingUser(null);
+    setFormData(initialForm);
   };
 
   const handleDeleteUser = async (id, name) => {
@@ -184,10 +209,10 @@ const UserManagement = () => {
         ))}
       </div>
 
-      {/* FORM MODAL */}
+      {/* PROFILE FORM MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={() => setIsModalOpen(false)} />
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={closeModals} />
           <form onSubmit={handleSaveUser} className="relative w-full max-w-xl bg-white dark:bg-[#0B1120] rounded-[3rem] p-10 shadow-2xl border border-slate-200 dark:border-white/5 animate-in zoom-in-95 duration-300 text-left">
             <div className="flex justify-between items-start mb-8">
               <div>
@@ -198,7 +223,7 @@ const UserManagement = () => {
                   Identity Protocol
                 </p>
               </div>
-              <button type="button" onClick={() => setIsModalOpen(false)} className="p-3 bg-slate-50 dark:bg-white/5 text-slate-400 rounded-full active:scale-90"><X size={24} /></button>
+              <button type="button" onClick={closeModals} className="p-3 bg-slate-50 dark:bg-white/5 text-slate-400 rounded-full active:scale-90"><X size={24} /></button>
             </div>
 
             <div className="space-y-6">
@@ -224,7 +249,6 @@ const UserManagement = () => {
                  </div>
                </div>
 
-               {/* ADMIN TOGGLE - NEW HIGH-LEVEL OVERRIDE */}
                <div className="pt-4 border-t border-slate-100 dark:border-white/5">
                  <button
                    type="button"
@@ -246,14 +270,8 @@ const UserManagement = () => {
                  </button>
                </div>
 
-               {/* APP ACCESS SECTION */}
                <div className="space-y-4 pt-4">
-                 <div className="flex flex-col gap-1 ml-1 text-left">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] font-mono">
-                     Application Access Control
-                   </label>
-                 </div>
-
+                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] font-mono ml-1">Application Access Control</label>
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                    {[
                      { id: 'CLIENT_TRACKER', label: 'Client App', desc: 'Investment/AUM', icon: Monitor },
@@ -265,28 +283,16 @@ const UserManagement = () => {
                          key={app.id}
                          type="button"
                          onClick={() => toggleApp(app.id)}
-                         className={`relative flex items-center gap-4 p-5 rounded-4xl border transition-all text-left ${
-                           isSelected
-                             ? 'bg-emerald-500 border-emerald-500 shadow-xl shadow-emerald-500/20'
-                             : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/10'
-                         }`}
+                         className={`relative flex items-center gap-4 p-5 rounded-4xl border transition-all text-left ${isSelected ? 'bg-emerald-500 border-emerald-500 shadow-xl' : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/10'}`}
                        >
-                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${
-                           isSelected ? 'bg-white/20 text-white' : 'bg-white dark:bg-white/5 text-slate-400 border border-slate-100 dark:border-white/5'
-                         }`}>
+                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-white/20 text-white' : 'bg-white dark:bg-white/5 text-slate-400 border border-slate-100 dark:border-white/5'}`}>
                            <app.icon size={20} strokeWidth={isSelected ? 3 : 2} />
                          </div>
                          <div className="flex-1 min-w-0">
-                           <p className={`text-[11px] font-black uppercase tracking-tight leading-none ${isSelected ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
-                             {app.label}
-                           </p>
-                           <p className={`text-[8px] font-bold uppercase tracking-widest mt-1.5 ${isSelected ? 'text-emerald-100' : 'text-slate-400'}`}>
-                             {app.desc}
-                           </p>
+                           <p className={`text-[11px] font-black uppercase tracking-tight leading-none ${isSelected ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{app.label}</p>
+                           <p className={`text-[8px] font-bold uppercase tracking-widest mt-1.5 ${isSelected ? 'text-emerald-100' : 'text-slate-400'}`}>{app.desc}</p>
                          </div>
-                         <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-all ${
-                           isSelected ? 'bg-white border-white text-emerald-500 scale-110' : 'border-slate-200 dark:border-white/10'
-                         }`}>
+                         <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-all ${isSelected ? 'bg-white border-white text-emerald-500 scale-110' : 'border-slate-200 dark:border-white/10'}`}>
                            {isSelected && <Check size={14} strokeWidth={4} />}
                          </div>
                        </button>
@@ -310,16 +316,26 @@ const UserManagement = () => {
         </div>
       )}
 
-      {/* PASSWORD RESET MODAL */}
+      {/* DEDICATED PASSWORD RESET MODAL */}
       {editingUser && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={() => setEditingUser(null)} />
-          <form onSubmit={handleSaveUser} className="relative w-full max-w-sm bg-white dark:bg-[#0B1120] rounded-[3rem] p-10 shadow-2xl border border-slate-200 dark:border-white/5 text-center animate-in zoom-in-95 duration-300">
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={closeModals} />
+          <form onSubmit={handleResetPassword} className="relative w-full max-w-sm bg-white dark:bg-[#0B1120] rounded-[3rem] p-10 shadow-2xl border border-slate-200 dark:border-white/5 text-center animate-in zoom-in-95 duration-300">
             <Shield size={48} className="mx-auto text-blue-500 mb-6" />
             <h2 className="text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">Reset <span className="text-blue-500">Credentials</span></h2>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 mb-8 leading-relaxed">Updating security key for <br/> {editingUser.name}</p>
-            <input type="password" required autoFocus className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-xs font-black outline-none focus:border-blue-500/30 transition-all text-center" placeholder="NEW MASTER KEY" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
-            <button type="submit" className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 h-16 rounded-2xl font-[1000] uppercase text-[10px] tracking-[0.2em] mt-6 active:scale-95 transition-all">Update Security Key</button>
+            <input 
+              type="password" 
+              required 
+              autoFocus 
+              className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-xs font-black outline-none focus:border-blue-500/30 transition-all text-center" 
+              placeholder="NEW MASTER KEY" 
+              value={formData.password} 
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
+            />
+            <button type="submit" className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 h-16 rounded-2xl font-[1000] uppercase text-[10px] tracking-[0.2em] mt-6 active:scale-95 transition-all">
+              Update Security Key
+            </button>
           </form>
         </div>
       )}
