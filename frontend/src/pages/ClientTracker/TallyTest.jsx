@@ -45,8 +45,7 @@ const TallyTest = () => {
             const responseData = await request("/tally/proxy", "POST", { xml });
             
             // Extract company names using regex from raw XML string
-            const matches = [...responseData.matchAll(/<NAME>(.*?)<\/NAME>/g)].map(m => m[1]);
-            setCompanies(matches);
+            const matches = [...responseData.matchAll(/<NAME[^>]*>(.*?)<\/NAME>/g)].map(m => m[1]);            setCompanies(matches);
             if (matches.length > 0) setSelectedCompany(matches[0]);
             
             setSuccessMsg(`Connected! Found ${matches.length} companies.`);
@@ -55,36 +54,43 @@ const TallyTest = () => {
         }
     };
 
-    const fetchLedgers = async () => {
-        if (!selectedCompany) return;
-        setSuccessMsg("");
+const fetchLedgers = async () => {
+    if (!selectedCompany) return;
+    setSuccessMsg("");
 
-        const xml = `
-        <ENVELOPE>
-            <HEADER>
-                <TALLYREQUEST>Export</TALLYREQUEST>
-                <TYPE>Collection</TYPE>
-                <ID>List of Ledgers</ID>
-            </HEADER>
-            <BODY>
-                <DESC>
-                    <STATICVARIABLES>
-                        <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
-                        <SVCURRENTCOMPANY>${selectedCompany}</SVCURRENTCOMPANY>
-                    </STATICVARIABLES>
-                </DESC>
-            </BODY>
-        </ENVELOPE>`;
+    const xml = `
+    <ENVELOPE>
+        <HEADER>
+            <VERSION>1</VERSION>
+            <TALLYREQUEST>Export</TALLYREQUEST>
+            <TYPE>Collection</TYPE>
+            <ID>Ledger</ID>
+        </HEADER>
+        <BODY>
+            <DESC>
+                <STATICVARIABLES>
+                    <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+                    <SVCURRENTCOMPANY>${selectedCompany}</SVCURRENTCOMPANY>
+                </STATICVARIABLES>
+            </DESC>
+        </BODY>
+    </ENVELOPE>`;
 
-        try {
-            const responseData = await request("/tally/proxy", "POST", { xml });
-            const matches = [...responseData.matchAll(/<NAME>(.*?)<\/NAME>/g)].map(m => m[1]);
-            setLedgers(matches);
-            setSuccessMsg(`Fetched ${matches.length} ledgers from ${selectedCompany}.`);
-        } catch {
-            // Hook automatically handles error state
-        }
-    };
+    try {
+        const responseData = await request("/tally/proxy", "POST", { xml });
+        
+        // Using the updated Regex to handle attributes inside the NAME tag
+        const matches = [...responseData.matchAll(/<NAME[^>]*>(.*?)<\/NAME>/g)].map(m => m[1]);
+        
+        // Remove duplicates (Tally often returns secondary alias names)
+        const uniqueLedgers = [...new Set(matches)];
+        
+        setLedgers(uniqueLedgers);
+        setSuccessMsg(`Fetched ${uniqueLedgers.length} ledgers from ${selectedCompany}.`);
+    } catch {
+        // Hook automatically handles error state
+    }
+};
 
     const alertStyles = {
         info: "bg-blue-50 text-blue-700 border-blue-200",
