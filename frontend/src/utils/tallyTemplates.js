@@ -1,9 +1,10 @@
 /**
- * Tally XML Templates - Production Grade
- * Validated for TallyPrime 2.0+ and Tally.ERP 9
+ * Tally XML Templates - Production Grade (Human-Friendly)
+ * Validated for TallyPrime 2.0+
  */
 
 export const tallyTemplates = {
+    // Fetch all companies visible in Tally
     getCompanies: () => `
         <ENVELOPE>
             <HEADER>
@@ -21,7 +22,7 @@ export const tallyTemplates = {
             </BODY>
         </ENVELOPE>`,
 
-    // HARDENED: Explicitly fetching only Name to reduce payload size
+    // Fetch Ledgers with their Parent Groups for smart filtering
     getLedgers: (companyName) => `
         <ENVELOPE>
             <HEADER>
@@ -32,6 +33,14 @@ export const tallyTemplates = {
             </HEADER>
             <BODY>
                 <DESC>
+                    <TDL>
+                        <TDLMESSAGE>
+                            <COLLECTION NAME="Ledger" ISMODIFY="No">
+                                <TYPE>Ledger</TYPE>
+                                <FETCH>Name, Parent</FETCH>
+                            </COLLECTION>
+                        </TDLMESSAGE>
+                    </TDL>
                     <STATICVARIABLES>
                         <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
                         <SVCURRENTCOMPANY>${companyName}</SVCURRENTCOMPANY>
@@ -40,19 +49,15 @@ export const tallyTemplates = {
             </BODY>
         </ENVELOPE>`,
 
-    /**
-     * HARDENED VOUCHER GENERATOR
-     * 1. Added OBJSTATUSTYPE for better persistence
-     * 2. Standardized AMOUNT signs (Tally reads Credits as negative)
-     * 3. Added ISPARTYLEDGER flag for Accounting View compatibility
-     */
+    // Production-Perfect Voucher Import
     generateVoucher: ({ company, type, date, ledgerName, bankAccount, amount, narration }) => {
         const tallyDate = date.replace(/-/g, '');
         
-        // Tally Math: Debits are Positive, Credits are Negative
-        // Receipt: Bank is Debit (+), Ledger is Credit (-)
+        // Tally Math: Credits are Negative
         const ledgerAmount = type === 'Payment' ? amount : `-${amount}`;
         const bankAmount = type === 'Receipt' ? amount : `-${amount}`;
+        const isLedgerPositive = type === 'Payment' ? 'Yes' : 'No';
+        const isBankPositive = type === 'Receipt' ? 'Yes' : 'No';
 
         return `
         <ENVELOPE>
@@ -78,16 +83,16 @@ export const tallyTemplates = {
                                 <PARTYLEDGERNAME>${type === 'Receipt' ? ledgerName : bankAccount}</PARTYLEDGERNAME>
                                 <PERSISTEDVIEW>Accounting Voucher View</PERSISTEDVIEW>
                                 <NARRATION>${narration}</NARRATION>
-                                
                                 <ALLLEDGERENTRIES.LIST>
                                     <LEDGERNAME>${ledgerName}</LEDGERNAME>
-                                    <ISDEEMEDPOSITIVE>${type === 'Payment' ? 'Yes' : 'No'}</ISDEEMEDPOSITIVE>
+                                    <ISDEEMEDPOSITIVE>${isLedgerPositive}</ISDEEMEDPOSITIVE>
+                                    <ISPARTYLEDGER>Yes</ISPARTYLEDGER>
                                     <AMOUNT>${ledgerAmount}</AMOUNT>
                                 </ALLLEDGERENTRIES.LIST>
-                                
                                 <ALLLEDGERENTRIES.LIST>
                                     <LEDGERNAME>${bankAccount}</LEDGERNAME>
-                                    <ISDEEMEDPOSITIVE>${type === 'Receipt' ? 'Yes' : 'No'}</ISDEEMEDPOSITIVE>
+                                    <ISDEEMEDPOSITIVE>${isBankPositive}</ISDEEMEDPOSITIVE>
+                                    <ISPARTYLEDGER>No</ISPARTYLEDGER>
                                     <AMOUNT>${bankAmount}</AMOUNT>
                                 </ALLLEDGERENTRIES.LIST>
                             </VOUCHER>
@@ -95,6 +100,6 @@ export const tallyTemplates = {
                     </REQUESTDATA>
                 </IMPORTDATA>
             </BODY>
-        </ENVELOPE>`;
+        </ENVELOPE>`.trim();
     }
 };
