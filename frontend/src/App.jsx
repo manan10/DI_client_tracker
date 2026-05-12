@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from "./hooks/useAuth";
 
 // --- Layouts ---
 import ExpenseTrackerLayout from "./layouts/ExpenseTrackerLayout";
+import TallyTest from "./pages/ClientTracker/TallyTest";
 
 // --- Lazy Loaded Pages ---
 // Client Tracker App Components
@@ -66,6 +67,7 @@ function App() {
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/login" element={<Auth />} />
+              <Route path="/tally-test" element={<TallyTest />} />
 
               <Route
                 path="/"

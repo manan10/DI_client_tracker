@@ -14,7 +14,8 @@ import {
   BarChart3,
   Lock,
   Grid, 
-  ListTodo
+  ListTodo,
+  TestTubeIcon
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import Logo from '../assets/logo_nobrand.png';
@@ -57,6 +58,7 @@ const Navbar = () => {
     // Only spread the Accounts object if the user is an Admin
     ...(user?.isAdmin ? [{ name: 'Accounts', path: '/accounts', icon: BarChart3 }] : []),
     { name: 'Settings', path: '/settings', icon: SettingsIcon },
+    { name: 'Test', path: '/tally-test', icon: TestTubeIcon, isLocked: false },
   ];
 
   return (
