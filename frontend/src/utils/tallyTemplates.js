@@ -49,12 +49,9 @@ export const tallyTemplates = {
     generateVoucher: ({ company, type, date, ledgerName, bankAccount, amount, narration }) => {
         const tallyDate = date.replace(/-/g, '');
         
-        // Tally Logic: 
-        // Receipt: Bank is Debit (+), Ledger is Credit (-)
-        // Payment: Ledger is Debit (+), Bank is Credit (-)
+        // Logic check: Tally reads Credits as negative
         const ledgerAmount = type === 'Payment' ? amount : `-${amount}`;
         const bankAmount = type === 'Receipt' ? amount : `-${amount}`;
-
         const isLedgerPositive = type === 'Payment' ? 'Yes' : 'No';
         const isBankPositive = type === 'Receipt' ? 'Yes' : 'No';
 
@@ -67,12 +64,14 @@ export const tallyTemplates = {
                 <ID>Vouchers</ID>
             </HEADER>
             <BODY>
+                <DESC>
+                    <STATICVARIABLES>
+                        <SVCURRENTCOMPANY>${company}</SVCURRENTCOMPANY>
+                    </STATICVARIABLES>
+                </DESC>
                 <IMPORTDATA>
                     <REQUESTDESC>
                         <REPORTNAME>Vouchers</REPORTNAME>
-                        <STATICVARIABLES>
-                            <SVCURRENTCOMPANY>${company}</SVCURRENTCOMPANY>
-                        </STATICVARIABLES>
                     </REQUESTDESC>
                     <REQUESTDATA>
                         <TALLYMESSAGE xmlns:UDF="TallyUDF">
