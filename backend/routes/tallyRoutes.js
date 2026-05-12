@@ -1,13 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const { protect } = require('../middleware/authMiddleware'); // Ensure only you/family can use this
+const { protect } = require('../middleware/authmiddleware');
 
-// @desc    Relay XML to the Local Bridge
-// @route   POST /api/tally/proxy
 router.post('/proxy', protect, async (req, res) => {
     try {
-        // TALLY_BRIDGE_URL will be your Ngrok link or Static IP
         const bridgeUrl = process.env.TALLY_BRIDGE_URL; 
         
         if (!bridgeUrl) {
@@ -16,12 +13,26 @@ router.post('/proxy', protect, async (req, res) => {
 
         const response = await axios.post(`${bridgeUrl}/tally-proxy`, {
             xml: req.body.xml
+        }, {
+            timeout: 10000 
         });
 
+        // Set the header so the browser knows it's receiving XML
+        res.set('Content-Type', 'text/xml');
         res.send(response.data);
+
     } catch (error) {
+        // Detailed logging for you to debug during the experiment
         console.error("Cloud Gateway Error:", error.message);
-        res.status(502).json({ message: "Bridge offline. Ensure the PC is on and Bridge service is running." });
+
+        if (error.code === 'ECONNABORTED') {
+            return res.status(504).json({ message: "Connection timed out. Is the Tally PC slow or asleep?" });
+        }
+
+        res.status(502).json({ 
+            message: "Bridge offline or unreachable.",
+            details: error.message 
+        });
     }
 });
 
