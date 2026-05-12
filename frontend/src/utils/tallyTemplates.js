@@ -49,11 +49,10 @@ export const tallyTemplates = {
     generateVoucher: ({ company, type, date, ledgerName, bankAccount, amount, narration }) => {
         const tallyDate = date.replace(/-/g, '');
         
-        // Logic check: Tally reads Credits as negative
+        // Tally Math: Debits are Positive, Credits are Negative
+        // Receipt: Bank is Debit (+), Ledger is Credit (-)
         const ledgerAmount = type === 'Payment' ? amount : `-${amount}`;
         const bankAmount = type === 'Receipt' ? amount : `-${amount}`;
-        const isLedgerPositive = type === 'Payment' ? 'Yes' : 'No';
-        const isBankPositive = type === 'Receipt' ? 'Yes' : 'No';
 
         return `
         <ENVELOPE>
@@ -64,14 +63,12 @@ export const tallyTemplates = {
                 <ID>Vouchers</ID>
             </HEADER>
             <BODY>
-                <DESC>
-                    <STATICVARIABLES>
-                        <SVCURRENTCOMPANY>${company}</SVCURRENTCOMPANY>
-                    </STATICVARIABLES>
-                </DESC>
                 <IMPORTDATA>
                     <REQUESTDESC>
                         <REPORTNAME>Vouchers</REPORTNAME>
+                        <STATICVARIABLES>
+                            <SVCURRENTCOMPANY>${company}</SVCURRENTCOMPANY>
+                        </STATICVARIABLES>
                     </REQUESTDESC>
                     <REQUESTDATA>
                         <TALLYMESSAGE xmlns:UDF="TallyUDF">
@@ -84,13 +81,13 @@ export const tallyTemplates = {
                                 
                                 <ALLLEDGERENTRIES.LIST>
                                     <LEDGERNAME>${ledgerName}</LEDGERNAME>
-                                    <ISDEEMEDPOSITIVE>${isLedgerPositive}</ISDEEMEDPOSITIVE>
+                                    <ISDEEMEDPOSITIVE>${type === 'Payment' ? 'Yes' : 'No'}</ISDEEMEDPOSITIVE>
                                     <AMOUNT>${ledgerAmount}</AMOUNT>
                                 </ALLLEDGERENTRIES.LIST>
                                 
                                 <ALLLEDGERENTRIES.LIST>
                                     <LEDGERNAME>${bankAccount}</LEDGERNAME>
-                                    <ISDEEMEDPOSITIVE>${isBankPositive}</ISDEEMEDPOSITIVE>
+                                    <ISDEEMEDPOSITIVE>${type === 'Receipt' ? 'Yes' : 'No'}</ISDEEMEDPOSITIVE>
                                     <AMOUNT>${bankAmount}</AMOUNT>
                                 </ALLLEDGERENTRIES.LIST>
                             </VOUCHER>
