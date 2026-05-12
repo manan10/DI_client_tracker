@@ -6,13 +6,13 @@ import {
     Activity, 
     CheckCircle2, 
     RefreshCw, 
-    Search, 
     FileCode2, 
     SendHorizontal, 
     AlertCircle, 
-    ArrowRight,
     Library,
-    LayoutDashboard
+    LayoutDashboard,
+    Copy,
+    Check
 } from 'lucide-react';
 
 const TallyTest = () => {
@@ -29,6 +29,7 @@ const TallyTest = () => {
     const [lastRequest, setLastRequest] = useState("");
     const [lastResponse, setLastResponse] = useState("");
     const [viewMode, setViewMode] = useState('request'); // request | response
+    const [copiedSection, setCopiedSection] = useState(null); // feed | data
 
     // Voucher State
     const [voucherType, setVoucherType] = useState("Receipt");
@@ -41,8 +42,15 @@ const TallyTest = () => {
     });
 
     const logActivity = (msg, type = 'info') => {
-        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         setActivityLog(prev => [{ time, msg, type }, ...prev].slice(0, 30));
+    };
+
+    const copyToClipboard = (text, section) => {
+        if (!text) return;
+        navigator.clipboard.writeText(text);
+        setCopiedSection(section);
+        setTimeout(() => setCopiedSection(null), 2000);
     };
 
     // --- Actions ---
@@ -60,16 +68,16 @@ const TallyTest = () => {
             
             setCompanies(cleanList);
             if (cleanList.length > 0) setSelectedCompany(cleanList[0]);
-            logActivity(`Success: Found ${cleanList.length} companies ready for sync.`, "success");
+            logActivity(`Success: Found ${cleanList.length} companies.`, "success");
         } catch (err) {
             setLastResponse(err.message || "Connection timed out");
-            logActivity(`Connection Failed: Ensure the Tally Bridge is running on the PC.`, "error");
+            logActivity(`Connection Failed: Ensure Tally Bridge is running.`, "error");
         }
     };
 
     const fetchLedgers = async () => {
         if (!selectedCompany || !isCompanyOpen) {
-            logActivity("Action Required: Please confirm the company is open in Tally first.", "error");
+            logActivity("Action Required: Confirm company is open in Tally.", "error");
             return;
         }
         const xml = tallyTemplates.getLedgers(selectedCompany);
@@ -101,10 +109,10 @@ const TallyTest = () => {
             const responseData = await request("/tally/proxy", "POST", { xml });
             setLastResponse(responseData);
             if (responseData.includes("CREATED: 1") || responseData.includes("<CREATED>1</CREATED>")) {
-                logActivity(`${voucherType} successfully posted to Tally!`, "success");
+                logActivity(`${voucherType} successfully posted!`, "success");
                 setVoucherData(prev => ({ ...prev, amount: "" }));
             } else {
-                logActivity("Tally rejected the data. See Response Details for specifics.", "error");
+                logActivity("Tally rejected the data. Check Response details.", "error");
             }
         } catch (err) {
             setLastResponse(err.message);
@@ -128,7 +136,6 @@ const TallyTest = () => {
                         <p className="text-slate-400 text-sm">Direct bridge for Dalal Investment accounting</p>
                     </div>
 
-                    {/* Step 1 & 2 Card */}
                     <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6 space-y-6">
                         <div className="flex items-center justify-between">
                             <h2 className="text-[11px] font-bold text-indigo-600 uppercase tracking-widest">Connection Setup</h2>
@@ -174,7 +181,6 @@ const TallyTest = () => {
                         </div>
                     </div>
 
-                    {/* VOUCHER FORM CARD */}
                     <div className={`bg-white border border-slate-200 rounded-3xl shadow-sm p-6 transition-all duration-500 ${ledgers.length === 0 ? 'opacity-20 grayscale pointer-events-none' : 'opacity-100'}`}>
                         <h2 className="text-[11px] font-bold text-indigo-600 uppercase tracking-widest mb-6">New Transaction</h2>
                         
@@ -230,18 +236,25 @@ const TallyTest = () => {
                 <div className="lg:col-span-7 flex flex-col gap-6 h-full overflow-hidden">
                     
                     {/* LIVE ACTIVITY FEED */}
-                    <div className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden h-1/3">
+                    <div className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden h-1/3 relative">
                         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
                                 <Activity className="w-3.5 h-3.5 text-indigo-500"/> Activity Feed
                             </span>
+                            <button 
+                                onClick={() => copyToClipboard(activityLog.map(l => `[${l.time}] ${l.msg}`).join('\n'), 'feed')}
+                                className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors group"
+                                title="Copy full log"
+                            >
+                                {copiedSection === 'feed' ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600" />}
+                            </button>
                         </div>
-                        <div className="flex-1 p-5 overflow-y-auto space-y-3">
+                        <div className="flex-1 p-5 overflow-y-auto space-y-3 font-mono">
                             {activityLog.length === 0 && <p className="text-slate-300 text-xs italic">Waiting for connection...</p>}
                             {activityLog.map((log, i) => (
                                 <div key={i} className={`flex gap-4 animate-in slide-in-from-left duration-300`}>
-                                    <span className="text-[10px] font-bold text-slate-300 mt-0.5">{log.time}</span>
-                                    <span className={`text-xs font-semibold ${log.type === 'error' ? 'text-red-500' : log.type === 'success' ? 'text-emerald-600' : 'text-slate-600'}`}>
+                                    <span className="text-[9px] font-bold text-slate-300 mt-0.5 whitespace-nowrap">{log.time}</span>
+                                    <span className={`text-[11px] font-semibold leading-relaxed ${log.type === 'error' ? 'text-red-500' : log.type === 'success' ? 'text-emerald-600' : 'text-slate-600'}`}>
                                         {log.msg}
                                     </span>
                                 </div>
@@ -250,7 +263,7 @@ const TallyTest = () => {
                     </div>
 
                     {/* TECHNICAL DATA INSPECTOR */}
-                    <div className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden h-2/3">
+                    <div className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden h-2/3 relative">
                         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div className="flex gap-6">
                                 <button 
@@ -266,13 +279,22 @@ const TallyTest = () => {
                                     Raw Response
                                 </button>
                             </div>
-                            <FileCode2 className="w-4 h-4 text-slate-300"/>
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => copyToClipboard(viewMode === 'request' ? lastRequest : lastResponse, 'data')}
+                                    className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 rounded-lg transition-colors border border-transparent hover:border-slate-200 group"
+                                >
+                                    {copiedSection === 'data' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3 text-slate-400 group-hover:text-slate-600" />}
+                                    <span className="text-[9px] font-bold text-slate-400 group-hover:text-slate-600 uppercase">Copy XML</span>
+                                </button>
+                                <FileCode2 className="w-4 h-4 text-slate-300 ml-2"/>
+                            </div>
                         </div>
-                        <div className="flex-1 p-6 bg-slate-50/50 font-mono text-[11px] text-slate-500 overflow-auto whitespace-pre custom-scrollbar">
+                        <div className="flex-1 p-6 bg-slate-50/50 font-mono text-[11px] text-slate-500 overflow-auto whitespace-pre custom-scrollbar select-all">
                             {viewMode === 'request' ? (
-                                lastRequest || "Waiting for outgoing data..."
+                                lastRequest || "No XML generated yet..."
                             ) : (
-                                lastResponse || "Waiting for Tally response..."
+                                lastResponse || "Waiting for Tally feedback..."
                             )}
                         </div>
                     </div>
