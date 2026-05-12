@@ -29,12 +29,13 @@ const TallyTest = () => {
                 <VERSION>1</VERSION>
                 <TALLYREQUEST>Export</TALLYREQUEST>
                 <TYPE>Collection</TYPE>
-                <ID>Company On Disk</ID> 
+                <ID>CompanyOnDisk</ID> 
             </HEADER>
             <BODY>
                 <DESC>
                     <STATICVARIABLES>
                         <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+                        <SVINCLUDE>All</SVINCLUDE>
                     </STATICVARIABLES>
                 </DESC>
             </BODY>
@@ -98,8 +99,8 @@ const TallyTest = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 p-8 font-sans text-slate-900">
-            <Navbar /> {/* Assuming you have a Navbar component */}
-            <div className="max-w-6xl mx-auto space-y-8">
+            <Navbar /> 
+            <div className="max-w-6xl mx-auto space-y-8 mt-4">
                 
                 <header className="flex justify-between items-end">
                     <div>
