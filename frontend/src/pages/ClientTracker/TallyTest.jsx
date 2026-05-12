@@ -58,7 +58,7 @@ const TallyTest = () => {
             setCompanies(cleanList);
             if (cleanList.length > 0) setSelectedCompany(cleanList[0]);
             logActivity(`Success: Found ${cleanList.length} companies.`, "success");
-        } catch (err) {
+        } catch {
             logActivity(`Connection Failed. Check Bridge/Ngrok.`, "error");
         }
     };
@@ -68,17 +68,34 @@ const TallyTest = () => {
         const xml = tallyTemplates.getLedgers(selectedCompany);
         setLastRequest(xml);
         logActivity(`Categorizing accounts for ${selectedCompany}...`, "process");
+        
         try {
             const responseData = await request("/tally/proxy", "POST", { xml });
             setLastResponse(responseData);
             
-            // Regex to parse Name from attribute and Parent from child tag
-            const ledgerRegex = /<LEDGER NAME="(.*?)".*?>[\s\S]*?<PARENT>(.*?)<\/PARENT>/g;
-            const matches = [...responseData.matchAll(ledgerRegex)];
-            const mapped = matches.map(m => ({ name: m[1], parent: m[2] }));
+            // IMPROVED REGEX: 
+            // 1. Matches Name inside the LEDGER tag even with other attributes
+            // 2. Matches Parent inside the PARENT tag
+            const ledgerRegex = /<LEDGER NAME="([^"]*)"[^>]*>[\s\S]*?<PARENT[^>]*>(.*?)<\/PARENT>/g;
             
-            setLedgers(mapped);
-            logActivity(`Sync Complete: ${mapped.length} accounts classified.`, "success");
+            const matches = [...responseData.matchAll(ledgerRegex)];
+            
+            if (matches.length === 0) {
+                logActivity("Regex Match Failed. Checking alternative pattern...", "error");
+                // Fallback for different Tally XML versions
+                const fallbackRegex = /<NAME>(.*?)<\/NAME>[\s\S]*?<PARENT>(.*?)<\/PARENT>/g;
+                const fallbackMatches = [...responseData.matchAll(fallbackRegex)];
+                const mapped = fallbackMatches.map(m => ({ name: m[1], parent: m[2] }));
+                setLedgers(mapped);
+                logActivity(`Sync Complete (Fallback): ${mapped.length} accounts classified.`, "success");
+            } else {
+                const mapped = matches.map(m => ({
+                    name: m[1],
+                    parent: m[2]
+                }));
+                setLedgers(mapped);
+                logActivity(`Sync Complete: ${mapped.length} accounts classified.`, "success");
+            }
         } catch (err) {
             logActivity(`Sync Error: ${err.message}`, "error");
         }
