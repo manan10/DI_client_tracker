@@ -26,13 +26,17 @@ const TallyTest = () => {
         setSuccessMsg(""); 
         const xml = `
         <ENVELOPE>
-            <HEADER><TALLYREQUEST>Export</TALLYREQUEST></HEADER>
+            <HEADER>
+                <VERSION>1</VERSION>
+                <TALLYREQUEST>Export</TALLYREQUEST>
+                <TYPE>Collection</TYPE>
+                <ID>List of Companies</ID>
+            </HEADER>
             <BODY>
                 <DESC>
-                    <STATICVARIABLES><SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT></STATICVARIABLES>
-                    <TDL><TDLMESSAGE>
-                        <COLLECTION NAME="List of Companies" ISMODIFY="No"><TYPE>Company</TYPE></COLLECTION>
-                    </TDLMESSAGE></TDL>
+                    <STATICVARIABLES>
+                        <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+                    </STATICVARIABLES>
                 </DESC>
             </BODY>
         </ENVELOPE>`;
