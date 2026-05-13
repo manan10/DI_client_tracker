@@ -1,30 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApi } from '../../hooks/useApi';
 import { tallyTemplates } from '../../utils/tallyTemplates';
 import Navbar from '../../components/Navbar';
 import { 
-    Activity, CheckCircle2, RefreshCw, FileCode2, 
-    SendHorizontal, AlertCircle, Library, LayoutDashboard, 
-    Copy, Check, Database, Landmark 
+    Activity, CheckCircle2, RefreshCw, 
+    SendHorizontal, Library, LayoutDashboard, 
+    Database, Terminal, Edit3, Search
 } from 'lucide-react';
 
 const TallyTest = () => {
-    const { request, loading, error: apiError } = useApi();
+    // FIXED: Removed unused apiError variable
+    const { request, loading } = useApi();
     
-    // Core State
     const [companies, setCompanies] = useState([]);
     const [selectedCompany, setSelectedCompany] = useState("");
     const [isCompanyOpen, setIsCompanyOpen] = useState(false);
-    const [ledgers, setLedgers] = useState([]); // Array of {name, parent}
+    const [ledgers, setLedgers] = useState([]); 
     
-    // UI State
     const [activityLog, setActivityLog] = useState([]);
-    const [lastRequest, setLastRequest] = useState("");
+    const [manualXml, setManualXml] = useState(""); 
     const [lastResponse, setLastResponse] = useState("");
-    const [viewMode, setViewMode] = useState('request');
-    const [copiedSection, setCopiedSection] = useState(null);
+    const [searchTerm, setSearchTerm] = useState("");
 
-    // Voucher State
     const [voucherType, setVoucherType] = useState("Receipt");
     const [voucherData, setVoucherData] = useState({
         date: new Date().toISOString().split('T')[0],
@@ -34,133 +31,113 @@ const TallyTest = () => {
         narration: "Sync via MFD Portal"
     });
 
+    // FIXED: Computed XML directly instead of using useEffect to avoid cascading renders
+    const generatedXml = useMemo(() => {
+        if (!selectedCompany) return "";
+        return tallyTemplates.generateVoucher({
+            company: selectedCompany,
+            type: voucherType,
+            ...voucherData
+        });
+    }, [voucherData, voucherType, selectedCompany]);
+
+    // Use manualXml if the user has edited it, otherwise use the auto-generated one
+    const activeXml = manualXml || generatedXml;
+
+    const filteredGroupedLedgers = useMemo(() => {
+        const filtered = ledgers.filter(l => 
+            l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            l.parent.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        return filtered.reduce((acc, ledger) => {
+            if (!acc[ledger.parent]) acc[ledger.parent] = [];
+            acc[ledger.parent].push(ledger.name);
+            return acc;
+        }, {});
+    }, [ledgers, searchTerm]);
+
     const logActivity = (msg, type = 'info') => {
         const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         setActivityLog(prev => [{ time, msg, type }, ...prev].slice(0, 30));
     };
 
-    const copyToClipboard = (text, section) => {
-        if (!text) return;
-        navigator.clipboard.writeText(text);
-        setCopiedSection(section);
-        setTimeout(() => setCopiedSection(null), 2000);
-    };
-
     const fetchCompanies = async () => {
         const xml = tallyTemplates.getCompanies();
-        setLastRequest(xml);
-        logActivity("Scanning for local Tally instances...", "process");
         try {
             const responseData = await request("/tally/proxy", "POST", { xml });
-            setLastResponse(responseData);
             const matches = [...responseData.matchAll(/<NAME[^>]*>(.*?)<\/NAME>/g)].map(m => m[1]);
-            const cleanList = [...new Set(matches)].filter(n => !n.includes('migrated-to'));
-            setCompanies(cleanList);
-            if (cleanList.length > 0) setSelectedCompany(cleanList[0]);
-            logActivity(`Success: Found ${cleanList.length} companies.`, "success");
+            const filtered = [...new Set(matches)].filter(n => !n.includes('migrated-to'));
+            setCompanies(filtered);
+            if (filtered.length > 0) setSelectedCompany(filtered[0]);
+            logActivity(`Success: Connected to Tally PC.`, "success");
         } catch {
-            logActivity(`Connection Failed. Check Bridge/Ngrok.`, "error");
+            logActivity(`Bridge Connection Failed.`, "error");
         }
     };
 
     const fetchLedgers = async () => {
-        if (!selectedCompany || !isCompanyOpen) return;
         const xml = tallyTemplates.getLedgers(selectedCompany);
-        setLastRequest(xml);
-        logActivity(`Categorizing accounts for ${selectedCompany}...`, "process");
-        
+        logActivity(`Pulling master data for ${selectedCompany}...`, "process");
         try {
             const responseData = await request("/tally/proxy", "POST", { xml });
-            setLastResponse(responseData);
-            
-            // IMPROVED REGEX: 
-            // 1. Matches Name inside the LEDGER tag even with other attributes
-            // 2. Matches Parent inside the PARENT tag
             const ledgerRegex = /<LEDGER NAME="([^"]*)"[^>]*>[\s\S]*?<PARENT[^>]*>(.*?)<\/PARENT>/g;
-            
             const matches = [...responseData.matchAll(ledgerRegex)];
-            
-            if (matches.length === 0) {
-                logActivity("Regex Match Failed. Checking alternative pattern...", "error");
-                // Fallback for different Tally XML versions
-                const fallbackRegex = /<NAME>(.*?)<\/NAME>[\s\S]*?<PARENT>(.*?)<\/PARENT>/g;
-                const fallbackMatches = [...responseData.matchAll(fallbackRegex)];
-                const mapped = fallbackMatches.map(m => ({ name: m[1], parent: m[2] }));
-                setLedgers(mapped);
-                logActivity(`Sync Complete (Fallback): ${mapped.length} accounts classified.`, "success");
-            } else {
-                const mapped = matches.map(m => ({
-                    name: m[1],
-                    parent: m[2]
-                }));
-                setLedgers(mapped);
-                logActivity(`Sync Complete: ${mapped.length} accounts classified.`, "success");
-            }
+            const mapped = matches.map(m => ({ name: m[1], parent: m[2] }));
+            setLedgers(mapped);
+            logActivity(`Categorized ${mapped.length} accounts.`, "success");
         } catch (err) {
             logActivity(`Sync Error: ${err.message}`, "error");
         }
     };
 
     const postVoucher = async () => {
-        logActivity(`Committing ${voucherType} to Tally...`, "process");
-        const xml = tallyTemplates.generateVoucher({
-            company: selectedCompany,
-            type: voucherType,
-            ...voucherData
-        });
-        setLastRequest(xml);
+        logActivity(`Committing XML to ${selectedCompany}...`, "process");
         try {
-            const responseData = await request("/tally/proxy", "POST", { xml });
+            const responseData = await request("/tally/proxy", "POST", { xml: activeXml });
             setLastResponse(responseData);
             if (responseData.includes("<CREATED>1</CREATED>") || responseData.includes("CREATED: 1")) {
-                logActivity(`Voucher Created Successfully!`, "success");
-                setVoucherData(prev => ({ ...prev, amount: "" }));
+                logActivity(`Voucher Posted Successfully!`, "success");
+                setManualXml(""); // Reset manual edits on success
             } else {
-                logActivity("Tally rejected the entry. Check Raw Response.", "error");
+                logActivity("Transaction rejected. Review Tally Response.", "error");
             }
         } catch (err) {
-            logActivity(`Critical Error: ${err.message}`, "error");
+            logActivity(`Network Error: ${err.message}`, "error");
         }
     };
 
     return (
         <div className="min-h-screen bg-[#FDFDFD] font-sans text-slate-700">
             <Navbar />
-            <div className="max-w-[1500px] mx-auto p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 h-[calc(100vh-100px)]">
+            {/* FIXED: Applied canonical max-w class */}
+            <div className="max-w-400 mx-auto p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 h-[calc(100vh-100px)]">
                 
-                {/* LEFT: WORKFLOW */}
                 <div className="lg:col-span-5 space-y-6 overflow-y-auto pr-4 custom-scrollbar">
-                    <div className="space-y-1 mb-6">
-                        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-                            <LayoutDashboard className="w-6 h-6 text-indigo-600" /> Tally Hub
-                        </h1>
-                        <p className="text-slate-400 text-sm italic">{selectedCompany || 'Awaiting Connection...'}</p>
-                    </div>
-
                     <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6 space-y-6">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Step 1: Bridge Setup</h2>
-                            <button onClick={fetchCompanies} disabled={loading} className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl text-xs font-bold transition-all">
+                            <h2 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">01. Environment</h2>
+                            <button onClick={fetchCompanies} className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-all flex items-center gap-2">
                                 <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} /> Scan PC
                             </button>
                         </div>
                         <div className={`space-y-4 ${companies.length === 0 ? 'opacity-30' : ''}`}>
-                            <select value={selectedCompany} onChange={(e) => { setSelectedCompany(e.target.value); setIsCompanyOpen(false); setLedgers([]); }} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none">
+                            <select value={selectedCompany} onChange={(e) => setSelectedCompany(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold">
                                 {companies.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                             <div className="flex gap-3">
-                                <button onClick={() => setIsCompanyOpen(!isCompanyOpen)} className={`flex-1 flex items-center justify-center gap-3 p-3 rounded-xl border text-[10px] font-black uppercase transition-all ${isCompanyOpen ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
-                                    {isCompanyOpen ? <CheckCircle2 className="w-4 h-4" /> : <div className="w-4 h-4 rounded-full border-2 border-slate-200" />} Open in Tally
+                                <button onClick={() => setIsCompanyOpen(!isCompanyOpen)} className={`flex-1 p-3 rounded-xl border text-[10px] font-black uppercase transition-all ${isCompanyOpen ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-50 text-slate-400'}`}>
+                                    {isCompanyOpen ? 'Company Active' : 'Confirm Active State'}
                                 </button>
-                                <button onClick={fetchLedgers} disabled={!isCompanyOpen || loading} className="flex-1 bg-slate-900 text-white p-3 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 disabled:opacity-20">
+                                <button onClick={fetchLedgers} disabled={!isCompanyOpen} className="flex-1 bg-slate-900 text-white p-3 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2">
                                     <Database className="w-4 h-4"/> Sync Masters
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <div className={`bg-white border border-slate-200 rounded-3xl shadow-sm p-6 transition-all ${ledgers.length === 0 ? 'opacity-20 grayscale pointer-events-none' : ''}`}>
-                        <h2 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-6">Step 2: Post Voucher</h2>
+                    <div className={`bg-white border border-slate-200 rounded-3xl shadow-sm p-6 transition-all ${ledgers.length === 0 ? 'opacity-20 pointer-events-none' : ''}`}>
+                        <h2 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-6">02. Entry Helper</h2>
                         <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
                             {['Receipt', 'Payment', 'Sales'].map(t => (
                                 <button key={t} onClick={() => setVoucherType(t)} className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${voucherType === t ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>
@@ -168,71 +145,85 @@ const TallyTest = () => {
                                 </button>
                             ))}
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="col-span-2">
-                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Target Account</label>
-                                <select className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold outline-none" value={voucherData.ledgerName} onChange={e => setVoucherData({...voucherData, ledgerName: e.target.value})}>
-                                    <option value="">-- Search Accounts --</option>
-                                    {ledgers.map(l => <option key={l.name} value={l.name}>{l.name} ({l.parent})</option>)}
+
+                        <div className="space-y-5">
+                            <div className="space-y-2">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-3.5 w-4 h-4 text-slate-300" />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Search ledger..."
+                                        className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-3 rounded-xl text-xs font-bold outline-none"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                                <select 
+                                    className="w-full bg-white border border-slate-200 p-3 rounded-xl text-xs font-bold outline-none" 
+                                    value={voucherData.ledgerName} 
+                                    onChange={e => setVoucherData({...voucherData, ledgerName: e.target.value})}
+                                >
+                                    <option value="">-- Choose Account --</option>
+                                    {Object.entries(filteredGroupedLedgers).map(([group, names]) => (
+                                        <optgroup key={group} label={group.toUpperCase()}>
+                                            {names.map(n => <option key={n} value={n}>{n}</option>)}
+                                        </optgroup>
+                                    ))}
                                 </select>
                             </div>
-                            <div className="col-span-2">
-                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Bank / Cash Account (Filtered)</label>
-                                <select className="w-full bg-indigo-50/30 border border-indigo-100 p-3 rounded-xl text-xs font-bold text-indigo-700 outline-none" value={voucherData.bankAccount} onChange={e => setVoucherData({...voucherData, bankAccount: e.target.value})}>
-                                    <option value="">-- Select Verified Bank --</option>
-                                    {ledgers.filter(l => l.parent.includes("Bank") || l.parent.includes("Cash")).map(l => <option key={l.name} value={l.name}>{l.name}</option>)}
-                                </select>
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[9px] font-black text-slate-400 uppercase block">Amount</label>
-                                <input type="number" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-black text-indigo-600" value={voucherData.amount} onChange={e => setVoucherData({...voucherData, amount: e.target.value})} />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[9px] font-black text-slate-400 uppercase block">VCH Date</label>
-                                <input type="date" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold" value={voucherData.date} onChange={e => setVoucherData({...voucherData, date: e.target.value})} />
-                            </div>
-                            <div className="col-span-2">
-                                <textarea rows="2" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-medium mt-2" placeholder="Narration..." value={voucherData.narration} onChange={e => setVoucherData({...voucherData, narration: e.target.value})} />
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="col-span-2">
+                                    <select className="w-full bg-indigo-50 border border-indigo-100 p-3 rounded-xl text-xs font-bold text-indigo-700" value={voucherData.bankAccount} onChange={e => setVoucherData({...voucherData, bankAccount: e.target.value})}>
+                                        <option value="">-- Choose Bank --</option>
+                                        {ledgers.filter(l => l.parent.includes("Bank") || l.parent.includes("Cash")).map(l => <option key={l.name} value={l.name}>{l.name}</option>)}
+                                    </select>
+                                </div>
+                                <input type="number" placeholder="Amount" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-black text-indigo-600" value={voucherData.amount} onChange={e => setVoucherData({...voucherData, amount: e.target.value})} />
+                                <input type="date" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold outline-none" value={voucherData.date} onChange={e => setVoucherData({...voucherData, date: e.target.value})} />
                             </div>
                         </div>
-                        <button onClick={postVoucher} disabled={loading} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs tracking-widest shadow-lg mt-6 flex items-center justify-center gap-3 active:scale-[0.98] transition-all">
-                            <SendHorizontal className="w-4 h-4"/> POST {voucherType.toUpperCase()}
-                        </button>
                     </div>
                 </div>
 
-                {/* RIGHT: DIAGNOSTICS */}
                 <div className="lg:col-span-7 flex flex-col gap-6 h-full overflow-hidden">
-                    <div className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden h-1/3">
-                        <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2"><Activity className="w-3 h-3 text-indigo-500"/> Activity Log</span>
-                            <button onClick={() => copyToClipboard(activityLog.map(l => `[${l.time}] ${l.msg}`).join('\n'), 'feed')} className="p-1 hover:bg-slate-100 rounded">
-                                {copiedSection === 'feed' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3 text-slate-400" />}
+                    <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-xl flex flex-col overflow-hidden h-3/5 relative">
+                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2"><Edit3 className="w-3 h-3 text-blue-500"/> Payload Editor</span>
+                            <button onClick={postVoucher} disabled={loading} className="bg-blue-600 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2">
+                                <SendHorizontal className="w-3 h-3"/> Commit To Tally
                             </button>
                         </div>
-                        <div className="flex-1 p-5 overflow-y-auto space-y-2 font-mono">
-                            {activityLog.map((log, i) => (
-                                <div key={i} className="flex gap-3 animate-in fade-in duration-300">
-                                    <span className="text-[8px] font-bold text-slate-300 mt-1">{log.time}</span>
-                                    <span className={`text-[10px] font-bold ${log.type === 'error' ? 'text-red-500' : log.type === 'success' ? 'text-emerald-600' : 'text-slate-500'}`}>{log.msg}</span>
-                                </div>
-                            ))}
-                        </div>
+                        <textarea 
+                            className="flex-1 p-8 font-mono text-[10px] text-blue-600 bg-transparent outline-none resize-none custom-scrollbar"
+                            value={activeXml}
+                            onChange={(e) => setManualXml(e.target.value)}
+                        />
                     </div>
 
-                    <div className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden h-2/3">
-                        <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                            <div className="flex gap-4">
-                                <button onClick={() => setViewMode('request')} className={`text-[9px] font-black uppercase tracking-widest pb-1 transition-all ${viewMode === 'request' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400'}`}>Request XML</button>
-                                <button onClick={() => setViewMode('response')} className={`text-[9px] font-black uppercase tracking-widest pb-1 transition-all ${viewMode === 'response' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400'}`}>Response XML</button>
+                    <div className="grid grid-cols-2 gap-6 h-2/5">
+                        {/* FIXED: Applied canonical rounded-4xl class */}
+                        <div className="bg-white border border-slate-200 rounded-4xl shadow-sm flex flex-col overflow-hidden">
+                            <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50">
+                                <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 font-mono">Activity Log</span>
                             </div>
-                            <button onClick={() => copyToClipboard(viewMode === 'request' ? lastRequest : lastResponse, 'data')} className="flex items-center gap-2 px-2 py-1 hover:bg-slate-100 rounded border border-transparent hover:border-slate-200 group">
-                                {copiedSection === 'data' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3 text-slate-400" />}
-                                <span className="text-[8px] font-black text-slate-400 uppercase">Copy</span>
-                            </button>
+                            <div className="flex-1 p-5 overflow-y-auto space-y-2 font-mono text-[9px]">
+                                {activityLog.map((log, i) => (
+                                    <div key={i} className={log.type === 'error' ? 'text-red-500' : log.type === 'success' ? 'text-emerald-600' : 'text-slate-400'}>
+                                        [{log.time}] {log.msg}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                        <div className="flex-1 p-6 bg-slate-50/50 font-mono text-[10px] text-slate-400 overflow-auto whitespace-pre custom-scrollbar">
-                            {viewMode === 'request' ? lastRequest || "// Outgoing data..." : lastResponse || "// Inbound feedback..."}
+
+                        {/* FIXED: Applied canonical rounded-4xl class */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-4xl shadow-2xl flex flex-col overflow-hidden">
+                            <div className="px-5 py-3 border-b border-slate-800 bg-slate-800/30">
+                                <span className="text-[8px] font-black uppercase tracking-widest text-slate-600 font-mono">Tally Response</span>
+                            </div>
+                            <div className="flex-1 p-5 overflow-auto font-mono text-[9px] text-emerald-500/80 custom-scrollbar">
+                                {lastResponse || "// Awaiting transmission..."}
+                            </div>
                         </div>
                     </div>
                 </div>
