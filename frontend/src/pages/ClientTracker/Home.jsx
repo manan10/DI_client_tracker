@@ -92,7 +92,7 @@ const Home = () => {
           setSelectedClient(null);
           setIsModalOpen(true);
         }}
-        className="fixed bottom-8 right-8 z-50 bg-slate-950 dark:bg-orange-600 text-white p-5 rounded-2xl shadow-2xl hover:scale-110 active:scale-90 transition-all border-2 border-white/20"
+        className="fixed bottom-22 right-8 z-50 bg-slate-950 dark:bg-orange-600 text-white p-5 rounded-2xl shadow-2xl hover:scale-110 active:scale-90 transition-all border-2 border-white/20"
       >
         <Plus size={28} strokeWidth={4} />
       </button>

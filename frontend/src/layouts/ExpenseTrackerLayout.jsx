@@ -75,13 +75,25 @@ const ExpenseTrackerLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] transition-colors duration-500">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-500 flex flex-col">
       <ExpenseNavbar />
-      <Outlet context={{ fetchWallets, wallets, refreshKey }} />
-      <FloatingActions 
-        onOpenExpense={() => setIsExpenseModalOpen(true)}
-        onOpenTopUp={() => setIsTopUpModalOpen(true)}
-      />
+      
+      {/* Bottom padding ensures content isn't covered by the mobile nav */}
+      <div className="flex-1 pb-24 md:pb-0">
+        <Outlet context={{ fetchWallets, wallets, refreshKey }} />
+      </div>
+
+      {/* 
+        Restored to Bottom Right layout. 
+        bottom-24 keeps it safely above the mobile navbar. 
+      */}
+      <div className="fixed bottom-24 md:bottom-10 right-5 md:right-10 z-40">
+        <FloatingActions 
+          onOpenExpense={() => setIsExpenseModalOpen(true)}
+          onOpenTopUp={() => setIsTopUpModalOpen(true)}
+        />
+      </div>
+
       <ExpenseModal 
         isOpen={isExpenseModalOpen} setOpen={setIsExpenseModalOpen}
         wallets={wallets} expenseData={expenseData}
