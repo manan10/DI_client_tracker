@@ -28,7 +28,6 @@ const ClientDirectory = () => {
   const navigate = useNavigate();
   const { request, loading } = useApi();
 
-  // Parallel fetch for Clients and Business Settings
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -37,14 +36,12 @@ const ClientDirectory = () => {
           request("/settings"),
         ]);
 
-        // FIX: Extracting the data array from the response object
         if (clientRes?.success) {
           setClients(clientRes.data || []);
         } else {
           setClients([]);
         }
 
-        // FIX: Extracting thresholds correctly from the business settings object
         const incomingThresholds = settingsRes?.data?.business?.thresholds || settingsRes?.business?.thresholds;
         if (incomingThresholds) {
           setThresholds(incomingThresholds);
@@ -87,7 +84,7 @@ const ClientDirectory = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 transition-colors duration-300">
       <Navbar />
-      <main className="w-full max-w-[98%] mx-auto px-4 sm:px-6 py-12">
+      <main className="w-full max-w-[98%] mx-auto px-4 sm:px-6 py-12 md:pb-12 pb-32">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
@@ -118,7 +115,7 @@ const ClientDirectory = () => {
           />
         </div>
 
-        {/* Global Business Summary - Rendered as soon as data exists */}
+        {/* Global Business Summary */}
         {thresholds && allFamilies.length > 0 && (
           <TierSummary
             families={allFamilies}
@@ -128,10 +125,10 @@ const ClientDirectory = () => {
         )}
 
         {/* Main Records Table */}
-        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl border-t-4 border-t-emerald-500 border-x border-b border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-slate-50/50 dark:bg-slate-900/50 text-[10px] font-black uppercase tracking-[0.15em] border-b border-slate-100 dark:border-slate-800">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl border-t-4 border-t-emerald-500 border-x border-b border-slate-200 dark:border-slate-800 overflow-hidden transition-colors w-full mt-8">
+          <div className="w-full">
+            <table className="w-full text-left border-collapse block md:table">
+              <thead className="hidden md:table-header-group bg-slate-50/50 dark:bg-slate-900/50 text-[10px] font-black uppercase tracking-[0.15em] border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <SortableHeader
                     label="Client / Family Name"
@@ -145,7 +142,7 @@ const ClientDirectory = () => {
                     sortConfig={sortConfig}
                     requestSort={requestSort}
                   />
-                  <th className="px-8 py-5 text-slate-400 dark:text-slate-500 font-black">
+                  <th className="hidden md:table-cell px-8 py-5 text-slate-400 dark:text-slate-500 font-black">
                     Relationship Status
                   </th>
                   <SortableHeader
@@ -154,20 +151,25 @@ const ClientDirectory = () => {
                     sortConfig={sortConfig}
                     requestSort={requestSort}
                     align="right"
+                    className="hidden md:table-cell"
                   />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                {currentRecords.map((family) => (
+              
+              <tbody className="block md:table-row-group">
+                {/* CRITICAL FIX: Passing the index to ClientTableRow so it can calculate even/odd accurately 
+                */}
+                {currentRecords.map((family, index) => (
                   <ClientTableRow
                     key={family._id}
                     client={family}
+                    index={index} 
                     onClick={handleClientClick}
                   />
                 ))}
                 {currentRecords.length === 0 && !loading && (
-                  <tr>
-                    <td colSpan="4" className="px-8 py-20 text-center">
+                  <tr className="block md:table-row">
+                    <td colSpan="4" className="block md:table-cell px-8 py-20 text-center">
                       <p className="text-slate-400 dark:text-slate-600 font-black uppercase text-[10px] tracking-[0.2em]">
                         No records found
                       </p>
@@ -179,13 +181,12 @@ const ClientDirectory = () => {
           </div>
 
           {/* Pagination Controls */}
-          <div className="flex justify-between items-center px-10 py-6 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800">
-            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+          <div className="flex justify-between items-center px-6 md:px-10 py-6 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800">
+            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hidden sm:block">
               Showing {totalRecords > 0 ? indexOfFirstRecord + 1 : 0} to{" "}
-              {Math.min(indexOfLastRecord, totalRecords)} of {totalRecords}{" "}
-              Records
+              {Math.min(indexOfLastRecord, totalRecords)} of {totalRecords} Records
             </p>
-            <div className="flex gap-3">
+            <div className="flex gap-3 w-full sm:w-auto justify-between sm:justify-start">
               <button
                 disabled={currentPage === 1 || loading}
                 onClick={() => setCurrentPage((prev) => prev - 1)}

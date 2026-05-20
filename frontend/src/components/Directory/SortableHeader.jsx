@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChevronUp, ChevronDown, ArrowUpDown } from "lucide-react";
 
-const SortableHeader = ({ label, sortKey, sortConfig, requestSort, align = "left" }) => {
+const SortableHeader = ({ label, sortKey, sortConfig, requestSort, align = "left", className = "" }) => {
   const isActive = sortConfig.key === sortKey;
   
   return (
@@ -10,6 +10,7 @@ const SortableHeader = ({ label, sortKey, sortConfig, requestSort, align = "left
         px-8 py-5 cursor-pointer select-none transition-all 
         hover:bg-slate-50 dark:hover:bg-slate-800/50 group
         ${align === 'right' ? 'text-right' : 'text-left'}
+        ${className}
       `}
       onClick={() => requestSort(sortKey)}
     >
