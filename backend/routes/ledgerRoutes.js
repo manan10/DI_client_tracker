@@ -3,7 +3,7 @@ const {
     bulkSyncTallyLedgers, 
     getAllLedgers // Renamed for better registry support
 } = require('../controllers/ledgerController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authmiddleware');
 
 const router = express.Router();
 
