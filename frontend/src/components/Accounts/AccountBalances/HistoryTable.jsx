@@ -1,137 +1,91 @@
 import React, { useMemo } from 'react';
-import { Edit3, History, Landmark, Hash } from 'lucide-react';
+import { Edit3, History, Landmark, Hash, Calendar, DollarSign } from 'lucide-react';
 
 const HistoryTable = ({ accounts, history, onEdit }) => {
+  const sortedAccounts = useMemo(() => [...accounts].sort((a, b) => a.name.localeCompare(b.name)), [accounts]);
   
-  // 1. Sort accounts alphabetically by name (User/Account Name)
-  const sortedAccounts = useMemo(() => {
-    return [...accounts].sort((a, b) => a.name.localeCompare(b.name));
-  }, [accounts]);
+  const formatCurrency = (amount) => new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(amount);
 
-  // 2. Helper for Absolute Indian Currency Formatting (e.g., 1,00,000)
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  // 3. Limit to last 3 snapshots
   const limitedHistory = useMemo(() => history.slice(0, 3), [history]);
 
   return (
-    <section className="w-full space-y-4">
-      {/* Table Header / Title Section */}
+    <section className="w-full space-y-6">
+      {/* Title Section */}
       <div className="flex items-center justify-between px-2">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-slate-500/10 dark:bg-slate-400/10 rounded-lg border border-slate-200 dark:border-slate-800/50">
-            <History className="text-slate-700 dark:text-slate-400" size={20} strokeWidth={2.5} />
+          <div className="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+            <History className="text-emerald-600 dark:text-emerald-400" size={20} strokeWidth={2.5} />
           </div>
           <div>
-            <h2 className="text-xl font-black text-slate-950 dark:text-white uppercase tracking-tight italic">
-              Historical Ledger
-            </h2>
-            <p className="text-[10px] font-black text-slate-700/60 dark:text-slate-400/50 uppercase tracking-[0.2em]">
-              Performance Analysis • Last 3 Snapshots
-            </p>
+            <h2 className="text-xl font-black text-slate-950 dark:text-white uppercase tracking-tight italic">Historical Ledger</h2>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Performance Analysis</p>
           </div>
-        </div>
-        
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-950/30 rounded-full border border-slate-100 dark:border-slate-900/50">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-          <span className="text-[9px] font-black text-slate-800 dark:text-slate-400 uppercase tracking-tighter">
-            Tap date to modify
-          </span>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-lg border-2 border-slate-100/50 dark:border-slate-900/30 shadow-2xl overflow-hidden">
-        <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/80 dark:bg-slate-900/40 border-b-2 border-slate-100 dark:border-slate-900/50">
-                <th className="p-6 text-[11px] font-black uppercase tracking-[0.2em] text-slate-800/70 dark:text-slate-400/70 w-72">
-                  <div className="flex items-center gap-2">
-                    <Landmark size={14} /> Account Source
+      {/* --- DESKTOP VIEW: The Table --- */}
+      <div className="hidden md:block bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-50/50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-800">
+              <th className="p-6 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Account Source</th>
+              {limitedHistory.map((snap) => (
+                <th key={snap._id} onClick={() => onEdit(snap)} className="p-6 text-right cursor-pointer group hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors">
+                  <div className="flex flex-col items-end gap-1">
+                    <Edit3 size={12} className="text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="text-slate-900 dark:text-slate-200 text-xs font-black uppercase tracking-widest">
+                      {new Date(snap.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                    </span>
                   </div>
                 </th>
-                {limitedHistory.map((snap) => (
-                  <th 
-                    key={snap._id} 
-                    onClick={() => onEdit(snap)} 
-                    className="p-6 text-[11px] font-black uppercase cursor-pointer hover:bg-white dark:hover:bg-slate-800/20 transition-all border-l border-slate-100 dark:border-slate-900/50 group"
-                  >
-                    <div className="flex flex-col items-end justify-center gap-1.5 text-right pr-2">
-                      <div className="h-3">
-                        <Edit3 size={12} className="text-emerald-600 dark:text-emerald-500 opacity-0 group-hover:opacity-100 transition-all transform group-hover:-translate-y-1" />
-                      </div>
-                      <span className="text-slate-900 dark:text-slate-200 block whitespace-nowrap">
-                        {new Date(snap.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                      </span>
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            
-            <tbody className="divide-y divide-slate-50/50 dark:divide-slate-600/20">
-              {sortedAccounts.map((acc) => (
-                <tr 
-                  key={acc._id} 
-                  className="hover:bg-slate-500/3 dark:hover:bg-slate-400/2 dark:bg-slate-800 transition-colors group"
-                >
-                  <td className="p-5 pl-8">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight">
-                        {acc.name}
-                      </span>
-                      {acc.accountNumber && (
-                        <div className="flex items-center gap-1 mt-1 opacity-60">
-                          <Hash size={10} className="text-slate-400" />
-                          <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-500 tracking-wider">
-                            {acc.accountNumber}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  {limitedHistory.map(snap => {
-                    const balance = snap.balances.find(b => b.accountId?._id === acc._id || b.accountId === acc._id)?.amount || 0;
-                    return (
-                      <td key={snap._id} className="p-5 border-l border-slate-50 dark:border-slate-900/10">
-                        <div className="flex items-center justify-end font-black text-sm text-slate-950 dark:text-white pr-2">
-                          <span className="text-slate-800/30 dark:text-slate-400/20 text-[10px] mr-1.5 italic">₹</span>
-                          {formatCurrency(balance)}
-                        </div>
-                      </td>
-                    );
-                  })}
-                </tr>
               ))}
-            </tbody>
-
-            <tfoot>
-              <tr className="bg-slate-900 dark:bg-slate-900 text-white border-t-4 border-emerald-600/80">
-                <td className="p-8 uppercase text-xs font-black tracking-[0.2em] text-emerald-500">
-                  <div className="flex flex-col">
-                    <span className="text-white/40 text-[8px] mb-1 uppercase tracking-widest">Treasury Report</span>
-                    Aggregate Liquidity
-                  </div>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            {sortedAccounts.map((acc) => (
+              <tr key={acc._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                <td className="p-5 pl-8">
+                  <p className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase">{acc.name}</p>
+                  {acc.accountNumber && <p className="text-[10px] font-mono text-slate-400">#{acc.accountNumber}</p>}
                 </td>
                 {limitedHistory.map(snap => (
-                  <td key={snap._id} className="p-8 border-l border-white/5">
-                    <div className="flex flex-col items-end pr-2">
-                      <span className="text-[9px] text-slate-400/50 uppercase font-black mb-1">Snapshot Total</span>
-                      <div className="text-xl font-black tracking-tighter">
-                        <span className="text-emerald-500 text-sm italic mr-1">₹</span>
-                        {formatCurrency(snap.totalBalance)}
-                      </div>
-                    </div>
+                  <td key={snap._id} className="p-5 text-right font-black text-slate-900 dark:text-slate-300">
+                    ₹{formatCurrency(snap.balances.find(b => (b.accountId?._id || b.accountId) === acc._id)?.amount || 0)}
                   </td>
                 ))}
               </tr>
-            </tfoot>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* --- MOBILE VIEW: Stacked Snapshot Cards --- */}
+      <div className="md:hidden space-y-4">
+        {limitedHistory.map((snap) => (
+          <div key={snap._id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+            <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2 text-slate-900 font-black uppercase tracking-widest text-xs">
+                <Calendar size={14} className="text-emerald-500" />
+                {new Date(snap.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
+              </div>
+              <button onClick={() => onEdit(snap)} className="text-[9px] font-black uppercase bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg">Edit</button>
+            </div>
+            <div className="space-y-3">
+              {sortedAccounts.map(acc => (
+                <div key={acc._id} className="flex justify-between text-[11px] font-bold">
+                  <span className="text-slate-500">{acc.name}</span>
+                  <span className="text-slate-900 dark:text-slate-300 tabular-nums">
+                    ₹{formatCurrency(snap.balances.find(b => (b.accountId?._id || b.accountId) === acc._id)?.amount || 0)}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+              <span className="text-[10px] font-black uppercase text-slate-400">Total</span>
+              <span className="text-sm font-black text-emerald-600 tabular-nums">₹{formatCurrency(snap.totalBalance)}</span>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );

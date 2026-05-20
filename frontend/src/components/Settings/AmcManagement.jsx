@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, Trash2, Edit2, Check, Landmark, Loader2, 
   AlertTriangle, Search, Globe, Settings2, Link as LinkIcon, 
-  Save, X, Activity
+  Save, X, Activity, MapPin, Navigation
 } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
 import { toast } from 'sonner';
@@ -15,9 +15,14 @@ const AmcManagement = () => {
   const [stagedAmcIds, setStagedAmcIds] = useState([]);
   
   const [showMaster, setShowMaster] = useState(false);
+  
   const [newAmc, setNewAmc] = useState('');
+  const [newAmcIsLocal, setNewAmcIsLocal] = useState(false);
+  
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
+  const [editIsLocal, setEditIsLocal] = useState(false);
+  
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -53,21 +58,35 @@ const AmcManagement = () => {
   // Master Actions
   const handleAddGlobal = async () => {
     if (!newAmc.trim()) return toast.warning("Name Required");
-    const res = await request('/amcs', 'POST', { name: newAmc });
+    
+    const res = await request('/amcs', 'POST', { name: newAmc.trim(), isLocal: newAmcIsLocal });
     if (res?.data) {
       setAmcs(prev => [...prev, res.data]);
       setNewAmc('');
+      setNewAmcIsLocal(false);
       toast.success("Registered to Master");
     }
   };
 
   const handleUpdateGlobal = async (id) => {
     if (!editValue.trim()) return;
-    const res = await request(`/amcs/${id}`, 'PUT', { name: editValue });
+    
+    const res = await request(`/amcs/${id}`, 'PUT', { name: editValue.trim(), isLocal: editIsLocal });
     if (res?.data) {
       setAmcs(prev => prev.map(a => a._id === id ? res.data : a));
       setEditingId(null);
-      toast.success("Master Name Updated");
+      toast.success("Master Parameters Updated");
+    }
+  };
+
+  const handleToggleLocalInline = async (e, amcObj) => {
+    e.stopPropagation(); 
+    const nextLocalState = !amcObj.isLocal;
+    
+    const res = await request(`/amcs/${amcObj._id}`, 'PUT', { isLocal: nextLocalState });
+    if (res?.data) {
+      setAmcs(prev => prev.map(a => a._id === amcObj._id ? res.data : a));
+      toast.success(`${amcObj.name} updated to ${nextLocalState ? 'Intrastate (CGST+SGST)' : 'Interstate (IGST)'}`);
     }
   };
 
@@ -126,7 +145,6 @@ const AmcManagement = () => {
       <div className="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 px-4 py-4">
         <div className="max-w-7xl mx-auto flex flex-col gap-4">
           
-          {/* Header Title Section - Always on Top */}
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
               <h1 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter leading-none">AMC Registry</h1>
@@ -143,7 +161,6 @@ const AmcManagement = () => {
             </button>
           </div>
 
-          {/* Tab Selection Row */}
           <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-1">
             <div className="p-2 bg-emerald-500 text-white rounded-lg hidden md:block"><Settings2 size={18}/></div>
             {arns.map(arn => (
@@ -171,35 +188,72 @@ const AmcManagement = () => {
                     <h3 className="text-sm font-black uppercase tracking-tighter text-slate-900 dark:text-white italic">Global AMC Management</h3>
                     <button onClick={() => setShowMaster(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={18}/></button>
                 </div>
-                <div className="flex gap-3 mb-8 max-w-md">
+                
+                {/* IMPROVED: Standardized financial labels for tax scoping options */}
+                <div className="flex flex-col sm:flex-row gap-3 mb-8 max-w-2xl items-stretch sm:items-center">
                     <input 
-                      value={newAmc} onChange={e => setNewAmc(e.target.value)}
+                      value={newAmc} 
+                      onChange={e => setNewAmc(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleAddGlobal()}
                       placeholder="Add AMC name..."
-                      className="flex-1 bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 text-xs font-black uppercase outline-none focus:ring-2 focus:ring-emerald-500/20 dark:text-white"
+                      className="flex-1 bg-slate-50 dark:bg-slate-800 rounded-xl px-6 py-4 text-xs font-black uppercase outline-none focus:ring-2 focus:ring-emerald-500/20 dark:text-white border border-transparent placeholder:text-slate-300"
                     />
-                    <button onClick={handleAddGlobal} className="bg-emerald-600 text-white px-6 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition-all">Register</button>
+                    
+                    <label className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 rounded-xl px-6 py-4 cursor-pointer text-[10px] font-black uppercase tracking-wider text-slate-400 select-none border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors shrink-0">
+                      <input 
+                        type="checkbox"
+                        checked={newAmcIsLocal}
+                        onChange={e => setNewAmcIsLocal(e.target.checked)}
+                        className="w-3.5 h-3.5 rounded text-emerald-600 border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-0 cursor-pointer"
+                      />
+                      Intrastate (CGST + SGST)
+                    </label>
+
+                    {/* FIXED: Applied py-4 padding height, explicit horizontal space matching text inputs, and drop shrink-0 lock */}
+                    <button 
+                      onClick={handleAddGlobal} 
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white px-10 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/10 transition-all active:scale-95 shrink-0"
+                    >
+                      Register
+                    </button>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 max-h-72 overflow-y-auto pr-2 custom-scrollbar">
                     {amcs.sort((a,b) => a.name.localeCompare(b.name)).map(amc => (
-                        <div key={amc._id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 group">
-                            <div className="flex-1 min-w-0">
+                        <div key={amc._id} className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 group">
+                            <div className="flex-1 min-w-0 pr-2">
                                 {editingId === amc._id ? (
-                                    <input 
-                                        autoFocus value={editValue} 
-                                        onChange={e => setEditValue(e.target.value)}
-                                        onKeyDown={e => e.key === 'Enter' && handleUpdateGlobal(amc._id)}
-                                        className="bg-white dark:bg-slate-700 text-[10px] font-black p-1 w-full outline-none border-b-2 border-emerald-500 dark:text-white"
-                                    />
+                                    <div className="space-y-1.5 w-full">
+                                        <input 
+                                            autoFocus value={editValue} 
+                                            onChange={e => setEditValue(e.target.value)}
+                                            onKeyDown={e => e.key === 'Enter' && handleUpdateGlobal(amc._id)}
+                                            className="bg-white dark:bg-slate-700 text-[10px] font-black p-1 w-full outline-none border-b-2 border-emerald-500 dark:text-white uppercase"
+                                        />
+                                        <label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-slate-400 cursor-pointer select-none">
+                                          <input 
+                                            type="checkbox"
+                                            checked={editIsLocal}
+                                            onChange={e => setEditIsLocal(e.target.checked)}
+                                            className="w-3 text-emerald-600 rounded focus:ring-0 border-slate-200 dark:border-slate-700 cursor-pointer"
+                                          />
+                                          Within State
+                                        </label>
+                                    </div>
                                 ) : (
-                                    <span className="text-[10px] font-black uppercase text-slate-600 dark:text-slate-400 truncate pr-2">{amc.name}</span>
+                                    <div className="flex flex-col gap-0.5">
+                                        <span className="text-[10px] font-black uppercase text-slate-700 dark:text-slate-300 truncate font-sans">{amc.name}</span>
+                                        <span className={`text-[8px] font-black uppercase tracking-widest ${amc.isLocal ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                          {amc.isLocal ? '📍 Intrastate (Local)' : '🌐 Interstate (Out of State)'}
+                                        </span>
+                                    </div>
                                 )}
                             </div>
                             <div className="flex gap-1 shrink-0">
                                 {editingId === amc._id ? (
                                     <button onClick={() => handleUpdateGlobal(amc._id)} className="p-1 text-emerald-500"><Check size={14}/></button>
                                 ) : (
-                                    <button onClick={() => {setEditingId(amc._id); setEditValue(amc.name)}} className="p-1 text-slate-400 hover:text-emerald-500"><Edit2 size={12}/></button>
+                                    <button onClick={() => {setEditingId(amc._id); setEditValue(amc.name); setEditIsLocal(!!amc.isLocal)}} className="p-1 text-slate-400 hover:text-emerald-500"><Edit2 size={12}/></button>
                                 )}
                                 <button onClick={() => setDeleteConfirm({id: amc._id, name: amc.name})} className="p-1 text-slate-400 hover:text-rose-500"><Trash2 size={12}/></button>
                             </div>
@@ -243,22 +297,31 @@ const AmcManagement = () => {
                             : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
                         }`}
                     >
-                        <div className="flex items-center gap-4 min-w-0">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                        <div className="flex items-center gap-4 min-w-0 flex-1">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 ${
                                 isLinked ? 'bg-emerald-500 text-white' : 'bg-slate-50 dark:bg-slate-800 text-slate-300'
                             }`}>
                                 {isLinked ? <Check size={18} strokeWidth={3} /> : <Landmark size={18} />}
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1 text-left">
                                 <p className={`text-[11px] font-black uppercase tracking-tight truncate ${isLinked ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>
                                     {amc.name}
                                 </p>
-                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                                    {isLinked ? 'Registry Active' : 'Offline'}
-                                </p>
+                                
+                                {/* IMPROVED: Styled badge actions with generic, corporate financial labels */}
+                                <span 
+                                  onClick={(e) => handleToggleLocalInline(e, amc)}
+                                  className={`inline-block text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border mt-1 select-none transition-all ${
+                                    amc.isLocal 
+                                      ? 'bg-amber-400/10 text-amber-600 dark:text-amber-400 border-amber-400/20 hover:bg-amber-400/20' 
+                                      : 'bg-slate-100 dark:bg-white/5 text-slate-400 border-slate-200 dark:border-white/5 hover:bg-slate-200'
+                                  }`}
+                                >
+                                  {amc.isLocal ? '📍 Intrastate (CGST+SGST)' : '🌐 Interstate (IGST)'}
+                                </span>
                             </div>
                         </div>
-                        <div className={`w-10 h-5 rounded-full relative transition-colors duration-500 flex items-center px-1 ${
+                        <div className={`w-10 h-5 rounded-full relative transition-colors duration-500 flex items-center px-1 shrink-0 ${
                             isLinked ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-800'
                         }`}>
                             <div className={`w-3 h-3 bg-white rounded-full transition-all duration-300 ${isLinked ? 'translate-x-5' : 'translate-x-0'}`} />

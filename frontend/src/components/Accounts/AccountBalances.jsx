@@ -52,7 +52,6 @@ const AccountBalances = () => {
     const editValues = {};
     snapshot.balances.forEach(b => { 
       if (b.accountId?._id) {
-        // Keeping DB decimal format (18.73)
         editValues[b.accountId._id] = b.amount; 
       }
     });
@@ -62,9 +61,7 @@ const AccountBalances = () => {
 
   const groupedAccounts = useMemo(() => groupAccountsByOwner(accounts), [accounts]);
 
-  // FIXED CALCULATION LOGIC
   const performance = useMemo(() => {
-    // If we have history and the form is CLOSED, show the latest DB snapshot
     if (!isEntryOpen && history.length > 0) {
       const latest = history[0];
       const previous = history.length > 1 ? history[1] : null;
@@ -77,8 +74,6 @@ const AccountBalances = () => {
         growth: currentVal - prevVal 
       };
     }
-
-    // If form is OPEN, use utility to calculate based on inputs
     return calculatePerformance(inputValues, history);
   }, [inputValues, history, isEntryOpen]);
 
@@ -86,7 +81,7 @@ const AccountBalances = () => {
     setSaving(true);
     const balances = Object.entries(inputValues).map(([id, val]) => ({
       accountId: id,
-      amount: Number(val) || 0 // DB stores decimals directly
+      amount: Number(val) || 0 
     }));
     try {
       const endpoint = editingId ? `/accounts/snapshot/${editingId}` : '/accounts/snapshot';
@@ -103,10 +98,16 @@ const AccountBalances = () => {
     }
   };
 
-  if (loading) return <div className="h-screen w-full flex items-center justify-center italic text-slate-400">Loading Assets...</div>;
+  if (loading) return <div className="h-[60vh] w-full flex items-center justify-center italic text-slate-400">Loading Assets...</div>;
 
   return (
-    <div className="w-full px-6 md:px-12 py-10 space-y-14">
+    /* MOBILE OPTIMIZATION: 
+      - Reduced outer padding from space-y-14 to space-y-8 for tighter mobile density.
+      - w-full ensures the component respects the mobile bounds.
+    */
+    <div className="w-full px-4 md:px-12 py-6 md:py-10 space-y-8 md:space-y-14">
+      
+      {/* AccountHero stays as the primary anchor for the page */}
       <AccountHero 
         currentTotal={performance.currentTotal}
         growth={performance.growth}
@@ -115,6 +116,7 @@ const AccountBalances = () => {
         editingId={editingId}
       />
 
+      {/* SnapshotForm handles its own 'isOpen' state, no additional mobile wrappers needed */}
       <SnapshotForm 
         isOpen={isEntryOpen}
         onClose={() => { setIsEntryOpen(false); setEditingId(null); }}
@@ -131,6 +133,9 @@ const AccountBalances = () => {
       />
 
       <div className="w-full">
+        {/* HistoryTable logic remains untouched to preserve Desktop look, 
+          but relies on the parent's padding adjustments for better flow.
+        */}
         <HistoryTable accounts={accounts} history={history} onEdit={startEdit} />
       </div>
     </div>

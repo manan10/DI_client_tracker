@@ -1,221 +1,277 @@
-import React, { useState, useEffect } from 'react';
-import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Terminal, Info, Building2, Check, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Upload, FileText, Loader2, Terminal, 
+  Building2, Sparkles, Search, Layers, ChevronRight, 
+  Database, RefreshCcw, Filter, CheckCircle2
+} from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx'; // Assuming you use xlsx for client-side parsing
 
 const TallyLedgerImport = () => {
   const { request } = useApi();
   const [isUploading, setIsUploading] = useState(false);
-  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [file, setFile] = useState(null);
-  const [importStats, setImportStats] = useState(null);
   
   const [arns, setArns] = useState([]);
+  const [ledgers, setLedgers] = useState([]);
   const [selectedArn, setSelectedArn] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCompany, setActiveCompany] = useState(null);
 
   useEffect(() => {
-    const fetchArns = async () => {
+    const fetchData = async () => {
       try {
-        const res = await request('/arns');
-        if (res?.data) setArns(res.data);
+        const [arnRes, ledgerRes] = await Promise.all([
+          request('/arns'),
+          request('/ledgers') 
+        ]);
+        if (arnRes?.data) setArns(arnRes.data);
+        if (ledgerRes?.data) setLedgers(ledgerRes.data);
       } catch {
-        toast.error("Failed to load ARN registry");
+        toast.error("Registry Load Failed");
+      } finally {
+        setIsInitialLoading(false);
       }
     };
-    fetchArns();
+    fetchData();
   }, [request]);
+
+  const companies = useMemo(() => {
+    const grouped = ledgers.reduce((acc, curr) => {
+      const co = curr.tallyCompanyName || "Unassigned";
+      if (!acc[co]) acc[co] = { name: co, count: 0, arn: curr.arnId?.nickname };
+      acc[co].count++;
+      return acc;
+    }, {});
+    return Object.values(grouped).sort((a, b) => b.count - a.count);
+  }, [ledgers]);
+
+  const filteredLedgers = useMemo(() => {
+    return ledgers.filter(l => {
+      const matchCo = activeCompany ? l.tallyCompanyName === activeCompany : true;
+      const matchSearch = l.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          l.groupName?.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchCo && matchSearch;
+    });
+  }, [ledgers, activeCompany, searchQuery]);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      if (selectedFile.name.endsWith('.csv') || selectedFile.name.endsWith('.xlsx')) {
-        setFile(selectedFile);
-        setImportStats(null); // Clear previous stats on new file
-      } else {
-        toast.error("Invalid File Type", { description: "Please upload a .csv or .xlsx file exported from Tally." });
-      }
+    if (selectedFile?.name.match(/\.(csv|xlsx|xls)$/)) {
+      setFile(selectedFile);
+      toast.success("File Staged", { description: selectedFile.name });
+    } else {
+      toast.error("Invalid File Type");
     }
   };
 
-  const handleUpload = async () => {
+  const handleSync = async () => {
     if (!file || !selectedArn) return;
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('arnId', selectedArn);
+    
+    // 1. Find the Tally Company Name linked to this ARN for context
+    const targetArn = arns.find(a => a._id === selectedArn);
+    const companyContext = targetArn?.linkedTallyFirms?.[0]; // Default to first linked firm
+
+    if (!companyContext) {
+      toast.error("ARN Mapping Missing", { description: "Link a Tally Firm to this ARN in settings first." });
+      setIsUploading(false);
+      return;
+    }
 
     try {
-      const res = await request('/ledgers/import', 'POST', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      
-      if (res.success) {
-        setImportStats(res.stats);
-        setShowSuccessOverlay(true);
-        
-        toast.success("Ledgers Synchronized", {
-          description: `Successfully processed ${res.stats.total} total records.`
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        // Map spreadsheet columns to our Ledger schema
+        const formattedLedgers = jsonData.map(row => ({
+          name: row.Name || row.ledger || row.Particulars,
+          parent: row.Parent || row.Group || row.Under
+        })).filter(l => l.name);
+
+        const res = await request('/ledgers/bulk-sync', 'POST', {
+          ledgers: formattedLedgers,
+          company: companyContext,
+          arnId: selectedArn
         });
-        
-        setFile(null);
-        // Hide overlay after 3 seconds
-        setTimeout(() => setShowSuccessOverlay(false), 3000);
-      }
+
+        if (res.success) {
+          toast.success("Sync Complete", { 
+            description: `Updated ${res.stats.totalSynced} records for ${companyContext}` 
+          });
+          setFile(null);
+          const updated = await request('/ledgers');
+          if (updated?.data) setLedgers(updated.data);
+        }
+      };
+      reader.readAsArrayBuffer(file);
     } catch (err) {
-      toast.error("Import Failed", { description: err.message });
+      toast.error("Sync Failed", { description: err.message });
     } finally {
       setIsUploading(false);
     }
   };
 
+  if (isInitialLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-emerald-500" size={40} /></div>;
+
   return (
-    <div className="max-w-4xl space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+    <div className="flex h-[calc(100vh-12rem)] gap-8 animate-in fade-in duration-500">
       
-      {/* Success Celebration Overlay */}
-      {showSuccessOverlay && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 dark:bg-slate-950/60 backdrop-blur-sm rounded-md animate-in fade-in zoom-in duration-300">
-          <div className="flex flex-col items-center bg-white dark:bg-slate-900 p-8 border-2 border-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.2)] rounded-lg text-center">
-            <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mb-4 animate-bounce">
-              <Check className="text-white" size={32} strokeWidth={4} />
-            </div>
-            <h4 className="text-xl font-black uppercase italic dark:text-white">Sync Completed</h4>
-            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em] mt-1">Registry Updated Successfully</p>
-          </div>
+      {/* 1. SIDEBAR: COMPANY CLUSTERS */}
+      <aside className="w-80 flex flex-col gap-6 shrink-0">
+        <div className="flex flex-col gap-2 border-l-4 border-emerald-500 pl-6">
+          <h3 className="text-xl font-black uppercase tracking-tighter italic dark:text-white leading-none">
+            Master <span className="text-emerald-500">Registry</span>
+          </h3>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">
+            Accounting Bridge Control
+          </p>
         </div>
-      )}
 
-      {/* Header Section */}
-      <div className="flex flex-col gap-2 border-l-4 border-emerald-500 pl-6">
-        <h3 className="text-2xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">
-          Tally ERP <span className="text-emerald-500">Sync</span>
-        </h3>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-          Import ledger master records from Tally export files
-        </p>
-      </div>
-
-      {/* ARN Selection Dropdown */}
-      <div className="p-6 bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-white/5 rounded-md">
-        <div className="flex items-center gap-3 mb-4">
-          <Building2 size={16} className="text-emerald-500" />
-          <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Target Entity (ARN)</h4>
-        </div>
-        <select 
-          value={selectedArn}
-          onChange={(e) => setSelectedArn(e.target.value)}
-          className="w-full bg-white dark:bg-slate-950 border-2 border-slate-200 dark:border-white/10 p-4 font-black uppercase text-xs tracking-widest outline-none focus:border-emerald-500 transition-all cursor-pointer text-slate-900 dark:text-white"
-        >
-          <option value="">Choose an ARN...</option>
-          {arns.map(arn => (
-            <option key={arn._id} value={arn._id}>{arn.arnCode} — {arn.nickname}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Upload Zone */}
-      <div className={`grid grid-cols-1 lg:grid-cols-5 gap-8 transition-all duration-500 ${!selectedArn ? 'opacity-40 grayscale pointer-events-none' : 'opacity-100'}`}>
-        <div className="lg:col-span-3">
-          <label className={`
-            relative flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-md transition-all cursor-pointer
-            ${file ? 'border-emerald-500 bg-emerald-50/10' : 'border-slate-200 dark:border-slate-800 hover:border-emerald-400 bg-slate-50/50 dark:bg-slate-900/50'}
-          `}>
-            <input type="file" className="hidden" onChange={handleFileChange} accept=".csv,.xlsx" />
-            
-            <div className="flex flex-col items-center text-center p-6">
-              {file ? (
-                <>
-                  <div className="w-16 h-16 bg-emerald-500 text-white rounded-full flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/20">
-                    <FileText size={32} />
-                  </div>
-                  <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{file.name}</p>
-                  <p className="text-[10px] font-bold text-emerald-500 uppercase mt-1">Ready for processing</p>
-                </>
-              ) : (
-                <>
-                  <Upload className="text-slate-300 mb-4" size={40} strokeWidth={1.5} />
-                  <p className="text-sm font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">Drop Tally Export Here</p>
-                  <p className="text-[10px] text-slate-400 mt-2 uppercase tracking-widest leading-relaxed">
-                    Supported: CSV, XLSX <br />
-                    <span className="opacity-50">Standard Ledger Master Format</span>
-                  </p>
-                </>
-              )}
-            </div>
-          </label>
-
-          <button
-            onClick={handleUpload}
-            disabled={!file || isUploading || !selectedArn}
-            className={`
-              mt-6 w-full py-5 rounded-md font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-4 transition-all overflow-hidden relative
-              ${!file || isUploading || !selectedArn
-                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed' 
-                : 'bg-slate-950 dark:bg-emerald-500 text-white dark:text-slate-950 shadow-xl hover:scale-[1.01] active:scale-95'}
-            `}
+        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 pr-2">
+          <button 
+            onClick={() => setActiveCompany(null)}
+            className={`w-full p-4 rounded-xl flex items-center justify-between transition-all border-2 
+            ${!activeCompany ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600' : 'bg-white dark:bg-white/5 border-transparent hover:border-slate-200'}`}
           >
-            {isUploading ? (
-              <span className="flex items-center gap-4">
-                <Loader2 className="animate-spin" size={18} />
-                Executing Import...
-              </span>
-            ) : (
-              <span className="flex items-center gap-4">
-                <Terminal size={18} />
-                Begin Synchronization
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Documentation Sidebar */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="p-6 bg-slate-900 text-white rounded-md shadow-2xl relative overflow-hidden group">
-            <Terminal className="absolute -right-4 -top-4 size-24 opacity-10 group-hover:scale-110 transition-transform duration-700" />
-            <div className="relative z-10 space-y-4">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400 flex items-center gap-2">
-                <Info size={14} /> Import Logic
-              </h4>
-              <ul className="space-y-3">
-                {[
-                  "Ledgers are ARN-isolated",
-                  "Names are auto-normalized",
-                  "Existing records are updated",
-                  "Automatic group recognition"
-                ].map((text, i) => (
-                  <li key={i} className="flex gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-tight">
-                    <span className="text-emerald-500">»</span> {text}
-                  </li>
-                ))}
-              </ul>
+            <div className="flex items-center gap-3">
+              <Layers size={16} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Global Master</span>
             </div>
+            <span className="text-[10px] font-black opacity-50">{ledgers.length}</span>
+          </button>
+
+          <div className="h-px bg-slate-100 dark:bg-white/5 my-4" />
+
+          {companies.map(co => (
+            <button 
+              key={co.name}
+              onClick={() => setActiveCompany(co.name)}
+              className={`w-full p-5 rounded-2xl flex flex-col gap-3 transition-all border-2 text-left group
+              ${activeCompany === co.name ? 'bg-emerald-500/5 border-emerald-500/30' : 'bg-white dark:bg-white/2 border-transparent hover:border-slate-200'}`}
+            >
+              <div className="flex items-center justify-between">
+                <span className={`text-[11px] font-[1000] uppercase italic tracking-tight transition-colors ${activeCompany === co.name ? 'text-emerald-500' : 'text-slate-900 dark:text-white'}`}>
+                  {co.name}
+                </span>
+                {activeCompany === co.name && <CheckCircle2 size={14} className="text-emerald-500 animate-in zoom-in" />}
+              </div>
+              <div className="flex items-center justify-between opacity-50">
+                <div className="flex items-center gap-2">
+                  <Database size={10} />
+                  <span className="text-[9px] font-black uppercase tracking-tighter">{co.count} Records</span>
+                </div>
+                <span className="text-[9px] font-black uppercase italic">{co.arn}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </aside>
+
+      {/* 2. WORKSPACE: FILTER & DATA GRID */}
+      <section className="flex-1 flex flex-col gap-6 overflow-hidden">
+        
+        {/* COMMAND BAR */}
+        <div className="bg-slate-50 dark:bg-white/2 p-3 rounded-2xl flex items-center gap-4 border border-slate-100 dark:border-white/5 shadow-sm">
+          <div className="flex-1 relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={16} />
+            <input 
+              placeholder="FILTER BY LEDGER OR GROUP..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white dark:bg-slate-950 rounded-xl pl-12 pr-4 py-3 text-[10px] font-black uppercase tracking-widest outline-none border-2 border-transparent focus:border-emerald-500/20 transition-all placeholder:text-slate-300"
+            />
           </div>
 
-          {importStats && (
-            <div className="p-6 border-2 border-emerald-500/50 bg-white dark:bg-slate-900 rounded-md animate-in zoom-in duration-500 shadow-lg shadow-emerald-500/5">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 italic">Cycle Results</h4>
-                <Sparkles size={14} className="text-emerald-500 animate-pulse" />
-              </div>
-                {/* Change the labels in your stats display to be clearer */}
-                <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-emerald-50/50 dark:bg-emerald-500/5 border border-emerald-100 dark:border-emerald-500/20">
-                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">New Ledgers</p>
-                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
-                    {importStats.created}
-                    </p>
-                </div>
-                <div className="p-3 bg-slate-50 dark:bg-[#111218] border border-slate-100 dark:border-white/5">
-                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Existing Verified</p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-white tabular-nums">
-                    {importStats.updated}
-                    </p>
-                </div>
-                </div>
-            </div>
-          )}
+          <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
+
+          {/* SYNC TOOLS */}
+          <div className="flex items-center gap-2">
+            <select 
+              value={selectedArn}
+              onChange={(e) => setSelectedArn(e.target.value)}
+              className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl text-[9px] font-black uppercase outline-none border border-slate-200 dark:border-white/10 cursor-pointer hover:border-emerald-500/50 transition-colors"
+            >
+              <option value="">Select ARN Context</option>
+              {arns.map(arn => <option key={arn._id} value={arn._id}>{arn.nickname} ({arn.arnCode})</option>)}
+            </select>
+            
+            <label className={`cursor-pointer p-3 rounded-xl border border-dashed transition-all ${file ? 'bg-emerald-500/10 border-emerald-500' : 'bg-white dark:bg-white/5 border-slate-300 dark:border-white/20 hover:border-emerald-500'}`}>
+              <input type="file" className="hidden" onChange={handleFileChange} />
+              <Upload size={16} className={file ? 'text-emerald-500' : 'text-slate-400'} />
+            </label>
+
+            <button 
+              disabled={!file || !selectedArn || isUploading}
+              onClick={handleSync}
+              className={`flex items-center gap-3 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${!file ? 'opacity-20 grayscale pointer-events-none' : 'bg-slate-950 text-white dark:bg-emerald-500 dark:text-slate-950 shadow-lg hover:scale-105 active:scale-95'}`}
+            >
+              {isUploading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
+              Sync
+            </button>
+          </div>
         </div>
-      </div>
+
+        {/* LEDGER DATA GRID */}
+        <div className="flex-1 overflow-y-auto no-scrollbar border border-slate-100 dark:border-white/5 rounded-[2rem] bg-white dark:bg-[#050607] shadow-inner">
+          <table className="w-full text-left border-collapse">
+            <thead className="sticky top-0 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md z-10 border-b border-slate-100 dark:border-white/5">
+              <tr>
+                <th className="px-10 py-6 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 italic">Ledger Name</th>
+                <th className="px-10 py-6 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 italic">Parent Group</th>
+                <th className="px-10 py-6 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 italic">Context Firm</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50 dark:divide-white/5">
+              {filteredLedgers.map((ledger) => (
+                <tr key={ledger._id} className="group hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
+                  <td className="px-10 py-5">
+                    <div className="flex items-center gap-4">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-500/5 flex items-center justify-center text-emerald-500 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
+                        <Sparkles size={12} />
+                      </div>
+                      <span className="text-[11px] font-[1000] uppercase italic tracking-tight text-slate-900 dark:text-white leading-none">
+                        {ledger.name}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-10 py-5">
+                    <span className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 text-[9px] font-black uppercase tracking-widest text-slate-400 group-hover:text-emerald-500 transition-colors">
+                      {ledger.groupName || "Primary"}
+                    </span>
+                  </td>
+                  <td className="px-10 py-5">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-slate-400 uppercase italic leading-none truncate max-w-[180px]">
+                        {ledger.tallyCompanyName}
+                      </span>
+                      <span className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter mt-1">
+                        Linked to {ledger.arnId?.nickname || "Direct"}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredLedgers.length === 0 && (
+                <tr>
+                  <td colSpan="3" className="py-32 text-center opacity-20">
+                    <Filter size={64} className="mx-auto mb-6 stroke-1" />
+                    <p className="text-[11px] font-black uppercase tracking-[0.4em]">No Records in Current View</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 };

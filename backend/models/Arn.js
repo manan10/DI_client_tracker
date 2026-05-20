@@ -5,7 +5,9 @@ const arnSchema = new mongoose.Schema({
   nickname: { type: String, required: true },
   isActive: { type: Boolean, default: true },
   isDummy: { type: Boolean, default: false },
-  // New: Array of references to the Amc model
+  gstCompliant: { type: Boolean, default: false }, // Tracks if reverse-engineered tax splitting (18% GST) applies
+  
+  linkedTallyFirms: [{ type: String, index: true }], 
   allowedAmcs: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Amc'

@@ -14,7 +14,7 @@ export const tallyTemplates = {
             </STATICVARIABLES>
         </DESC>
     </BODY>
-</ENVELOPE>`,
+</ENVELOPE>`.trim(),
 
     getLedgers: (companyName) => `
 <ENVELOPE>
@@ -40,11 +40,11 @@ export const tallyTemplates = {
             </STATICVARIABLES>
         </DESC>
     </BODY>
-</ENVELOPE>`,
+</ENVELOPE>`.trim(),
 
-    // This is now just a helper to generate the initial editable string
     generateVoucher: ({ company, type, date, ledgerName, bankAccount, amount, narration }) => {
         const tallyDate = date.replace(/-/g, '');
+        // Balanced signs for Tally's Import Engine
         const ledgerAmount = type === 'Payment' ? amount : `-${amount}`;
         const bankAmount = type === 'Receipt' ? amount : `-${amount}`;
 
@@ -86,6 +86,6 @@ export const tallyTemplates = {
             </REQUESTDATA>
         </IMPORTDATA>
     </BODY>
-</ENVELOPE>`;
+</ENVELOPE>`.trim();
     }
 };

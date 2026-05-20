@@ -11,19 +11,23 @@ router.post('/proxy', protect, async (req, res) => {
             return res.status(500).json({ message: "Bridge URL not configured in .env" });
         }
 
+        // The Bridge Script on your father's PC expects a JSON object: { xml: "..." }
         const response = await axios.post(`${bridgeUrl}/tally-proxy`, {
             xml: req.body.xml
         }, {
-            timeout: 10000 
+            headers: {
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true' // Mandatory for Ngrok free tier
+            },
+            timeout: 15000 
         });
 
-        // Set the header so the browser knows it's receiving XML
+        // Forward Tally's response back to the frontend
         res.set('Content-Type', 'text/xml');
         res.send(response.data);
 
     } catch (error) {
-        // Detailed logging for you to debug during the experiment
-        console.error("Cloud Gateway Error:", error.message);
+        console.error("🌐 Accounting Bridge Error:", error.message);
 
         if (error.code === 'ECONNABORTED') {
             return res.status(504).json({ message: "Connection timed out. Is the Tally PC slow or asleep?" });

@@ -4,7 +4,8 @@ const {
     createArn, 
     updateArn, 
     deleteArn,
-    updateArnAmcMapping // New controller function
+    updateArnAmcMapping,
+    linkTallyFirm // Import the new controller method
 } = require('../controllers/arnController');
 
 // Base routes
@@ -17,8 +18,10 @@ router.route('/:id')
     .put(updateArn)
     .delete(deleteArn);
 
-// New: Batch update for AMC mappings
-// This matches your frontend call: request(`/arns/${selectedArn._id}/amcs/batch`, 'PUT', ...)
+// Hierarchy Link: Connect a Tally Company name to this ARN
+router.patch('/:id/tally-link', linkTallyFirm);
+
+// Batch update for AMC mappings
 router.put('/:id/amcs/batch', updateArnAmcMapping);
 
 module.exports = router;

@@ -1,19 +1,22 @@
 const express = require('express');
-const multer = require('multer');
-const { importTallyLedgers, getLedgersByArn } = require('../controllers/ledgerController');
-const { protect } = require('../middleware/authmiddleware');
+const { 
+    bulkSyncTallyLedgers, 
+    getAllLedgers // Renamed for better registry support
+} = require('../controllers/ledgerController');
+const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Temporary storage configuration
-const upload = multer({ dest: 'uploads/temp/' });
+/**
+ * @desc    Sync Ledger master list from Tally Bridge
+ * @route   POST /api/ledgers/bulk-sync
+ */
+router.post('/bulk-sync', protect, bulkSyncTallyLedgers);
 
-// @desc    Import Tally Ledgers for a specific ARN
-// @route   POST /api/ledgers/import
-router.post('/import', protect, upload.single('file'), importTallyLedgers);
+/**
+ * @desc    Get All Ledgers or filter by Company name via query params
+ * @route   GET /api/ledgers
+ */
+router.get('/', protect, getAllLedgers);
 
-// @desc    Get Ledgers belonging to a specific ARN
-// @route   GET /api/ledgers/arn/:arnId
-router.get('/arn/:arnId', protect, getLedgersByArn);
-
-module.exports = router; 
+module.exports = router;

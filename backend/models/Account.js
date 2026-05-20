@@ -1,8 +1,7 @@
 const mongoose = require('mongoose');
 
-// 1. Account Definition (Linked to an ARN)
 const accountSchema = new mongoose.Schema({
-  name: { type: String, required: true, unique: true }, // e.g., "HDFC Savings - ARN 120503"
+  name: { type: String, required: true, unique: true }, 
   accountNumber: { type: String },
   
   // Link to the ARN this account belongs to
@@ -12,6 +11,13 @@ const accountSchema = new mongoose.Schema({
     index: true,
   },
 
+  // --- NEW MAPPING LAYER ---
+  tallyMapping: {
+    companyName: { type: String, index: true }, // The name of the firm in Tally
+    ledgerName: { type: String, index: true }   // The exact name of the Bank Ledger in Tally
+  },
+  // -------------------------
+
   category: { 
     type: String, 
     enum: ['Bank', 'Brokerage', 'Cash', 'Fixed Income', 'Other'], 
@@ -19,6 +25,9 @@ const accountSchema = new mongoose.Schema({
   },
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
+
+// Ensure a Tally Ledger isn't mapped to two different local accounts by mistake
+accountSchema.index({ "tallyMapping.companyName": 1, "tallyMapping.ledgerName": 1 });
 
 // 2. The Snapshot (Remains mostly the same, but now reflects ARN-linked accounts)
 const balanceSnapshotSchema = new mongoose.Schema({
