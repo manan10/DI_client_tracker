@@ -39,10 +39,11 @@ const StatCards = () => {
 
   return (
     /* GRID STRATEGY:
-       - grid-cols-2: 2 cards per row on mobile (No scrolling!)
-       - md:flex: Reverts to a single row on tablets/desktop
+       - grid-cols-2: 2 cards per row on mobile for high density/no scroll.
+       - gap-2: Compact mobile spacing.
+       - md:flex: Reverts to desktop row layout.
     */
-    <div className="grid grid-cols-2 md:flex md:flex-row md:items-center gap-3 sm:gap-4 md:justify-center px-1 sm:px-4 py-2">
+    <div className="grid grid-cols-2 md:flex md:flex-row md:items-center gap-2 md:gap-4 md:justify-center w-full">
       <StatCard 
         title="Families" 
         value={stats.totalFamilies} 

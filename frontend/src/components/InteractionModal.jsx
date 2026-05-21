@@ -66,9 +66,18 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient, editingDa
     if (isOpen && !isClientLocked) {
       const fetchClients = async () => {
         try {
-          const data = await request('/clients/');
-          setClients(data);
-        } catch (err) { console.error("Failed to load clients", err); }
+          const res = await request('/clients/');
+          // FIX: Check if res has a data property (array) or is the array itself
+          if (res && typeof res === 'object') {
+            const clientData = res.data || (Array.isArray(res) ? res : []);
+            setClients(clientData);
+          } else {
+            setClients([]);
+          }
+        } catch (err) { 
+          console.error("Failed to load clients", err); 
+          setClients([]); 
+        }
       };
       fetchClients();
     }
@@ -161,10 +170,18 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient, editingDa
           <div className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/90 backdrop-blur-sm transition-opacity" />
         </Transition.Child>
 
-        <div className="fixed inset-0 z-110 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-0 sm:p-4 text-center sm:text-left">
-            <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enterTo="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-200" leaveFrom="opacity-100 translate-y-0 sm:scale-100" leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
-              <Dialog.Panel className="w-full max-w-4xl transform text-left align-middle transition-all bg-white dark:bg-[#1e293b] sm:rounded-xl shadow-2xl border-t sm:border border-slate-200 dark:border-slate-700 flex flex-col max-h-screen sm:max-h-[90vh]">
+        <div className="fixed inset-0 z-110 overflow-hidden">
+          <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-0 sm:pl-16">
+            <Transition.Child 
+              as={Fragment} 
+              enter="transform transition ease-in-out duration-500 sm:duration-700" 
+              enterFrom="translate-x-full" 
+              enterTo="translate-x-0" 
+              leave="transform transition ease-in-out duration-500 sm:duration-700" 
+              leaveFrom="translate-x-0" 
+              leaveTo="translate-x-full"
+            >
+              <Dialog.Panel className="pointer-events-auto w-screen max-w-md md:max-w-2xl lg:max-w-4xl transform text-left align-middle transition-all bg-white dark:bg-[#1e293b] shadow-2xl border-l border-slate-200 dark:border-slate-700 flex flex-col h-full">
                 
                 {/* DYNAMIC HEADER */}
                 <div className={`px-6 py-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center shrink-0 transition-colors duration-500 ${editingData ? 'bg-amber-50/50 dark:bg-amber-950/10' : 'bg-slate-50 dark:bg-slate-900'}`}>
@@ -187,170 +204,172 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient, editingDa
                   </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-10 space-y-12">
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                    
-                    {/* Left Column */}
-                    <div className="lg:col-span-5 space-y-10">
-                      <div className="relative" ref={dropdownRef}>
-                        <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Client Record</label>
-                        <div className="relative">
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                            {isClientLocked ? <Lock size={14} /> : <Search size={14} />}
+                <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+                  <div className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                      
+                      {/* Left Column */}
+                      <div className="lg:col-span-5 space-y-10">
+                        <div className="relative" ref={dropdownRef}>
+                          <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Client Record</label>
+                          <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                              {isClientLocked ? <Lock size={14} /> : <Search size={14} />}
+                            </div>
+                            <input 
+                              type="text"
+                              disabled={isClientLocked}
+                              className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:border-slate-400 dark:focus:border-slate-500 outline-none transition-all disabled:opacity-60 font-bold"
+                              placeholder="Search name or PAN..."
+                              value={searchTerm}
+                              onChange={(e) => { setSearchTerm(e.target.value); setIsDropdownOpen(true); }}
+                              required
+                            />
                           </div>
-                          <input 
-                            type="text"
-                            disabled={isClientLocked}
-                            className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:border-slate-400 dark:focus:border-slate-500 outline-none transition-all disabled:opacity-60 font-bold"
-                            placeholder="Search name or PAN..."
-                            value={searchTerm}
-                            onChange={(e) => { setSearchTerm(e.target.value); setIsDropdownOpen(true); }}
-                            required
-                          />
+                          {!isClientLocked && isDropdownOpen && searchTerm.length > 0 && (
+                            <div className="absolute z-20 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                              {filteredClients.map(c => (
+                                <div key={c._id} onClick={() => { setFormData({...formData, client: c._id, clientName: c.name}); setSearchTerm(c.name); setIsDropdownOpen(false); }} className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer border-b border-slate-50 dark:border-slate-700 last:border-0">
+                                  <p className="text-sm font-bold text-slate-900 dark:text-white">{c.name}</p>
+                                  <p className="text-[10px] text-slate-500 font-mono uppercase">{c.pan}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        {!isClientLocked && isDropdownOpen && searchTerm.length > 0 && (
-                          <div className="absolute z-20 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl max-h-48 overflow-y-auto">
-                            {filteredClients.map(c => (
-                              <div key={c._id} onClick={() => { setFormData({...formData, client: c._id, clientName: c.name}); setSearchTerm(c.name); setIsDropdownOpen(false); }} className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer border-b border-slate-50 dark:border-slate-700 last:border-0">
-                                <p className="text-sm font-bold text-slate-900 dark:text-white">{c.name}</p>
-                                <p className="text-[10px] text-slate-500 font-mono uppercase">{c.pan}</p>
+
+                        <div className="space-y-6">
+                          <div className="min-w-0">
+                            <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Date of Interaction</label>
+                            <div className="relative flex items-center bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg h-11">
+                              <div className="px-4 text-slate-400"><Clock size={14} /></div>
+                              <input 
+                                type="date"
+                                required
+                                className="flex-1 h-full pr-9 text-[11px] font-bold bg-transparent outline-none dark:text-white uppercase relative z-10"
+                                value={formData.date}
+                                onChange={(e) => setFormData({...formData, date: e.target.value})}
+                                style={{ colorScheme: 'dark' }}
+                              />
+                              <CalendarIcon size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-0" />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="min-w-0">
+                              <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Channel</label>
+                              <div className="relative">
+                                <select 
+                                  className="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-sm appearance-none outline-none focus:border-slate-400 font-bold"
+                                  value={formData.type}
+                                  onChange={(e) => setFormData({...formData, type: e.target.value})}
+                                >
+                                  {['In-Person', 'Call', 'WhatsApp', 'Email'].map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                               </div>
+                            </div>
+
+                            <div className="min-w-0">
+                              <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Follow-up</label>
+                              <div className="flex items-center bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden h-11">
+                                <div className="px-3 border-r border-slate-200 dark:border-slate-700 flex items-center h-full shrink-0">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={formData.followUpRequired} 
+                                    onChange={(e) => setFormData({...formData, followUpRequired: e.target.checked})}
+                                    className="w-4 h-4 accent-slate-900 dark:accent-emerald-500 rounded cursor-pointer"
+                                  />
+                                </div>
+                                <div className="relative flex-1 h-full min-w-0">
+                                  <input 
+                                    type="date"
+                                    disabled={!formData.followUpRequired}
+                                    className="w-full h-full px-3 pr-9 text-[11px] font-bold bg-transparent outline-none dark:text-white disabled:opacity-20 uppercase transition-opacity relative z-10"
+                                    value={formData.followUpDate}
+                                    onChange={(e) => setFormData({...formData, followUpDate: e.target.value})}
+                                    style={{ colorScheme: 'dark' }}
+                                  />
+                                  <CalendarIcon size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-0" />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Focus Topics</label>
+                          <div className="flex flex-wrap gap-2">
+                            {['MF', 'PMS', 'AIF', 'SIF', 'Debt', 'Tax Planning'].map(point => (
+                              <button
+                                key={point}
+                                type="button"
+                                onClick={() => toggleDiscussionPoint(point)}
+                                className={`px-3 py-1.5 rounded text-[10px] font-bold border transition-all ${
+                                  formData.discussionPoints.includes(point) 
+                                  ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-600 dark:border-emerald-600' 
+                                  : 'bg-white dark:bg-transparent border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400'
+                                }`}
+                              >
+                                {point}
+                              </button>
                             ))}
                           </div>
-                        )}
+                        </div>
                       </div>
 
-                      <div className="space-y-6">
-                        <div className="min-w-0">
-                          <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Date of Interaction</label>
-                          <div className="relative flex items-center bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg h-11">
-                            <div className="px-4 text-slate-400"><Clock size={14} /></div>
-                            <input 
-                              type="date"
-                              required
-                              className="flex-1 h-full pr-9 text-[11px] font-bold bg-transparent outline-none dark:text-white uppercase relative z-10"
-                              value={formData.date}
-                              onChange={(e) => setFormData({...formData, date: e.target.value})}
-                              style={{ colorScheme: 'dark' }}
-                            />
-                            <CalendarIcon size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-0" />
-                          </div>
-                        </div>
+                      <div className="lg:col-span-7 flex flex-col min-h-75">
+                        <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Notes & Summary</label>
+                        
+                        <div className="relative flex-1 group">
+                          <textarea 
+                            required
+                            className="w-full h-full min-h-75 p-5 pb-16 bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-slate-400 dark:focus:border-emerald-500/50 leading-relaxed placeholder:text-slate-400 transition-all resize-none font-medium"
+                            placeholder="Detail the key takeaways and proposed actions..."
+                            value={formData.summary}
+                            onChange={(e) => setFormData({...formData, summary: e.target.value})}
+                          />
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                          <div className="min-w-0">
-                            <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Channel</label>
-                            <div className="relative">
-                              <select 
-                                className="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-sm appearance-none outline-none focus:border-slate-400 font-bold"
-                                value={formData.type}
-                                onChange={(e) => setFormData({...formData, type: e.target.value})}
+                          <div className="absolute bottom-4 right-4 flex items-center gap-2">
+                            {originalSummary && !isRefining && (
+                              <button 
+                                type="button" 
+                                onClick={handleUndoRefinement}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[10px] font-black uppercase bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm tracking-widest"
                               >
-                                {['In-Person', 'Call', 'WhatsApp', 'Email'].map(t => <option key={t} value={t}>{t}</option>)}
-                              </select>
-                              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                <RotateCcw size={12} /> UNDO
+                              </button>
+                            )}
+
+                            <div className="flex bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 rounded-md shadow-sm overflow-hidden">
+                              <button 
+                                type="button" 
+                                onClick={handleAiRefine}
+                                disabled={isRefining || !formData.summary}
+                                className="flex items-center gap-1.5 px-4 py-2 text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all border-r border-slate-200 dark:border-slate-700 disabled:opacity-40 tracking-widest"
+                              >
+                                {isRefining ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                                {isRefining ? 'POLISHING...' : 'REFINE WITH AI'}
+                              </button>
+
+                              <button 
+                                type="button" 
+                                onClick={handleVoiceInput}
+                                className={`flex items-center gap-1.5 px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${
+                                  isListening ? 'bg-red-50 text-red-600 animate-pulse' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                }`}
+                              >
+                                <Mic size={12} /> {isListening ? 'LISTENING' : 'DICTATE'}
+                              </button>
                             </div>
-                          </div>
-
-                          <div className="min-w-0">
-                            <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Follow-up</label>
-                            <div className="flex items-center bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden h-11">
-                              <div className="px-3 border-r border-slate-200 dark:border-slate-700 flex items-center h-full shrink-0">
-                                <input 
-                                  type="checkbox" 
-                                  checked={formData.followUpRequired} 
-                                  onChange={(e) => setFormData({...formData, followUpRequired: e.target.checked})}
-                                  className="w-4 h-4 accent-slate-900 dark:accent-emerald-500 rounded cursor-pointer"
-                                />
-                              </div>
-                              <div className="relative flex-1 h-full min-w-0">
-                                <input 
-                                  type="date"
-                                  disabled={!formData.followUpRequired}
-                                  className="w-full h-full px-3 pr-9 text-[11px] font-bold bg-transparent outline-none dark:text-white disabled:opacity-20 uppercase transition-opacity relative z-10"
-                                  value={formData.followUpDate}
-                                  onChange={(e) => setFormData({...formData, followUpDate: e.target.value})}
-                                  style={{ colorScheme: 'dark' }}
-                                />
-                                <CalendarIcon size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-0" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Focus Topics</label>
-                        <div className="flex flex-wrap gap-2">
-                          {['MF', 'PMS', 'AIF', 'SIF', 'Debt', 'Tax Planning'].map(point => (
-                            <button
-                              key={point}
-                              type="button"
-                              onClick={() => toggleDiscussionPoint(point)}
-                              className={`px-3 py-1.5 rounded text-[10px] font-bold border transition-all ${
-                                formData.discussionPoints.includes(point) 
-                                ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-600 dark:border-emerald-600' 
-                                : 'bg-white dark:bg-transparent border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400'
-                              }`}
-                            >
-                              {point}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="lg:col-span-7 flex flex-col min-h-87.5">
-                      <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Notes & Summary</label>
-                      
-                      <div className="relative flex-1 group">
-                        <textarea 
-                          required
-                          className="w-full h-full min-h-75 p-5 pb-16 bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-slate-400 dark:focus:border-emerald-500/50 leading-relaxed placeholder:text-slate-400 transition-all resize-none font-medium"
-                          placeholder="Detail the key takeaways and proposed actions..."
-                          value={formData.summary}
-                          onChange={(e) => setFormData({...formData, summary: e.target.value})}
-                        />
-
-                        <div className="absolute bottom-4 right-4 flex items-center gap-2">
-                          {originalSummary && !isRefining && (
-                            <button 
-                              type="button" 
-                              onClick={handleUndoRefinement}
-                              className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[10px] font-black uppercase bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm tracking-widest"
-                            >
-                              <RotateCcw size={12} /> UNDO
-                            </button>
-                          )}
-
-                          <div className="flex bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 rounded-md shadow-sm overflow-hidden">
-                            <button 
-                              type="button" 
-                              onClick={handleAiRefine}
-                              disabled={isRefining || !formData.summary}
-                              className="flex items-center gap-1.5 px-4 py-2 text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all border-r border-slate-200 dark:border-slate-700 disabled:opacity-40 tracking-widest"
-                            >
-                              {isRefining ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                              {isRefining ? 'POLISHING...' : 'REFINE WITH AI'}
-                            </button>
-
-                            <button 
-                              type="button" 
-                              onClick={handleVoiceInput}
-                              className={`flex items-center gap-1.5 px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${
-                                isListening ? 'bg-red-50 text-red-600 animate-pulse' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                              }`}
-                            >
-                              <Mic size={12} /> {isListening ? 'LISTENING' : 'DICTATE'}
-                            </button>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Dynamic Submit Button */}
-                  <div className="flex justify-end pt-4 shrink-0">
+                  {/* STICKY FOOTER (Mobile Optimization) */}
+                  <div className="flex justify-end p-4 sm:px-10 sm:py-5 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
                     <button
                       type="submit"
                       disabled={loading || !formData.client || isRefining}
