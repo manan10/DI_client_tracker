@@ -1,16 +1,7 @@
 import React, { useState } from 'react';
-import { 
-  Calendar, 
-  ChevronDown, 
-  Landmark, 
-  Trash2, 
-  Copy 
-} from 'lucide-react';
+import { Calendar, ChevronDown, Trash2, Copy, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
-/**
- * Formats currency with 2 decimal places as requested
- */
 const formatINR = (amount) => {
   return new Intl.NumberFormat('en-IN', {
     minimumFractionDigits: 2,
@@ -22,7 +13,6 @@ const HistoryRow = ({ row, onDeleteSuccess }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Filter and SORT entries alphabetically
   const activeEntries = row.entries
     .filter(entry => entry.amount > 0)
     .sort((a, b) => a.amcName.localeCompare(b.amcName));
@@ -54,114 +44,73 @@ const HistoryRow = ({ row, onDeleteSuccess }) => {
 
   return (
     <>
+      {/* DESKTOP ROW (Original) */}
       <tr 
         onClick={() => !isDeleting && setIsExpanded(!isExpanded)}
-        className={`dark:bg-slate-900 group cursor-pointer border-b border-slate-100/50 dark:border-slate-800/30 transition-all duration-200 ${
-          isExpanded 
-            ? 'bg-emerald-50/50 dark:bg-emerald-500/3' 
-            : 'hover:bg-slate-50/80 dark:hover:bg-slate-900/40'
-        } ${isDeleting ? 'opacity-20 grayscale' : ''}`}
+        className="hidden md:table-row dark:bg-slate-900 group cursor-pointer border-b border-slate-100/50 dark:border-slate-800/30 hover:bg-slate-50/80 transition-all"
       >
         <td className="px-6 py-5">
           <div className="flex items-center gap-4">
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-110 ${
-              isExpanded ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:text-emerald-500'
-            }`}>
-              <Calendar size={16} strokeWidth={2.5} />
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${isExpanded ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+              <Calendar size={16} />
             </div>
-            <span className={`text-[14px] font-black tracking-tight transition-colors ${isExpanded ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-900 dark:text-slate-200'}`}>
-              {row.accountingMonth}
-            </span>
+            <span className="text-[14px] font-black">{row.accountingMonth}</span>
           </div>
         </td>
-        <td className="px-6 py-5">
-            <div className="flex flex-col items-center">
-              <span className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tight">
-                {activeEntries[0]?.amcName || "---"}
-              </span>
-              {activeEntries.length > 1 && (
-                <span className="text-[9px] font-black text-emerald-500 tracking-widest mt-0.5">
-                   + {activeEntries.length - 1} MORE
-                </span>
-              )}
-            </div>
+        <td className="px-6 py-5 text-center text-[11px] font-black uppercase text-slate-500">
+            {activeEntries[0]?.amcName || "---"}
+            {activeEntries.length > 1 && <div className="text-[9px] text-emerald-500 mt-0.5">+ {activeEntries.length - 1} MORE</div>}
         </td>
-        <td className="px-6 py-5 text-right">
-          <span className={`text-[15px] font-[1000] tracking-tighter transition-all ${
-            isExpanded ? 'text-emerald-600 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'text-slate-800 dark:text-slate-200'
-          }`}>
-            ₹{formatINR(row.totalGross)}
-          </span>
-        </td>
+        <td className="px-6 py-5 text-right text-[15px] font-[1000]">₹{formatINR(row.totalGross)}</td>
         <td className="px-6 py-5 text-center">
-            <div className={`mx-auto w-2 h-2 rounded-full transition-all duration-500 ${isExpanded ? 'bg-emerald-500 scale-125 shadow-[0_0_8px_#10b981]' : 'bg-slate-300 dark:bg-slate-700'}`} />
+            <div className={`w-2 h-2 rounded-full ${isExpanded ? 'bg-emerald-500' : 'bg-slate-300'}`} />
         </td>
-        <td className="px-6 py-5 text-right">
-          <ChevronDown size={18} className={`ml-auto transition-transform duration-500 text-slate-300 ${isExpanded ? 'rotate-180 text-emerald-500' : 'group-hover:text-slate-400'}`} />
-        </td>
+        <td className="px-6 py-5 text-right"><ChevronDown size={18} className={`ml-auto transition-transform ${isExpanded ? 'rotate-180' : ''}`} /></td>
       </tr>
 
-      {/* Expanded Micro-Ledger */}
-      <tr>
-        <td colSpan="5" className="p-0 border-none">
-          <div className={`grid transition-all duration-500 ease-in-out ${
-            isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 overflow-hidden'
-          }`}>
-            <div className="overflow-hidden bg-slate-50/60 dark:bg-slate-950/40">
-              <div className="px-12 py-10 border-b border-slate-200 dark:border-slate-800/60">
-                
-                {/* Header for Micro Ledger */}
-                <div className="flex justify-between items-center mb-6 px-4 pb-2 border-b-2 border-slate-200 dark:border-slate-800">
-                    <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">AMC Breakdown </h5>
-                    <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Amount</h5>
-                </div>
+      {/* MOBILE COMPACT CARD (New & Better) */}
+      <div className="md:hidden p-4 border-b border-slate-100 bg-white" onClick={() => setIsExpanded(!isExpanded)}>
+        <div className="flex justify-between items-start mb-2">
+            <div>
+                <div className="font-black text-[12px] uppercase tracking-widest">{row.accountingMonth}</div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase">{activeEntries[0]?.amcName || "---"}</div>
+            </div>
+            <div className="text-right">
+                <div className="font-[1000] text-[14px] text-emerald-700">₹{formatINR(row.totalGross)}</div>
+                {activeEntries.length > 1 && <span className="text-[9px] font-black text-emerald-500">+ {activeEntries.length - 1} MORE</span>}
+            </div>
+        </div>
+      </div>
 
-                {/* Vertical sorting using columns-2 */}
-                <div className="columns-1 md:columns-2 gap-x-16 space-y-2">
-                  {activeEntries.map((entry, idx) => (
-                    <div 
-                      key={idx} 
-                      className="break-inside-avoid mb-2 flex justify-between items-center py-3 px-4 bg-white/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/50 rounded-xl hover:border-emerald-500/30 transition-all"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400/80" />
-                        <span className="text-[12px] font-black text-slate-700 dark:text-slate-200 uppercase tracking-tight">
-                          {entry.amcName}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-[9px] font-black text-slate-400 bg-slate-200/50 dark:bg-slate-800 px-2 py-0.5 rounded tabular-nums">D{entry.payoutDay || '--'}</span>
-                        <span className="text-[13.5px] font-[1000] text-slate-900 dark:text-white tracking-tighter font-mono min-w-25 text-right">
-                          ₹{formatINR(entry.amount)}
-                        </span>
-                      </div>
+      {/* EXPANDED MICRO-LEDGER (Shared Logic) */}
+      {isExpanded && (
+        <tr>
+          <td colSpan="5" className="p-0 border-none">
+            <div className="bg-slate-50/60 p-4 md:px-12 md:py-10 border-b border-slate-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {activeEntries.map((entry, idx) => (
+                  <div key={idx} className="flex justify-between items-center py-3 px-4 bg-white border border-slate-100 rounded-xl shadow-sm">
+                    <div className="flex items-center gap-3">
+                        <FileText size={14} className="text-slate-300" />
+                        <span className="text-[11px] font-black text-slate-700 uppercase">{entry.amcName}</span>
                     </div>
-                  ))}
-                </div>
+                    <span className="text-[12px] font-[1000] text-slate-900 tabular-nums">₹{formatINR(entry.amount)}</span>
+                  </div>
+                ))}
+              </div>
 
-                <div className="mt-12 pt-6 flex justify-between items-center border-t border-slate-300 dark:border-slate-800">
-                  <button 
-                    onClick={copyId}
-                    className="group flex items-center gap-2 text-[9px] font-black text-slate-400 hover:text-emerald-500 transition-colors tracking-widest"
-                  >
-                    <Copy size={12} className="group-hover:scale-110 transition-transform" />
-                    UID: {row._id.toUpperCase()}
-                  </button>
-                  
-                  <button 
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="flex items-center gap-2 text-[10px] font-black uppercase text-red-500/60 hover:text-red-600 transition-all tracking-[0.2em] group bg-red-500/5 px-4 py-2 rounded-lg border border-red-500/10"
-                  >
-                    <Trash2 size={14} className="group-hover:rotate-12 transition-transform" />
-                    {isDeleting ? 'DELETING...' : 'PERMANENT DELETE'}
-                  </button>
-                </div>
+              <div className="mt-6 pt-6 flex justify-between items-center border-t border-slate-300">
+                <button onClick={copyId} className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-emerald-500">
+                  <Copy size={12} /> UID: {row._id.toUpperCase()}
+                </button>
+                <button onClick={handleDelete} disabled={isDeleting} className="flex items-center gap-2 text-[10px] font-black uppercase text-red-500 hover:text-red-700 tracking-widest">
+                  <Trash2 size={12} /> {isDeleting ? 'DELETING...' : 'DELETE'}
+                </button>
               </div>
             </div>
-          </div>
-        </td>
-      </tr>
+          </td>
+        </tr>
+      )}
     </>
   );
 };

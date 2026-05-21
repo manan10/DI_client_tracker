@@ -12,36 +12,22 @@ const WorkspaceHistory = ({ arnId, fiscalYear }) => {
 
   const fetchHistory = useCallback(async () => {
     if (!arnId) return;
-    
     setIsSyncing(true);
     try {
-      // FIXED: Added fiscalYear query parameter to the history endpoint
       const json = await request(`/commissions/history/${arnId}?fiscalYear=${fiscalYear}`);
-      if (json.success) {
-        setHistory(json.data);
-      } else {
-        setHistory([]);
-      }
+      setHistory(json.success ? json.data : []);
     } catch (err) {
-      if (err.response?.status === 404) {
-        setHistory([]);
-      } else {
-        toast.error("Ledger history sync failed");
-      }
+      if (err.response?.status === 404) setHistory([]);
+      else toast.error("Ledger history sync failed");
     } finally {
       setIsSyncing(false);
     }
-  }, [arnId, fiscalYear, request]); // Added fiscalYear to dependencies
+  }, [arnId, fiscalYear, request]);
 
   useEffect(() => {
     let active = true;
-
-    const loadData = async () => {
-      if (active) await fetchHistory();
-    };
-
+    const loadData = async () => { if (active) await fetchHistory(); };
     loadData();
-
     return () => { active = false; };
   }, [fetchHistory]);
 
@@ -68,7 +54,6 @@ const WorkspaceHistory = ({ arnId, fiscalYear }) => {
             {isLoading ? "Syncing..." : `FY ${fiscalYear} | ${filteredHistory.length} Periods`}
           </span>
         </div>
-        
         <div className="relative group w-full md:w-72">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-500 transition-colors" size={14} />
           <input 
@@ -82,7 +67,8 @@ const WorkspaceHistory = ({ arnId, fiscalYear }) => {
       </div>
 
       <div className="bg-white dark:bg-transparent border border-slate-100 dark:border-slate-800 rounded-lg overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/80 dark:bg-slate-950/60">
@@ -94,26 +80,13 @@ const WorkspaceHistory = ({ arnId, fiscalYear }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-slate-900/40">
-              {filteredHistory.length > 0 ? (
-                filteredHistory.map((row) => (
-                  <HistoryRow key={row._id} row={row} onDeleteSuccess={fetchHistory} />
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="px-6 py-20 text-center">
-                    {isLoading ? (
-                      <Loader2 className="mx-auto animate-spin text-emerald-500/40 mb-3" size={32} />
-                    ) : (
-                      <AlertCircle className="mx-auto text-slate-200 mb-3" size={32} />
-                    )}
-                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                      {isLoading ? "Updating Ledger..." : `No records found for FY ${fiscalYear}`}
-                    </p>
-                  </td>
-                </tr>
-              )}
+              {filteredHistory.map((row) => <HistoryRow key={row._id} row={row} onDeleteSuccess={fetchHistory} />)}
             </tbody>
           </table>
+        </div>
+        {/* Mobile View Placeholder */}
+        <div className="md:hidden">
+            {filteredHistory.map((row) => <HistoryRow key={row._id} row={row} onDeleteSuccess={fetchHistory} />)}
         </div>
       </div>
     </div>

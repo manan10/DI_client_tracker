@@ -29,7 +29,6 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
   const scrollContainerRef = useRef(null);
   const activePickerRef = useRef(null);
 
-  // NEW: Memoized and Alphabetically Sorted AMC List
   const sortedAmcList = useMemo(() => {
     if (!amcList || amcList.length === 0) return [];
     
@@ -115,11 +114,11 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 w-full h-full z-9999 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-0 md:p-6">
-      <div className="bg-white dark:bg-slate-950 w-full md:max-w-6xl h-full md:h-[92vh] md:rounded-lg border-0 md:border-2 border-slate-200 dark:border-slate-800 flex flex-col shadow-2xl relative overflow-hidden">
+    <div className="fixed inset-0 z-9999 flex justify-end bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="w-full h-dvh sm:w-212.5 lg:w-237.5 bg-white dark:bg-slate-950 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right-[100%] duration-300 border-l border-slate-200 dark:border-slate-800">
         
         {/* Header */}
-        <div className="px-6 py-6 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 shrink-0 z-50">
+        <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-950 shrink-0">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center text-slate-900 shadow-lg">
               <Landmark size={20} strokeWidth={2.5} />
@@ -169,15 +168,15 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
         {/* Content Area */}
         <div 
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto p-4 md:p-10 bg-slate-50 dark:bg-[#010413]"
+          className="flex-1 overflow-y-auto p-4 sm:p-10 bg-slate-50 dark:bg-[#010413]"
         >
           {sortedAmcList.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-3">
               <Activity size={40} className="opacity-20" />
-              <p className="font-black uppercase text-[10px] tracking-[0.3em] text-center">No AMCs mapped to this ARN.<br/><span className="text-[8px] opacity-50 tracking-normal">Go to Settings &gt; AMC Registry to link AMCs.</span></p>
+              <p className="font-black uppercase text-[10px] tracking-[0.3em] text-center">No AMCs mapped.<br/><span className="text-[8px] opacity-50 tracking-normal">Go to Settings &gt; AMC Registry to link AMCs.</span></p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3 max-w-5xl mx-auto pb-64">
+            <div className="grid grid-cols-1 gap-2 sm:gap-3 max-w-5xl mx-auto pb-32">
               {sortedAmcList.map((amc) => {
                 const amcName = typeof amc === 'string' ? amc : amc.name;
                 const amcId = typeof amc === 'string' ? amc : amc._id;
@@ -188,17 +187,17 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
                 return (
                   <div 
                     key={amcId} 
-                    className="flex flex-col md:flex-row md:items-center gap-4 p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl group hover:border-emerald-500/30 transition-all shadow-sm"
+                    className="flex flex-row items-center justify-between p-3 sm:p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl group hover:border-emerald-500/30 transition-all shadow-sm"
                   >
-                    <div className="flex-1">
-                      <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight italic">{amcName}</h3>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-[10px] sm:text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight italic truncate">{amcName}</h3>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 shrink-0">
                       <div className="relative" ref={isPickerActive ? activePickerRef : null}>
                         <button 
                           onClick={() => setActiveDayPicker(isPickerActive ? null : amcName)}
-                          className={`w-32 md:w-40 px-4 py-3 rounded-xl text-[11px] font-black transition-all border-2 ${
+                          className={`w-20 sm:w-40 px-2 sm:px-4 py-2 sm:py-3 rounded-lg text-[8px] sm:text-[11px] font-black transition-all border-2 ${
                             formData[amcName]?.day 
                             ? 'bg-emerald-500/10 border-emerald-500 text-emerald-500' 
                             : 'bg-slate-50 dark:bg-slate-900 border-transparent text-slate-400'
@@ -208,7 +207,7 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
                         </button>
 
                         {isPickerActive && (
-                          <div className="absolute top-full mt-2 left-0 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-4 z-200 animate-in slide-in-from-top-2">
+                          <div className="absolute top-full mt-2 right-0 sm:left-0 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-4 z-200 animate-in slide-in-from-top-2">
                             <div className="grid grid-cols-7 gap-1">
                               {[...Array(daysInMonth)].map((_, i) => (
                                 <button
@@ -227,12 +226,12 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
                       </div>
 
                       <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₹</span>
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[10px] sm:text-sm">₹</span>
                         <input 
                           type="text"
                           value={formData[amcName]?.amount ? formatIndianNumber(formData[amcName].amount) : ''}
                           onChange={(e) => handleAmountChange(amcName, e)}
-                          className="w-40 md:w-48 pl-10 pr-4 py-3 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-right font-black dark:text-white outline-none focus:border-emerald-500 transition-all text-lg"
+                          className="w-24 sm:w-48 pl-6 sm:pl-10 pr-2 sm:pr-4 py-2 sm:py-3 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-lg text-right font-black dark:text-white outline-none focus:border-emerald-500 transition-all text-xs sm:text-lg"
                           placeholder="0.00"
                         />
                       </div>
@@ -245,20 +244,20 @@ const CommissionForm = ({ isOpen, onClose, arnName, arnNickname, arnId, amcList 
         </div>
 
         {/* Footer */}
-        <div className="p-6 md:px-12 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6 shrink-0 z-50">
+        <div className="p-4 sm:p-6 sm:px-12 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 shrink-0 z-50">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-emerald-500/10 rounded-lg text-emerald-500">
-                <IndianRupee size={24} />
+            <div className="p-2 sm:p-3 bg-emerald-500/10 rounded-lg text-emerald-500">
+                <IndianRupee size={20} />
             </div>
             <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Monthly Liquidity</p>
-              <p className="text-3xl font-[1000] dark:text-white italic tracking-tighter">₹{totalGross.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+              <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest">Monthly Liquidity</p>
+              <p className="text-xl sm:text-3xl font-[1000] dark:text-white italic tracking-tighter">₹{totalGross.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
             </div>
           </div>
           <button 
             onClick={() => onSave({ arnId, accountingMonth: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`, data: formData, totalGross })}
             disabled={saving || isFetching || sortedAmcList.length === 0}
-            className="w-full md:w-auto bg-emerald-600 text-white px-12 py-4 rounded-xl font-[1000] uppercase text-xs tracking-[0.2em] shadow-xl hover:bg-emerald-500 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
+            className="w-full sm:w-auto bg-emerald-600 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-lg font-[1000] uppercase text-[10px] tracking-[0.2em] shadow-xl hover:bg-emerald-500 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
           >
             {saving ? <Loader2 className="animate-spin inline mr-2" size={16}/> : <CheckCircle2 className="inline mr-2" size={16}/>}
             Authorize Ledger
