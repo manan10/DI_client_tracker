@@ -1,31 +1,17 @@
 import React from 'react';
-import { X, Calendar, FileText, Landmark, CheckCircle2 } from 'lucide-react';
+import { X, Calendar, FileText, Landmark, CheckCircle2, Info } from 'lucide-react';
 
 const SnapshotForm = ({ 
-  isOpen, 
-  onClose, 
-  groupedAccounts, 
-  inputValues, 
-  setInputValues, 
-  entryDate, 
-  setEntryDate, 
-  note, 
-  setNote, 
-  onSave, 
-  saving, 
-  editingId 
+  isOpen, onClose, groupedAccounts, inputValues, setInputValues, 
+  entryDate, onDateChange, note, setNote, onSave, saving, editingId 
 }) => {
   if (!isOpen) return null;
 
   const toIndianCSV = (val) => {
     if (val === undefined || val === null || val === "") return "";
-    
     const parts = val.toString().split('.');
-    // Format the integer part with Indian commas
     const integerPart = parts[0].replace(/,/g, "");
     const formattedInteger = new Intl.NumberFormat('en-IN').format(integerPart);
-    
-    // If there's a decimal part, append it back (up to 2 decimal places)
     return parts.length > 1 ? `${formattedInteger}.${parts[1].slice(0, 2)}` : formattedInteger;
   };
 
@@ -38,135 +24,149 @@ const SnapshotForm = ({
   const isFormValid = entryDate && totalAbsolute > 0;
 
   const handleInputChange = (id, rawValue) => {
-    // Allow digits and a single decimal point
     let cleanValue = rawValue.replace(/[^0-9.]/g, "");
-    
-    // Ensure only one decimal point exists
     const parts = cleanValue.split('.');
     if (parts.length > 2) {
       cleanValue = parts[0] + '.' + parts.slice(1).join('');
     }
-    
     setInputValues({ ...inputValues, [id]: cleanValue });
   };
 
   return (
-    <div className="fixed inset-0 w-full h-full z-9999 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-0 md:p-6 lg:p-10">
-      <div className="w-full md:max-w-6xl h-full md:h-auto md:max-h-[90vh] md:rounded-xl border-0 md:border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden bg-white dark:bg-slate-950 shadow-2xl transition-all">
+    /* BACKDROP: Justify-end forces the drawer to dock to the right edge of the screen */
+    <div className="fixed inset-0 z-9999 flex justify-end bg-slate-900/60 backdrop-blur-sm transition-all">
+      
+      {/* DRAWER CONTAINER: 
+        Mobile: Full height, full width. 
+        Desktop: Full height, docked right, massive 950px width.
+      */}
+      <div className="w-full h-dvh sm:w-212.5 lg:w-237.5 bg-white dark:bg-slate-950 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-[100%] sm:slide-in-from-bottom-0 sm:slide-in-from-right-[100%] duration-300 sm:border-l border-slate-200 dark:border-slate-800">
         
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-950 shrink-0 z-20">
+        {/* --- HEADER --- */}
+        <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-950 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-slate-900 dark:bg-emerald-500/10 rounded-lg flex items-center justify-center shadow-sm">
-              <Landmark className="text-emerald-500" size={20} strokeWidth={2.5} />
-            </div>
-            <div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight italic">
-                {editingId ? "Modify Ledger" : "Treasury Snapshot"}
-              </h2>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Decimal INR Mode</p>
-            </div>
+            <Landmark className="text-emerald-600 dark:text-emerald-500" size={20} />
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white uppercase tracking-tight">
+              {editingId ? "Update Ledger" : "Log Balances"}
+            </h2>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all">
-            <X size={24} strokeWidth={2.5} />
+          <button 
+            onClick={onClose} 
+            className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors outline-none"
+          >
+            <X size={24} />
           </button>
         </div>
 
-        <div className="flex flex-1 flex-col md:flex-row overflow-hidden">
-          {/* Main Table Area */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar bg-slate-50/30 dark:bg-transparent">
-            <div className="max-w-3xl mx-auto space-y-6">
-              {Object.entries(groupedAccounts).map(([key, group]) => (
-                <div key={key} className="space-y-2">
-                  <div className="flex items-center gap-3 px-2">
-                    <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-[0.2em] italic whitespace-nowrap">{group.name}</span>
-                    <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
-                  </div>
-                  
-                  <div className="grid gap-2">
-                    {group.list.map(acc => (
-                      <div key={acc._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl hover:border-emerald-200 dark:hover:border-emerald-500/30 transition-all shadow-sm group">
-                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300 pl-2">
-                          {acc.name}
-                        </span>
-                        
-                        <div className="relative w-full sm:w-64">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600 font-bold text-sm italic pointer-events-none">₹</span>
-                          <input 
-                            type="text"
-                            value={toIndianCSV(inputValues[acc._id])}
-                            onChange={(e) => handleInputChange(acc._id, e.target.value)}
-                            placeholder="0.00"
-                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 pl-9 pr-4 text-right text-base font-black text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+        {/* --- DUAL-COLUMN WORKSPACE --- */}
+        <div className="flex flex-col sm:flex-row flex-1 overflow-y-auto sm:overflow-hidden bg-white dark:bg-slate-950">
+          
+          {/* LEFT COLUMN: Metadata (Date & Notes) */}
+          <div className="w-full sm:w-[320px] lg:w-90 shrink-0 border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/30 p-6 sm:p-8 flex flex-col gap-6 sm:overflow-y-auto custom-scrollbar">
+            
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                Entry Date
+              </label>
+              <input 
+                type="date" 
+                value={entryDate}
+                onChange={(e) => onDateChange(e.target.value)}
+                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-4 py-3 text-base sm:text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-sm"
+              />
+            </div>
+
+            {editingId && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4 flex items-start gap-3">
+                <Info className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" size={18} />
+                <p className="text-xs text-blue-800 dark:text-blue-300 font-medium leading-relaxed">
+                  Modifying an existing entry for this date. Saving will override the previous records.
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                Internal Note
+              </label>
+              <textarea 
+                rows="5"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Reference details..."
+                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-4 py-3 text-base sm:text-sm font-medium text-slate-900 dark:text-white outline-none resize-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-sm"
+              />
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="flex flex-col w-full md:w-80 shrink-0 p-6 gap-6 border-l border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-y-auto custom-scrollbar">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                  <Calendar size={14} className="text-emerald-500" /> Entry Date
-                </label>
-                <input 
-                  type="date" 
-                  value={entryDate}
-                  onChange={(e) => setEntryDate(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 text-sm font-black text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all"
-                />
+          {/* RIGHT COLUMN: The Ledger / Accounts */}
+          <div className="flex-1 p-6 sm:p-8 sm:overflow-y-auto custom-scrollbar">
+            {Object.entries(groupedAccounts).map(([key, group]) => (
+              <div key={key} className="mb-8 last:mb-0">
+                
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">
+                  {group.name}
+                </h3>
+                
+                <div className="flex flex-col gap-1">
+                  {group.list.map(acc => (
+                    <div key={acc._id} className="flex flex-col xl:flex-row xl:items-center justify-between py-3 xl:py-2 border-b border-slate-50 dark:border-slate-800/50 group hover:bg-slate-50 dark:hover:bg-slate-900/50 xl:px-3 xl:-mx-3 rounded-md transition-colors gap-2">
+                      
+                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 shrink-0">
+                        {acc.name}
+                      </label>
+                      
+                      <div className="relative w-full xl:w-56">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₹</span>
+                        <input 
+                          type="text"
+                          inputMode="decimal"
+                          value={toIndianCSV(inputValues[acc._id])}
+                          onChange={(e) => handleInputChange(acc._id, e.target.value)}
+                          placeholder="0.00"
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md py-3 xl:py-2 pl-8 pr-3 text-right text-base xl:text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-sm"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                  <FileText size={14} className="text-emerald-500" /> Internal Note
-                </label>
-                <textarea 
-                  rows="6"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="Memo..."
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 text-sm font-bold text-slate-900 dark:text-white outline-none resize-none focus:border-emerald-500 transition-all placeholder:text-slate-400"
-                />
-              </div>
+            ))}
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-950 shrink-0">
-          <div className="flex flex-col">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Snapshot Total</span>
-              <div className="flex items-baseline gap-1.5">
-                  <span className="text-lg font-black text-emerald-500 italic">₹</span>
-                  <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
-                      {totalInLakhs.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                  <span className="text-[10px] font-black text-slate-400 uppercase italic">Lakhs</span>
-              </div>
+        {/* --- STICKY FOOTER --- */}
+        <div className="px-6 py-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 shrink-0 flex flex-col sm:flex-row justify-between items-center gap-4">
+          
+          <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Total Balance
+            </span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-xl font-[1000] text-slate-900 dark:text-white tracking-tight">
+                ₹{totalInLakhs.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <span className="text-xs font-bold text-slate-500 uppercase">Lakhs</span>
+            </div>
           </div>
           
-          <div className="flex items-center gap-4 w-full sm:w-auto">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
             <button 
               onClick={onClose} 
-              className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500 transition-colors"
+              className="hidden sm:block px-6 py-2.5 text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors outline-none"
             >
-              Discard
+              Cancel
             </button>
             <button 
-                onClick={onSave}
-                disabled={!isFormValid || saving}
-                className={`flex-1 sm:flex-none px-10 py-3.5 rounded-lg font-black uppercase text-[10px] tracking-[0.15em] shadow-lg transition-all active:scale-95
-                ${isFormValid 
-                    ? 'bg-slate-900 dark:bg-emerald-600 text-white hover:bg-black dark:hover:bg-emerald-500' 
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
-                }`}
+              onClick={onSave}
+              disabled={!isFormValid || saving}
+              className={`w-full sm:w-auto px-10 py-3.5 sm:py-2.5 rounded-md font-bold uppercase text-sm sm:text-xs tracking-wider transition-all flex items-center justify-center gap-2 outline-none
+              ${isFormValid 
+                  ? 'bg-slate-900 dark:bg-emerald-600 text-white hover:bg-slate-800 dark:hover:bg-emerald-500 active:scale-[0.98] shadow-sm' 
+                  : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+              }`}
             >
-                {saving ? "Processing..." : <><CheckCircle2 size={14} className="inline mr-2 -mt-0.5" /> Commit Snapshot</>}
+              {saving ? "Saving..." : <><CheckCircle2 size={16} /> Save Record</>}
             </button>
           </div>
         </div>

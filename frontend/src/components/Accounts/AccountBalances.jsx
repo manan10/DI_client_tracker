@@ -37,11 +37,35 @@ const AccountBalances = () => {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // --- NEW LOGIC: Checks if the selected date already exists in history ---
+  const handleDateChange = (newDate) => {
+    setEntryDate(newDate);
+    
+    // Look for an existing snapshot on this exact date
+    const existingSnap = history.find(h => new Date(h.date).toISOString().split('T')[0] === newDate);
+    
+    if (existingSnap) {
+      setEditingId(existingSnap._id);
+      setNote(existingSnap.note || "");
+      const editValues = {};
+      existingSnap.balances.forEach(b => { 
+        if (b.accountId?._id || b.accountId) {
+          editValues[b.accountId._id || b.accountId] = b.amount; 
+        }
+      });
+      setInputValues(editValues);
+    } else {
+      setEditingId(null);
+      // We don't clear the inputValues here so the user doesn't lose what they typed if they just change the date
+    }
+  };
+
   const handleOpenNewEntry = () => {
-    setEditingId(null);
+    const today = new Date().toISOString().split('T')[0];
     setInputValues({});
     setNote("");
-    setEntryDate(new Date().toISOString().split('T')[0]);
+    // Trigger the date check for "today" immediately upon opening
+    handleDateChange(today);
     setIsEntryOpen(true);
   };
 
@@ -51,8 +75,8 @@ const AccountBalances = () => {
     setNote(snapshot.note || "");
     const editValues = {};
     snapshot.balances.forEach(b => { 
-      if (b.accountId?._id) {
-        editValues[b.accountId._id] = b.amount; 
+      if (b.accountId?._id || b.accountId) {
+        editValues[b.accountId._id || b.accountId] = b.amount; 
       }
     });
     setInputValues(editValues);
@@ -69,10 +93,7 @@ const AccountBalances = () => {
       const currentVal = latest.balances.reduce((sum, b) => sum + (b.amount || 0), 0);
       const prevVal = previous ? previous.balances.reduce((sum, b) => sum + (b.amount || 0), 0) : currentVal;
       
-      return { 
-        currentTotal: currentVal, 
-        growth: currentVal - prevVal 
-      };
+      return { currentTotal: currentVal, growth: currentVal - prevVal };
     }
     return calculatePerformance(inputValues, history);
   }, [inputValues, history, isEntryOpen]);
@@ -101,13 +122,7 @@ const AccountBalances = () => {
   if (loading) return <div className="h-[60vh] w-full flex items-center justify-center italic text-slate-400">Loading Assets...</div>;
 
   return (
-    /* MOBILE OPTIMIZATION: 
-      - Reduced outer padding from space-y-14 to space-y-8 for tighter mobile density.
-      - w-full ensures the component respects the mobile bounds.
-    */
-    <div className="w-full px-4 md:px-12 py-6 md:py-10 space-y-8 md:space-y-14">
-      
-      {/* AccountHero stays as the primary anchor for the page */}
+    <div className="w-full md:px-12 py-6 md:py-10 space-y-8 md:space-y-14">
       <AccountHero 
         currentTotal={performance.currentTotal}
         growth={performance.growth}
@@ -116,7 +131,6 @@ const AccountBalances = () => {
         editingId={editingId}
       />
 
-      {/* SnapshotForm handles its own 'isOpen' state, no additional mobile wrappers needed */}
       <SnapshotForm 
         isOpen={isEntryOpen}
         onClose={() => { setIsEntryOpen(false); setEditingId(null); }}
@@ -124,7 +138,7 @@ const AccountBalances = () => {
         inputValues={inputValues}
         setInputValues={setInputValues}
         entryDate={entryDate}
-        setEntryDate={setEntryDate}
+        onDateChange={handleDateChange} // Passing the new handler
         note={note}
         setNote={setNote}
         onSave={handleSaveSnapshot}
@@ -133,9 +147,6 @@ const AccountBalances = () => {
       />
 
       <div className="w-full">
-        {/* HistoryTable logic remains untouched to preserve Desktop look, 
-          but relies on the parent's padding adjustments for better flow.
-        */}
         <HistoryTable accounts={accounts} history={history} onEdit={startEdit} />
       </div>
     </div>
