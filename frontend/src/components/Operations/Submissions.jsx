@@ -92,24 +92,25 @@ const Submissions = () => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20 md:pb-0">
+    <div className="space-y-4 md:space-y-8 animate-in fade-in duration-500 pb-20 md:pb-0">
       
       {/* UPGRADED COMMAND HEADER */}
       <div className="relative">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 relative z-10">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 shadow-inner">
-                <Activity size={24} className="text-emerald-500" />
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 md:gap-6 relative z-10">
+          <div className="space-y-2 md:space-y-3">
+            <div className="flex items-center gap-2 md:gap-3">
+              {/* More professional, less pill-like on mobile */}
+              <div className="p-2 md:p-3 bg-emerald-500/10 rounded-lg md:rounded-2xl border border-emerald-500/20 shadow-inner">
+                <Activity size={18} className="text-emerald-500 md:w-6 md:h-6" />
               </div>
               <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden md:block" />
               <div>
-                <h2 className="text-3xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic leading-none">
+                <h2 className="text-xl md:text-3xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic leading-none">
                   Submissions <span className="text-emerald-500">Desk</span>
                 </h2>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-1.5 md:gap-2 mt-1">
                   <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${viewMode === 'ACTIVE' ? 'bg-blue-500' : 'bg-emerald-500'}`} />
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
+                  <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
                     Client Ops / {viewMode === 'ACTIVE' ? 'Pending Tasks' : 'Finalized Vault'}
                   </p>
                 </div>
@@ -117,14 +118,14 @@ const Submissions = () => {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full lg:w-auto">
-            {/* SEGMENTED VIEW TOGGLE */}
-            <div className="inline-flex p-1 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl shadow-inner h-14">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4 w-full lg:w-auto">
+            {/* SEGMENTED VIEW TOGGLE - Compacted on mobile */}
+            <div className="inline-flex p-1 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg md:rounded-2xl shadow-inner h-10 md:h-14">
               <button 
                 onClick={() => setViewMode('ACTIVE')}
-                className={`flex-1 sm:flex-none flex items-center justify-center gap-3 px-8 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 md:gap-3 px-4 md:px-8 rounded-md md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
                   viewMode === 'ACTIVE' 
-                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-lg ring-1 ring-slate-200 dark:ring-white/10' 
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm md:shadow-lg ring-1 ring-slate-200 dark:ring-white/10' 
                   : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
@@ -132,9 +133,9 @@ const Submissions = () => {
               </button>
               <button 
                 onClick={() => setViewMode('FINALIZED')}
-                className={`flex-1 sm:flex-none flex items-center justify-center gap-3 px-8 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 md:gap-3 px-4 md:px-8 rounded-md md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
                   viewMode === 'FINALIZED' 
-                  ? 'bg-white dark:bg-slate-800 text-emerald-500 shadow-lg ring-1 ring-slate-200 dark:ring-white/10' 
+                  ? 'bg-white dark:bg-slate-800 text-emerald-500 shadow-sm md:shadow-lg ring-1 ring-slate-200 dark:ring-white/10' 
                   : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
@@ -142,24 +143,24 @@ const Submissions = () => {
               </button>
             </div>
 
-            {/* SEARCH & ADD GROUP */}
-            <div className="flex items-center gap-2 h-14">
+            {/* SEARCH & ADD GROUP - Compacted on mobile */}
+            <div className="flex items-center gap-2 h-10 md:h-14">
               <div className="relative flex-1 sm:w-72 h-full">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                 <input 
                   type="text" 
                   placeholder="Search" 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full h-full pl-12 pr-4 bg-white dark:bg-[#0D0E12] border border-slate-200 dark:border-white/10 rounded-2xl text-[11px] font-bold outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/5 transition-all shadow-sm uppercase tracking-tight"
+                  className="w-full h-full pl-9 md:pl-12 pr-4 bg-white dark:bg-[#0D0E12] border border-slate-200 dark:border-white/10 rounded-lg md:rounded-2xl text-[10px] md:text-[11px] font-bold outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/5 transition-all shadow-sm uppercase tracking-tight"
                 />
               </div>
               <button 
                 onClick={() => setIsNewPanelOpen(true)}
-                className="group relative h-full flex items-center gap-3 px-6 bg-emerald-600 text-white rounded-2xl text-[11px] font-[1000] uppercase tracking-widest shadow-2xl transition-all hover:scale-[1.03] active:scale-95 overflow-hidden"
+                className="group relative h-full flex items-center justify-center gap-2 md:gap-3 px-3 md:px-6 bg-emerald-600 text-white rounded-lg md:rounded-2xl text-[11px] font-[1000] uppercase tracking-widest shadow-md md:shadow-2xl transition-all hover:scale-[1.03] active:scale-95 overflow-hidden w-10 sm:w-auto shrink-0"
               >
                 <div className="absolute inset-0 bg-emerald-500 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                <Plus size={18} strokeWidth={3} className="relative z-10" />
+                <Plus size={16} strokeWidth={3} className="relative z-10 md:w-4.5 md:h-4.5" />
                 <span className="relative z-10 hidden sm:inline text-nowrap">New Submission</span>
               </button>
             </div>
@@ -167,27 +168,29 @@ const Submissions = () => {
         </div>
       </div>
 
-      {/* COMMAND CATEGORY CARDS */}
-      <div className="flex items-center gap-4 overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+      {/* COMMAND CATEGORY CARDS - Grid on Mobile, Flex on Desktop */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:flex md:flex-row md:items-center md:gap-4 overflow-x-auto md:no-scrollbar md:-mx-4 md:px-4 lg:mx-0 lg:px-0">
         {subTabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveCategory(tab.id)}
-            className={`min-w-37.5 md:min-w-45 flex flex-col items-start gap-1.5 px-6 py-5 rounded-4xl border transition-all duration-500 relative
+            className={`w-full md:min-w-45 flex-col items-start gap-1 md:gap-1.5 p-3 md:px-6 md:py-5 rounded-xl md:rounded-4xl border transition-all duration-500 relative
+              /* Make the 5th item span 2 columns on small mobile to balance grid */
+              last:col-span-2 sm:last:col-span-1 md:last:col-span-auto
               ${activeCategory === tab.id 
-                ? 'bg-white dark:bg-[#0D0E12] border-emerald-500 shadow-2xl shadow-emerald-500/10 -translate-y-1' 
+                ? 'bg-white dark:bg-[#0D0E12] border-emerald-500 shadow-md md:shadow-2xl shadow-emerald-500/10 md:-translate-y-1' 
                 : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/5'}
             `}
           >
             <div className="flex items-center justify-between w-full">
-              <div className={`p-2.5 rounded-xl transition-colors ${activeCategory === tab.id ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-400'}`}>
-                <tab.icon size={18} strokeWidth={2.5} />
+              <div className={`p-1.5 md:p-2.5 rounded-md md:rounded-xl transition-colors ${activeCategory === tab.id ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-400'}`}>
+                <tab.icon size={14} className="md:w-4.5 md:h-4.5" strokeWidth={2.5} />
               </div>
-              <span className={`text-base font-black tabular-nums tracking-tighter ${activeCategory === tab.id ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+              <span className={`text-sm md:text-base font-black tabular-nums tracking-tighter ${activeCategory === tab.id ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
                 {counts[tab.id] || 0}
               </span>
             </div>
-            <span className={`text-[10px] font-[1000] uppercase tracking-[0.15em] mt-2 ${activeCategory === tab.id ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+            <span className={`text-[9px] md:text-[10px] font-[1000] uppercase tracking-[0.15em] mt-1 md:mt-2 w-full text-left truncate ${activeCategory === tab.id ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
               {tab.name}
             </span>
           </button>
@@ -195,9 +198,10 @@ const Submissions = () => {
       </div>
 
       {/* CONTENT REGISTRY */}
-      <div className="bg-white dark:bg-[#0A0B0D] border border-slate-200 dark:border-white/5 rounded-[2.5rem] shadow-2xl overflow-hidden min-h-100">
+      {/* Mobile uses rounded-xl, Desktop uses rounded-[2.5rem] */}
+      <div className="bg-white dark:bg-[#0A0B0D] border border-slate-200 dark:border-white/5 rounded-xl md:rounded-[2.5rem] shadow-sm md:shadow-2xl overflow-hidden min-h-75 md:min-h-100">
         
-        {/* DESKTOP TABLE */}
+        {/* DESKTOP TABLE - EXACTLY AS ORIGINAL */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -254,45 +258,45 @@ const Submissions = () => {
           </table>
         </div>
 
-        {/* MOBILE CARDS */}
+        {/* MOBILE CARDS - Compact padding */}
         <div className="md:hidden divide-y divide-slate-100 dark:divide-white/5">
           {filteredData.map((sub) => (
             <div 
               key={sub._id} 
               onClick={() => { setSelectedSubmissionId(sub._id); setIsDetailOpen(true); }}
-              className="p-6 active:bg-slate-50 dark:active:bg-white/5 transition-all flex items-center justify-between"
+              className="p-4 active:bg-slate-50 dark:active:bg-white/5 transition-all flex items-center justify-between"
             >
-              <div className="space-y-2 flex-1 pr-4">
+              <div className="space-y-1 flex-1 pr-3 min-w-0">
                 <div className="flex items-center gap-2">
-                   <div className={`w-1.5 h-1.5 rounded-full ${sub.status === 'SETTLED' ? 'bg-emerald-500' : 'bg-blue-500 animate-pulse'}`} />
-                   <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase truncate">
+                   <div className={`shrink-0 w-1.5 h-1.5 rounded-full ${sub.status === 'SETTLED' ? 'bg-emerald-500' : 'bg-blue-500 animate-pulse'}`} />
+                   <p className="text-[10px] font-black text-slate-900 dark:text-white uppercase truncate">
                      {sub.schemeName || sub.subType?.replace(/_/g, ' ')}
                    </p>
                 </div>
-                <div className="flex justify-between items-end">
-                   <div>
-                      <p className="text-[10px] font-bold text-slate-500 uppercase">{sub.client?.name}</p>
+                <div className="flex justify-between items-end gap-2">
+                   <div className="min-w-0">
+                      <p className="text-[9px] font-bold text-slate-500 uppercase truncate">{sub.client?.name}</p>
                       {sub.type !== 'NON_FINANCIAL' ? (
-                        <p className="text-base font-black text-slate-900 dark:text-white tabular-nums tracking-tighter">
+                        <p className="text-[13px] font-black text-slate-900 dark:text-white tabular-nums tracking-tighter truncate mt-0.5">
                            {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(sub.amount)}
                         </p>
                       ) : (
-                        <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest mt-1">Request Item</p>
+                        <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mt-1">Request Item</p>
                       )}
                    </div>
-                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{sub.status}</span>
+                   <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest shrink-0">{sub.status}</span>
                 </div>
               </div>
-              <ChevronRight size={18} className="text-slate-300" />
+              <ChevronRight size={16} className="text-slate-300 shrink-0" />
             </div>
           ))}
         </div>
 
         {/* EMPTY STATE */}
         {filteredData.length === 0 && (
-          <div className="px-8 py-24 text-center flex flex-col items-center opacity-20">
-            <Landmark size={48} className="mb-4 text-slate-400" />
-            <p className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-500">Registry List Clear</p>
+          <div className="px-6 py-16 md:py-24 text-center flex flex-col items-center opacity-20">
+            <Landmark size={32} className="mb-3 text-slate-400 md:w-12 md:h-12 md:mb-4" />
+            <p className="text-[9px] md:text-[11px] font-black uppercase tracking-[0.4em] text-slate-500">Registry List Clear</p>
           </div>
         )}
       </div>

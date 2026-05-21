@@ -45,8 +45,8 @@ const Navbar = () => {
     { name: 'Test', path: '/tally-test', icon: TestTubeIcon, isLocked: false },
   ];
 
-  const mainMobileItems = navItems.slice(0, 3);
-  const moreMobileItems = navItems.slice(3);
+  const mainMobileItems = navItems.slice(0, 5);
+  const moreMobileItems = navItems.slice(5);
 
   return (
     <>

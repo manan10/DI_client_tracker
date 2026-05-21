@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
+import { 
   X, Check, Loader2, Search, ChevronRight, User, 
   Landmark, IndianRupee, ShieldCheck, Hash, 
   Activity, CreditCard, Send, ChevronDown, FileText, Settings
@@ -82,10 +82,8 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
     if (category === "SERVICE") {
       payload.type = "NON_FINANCIAL";
       payload.amount = 0;
-      // Use subType as schemeName if empty for service requests
       if (!payload.schemeName) payload.schemeName = payload.subType.replace(/_/g, ' ');
     } else {
-      // FIX: Remove subType entirely for financial transactions so it doesn't trigger Enum error
       delete payload.subType;
     }
 
@@ -153,66 +151,66 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
     <div className="fixed inset-0 z-2000 flex justify-end">
       <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md" onClick={handleClose} />
 
-      <div className="relative w-full max-w-2xl bg-white dark:bg-[#090A0C] h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-500">
+      <div className="relative w-full max-w-xl md:max-w-2xl bg-white dark:bg-[#090A0C] h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-500">
         
         {/* Header */}
-        <div className="px-10 pt-12 pb-8 flex justify-between items-start border-b border-slate-100 dark:border-white/5">
+        <div className="px-6 md:px-10 pt-8 md:pt-12 pb-6 md:pb-8 flex justify-between items-start border-b border-slate-100 dark:border-white/5">
           <div className="text-left">
             <div className="flex items-center gap-2 mb-1">
-               <Activity size={14} className="text-emerald-500" />
-               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Operations Hub</span>
+               <Activity size={12} md:size={14} className="text-emerald-500" />
+               <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Operations Hub</span>
             </div>
-            <h1 className="text-3xl font-[1000] tracking-tighter text-slate-900 dark:text-white uppercase italic">
+            <h1 className="text-2xl md:text-3xl font-[1000] tracking-tighter text-slate-900 dark:text-white uppercase italic">
               New <span className="text-emerald-500">Submission</span>
             </h1>
           </div>
           <button onClick={handleClose} className="p-2 text-slate-300 hover:text-rose-500 transition-colors">
-            <X size={24} />
+            <X size={20} md:size={24} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-10 py-10 space-y-10 no-scrollbar">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 md:px-10 py-6 md:py-10 space-y-8 md:space-y-10 no-scrollbar">
           
           {/* CATEGORY SELECTOR */}
-          <div className="space-y-4">
-             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block text-left ml-1">Submission Category</label>
-             <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-100 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10">
+          <div className="space-y-3">
+             <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest block text-left ml-1">Submission Category</label>
+             <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
                 <button 
                   type="button"
                   onClick={() => setCategory("FINANCIAL")}
-                  className={`flex items-center justify-center gap-3 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${category === 'FINANCIAL' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xl' : 'text-slate-400'}`}
+                  className={`flex items-center justify-center gap-2 md:gap-3 py-2.5 md:py-3 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${category === 'FINANCIAL' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-md' : 'text-slate-400'}`}
                 >
-                  <IndianRupee size={14} /> Financial
+                  <IndianRupee size={12} md:size={14} /> Financial
                 </button>
                 <button 
                   type="button"
                   onClick={() => setCategory("SERVICE")}
-                  className={`flex items-center justify-center gap-3 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${category === 'SERVICE' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xl' : 'text-slate-400'}`}
+                  className={`flex items-center justify-center gap-2 md:gap-3 py-2.5 md:py-3 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${category === 'SERVICE' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-md' : 'text-slate-400'}`}
                 >
-                  <Settings size={14} /> Service
+                  <Settings size={12} md:size={14} /> Service
                 </button>
              </div>
           </div>
 
           {/* DYNAMIC TYPE SELECTOR */}
-          <div className="grid grid-cols-2 gap-6 text-left">
-            <div className="space-y-3 relative">
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <Hash size={12} strokeWidth={3} /> {category === 'FINANCIAL' ? 'Type' : 'Service Type'}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+            <div className="space-y-2 md:space-y-3 relative">
+              <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <Hash size={10} md:size={12} strokeWidth={3} /> {category === 'FINANCIAL' ? 'Type' : 'Service Type'}
               </label>
               <button 
                 type="button"
                 onClick={() => setShowTypeDrop(!showTypeDrop)}
-                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-4 text-[11px] font-black uppercase flex justify-between items-center"
+                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-3 md:py-4 text-[10px] md:text-[11px] font-black uppercase flex justify-between items-center"
               >
                 {category === 'FINANCIAL' 
                   ? FINANCIAL_TYPES.find(o => o.id === formData.type)?.label 
                   : (SERVICE_TYPES.find(o => o.id === formData.subType)?.label || "SELECT...")}
-                <ChevronDown size={14} />
+                <ChevronDown size={12} md:size={14} />
               </button>
               
               {showTypeDrop && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#121418] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl z-100 overflow-hidden py-1 animate-in zoom-in-95 duration-200">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#121418] border border-slate-200 dark:border-white/10 rounded-lg shadow-2xl z-100 overflow-hidden py-1 animate-in zoom-in-95 duration-200">
                   {(category === 'FINANCIAL' ? FINANCIAL_TYPES : SERVICE_TYPES).map(opt => (
                     <button
                       key={opt.id}
@@ -222,7 +220,7 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
                         else setFormData({...formData, subType: opt.id});
                         setShowTypeDrop(false); 
                       }}
-                      className="w-full px-5 py-3 text-left text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-colors"
+                      className="w-full px-4 py-2.5 text-left text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-colors"
                     >
                       {opt.label}
                     </button>
@@ -231,9 +229,9 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
               )}
             </div>
 
-            <div className="space-y-3">
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <Send size={12} strokeWidth={3} /> Mode
+            <div className="space-y-2 md:space-y-3">
+              <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <Send size={10} md:size={12} strokeWidth={3} /> Mode
               </label>
               <div className="flex p-1 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10">
                 {["DIGITAL", "PHYSICAL"].map((m) => (
@@ -241,7 +239,7 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
                     key={m}
                     type="button"
                     onClick={() => setFormData({...formData, submissionMode: m})}
-                    className={`flex-1 py-2.5 rounded text-[9px] font-black uppercase transition-all ${formData.submissionMode === m ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-400"}`}
+                    className={`flex-1 py-2 rounded text-[8px] md:text-[9px] font-black uppercase transition-all ${formData.submissionMode === m ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-400"}`}
                   >
                     {m}
                   </button>
@@ -251,16 +249,16 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
           </div>
 
           {/* CLIENT SEARCH */}
-          <div className="space-y-3 text-left">
-            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <User size={12} strokeWidth={3} /> Client
+          <div className="space-y-2 md:space-y-3 text-left">
+            <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <User size={10} md:size={12} strokeWidth={3} /> Client
             </label>
             <div className="relative">
-              <div className={`flex items-center gap-4 px-5 py-4 rounded-xl border transition-all ${formData.client ? "border-emerald-500 bg-emerald-500/5" : "border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/2"}`}>
-                {isSearching ? <Loader2 size={18} className="animate-spin text-emerald-500" /> : <Search size={18} className="text-slate-300" />}
+              <div className={`flex items-center gap-3 md:gap-4 px-4 py-3 md:py-4 rounded-lg border transition-all ${formData.client ? "border-emerald-500 bg-emerald-500/5" : "border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/2"}`}>
+                {isSearching ? <Loader2 size={16} className="animate-spin text-emerald-500" /> : <Search size={16} className="text-slate-300" />}
                 <input
                   placeholder={formData.clientName || "SEARCH BY NAME OR PAN..."}
-                  className="bg-transparent border-none outline-none text-xs font-black w-full uppercase placeholder:text-slate-300"
+                  className="bg-transparent border-none outline-none text-[10px] md:text-xs font-black w-full uppercase placeholder:text-slate-300"
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -270,19 +268,19 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
               </div>
 
               {searchTerm && !formData.client && clients.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#121418] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#121418] border border-slate-200 dark:border-white/10 rounded-lg shadow-2xl z-50 overflow-hidden">
                   {clients.map((c) => (
                     <button
                       key={c._id}
                       type="button"
                       onClick={() => { setFormData({ ...formData, client: c._id, clientName: c.name }); setSearchTerm(""); }}
-                      className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 border-b border-slate-50 dark:border-white/5 last:border-0 transition-colors"
+                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 border-b border-slate-50 dark:border-white/5 last:border-0 transition-colors"
                     >
                       <div className="text-left">
-                        <div className="text-xs font-black uppercase tracking-tight">{c.name}</div>
-                        <div className="text-[9px] font-mono font-bold text-slate-400">{c.pan}</div>
+                        <div className="text-[10px] font-black uppercase tracking-tight">{c.name}</div>
+                        <div className="text-[8px] font-mono font-bold text-slate-400">{c.pan}</div>
                       </div>
-                      <ChevronRight size={14} className="text-slate-300" />
+                      <ChevronRight size={12} className="text-slate-300" />
                     </button>
                   ))}
                 </div>
@@ -291,32 +289,32 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
           </div>
 
           {/* SPECIFICATIONS */}
-          <div className="bg-slate-50 dark:bg-white/1 p-8 rounded-xl border border-slate-100 dark:border-white/5 space-y-6 text-left">
-            <div className="space-y-3">
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <Landmark size={12} strokeWidth={3} /> 
-                {category === 'SERVICE' ? 'Scheme / Request Context' : 'Fund Name'}
+          <div className="bg-slate-50 dark:bg-white/1 p-5 md:p-8 rounded-lg md:rounded-xl border border-slate-100 dark:border-white/5 space-y-4 md:space-y-6 text-left">
+            <div className="space-y-2 md:space-y-3">
+              <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <Landmark size={10} md:size={12} strokeWidth={3} /> 
+                {category === 'SERVICE' ? 'Scheme / Context' : 'Fund Name'}
               </label>
               <input
                 required={category === 'FINANCIAL'}
-                placeholder={category === 'SERVICE' ? "E.G. ALL FOLIOS / SPECIFIC AMC..." : "E.G. AXIS BLUECHIP FUND..."}
-                className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-5 py-4 text-xs font-black outline-none focus:border-emerald-500 transition-all uppercase"
+                placeholder={category === 'SERVICE' ? "E.G. ALL FOLIOS..." : "E.G. AXIS BLUECHIP..."}
+                className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-3 md:py-4 text-[10px] md:text-xs font-black outline-none focus:border-emerald-500 transition-all uppercase"
                 value={formData.schemeName}
                 onChange={(e) => setFormData({ ...formData, schemeName: e.target.value.toUpperCase() })}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-4 md:gap-6">
                 {category === 'FINANCIAL' && (
-                  <div className="space-y-3 text-left">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                        <IndianRupee size={12} strokeWidth={3} /> Amount
+                  <div className="space-y-2 md:space-y-3 text-left">
+                    <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <IndianRupee size={10} md:size={12} strokeWidth={3} /> Amount
                     </label>
                     <input
                         type="text"
                         required
                         placeholder="0.00"
-                        className="w-full px-5 py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-2xl font-[1000] outline-none focus:border-emerald-500 transition-all tabular-nums tracking-tighter"
+                        className="w-full px-4 py-3 md:py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-lg md:text-2xl font-[1000] outline-none focus:border-emerald-500 transition-all tabular-nums tracking-tighter"
                         value={formatIndianNumber(formData.amount)}
                         onChange={(e) => {
                           const rawValue = e.target.value.replace(/,/g, "");
@@ -326,13 +324,13 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
                   </div>
                 )}
 
-                <div className="space-y-3 text-left">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Hash size={12} strokeWidth={3} /> Folio No.
+                <div className="space-y-2 md:space-y-3 text-left">
+                  <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Hash size={10} md:size={12} strokeWidth={3} /> Folio No.
                   </label>
                   <input
                     placeholder="NEW / EXISTING..."
-                    className="w-full px-5 py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-black outline-none focus:border-emerald-500 transition-all uppercase"
+                    className="w-full px-4 py-3 md:py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] md:text-xs font-black outline-none focus:border-emerald-500 transition-all uppercase"
                     value={formData.folioNumber}
                     onChange={(e) => setFormData({ ...formData, folioNumber: e.target.value })}
                   />
@@ -342,45 +340,30 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
 
           {/* PAYMENT */}
           {category === 'FINANCIAL' && !formData.type.includes('REDEMPTION') && !formData.type.includes('SWP') && (
-            <div className="grid grid-cols-2 gap-6 text-left relative">
-              <div className="space-y-3">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <CreditCard size={12} strokeWidth={3} /> Payment Mode
+            <div className="grid grid-cols-2 gap-4 md:gap-6 text-left relative">
+              <div className="space-y-2 md:space-y-3">
+                <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <CreditCard size={10} md:size={12} strokeWidth={3} /> Payment Mode
                 </label>
                 <button 
                   type="button"
                   onClick={() => setShowPayDrop(!showPayDrop)}
-                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-4 text-[11px] font-black uppercase flex justify-between items-center"
+                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-3 md:py-4 text-[10px] md:text-[11px] font-black uppercase flex justify-between items-center"
                 >
                   {PAY_OPTIONS.find(o => o.id === formData.paymentMode)?.label}
-                  <ChevronDown size={14} />
+                  <ChevronDown size={12} md:size={14} />
                 </button>
-                
-                {showPayDrop && (
-                  <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-[#121418] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl z-100 overflow-hidden py-1 animate-in slide-in-from-bottom-2 duration-200">
-                    {PAY_OPTIONS.map(opt => (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        onClick={() => { setFormData({...formData, paymentMode: opt.id}); setShowPayDrop(false); }}
-                        className="w-full px-5 py-3 text-left text-[10px] font-black uppercase hover:bg-emerald-500 hover:text-white transition-colors"
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
 
-              <div className="space-y-3">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Initial Status</label>
+              <div className="space-y-2 md:space-y-3">
+                <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest">Initial Status</label>
                 <div className="flex p-1 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10">
                   {["WAITING", "PAID"].map((s) => (
                     <button
                       key={s}
                       type="button"
                       onClick={() => setFormData({...formData, paymentStatus: s})}
-                      className={`flex-1 py-2.5 rounded text-[9px] font-black uppercase transition-all ${formData.paymentStatus === s ? "bg-emerald-500 text-white shadow-sm" : "text-slate-400"}`}
+                      className={`flex-1 py-2.5 rounded text-[8px] md:text-[9px] font-black uppercase transition-all ${formData.paymentStatus === s ? "bg-emerald-500 text-white shadow-sm" : "text-slate-400"}`}
                     >
                       {s}
                     </button>
@@ -392,16 +375,16 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
 
           {/* BLUEPRINT PREVIEW */}
           {blueprint && (
-            <div className="pt-6 border-t border-slate-100 dark:border-white/5 space-y-4 text-left animate-in fade-in duration-500">
-              <div className="flex items-center justify-between px-2">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Protocol Blueprint</span>
-                <ShieldCheck size={14} className="text-emerald-500" />
+            <div className="pt-4 border-t border-slate-100 dark:border-white/5 space-y-3 text-left">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Protocol Blueprint</span>
+                <ShieldCheck size={12} className="text-emerald-500" />
               </div>
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-1 gap-1.5">
                 {blueprint.defaultSteps.map((step, idx) => (
-                  <div key={idx} className="flex items-center gap-4 px-4 py-3 bg-slate-50 dark:bg-white/2 border border-slate-100 dark:border-white/5 rounded-md">
-                    <span className="text-[8px] font-black text-emerald-500 w-4">{idx + 1}</span>
-                    <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wide">{step}</span>
+                  <div key={idx} className="flex items-center gap-3 px-3 py-2 bg-slate-50 dark:bg-white/2 border border-slate-100 dark:border-white/5 rounded-md">
+                    <span className="text-[7px] font-black text-emerald-500">{idx + 1}</span>
+                    <span className="text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wide">{step}</span>
                   </div>
                 ))}
               </div>
@@ -410,22 +393,17 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
         </form>
 
         {/* Footer */}
-        <div className="p-10 border-t border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50 dark:bg-white/2">
-          <button onClick={handleClose} className="text-[10px] font-black text-slate-400 hover:text-rose-600 uppercase tracking-widest transition-all">Discard</button>
+        <div className="p-5 md:p-10 border-t border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50 dark:bg-white/2 shrink-0">
+          <button onClick={handleClose} className="text-[9px] md:text-[10px] font-black text-slate-400 hover:text-rose-600 uppercase tracking-widest transition-all">Discard</button>
           <button
             onClick={handleSubmit}
-            disabled={
-              isSubmitting || 
-              !formData.client || 
-              (category === 'FINANCIAL' && (!formData.schemeName || !formData.amount)) ||
-              (category === 'SERVICE' && !formData.subType)
-            }
-            className="group relative flex items-center gap-4 bg-slate-900 dark:bg-white text-white dark:text-black px-12 py-4 rounded-lg transition-all active:scale-95 disabled:opacity-20 overflow-hidden"
+            disabled={isSubmitting || !formData.client || (category === 'FINANCIAL' && (!formData.schemeName || !formData.amount)) || (category === 'SERVICE' && !formData.subType)}
+            className="group relative flex items-center gap-2 md:gap-4 bg-slate-900 dark:bg-white text-white dark:text-black px-6 md:px-12 py-3 md:py-4 rounded-lg transition-all active:scale-95 disabled:opacity-20 overflow-hidden"
           >
             <div className="absolute inset-0 bg-emerald-600 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-            <div className="relative z-10 flex items-center gap-3">
-                <span className="text-[11px] font-[1000] uppercase tracking-widest">{isSubmitting ? "PROCESSING..." : "Submit Entry"}</span>
-                {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={4} />}
+            <div className="relative z-10 flex items-center gap-2 md:gap-3">
+                <span className="text-[9px] md:text-[11px] font-[1000] uppercase tracking-widest">{isSubmitting ? "PROCESSING..." : "Submit Entry"}</span>
+                {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} strokeWidth={4} />}
             </div>
           </button>
         </div>
