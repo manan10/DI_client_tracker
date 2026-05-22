@@ -1,40 +1,48 @@
 import React from 'react';
 
 const ComplianceConfig = ({ compliance, setCompliance }) => (
-  <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
-    <header className="mb-12">
-      <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">Credentials</h3>
-      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mt-2">Legal Distributor Identity & Disclaimers</p>
+  <div className="max-w-3xl mx-auto py-8 px-4 md:px-8 pb-64 md:pb-10">
+    
+    {/* HEADER */}
+    <header className="mb-12 border-b border-slate-100 pb-8">
+      <h3 className="text-xl font-bold uppercase tracking-tight text-slate-900">Credentials</h3>
+      <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-[0.2em] mt-2">Legal Distributor Identity & Disclaimers</p>
     </header>
 
-    <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="space-y-3">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">ARN Number</label>
+    <div className="space-y-12">
+      {/* IDENTIFIERS GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+        <div className="relative flex flex-col">
+          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-3">ARN Number</label>
           <input 
             type="text" 
-            value={compliance.arn}
+            value={compliance.arn || ''}
             onChange={(e) => setCompliance({...compliance, arn: e.target.value})}
-            className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-4 text-sm font-bold dark:text-slate-100 outline-none focus:border-amber-600 transition-all"
+            className="w-full bg-transparent border-b-2 border-slate-200 py-3 text-lg font-bold text-slate-900 outline-none focus:border-emerald-600 transition-colors"
+            placeholder="Enter ARN"
           />
         </div>
-        <div className="space-y-3">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">EUIN Number</label>
+        
+        <div className="relative flex flex-col">
+          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-3">EUIN Number</label>
           <input 
             type="text" 
-            value={compliance.euin}
+            value={compliance.euin || ''}
             onChange={(e) => setCompliance({...compliance, euin: e.target.value})}
-            className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-4 text-sm font-bold dark:text-slate-100 outline-none focus:border-amber-600 transition-all"
+            className="w-full bg-transparent border-b-2 border-slate-200 py-3 text-lg font-bold text-slate-900 outline-none focus:border-emerald-600 transition-colors"
+            placeholder="Enter EUIN"
           />
         </div>
       </div>
 
-      <div className="space-y-3">
-        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Global Disclaimer (Audit Trail)</label>
+      {/* DISCLAIMER */}
+      <div className="relative flex flex-col pt-4">
+        <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-3">Global Disclaimer (Audit Trail)</label>
         <textarea 
-          value={compliance.disclaimer}
+          value={compliance.disclaimer || ''}
           onChange={(e) => setCompliance({...compliance, disclaimer: e.target.value})}
-          className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-3xl px-6 py-5 text-sm font-medium dark:text-slate-100 outline-none focus:border-amber-600 h-40 resize-none leading-relaxed"
+          className="w-full border-2 border-slate-100 rounded-xl p-5 text-[11px] font-medium text-slate-600 outline-none focus:border-emerald-600 focus:bg-emerald-50/20 transition-all h-40 resize-none leading-relaxed"
+          placeholder="Enter legal disclaimer text..."
         />
       </div>
     </div>

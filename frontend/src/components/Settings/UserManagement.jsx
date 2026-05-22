@@ -28,13 +28,18 @@ const UserManagement = () => {
     }
   }, [request]);
 
+  // Fixed: ESLint-compliant effect with cleanup to prevent cascading renders
   useEffect(() => {
-    // Fixed: Wrapped in an async function to bypass the eslint warning
-    const init = async () => {
-      await refreshUsers();
+    let isMounted = true;
+    const loadUsers = async () => {
+      const data = await request("/users");
+      if (isMounted) {
+        setUsers(data || []);
+      }
     };
-    init();
-  }, [refreshUsers]);
+    loadUsers();
+    return () => { isMounted = false; };
+  }, [request]);
 
   const handleOpenEdit = (user) => {
     setUpdatingUser(user);
@@ -108,7 +113,7 @@ const UserManagement = () => {
   if (loading && users.length === 0) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-emerald-600" /></div>;
 
   return (
-    <div className="min-h-screen bg-white pb-64">
+    <div className="min-h-screen bg-white pb-32">
       
       {/* HEADER */}
       <div className="py-12 border-b border-slate-100 mb-12 px-6 md:px-16">
@@ -116,7 +121,7 @@ const UserManagement = () => {
           <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em] mt-2">Identity & Access Governance</p>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 md:px-16 space-y-12">
+      <div className="max-w-6xl mx-auto px-4 md:px-16 space-y-12">
         
         {/* PROVISIONING ACTION */}
         <div className="flex justify-end">
@@ -128,24 +133,26 @@ const UserManagement = () => {
             </button>
         </div>
 
-        {/* REGISTRY LIST */}
+        {/* REGISTRY LIST (COMPACT MOBILE SPACING) */}
         <div className="space-y-2">
            {users.map((u) => (
-             <div key={u._id} className="py-6 border-b border-slate-100 flex items-center justify-between hover:bg-slate-50 px-6 rounded-2xl transition-colors">
-                <div className="flex items-center gap-6">
-                    <div className={`w-12 h-12 flex items-center justify-center rounded-2xl ${u.isAdmin ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
-                        {u.isAdmin ? <Shield size={20} /> : <User size={20} />}
+             <div key={u._id} className="py-4 border-b border-slate-100 flex items-center justify-between hover:bg-slate-50 px-3 md:px-6 rounded-2xl transition-colors gap-2">
+                {/* Info Container: Reduced gap and added min-w-0 to prevent truncation pushing out buttons */}
+                <div className="flex items-center gap-3 md:gap-6 min-w-0 flex-1">
+                    <div className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-2xl shrink-0 ${u.isAdmin ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
+                        {u.isAdmin ? <Shield size={18} /> : <User size={18} />}
                     </div>
-                    <div>
-                        <h4 className="text-sm font-bold text-slate-800">{u.name}</h4>
-                        <p className="text-[11px] font-medium text-slate-400 mt-0.5">{u.email}</p>
+                    <div className="min-w-0 truncate">
+                        <h4 className="text-sm font-bold text-slate-800 truncate">{u.name}</h4>
+                        <p className="text-[11px] font-medium text-slate-400 mt-0.5 truncate">{u.email}</p>
                     </div>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                    <button onClick={() => handleOpenEdit(u)} className="p-3 text-slate-400 hover:text-emerald-600 transition-colors"><Edit3 size={16} /></button>
-                    <button onClick={() => setEditingUser(u)} className="p-3 text-slate-400 hover:text-emerald-600 transition-colors"><Key size={16} /></button>
-                    <button onClick={() => handleDeleteUser(u._id, u.name)} className="p-3 text-slate-400 hover:text-rose-500 transition-colors"><Trash2 size={16} /></button>
+                {/* Actions */}
+                <div className="flex items-center gap-0 shrink-0">
+                    <button onClick={() => handleOpenEdit(u)} className="p-2 md:p-3 text-slate-400 hover:text-emerald-600 transition-colors"><Edit3 size={16} /></button>
+                    <button onClick={() => setEditingUser(u)} className="p-2 md:p-3 text-slate-400 hover:text-emerald-600 transition-colors"><Key size={16} /></button>
+                    <button onClick={() => handleDeleteUser(u._id, u.name)} className="p-2 md:p-3 text-slate-400 hover:text-rose-500 transition-colors"><Trash2 size={16} /></button>
                 </div>
              </div>
            ))}
@@ -154,14 +161,14 @@ const UserManagement = () => {
 
       {/* FORM MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/80 backdrop-blur-sm">
-          <form onSubmit={handleSaveUser} className="w-full max-w-lg bg-white border border-slate-200 p-10 rounded-3xl shadow-2xl space-y-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-sm">
+          <form onSubmit={handleSaveUser} className="w-full max-w-lg bg-white border border-slate-200 p-8 rounded-3xl shadow-2xl space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-[11px] font-bold uppercase tracking-widest text-emerald-900">{updatingUser ? "Edit Profile" : "Register Member"}</h2>
               <button type="button" onClick={closeModals} className="text-slate-400 hover:text-slate-900"><X size={18} /></button>
             </div>
             
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-4">
                <div className="space-y-1"><label className="text-[8px] font-bold uppercase text-slate-400">Name</label><input required className="w-full border-b border-slate-200 py-2 text-[11px] font-medium uppercase outline-none focus:border-emerald-600" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })} /></div>
                <div className="space-y-1"><label className="text-[8px] font-bold uppercase text-slate-400">Username</label><input required className="w-full border-b border-slate-200 py-2 text-[11px] font-medium uppercase outline-none focus:border-emerald-600" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/\s/g, "") })} /></div>
                <div className="space-y-1"><label className="text-[8px] font-bold uppercase text-slate-400">Email</label><input required className="w-full border-b border-slate-200 py-2 text-[11px] font-medium uppercase outline-none focus:border-emerald-600" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} /></div>
@@ -197,7 +204,7 @@ const UserManagement = () => {
       {/* PASSWORD RESET MODAL */}
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/80 backdrop-blur-sm">
-          <form onSubmit={handleResetPassword} className="w-full max-w-sm bg-white border border-slate-200 p-10 rounded-3xl shadow-2xl text-center">
+          <form onSubmit={handleResetPassword} className="w-full max-w-sm bg-white border border-slate-200 p-8 rounded-3xl shadow-2xl text-center">
             <h2 className="text-[11px] font-bold uppercase tracking-widest mb-8 text-emerald-900">Reset Security Key</h2>
             <input type="password" required className="w-full border-b border-slate-200 py-3 text-[11px] font-medium outline-none text-center mb-8" placeholder="NEW PASSWORD" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
             <button type="submit" className="w-full bg-emerald-600 text-white py-3 rounded-xl text-[11px] font-bold uppercase transition-all">Update Key</button>

@@ -1,42 +1,77 @@
 import React from 'react';
-import { Info } from 'lucide-react';
+import { Info, Loader2, Save } from 'lucide-react';
+import { useApi } from '../../hooks/useApi';
+import { toast } from 'sonner';
 
-const TierConfig = ({ thresholds, setThresholds }) => (
-  <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
-    <header className="mb-12">
-      <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">Tier Thresholds</h3>
-      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mt-2">Set AUM limits for Wealth Elite Categorization</p>
-    </header>
+const TierConfig = ({ thresholds, setThresholds, compliance = {} }) => {
+  const { request, loading } = useApi();
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-      {Object.entries(thresholds).map(([tier, value]) => (
-        <div key={tier} className="group">
-          <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1 first-letter:uppercase">
-            {tier} Tier (₹ Crores)
-          </label>
-          <div className="relative">
-            <input 
-              type="number"
-              value={value}
-              onChange={(e) => setThresholds({...thresholds, [tier]: e.target.value})}
-              className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-md px-6 py-5 text-lg font-black text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-600 transition-all"
-            />
-            <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase">Cr</div>
+  const handleGlobalSave = async () => {
+    try {
+      await request("/settings", "PUT", { business: { thresholds }, compliance });
+      toast.success("Settings saved successfully.");
+    } catch { 
+      toast.error("Failed to save changes."); 
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto py-8 pb-64 md:pb-8">
+      {/* HEADER */}
+      <header className="mb-12">
+        <h3 className="text-xl font-bold uppercase tracking-tight text-slate-900">Tier Thresholds</h3>
+        <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-[0.2em] mt-2">Set AUM limits for Wealth Elite Categorization</p>
+      </header>
+
+      {/* CONFIGURATION GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+        {Object.entries(thresholds).map(([tier, value]) => (
+          <div key={tier} className="relative flex flex-col">
+            <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+              {tier} Tier (₹ Crores)
+            </label>
+            <div className="relative flex items-center">
+              <input 
+                type="number"
+                value={value}
+                onChange={(e) => setThresholds({...thresholds, [tier]: e.target.value})}
+                onWheel={(e) => e.target.blur()}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                    e.preventDefault();
+                  }
+                }}
+                className="w-full bg-transparent border-b-2 border-slate-200 py-3 text-lg font-bold text-slate-900 outline-none focus:border-emerald-600 transition-colors"
+              />
+              <span className="absolute right-0 text-[10px] font-bold text-slate-400 uppercase">Cr</span>
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
 
-    <div className="mt-12 p-8 bg-emerald-50 dark:bg-emerald-900/10 rounded-md border border-emerald-100 dark:border-emerald-900/20 flex gap-5 items-start">
-      <Info className="text-emerald-600 mt-1" size={20} />
-      <div>
-        <p className="text-xs font-bold text-emerald-900 dark:text-emerald-400 uppercase tracking-tight mb-1">Warning</p>
-        <p className="text-[11px] font-medium text-emerald-800/70 dark:text-emerald-500/70 leading-relaxed">
-          Adjusting these values will re-classify all families in your directory immediately after saving.
-        </p>
+      {/* ALERT SECTION */}
+      <div className="mt-16 flex gap-4 items-start border-l-2 border-emerald-600 pl-6 py-2">
+        <Info className="text-emerald-600 shrink-0 mt-0.5" size={18} />
+        <div className="space-y-1">
+          <p className="text-[9px] font-bold text-emerald-900 uppercase tracking-widest">System Notice</p>
+          <p className="text-[11px] font-medium text-slate-500 leading-relaxed max-w-lg">
+            Adjusting these values will re-classify all families in your directory immediately after saving. Ensure data accuracy before committing changes.
+          </p>
+        </div>
+      </div>
+
+      {/* COMMIT ACTION */}
+      <div className="mt-12 flex justify-end">
+        <button
+            onClick={handleGlobalSave}
+            disabled={loading}
+            className="w-full md:w-auto flex items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md shadow-emerald-600/20"
+        >
+            {loading ? <Loader2 className="animate-spin" size={14}/> : <Save size={14} />} Commit Changes
+        </button>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default TierConfig;

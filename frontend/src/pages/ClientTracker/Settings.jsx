@@ -22,7 +22,7 @@ import WorkflowManagement from "../../components/Settings/WorkflowManagement";
 import AccessDenied from "../../components/AccessDenied";
 
 const Settings = () => {
-  const { request, loading } = useApi();
+  const { request } = useApi();
   const { user, setUser } = useAuth();
 
   const [activeTab, setActiveTab] = useState(user?.isAdmin ? "users" : "amcs");
@@ -57,12 +57,7 @@ const Settings = () => {
     } catch { toast.error("Failed to save preference"); }
   };
 
-  const handleGlobalSave = async () => {
-    try {
-      await request("/settings", "PUT", { business: { thresholds }, compliance });
-      toast.success("Settings saved successfully.");
-    } catch { toast.error("Failed to save changes."); }
-  };
+
 
   const tabs = [
     { id: "users", label: "User Management", icon: Users, admin: true },
@@ -109,7 +104,7 @@ const Settings = () => {
         </header>
 
         {/* Dashboard Container */}
-        <div className="flex flex-col lg:flex-row gap-0 lg:gap-8 min-h-[70vh]">
+        <div className="flex flex-col lg:flex-row gap-0 lg:gap-8 min-h-[90vh]">
           
           {/* NAVIGATION SIDEBAR */}
           <aside className={`w-full lg:w-72 shrink-0 flex flex-col ${isMobileMenu ? "block" : "hidden lg:flex"}`}>
@@ -146,19 +141,6 @@ const Settings = () => {
             <div className="flex-1 overflow-y-auto p-6 md:p-12 no-scrollbar">
                 {renderContent()}
             </div>
-
-            {/* Sticky Action Footer */}
-            {(activeTab === "business" || activeTab === "compliance") && (
-              <div className="p-6 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-slate-800/20 flex justify-end shrink-0">
-                <button
-                    onClick={handleGlobalSave}
-                    disabled={loading}
-                    className="w-full md:w-auto flex items-center justify-center gap-3 bg-slate-900 dark:bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md"
-                >
-                    {loading ? <Loader2 className="animate-spin" size={14}/> : <Save size={14} />} Commit Changes
-                </button>
-              </div>
-            )}
           </section>
         </div>
       </main>
