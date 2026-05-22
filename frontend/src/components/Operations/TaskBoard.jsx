@@ -11,13 +11,9 @@ import { arrayMove } from "@dnd-kit/sortable";
 import {
   Plus,
   Search,
-  Settings,
-  ChevronRight,
-  Share2,
-  LayoutDashboard,
+  ListTodoIcon,
   Filter,
   Loader2,
-  ListTodoIcon,
 } from "lucide-react";
 
 import { useTasks } from "../../hooks/useTasks";
@@ -90,46 +86,46 @@ const TaskBoard = () => {
   return (
     <div className="min-h-screen dark:bg-slate-950 transition-colors duration-300">
       <div className="w-full px-4 md:px-8 py-6 space-y-6">
+        
+        {/* HEADER SECTION - Optimized for Mobile Flow */}
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-600/10 dark:bg-emerald-500/5 rounded-lg flex items-center justify-center border border-emerald-500/20 shadow-inner">
+              <div className="w-10 h-10 bg-emerald-600/10 dark:bg-emerald-500/5 rounded-lg flex items-center justify-center border border-emerald-500/20 shadow-inner shrink-0">
                 <ListTodoIcon size={20} className="text-emerald-500" />
               </div>
-              <h1 className="text-2xl md:text-4xl font-[1000] dark:text-white uppercase italic tracking-tighter">
-                Ops <span className="text-emerald-500">Task Board</span>
+              <h1 className="text-xl md:text-4xl font-[1000] dark:text-white uppercase italic tracking-tighter">
+                Ops <span className="text-emerald-500">Board</span>
               </h1>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsPanelOpen(true)}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 md:px-8 py-3 rounded-sm font-black text-[10px] md:text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-emerald-900/30 active:scale-95 transition-all flex items-center gap-2"
-              >
-                <Plus size={16} strokeWidth={4} />
-                <span className="hidden sm:inline">Create New Ticket</span>
-                <span className="sm:hidden">New</span>
-              </button>
-            </div>
+            <button
+              onClick={() => setIsPanelOpen(true)}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 md:px-8 py-3 rounded-lg font-black text-[10px] md:text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-emerald-900/30 active:scale-95 transition-all flex items-center gap-2"
+            >
+              <Plus size={16} strokeWidth={4} />
+              <span className="hidden sm:inline">Create New Ticket</span>
+            </button>
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-center gap-4 border-b border-slate-200 dark:border-white/5 pb-6">
-          <div className="relative group flex-1 md:flex-none">
+        {/* SEARCH & FILTER ROW */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 border-b border-slate-200 dark:border-white/5 pb-6">
+          <div className="relative group flex-1">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"
-              size={14}
+              size={16}
             />
             <input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search tasks or clients..."
-              className="w-full md:w-80 pl-10 pr-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-white/10 rounded-sm text-[12px] focus:ring-2 ring-emerald-500/20 outline-none transition-all placeholder:text-slate-400"
+              className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg text-[12px] focus:ring-2 ring-emerald-500/20 outline-none transition-all placeholder:text-slate-400"
             />
           </div>
 
-          <div className="flex items-center justify-between md:justify-start gap-6">
-            <div className="flex items-center -space-x-2.5 ml-0 md:ml-4">
+          <div className="flex items-center justify-between sm:justify-start gap-4">
+            <div className="flex items-center -space-x-2.5">
               {["AD", "MD", "UD", "PD"].map((initials, i) => (
                 <div
                   key={i}
@@ -142,14 +138,15 @@ const TaskBoard = () => {
                 +4
               </div>
             </div>
-            <button className="md:hidden p-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-md">
+            <button className="sm:hidden p-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg">
               <Filter size={18} className="text-slate-400" />
             </button>
           </div>
         </div>
 
+        {/* BOARD AREA */}
         {loading && tasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+          <div className="flex flex-col items-center justify-center h-[50vh] gap-4">
             <Loader2 className="animate-spin text-emerald-500" size={32} />
             <span className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.3em]">
               Syncing Tasks...
@@ -163,7 +160,7 @@ const TaskBoard = () => {
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 pb-20 min-h-[75vh]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-20">
               {COLUMNS.map((col) => (
                 <Column
                   key={col.id}

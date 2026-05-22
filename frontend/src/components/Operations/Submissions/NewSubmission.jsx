@@ -353,6 +353,21 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
                   {PAY_OPTIONS.find(o => o.id === formData.paymentMode)?.label}
                   <ChevronDown size={12} md:size={14} />
                 </button>
+
+                {showPayDrop && (
+                  <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-[#121418] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl z-100 overflow-hidden py-1 animate-in slide-in-from-bottom-2 duration-200">
+                    {PAY_OPTIONS.map(opt => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => { setFormData({...formData, paymentMode: opt.id}); setShowPayDrop(false); }}
+                        className="w-full px-5 py-3 text-left text-[10px] font-black uppercase hover:bg-emerald-500 hover:text-white transition-colors"
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2 md:space-y-3">
