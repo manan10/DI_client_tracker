@@ -102,7 +102,7 @@ const Settings = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 selection:bg-emerald-500/20">
       <Navbar />
 
-      <main className="w-full max-w-[1400px] mx-auto pt-6 md:pt-10">
+      <main className="w-full max-w-350 mx-auto pt-6 md:pt-10">
         <header className="px-6 mb-8 lg:mb-12">
             <h1 className="text-3xl font-black uppercase tracking-tighter italic">Settings</h1>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Configuration & System Control</p>

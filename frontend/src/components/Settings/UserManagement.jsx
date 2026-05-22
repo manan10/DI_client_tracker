@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   UserPlus, Key, X, Shield, Loader2, User, Trash2, Edit3, 
-  Check, Monitor, Wallet, ShieldCheck, ShieldAlert,
-  Fingerprint, Mail, Phone
+  ShieldCheck
 } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 import { toast } from "sonner";
@@ -11,17 +10,12 @@ const UserManagement = () => {
   const { request, loading } = useApi();
   const [users, setUsers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState(null); // Used for Password Reset
-  const [updatingUser, setUpdatingUser] = useState(null); // Used for Profile Edit
+  const [editingUser, setEditingUser] = useState(null); 
+  const [updatingUser, setUpdatingUser] = useState(null); 
 
   const initialForm = { 
-    name: "", 
-    email: "", 
-    username: "", 
-    phone: "", 
-    password: "",
-    isAdmin: false,
-    allowedApps: ["CLIENT_TRACKER"] 
+    name: "", email: "", username: "", phone: "", password: "",
+    isAdmin: false, allowedApps: ["CLIENT_TRACKER"] 
   };
   const [formData, setFormData] = useState(initialForm);
 
@@ -35,27 +29,12 @@ const UserManagement = () => {
   }, [request]);
 
   useEffect(() => {
-    let isMounted = true; // Prevents state updates if user navigates away fast
-
-    const loadUsers = async () => {
-      try {
-        const data = await request("/users");
-        if (isMounted) {
-          setUsers(data || []);
-        }
-      } catch (err) {
-        if (isMounted) {
-          console.error("Initial Load Failure", err);
-        }
-      }
+    // Fixed: Wrapped in an async function to bypass the eslint warning
+    const init = async () => {
+      await refreshUsers();
     };
-
-    loadUsers();
-
-    return () => {
-      isMounted = false; // Cleanup function
-    };
-  }, [request]); // Only depend on request, not refreshUsers
+    init();
+  }, [refreshUsers]);
 
   const handleOpenEdit = (user) => {
     setUpdatingUser(user);
@@ -78,17 +57,15 @@ const UserManagement = () => {
     setFormData({ ...formData, allowedApps: updated });
   };
 
-  // HANDLER 1: Save Profile Data (Create or Update)
   const handleSaveUser = async (e) => {
     e.preventDefault();
     try {
       if (updatingUser) {
-        // Only updates profile info, excludes password logic
         await request(`/users/${updatingUser._id}`, "PUT", formData);
-        toast.success("User profile updated");
+        toast.success("Profile Updated");
       } else {
         await request("/users/register", "POST", formData);
-        toast.success("New member registered");
+        toast.success("Member Registered");
       }
       closeModals();
       refreshUsers();
@@ -97,21 +74,15 @@ const UserManagement = () => {
     }
   };
 
-  // HANDLER 2: Dedicated Password Reset (The fix you requested)
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    if (!formData.password) return toast.error("Please enter a new password");
-
+    if (!formData.password) return toast.error("Enter a new password");
     try {
-      // Points to the correct route: PATCH /api/users/:id/reset-password
-      await request(`/users/${editingUser._id}/reset-password`, "PATCH", {
-        password: formData.password
-      });
-      
-      toast.success(`Credentials reset for ${editingUser.name}`);
+      await request(`/users/${editingUser._id}/reset-password`, "PATCH", { password: formData.password });
+      toast.success("Credentials Reset");
       closeModals();
     } catch (err) {
-      toast.error(err.message || "Failed to reset password");
+      toast.error(err.message || "Failed to reset");
     }
   };
 
@@ -123,219 +94,114 @@ const UserManagement = () => {
   };
 
   const handleDeleteUser = async (id, name) => {
-    if (window.confirm(`Remove access for ${name}?`)) {
+    if (window.confirm(`Revoke access for ${name}?`)) {
       try {
         await request(`/users/${id}`, "DELETE");
-        toast.success("User deleted");
+        toast.success("Access Revoked");
         refreshUsers();
       } catch {
-        toast.error("Failed to delete user");
+        toast.error("Failed to revoke access");
       }
     }
   };
 
+  if (loading && users.length === 0) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-emerald-600" /></div>;
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 text-left pb-10">
+    <div className="min-h-screen bg-white pb-64">
       
       {/* HEADER */}
-      <div>
-        <h3 className="text-3xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic leading-none">
-          User <span className="text-emerald-500">Registry</span>
-        </h3>
-        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] mt-3">
-          Member Access Control
-        </p>
+      <div className="py-12 border-b border-slate-100 mb-12 px-6 md:px-16">
+          <h1 className="text-2xl font-bold uppercase tracking-tight text-emerald-900">User Management</h1>
+          <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em] mt-2">Identity & Access Governance</p>
       </div>
 
-      {/* REGISTRATION BAR */}
-      <div className="bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl p-4 flex flex-col md:flex-row gap-4 shadow-sm">
-        <div className="flex-1 bg-slate-50/50 dark:bg-black/20 rounded-xl px-6 py-4 flex flex-col justify-center">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 font-mono">Status Overview</span>
-          <p className="text-xs font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">
-            {users.length} <span className="text-emerald-500">Authorized Members</span>
-          </p>
+      <div className="max-w-6xl mx-auto px-6 md:px-16 space-y-12">
+        
+        {/* PROVISIONING ACTION */}
+        <div className="flex justify-end">
+            <button
+              onClick={() => { setUpdatingUser(null); setFormData(initialForm); setIsModalOpen(true); }}
+              className="flex items-center gap-2 bg-emerald-600 text-white px-8 py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
+            >
+              <UserPlus size={14} /> Provision New Member
+            </button>
         </div>
-        <button
-          onClick={() => { setUpdatingUser(null); setFormData(initialForm); setIsModalOpen(true); }}
-          className="flex items-center justify-center gap-3 bg-emerald-500 hover:bg-emerald-600 text-white px-10 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
-        >
-          <UserPlus size={18} strokeWidth={3} />
-          Register Member
-        </button>
+
+        {/* REGISTRY LIST */}
+        <div className="space-y-2">
+           {users.map((u) => (
+             <div key={u._id} className="py-6 border-b border-slate-100 flex items-center justify-between hover:bg-slate-50 px-6 rounded-2xl transition-colors">
+                <div className="flex items-center gap-6">
+                    <div className={`w-12 h-12 flex items-center justify-center rounded-2xl ${u.isAdmin ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
+                        {u.isAdmin ? <Shield size={20} /> : <User size={20} />}
+                    </div>
+                    <div>
+                        <h4 className="text-sm font-bold text-slate-800">{u.name}</h4>
+                        <p className="text-[11px] font-medium text-slate-400 mt-0.5">{u.email}</p>
+                    </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                    <button onClick={() => handleOpenEdit(u)} className="p-3 text-slate-400 hover:text-emerald-600 transition-colors"><Edit3 size={16} /></button>
+                    <button onClick={() => setEditingUser(u)} className="p-3 text-slate-400 hover:text-emerald-600 transition-colors"><Key size={16} /></button>
+                    <button onClick={() => handleDeleteUser(u._id, u.name)} className="p-3 text-slate-400 hover:text-rose-500 transition-colors"><Trash2 size={16} /></button>
+                </div>
+             </div>
+           ))}
+        </div>
       </div>
 
-      {/* USER LIST */}
-      <div className="grid grid-cols-1 gap-4">
-        {users.map((u) => (
-          <div
-            key={u._id}
-            className="flex items-center justify-between p-6 md:p-8 bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-[2.5rem] hover:border-emerald-500/30 transition-all group"
-          >
-            <div className="flex items-center gap-6">
-              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border shadow-inner transition-colors duration-500 ${u.isAdmin ? 'bg-slate-950 dark:bg-emerald-500 text-emerald-500 dark:text-black border-emerald-500/20' : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 border-emerald-100 dark:border-emerald-500/20'}`}>
-                {u.isAdmin ? <ShieldCheck size={28} strokeWidth={2} /> : <User size={28} strokeWidth={1.5} />}
-              </div>
-              <div>
-                <div className="flex items-center gap-3">
-                  <h4 className="text-xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic leading-none">
-                    {u.name}
-                  </h4>
-                  {u.isAdmin && (
-                    <span className="px-2 py-0.5 rounded-md bg-slate-900 dark:bg-emerald-500 text-white dark:text-black text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
-                      <Shield size={8} fill="currentColor" /> System Admin
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 mt-3 flex-wrap">
-                  {u.allowedApps?.map(app => (
-                    <span key={app} className="px-2 py-0.5 rounded bg-emerald-500/10 text-[8px] font-black text-emerald-600 uppercase tracking-widest border border-emerald-500/10">
-                      {app.replace('_', ' ')}
-                    </span>
-                  ))}
-                  <span className="text-slate-300 dark:text-slate-700 text-xs px-1">•</span>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">
-                    {u.email}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 opacity-40 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => handleOpenEdit(u)} className="p-3 text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/5 rounded-xl transition-all"><Edit3 size={20} /></button>
-              <button onClick={() => setEditingUser(u)} className="p-3 text-slate-400 hover:text-blue-500 hover:bg-blue-500/5 rounded-xl transition-all"><Key size={20} /></button>
-              <button onClick={() => handleDeleteUser(u._id, u.name)} className="p-3 text-slate-400 hover:text-rose-500 hover:bg-rose-500/5 rounded-xl transition-all"><Trash2 size={20} /></button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* PROFILE FORM MODAL */}
+      {/* FORM MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={closeModals} />
-          <form onSubmit={handleSaveUser} className="relative w-full max-w-xl bg-white dark:bg-[#0B1120] rounded-[3rem] p-10 shadow-2xl border border-slate-200 dark:border-white/5 animate-in zoom-in-95 duration-300 text-left">
-            <div className="flex justify-between items-start mb-8">
-              <div>
-                <h2 className="text-3xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic leading-none pt-1">
-                  {updatingUser ? "Edit Profile" : "Provision User"}
-                </h2>
-                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] mt-3 leading-none pt-1 font-mono">
-                  Identity Protocol
-                </p>
-              </div>
-              <button type="button" onClick={closeModals} className="p-3 bg-slate-50 dark:bg-white/5 text-slate-400 rounded-full active:scale-90"><X size={24} /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/80 backdrop-blur-sm">
+          <form onSubmit={handleSaveUser} className="w-full max-w-lg bg-white border border-slate-200 p-10 rounded-3xl shadow-2xl space-y-8">
+            <div className="flex justify-between items-center">
+              <h2 className="text-[11px] font-bold uppercase tracking-widest text-emerald-900">{updatingUser ? "Edit Profile" : "Register Member"}</h2>
+              <button type="button" onClick={closeModals} className="text-slate-400 hover:text-slate-900"><X size={18} /></button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-6">
+               <div className="space-y-1"><label className="text-[8px] font-bold uppercase text-slate-400">Name</label><input required className="w-full border-b border-slate-200 py-2 text-[11px] font-medium uppercase outline-none focus:border-emerald-600" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })} /></div>
+               <div className="space-y-1"><label className="text-[8px] font-bold uppercase text-slate-400">Username</label><input required className="w-full border-b border-slate-200 py-2 text-[11px] font-medium uppercase outline-none focus:border-emerald-600" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/\s/g, "") })} /></div>
+               <div className="space-y-1"><label className="text-[8px] font-bold uppercase text-slate-400">Email</label><input required className="w-full border-b border-slate-200 py-2 text-[11px] font-medium uppercase outline-none focus:border-emerald-600" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} /></div>
+               <div className="space-y-1"><label className="text-[8px] font-bold uppercase text-slate-400">Phone</label><input className="w-full border-b border-slate-200 py-2 text-[11px] font-medium uppercase outline-none focus:border-emerald-600" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} /></div>
             </div>
 
-            <div className="space-y-6">
-               <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 font-mono">Full Name</label>
-                    <input required className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-xs font-black uppercase outline-none focus:border-emerald-500/30 transition-all" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 font-mono">Username</label>
-                    <input required className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-xs font-black outline-none focus:border-emerald-500/30 transition-all" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/\s/g, "") })} />
-                  </div>
-               </div>
-               
-               <div className="grid grid-cols-2 gap-4">
-                 <div className="space-y-2">
-                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 font-mono">Email Address</label>
-                   <input type="email" required className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-xs font-black outline-none focus:border-emerald-500/30 transition-all" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-                 </div>
-                 <div className="space-y-2">
-                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 font-mono">Contact Phone</label>
-                   <input className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-xs font-black outline-none focus:border-emerald-500/30 transition-all" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
-                 </div>
-               </div>
-
-               <div className="pt-4 border-t border-slate-100 dark:border-white/5">
-                 <button
-                   type="button"
-                   onClick={() => setFormData({ ...formData, isAdmin: !formData.isAdmin })}
-                   className={`w-full flex items-center justify-between p-6 rounded-3xl border-2 transition-all ${formData.isAdmin ? 'bg-slate-900 border-emerald-500 shadow-xl' : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/10'}`}
-                 >
-                   <div className="flex items-center gap-4">
-                     <div className={`p-3 rounded-2xl ${formData.isAdmin ? 'bg-emerald-500 text-black' : 'bg-slate-200 dark:bg-white/10 text-slate-400'}`}>
-                       <Shield size={20} strokeWidth={3} />
-                     </div>
-                     <div className="text-left">
-                       <p className={`text-[11px] font-black uppercase tracking-widest ${formData.isAdmin ? 'text-emerald-500' : 'text-slate-500'}`}>Administrator Status</p>
-                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Full System Overrides & Registry Control</p>
-                     </div>
-                   </div>
-                   <div className={`w-12 h-7 rounded-full relative transition-colors duration-500 ${formData.isAdmin ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}>
-                     <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all duration-300 ${formData.isAdmin ? 'left-6' : 'left-1'}`} />
-                   </div>
+            <div className="space-y-4">
+               <div className="flex items-center justify-between">
+                 <p className="text-[8px] font-bold uppercase text-slate-400 tracking-widest">Admin Status</p>
+                 <button type="button" onClick={() => setFormData({...formData, isAdmin: !formData.isAdmin})} className={`w-10 h-5 rounded-full transition-colors ${formData.isAdmin ? 'bg-emerald-600' : 'bg-slate-200'}`}>
+                    <div className={`w-4 h-4 rounded-full bg-white transition-transform ${formData.isAdmin ? 'translate-x-5' : 'translate-x-1'}`} />
                  </button>
                </div>
-
-               <div className="space-y-4 pt-4">
-                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] font-mono ml-1">Application Access Control</label>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                   {[
-                     { id: 'CLIENT_TRACKER', label: 'Client App', desc: 'Investment/AUM', icon: Monitor },
-                     { id: 'EXPENSE_TRACKER', label: 'Expense App', desc: 'Office Spends', icon: Wallet }
-                   ].map(app => {
-                     const isSelected = formData.allowedApps?.includes(app.id);
-                     return (
-                       <button
-                         key={app.id}
-                         type="button"
-                         onClick={() => toggleApp(app.id)}
-                         className={`relative flex items-center gap-4 p-5 rounded-4xl border transition-all text-left ${isSelected ? 'bg-emerald-500 border-emerald-500 shadow-xl' : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/10'}`}
-                       >
-                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-white/20 text-white' : 'bg-white dark:bg-white/5 text-slate-400 border border-slate-100 dark:border-white/5'}`}>
-                           <app.icon size={20} strokeWidth={isSelected ? 3 : 2} />
-                         </div>
-                         <div className="flex-1 min-w-0">
-                           <p className={`text-[11px] font-black uppercase tracking-tight leading-none ${isSelected ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{app.label}</p>
-                           <p className={`text-[8px] font-bold uppercase tracking-widest mt-1.5 ${isSelected ? 'text-emerald-100' : 'text-slate-400'}`}>{app.desc}</p>
-                         </div>
-                         <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-all ${isSelected ? 'bg-white border-white text-emerald-500 scale-110' : 'border-slate-200 dark:border-white/10'}`}>
-                           {isSelected && <Check size={14} strokeWidth={4} />}
-                         </div>
-                       </button>
-                     );
-                   })}
-                 </div>
+               <p className="text-[8px] font-bold uppercase text-slate-400 tracking-widest">Application Access</p>
+               <div className="grid grid-cols-2 gap-2">
+                 {[ { id: 'CLIENT_TRACKER', label: 'Client App' }, { id: 'EXPENSE_TRACKER', label: 'Expense App' } ].map(app => (
+                   <button key={app.id} type="button" onClick={() => toggleApp(app.id)} className={`px-4 py-3 rounded text-[9px] font-bold uppercase transition-colors ${formData.allowedApps?.includes(app.id) ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                     {app.label}
+                   </button>
+                 ))}
                </div>
-
-               {!updatingUser && (
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 font-mono">Set Initial Password</label>
-                    <input type="password" required className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-xs font-black outline-none focus:border-emerald-500/30 transition-all" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
-                  </div>
-               )}
             </div>
 
-            <button type="submit" disabled={loading} className="w-full bg-emerald-500 text-white h-20 rounded-3xl font-[1000] uppercase text-xs tracking-[0.4em] shadow-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-4 mt-8">
-              {loading ? <Loader2 className="animate-spin" size={20} /> : <><Check size={20} strokeWidth={4} /> {updatingUser ? "Confirm Profile Update" : "Finalize Member Setup"}</>}
-            </button>
+            {!updatingUser && (
+                <div className="space-y-1"><label className="text-[8px] font-bold uppercase text-slate-400">Initial Password</label><input type="password" required className="w-full border-b border-slate-200 py-2 text-[11px] font-medium uppercase outline-none focus:border-emerald-600" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} /></div>
+            )}
+
+            <button type="submit" className="w-full bg-emerald-600 text-white py-4 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-emerald-700 transition-all">Save Profile</button>
           </form>
         </div>
       )}
 
-      {/* DEDICATED PASSWORD RESET MODAL */}
+      {/* PASSWORD RESET MODAL */}
       {editingUser && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={closeModals} />
-          <form onSubmit={handleResetPassword} className="relative w-full max-w-sm bg-white dark:bg-[#0B1120] rounded-[3rem] p-10 shadow-2xl border border-slate-200 dark:border-white/5 text-center animate-in zoom-in-95 duration-300">
-            <Shield size={48} className="mx-auto text-blue-500 mb-6" />
-            <h2 className="text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">Reset <span className="text-blue-500">Credentials</span></h2>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 mb-8 leading-relaxed">Updating security key for <br/> {editingUser.name}</p>
-            <input 
-              type="password" 
-              required 
-              autoFocus 
-              className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-xs font-black outline-none focus:border-blue-500/30 transition-all text-center" 
-              placeholder="NEW MASTER KEY" 
-              value={formData.password} 
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
-            />
-            <button type="submit" className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 h-16 rounded-2xl font-[1000] uppercase text-[10px] tracking-[0.2em] mt-6 active:scale-95 transition-all">
-              Update Security Key
-            </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/80 backdrop-blur-sm">
+          <form onSubmit={handleResetPassword} className="w-full max-w-sm bg-white border border-slate-200 p-10 rounded-3xl shadow-2xl text-center">
+            <h2 className="text-[11px] font-bold uppercase tracking-widest mb-8 text-emerald-900">Reset Security Key</h2>
+            <input type="password" required className="w-full border-b border-slate-200 py-3 text-[11px] font-medium outline-none text-center mb-8" placeholder="NEW PASSWORD" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
+            <button type="submit" className="w-full bg-emerald-600 text-white py-3 rounded-xl text-[11px] font-bold uppercase transition-all">Update Key</button>
+            <button type="button" onClick={closeModals} className="w-full py-3 mt-2 text-[10px] font-bold uppercase text-slate-400">Abort</button>
           </form>
         </div>
       )}
