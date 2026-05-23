@@ -1,18 +1,17 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { 
   X, Check, ChevronRight, ArrowLeft, Search, 
   Wallet, ArrowRight, CornerDownRight, AlertCircle, Landmark,
-  Globe, Coins
+  Globe, Coins, Plus
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { useApi } from "../../../hooks/useApi";
 
 const IconRenderer = ({ iconName, size = 16, className = "" }) => {
-  const IconComponent = LucideIcons[iconName] || LucideIcons.MoreHorizontal;
+  const IconComponent = LucideIcons[iconName] || LucideIcons.Folder;
   return <IconComponent size={size} className={className} />;
 };
 
-// Helper for Indian Currency Formatting during typing
 const formatDisplayAmount = (val) => {
   if (!val) return "";
   const number = val.toString().replace(/[^0-9]/g, "");
@@ -30,18 +29,27 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
   const [searchQuery, setSearchQuery] = useState("");
   const [localError, setLocalError] = useState("");
 
+  // INLINE CREATION STATE
+  const [isAddingParent, setIsAddingParent] = useState(false);
+  const [newParentName, setNewParentName] = useState("");
+  const [isAddingSub, setIsAddingSub] = useState(false);
+  const [newSubName, setNewSubName] = useState("");
+
   const filteredWallets = useMemo(() => ({
     cash: wallets?.filter(w => !w.isVirtual) || [],
     online: wallets?.filter(w => w.isVirtual) || []
   }), [wallets]);
   
-  // PRESERVED ORIGINAL LOGIC WITH ESLINT FIX (setTimeout wrapper)
   useEffect(() => {
       if (!isOpen) {
         const timer = setTimeout(() => {
           setSelectedParent(null);
           setSearchQuery(""); 
           setLocalError("");
+          setIsAddingParent(false);
+          setIsAddingSub(false);
+          setNewParentName("");
+          setNewSubName("");
           if (!isEditMode) {
             setExpenseData({ 
               amount: "", category: "", description: "", 
@@ -52,7 +60,6 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
         return () => clearTimeout(timer);
       }
 
-      // Wrapped in setTimeout to prevent cascading render error while keeping your logic
       setTimeout(() => {
         if (isEditMode) {
             setStep(4);
@@ -68,21 +75,58 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
         }
       }, 0);
       
-  }, [isOpen]);
+  }, [isOpen, isEditMode, expenseData.sourceWallet, wallets, setExpenseData]);
   
+  // Refactored to a callable function for refreshing after inline creation
+  const loadCategories = useCallback(async () => {
+    try {
+      const res = await request("/categories/tree");
+      let rawData = res?.success ? res.data : Array.isArray(res) ? res : [];
+      const sortedTree = rawData.sort((a, b) => a.label.localeCompare(b.label)).map(parent => ({
+        ...parent, subCategories: (parent.subCategories || []).sort((a, b) => a.label.localeCompare(b.label))
+      }));
+      setCategoryTree(sortedTree);
+
+      // If a parent is selected, update its reference to reflect newly added subs
+      if (selectedParent) {
+        const updatedParent = sortedTree.find(p => p._id === selectedParent._id);
+        if (updatedParent) setSelectedParent(updatedParent);
+      }
+    } catch (err) { console.error(err); }
+  }, [request, selectedParent]);
+
   useEffect(() => {
-    const fetchTree = async () => {
-      try {
-        const res = await request("/categories/tree");
-        let rawData = res?.success ? res.data : Array.isArray(res) ? res : [];
-        const sortedTree = rawData.sort((a, b) => a.label.localeCompare(b.label)).map(parent => ({
-          ...parent, subCategories: (parent.subCategories || []).sort((a, b) => a.label.localeCompare(b.label))
-        }));
-        setCategoryTree(sortedTree);
-      } catch (err) { console.error(err); }
-    };
-    if (isOpen) fetchTree();
-  }, [isOpen, request]);
+    if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadCategories();
+    }
+  }, [isOpen, loadCategories]);
+
+  // INLINE CREATION HANDLERS
+  const handleCreateParent = async () => {
+    if (!newParentName.trim()) { setIsAddingParent(false); return; }
+    // Defaulting to a nice Slate color and generic Folder icon for quick-adds
+    const res = await request("/categories", "POST", { label: newParentName, color: "#64748b", icon: "Folder" });
+    if (res?.success) {
+      await loadCategories();
+      setNewParentName("");
+      setIsAddingParent(false);
+    } else {
+      setLocalError("Failed to create category");
+    }
+  };
+
+  const handleCreateSub = async () => {
+    if (!newSubName.trim()) { setIsAddingSub(false); return; }
+    const res = await request(`/categories/${selectedParent._id}/sub`, "POST", { label: newSubName });
+    if (res?.success) {
+      await loadCategories();
+      setNewSubName("");
+      setIsAddingSub(false);
+    } else {
+      setLocalError("Failed to create entry");
+    }
+  };
 
   const handleClose = () => !loading && setOpen(false);
   const nextStep = () => { setLocalError(""); setStep(prev => prev + 1); };
@@ -147,10 +191,14 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
           )}
 
           {step === 1 && (
-            <div className="space-y-5 animate-in fade-in slide-in-from-right-4">
+            <div className="space-y-4 sm:space-y-5 animate-in fade-in slide-in-from-right-4">
               <div className="text-left">
-                <h2 className="text-xl sm:text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">{isEditMode ? "Switch Account" : "Source of Funds"}</h2>
-                <p className="text-[9px] sm:text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-1">Bound to: {currentWallet?.walletName || "Selection Required"}</p>
+                <h2 className="text-xl sm:text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">
+                  {isEditMode ? "Switch Account" : "Source of Funds"}
+                </h2>
+                <p className="text-[9px] sm:text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-1">
+                  Bound to: {currentWallet?.walletName || "Selection Required"}
+                </p>
               </div>
 
               <div className="flex p-1 bg-slate-100 dark:bg-slate-900 rounded-2xl">
@@ -164,17 +212,31 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
 
               <div className="grid grid-cols-1 gap-2 pb-6">
                 {filteredWallets[activeTab].map(w => (
-                  <button key={w._id} onClick={() => { setExpenseData({...expenseData, sourceWallet: w._id}); isEditMode ? setStep(4) : nextStep(); }} className={`flex items-center justify-between p-4 sm:p-5 rounded-2xl border transition-all active:scale-[0.98] ${expenseData.sourceWallet === w._id ? (w.isVirtual ? 'bg-indigo-600 border-indigo-700 text-white' : 'bg-emerald-500 border-emerald-600 text-white') : 'bg-slate-50 border-slate-100 dark:bg-slate-900/50 dark:border-slate-800 text-slate-900 dark:text-white hover:border-emerald-500/50'}`}>
+                  <button 
+                    key={w._id} 
+                    onClick={() => { setExpenseData({...expenseData, sourceWallet: w._id}); isEditMode ? setStep(4) : nextStep(); }} 
+                    className={`flex items-center justify-between p-3.5 sm:p-5 rounded-2xl border transition-all active:scale-[0.98] ${
+                      expenseData.sourceWallet === w._id 
+                        ? (w.isVirtual ? 'bg-indigo-600 border-indigo-700 text-white' : 'bg-emerald-500 border-emerald-600 text-white') 
+                        : 'bg-slate-50 border-slate-100 dark:bg-slate-900/50 dark:border-slate-800 text-slate-900 dark:text-white hover:border-emerald-500/50'
+                    }`}
+                  >
                     <div className="flex items-center gap-3 sm:gap-4 overflow-hidden pr-2">
                       <div className={`p-2 rounded-lg shadow-sm shrink-0 ${expenseData.sourceWallet === w._id ? 'bg-white/20' : 'bg-white dark:bg-slate-800'}`}>
                         {w.isGeneralPool ? <Landmark size={18} /> : w.isVirtual ? <Globe size={18} /> : <Wallet size={18} />}
                       </div>
                       <div className="text-left truncate leading-tight">
-                        <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest block truncate">{w.walletName}</span>
-                        <span className="text-[7px] sm:text-[8px] font-black uppercase opacity-60 truncate">{w.isVirtual ? "Virtual" : "Cash"}</span>
+                        <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest block truncate">
+                          {w.walletName}
+                        </span>
+                        <span className="text-[7px] sm:text-[8px] font-black uppercase opacity-60 truncate">
+                          {w.isVirtual ? "Virtual" : "Cash"}
+                        </span>
                       </div>
                     </div>
-                    <span className="text-[10px] sm:text-[11px] font-[1000] italic tabular-nums shrink-0">{w.isVirtual ? "LINKED" : `₹${w.balance?.toLocaleString('en-IN')}`}</span>
+                    <span className="text-[10px] sm:text-[11px] font-[1000] italic tabular-nums shrink-0">
+                      {w.isVirtual ? "LINKED" : `₹${w.balance?.toLocaleString('en-IN')}`}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -184,21 +246,20 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
           {step === 2 && (
             <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-right-4">
               <div className="flex items-center justify-between">
-                 <button onClick={prevStep} className="text-[9px] sm:text-[10px] font-black text-emerald-500 uppercase flex items-center gap-1 active:opacity-70"><ArrowLeft size={12} strokeWidth={3}/> Change Account</button>
-                 <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border ${currentWallet?.isVirtual ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-500' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'}`}>
-                    {currentWallet?.isVirtual ? <Globe size={10}/> : <Coins size={10}/>}
-                    <span className="text-[8px] sm:text-[9px] font-black uppercase truncate max-w-20">{currentWallet?.walletName}</span>
-                 </div>
+                 <button onClick={prevStep} className="text-[9px] sm:text-[10px] font-black text-emerald-500 uppercase flex items-center gap-1 active:opacity-70 transition-opacity">
+                    <ArrowLeft size={12} strokeWidth={3}/> Back
+                 </button>
+                 <span className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest">Target: {currentWallet?.walletName}</span>
               </div>
               <div className="text-left">
                 <h2 className="text-xl sm:text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">Adjust Amount</h2>
                 <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Assign numeric value to this entry</p>
               </div>
               <div className={`relative border-b-2 transition-colors ${currentWallet?.isVirtual ? 'border-indigo-500' : 'border-emerald-500'}`}>
-                <span className={`absolute left-0 bottom-6 text-3xl sm:text-4xl font-[1000] italic ${currentWallet?.isVirtual ? 'text-indigo-200' : 'text-emerald-200'}`}>₹</span>
+                <span className={`absolute left-0 bottom-6 text-3xl sm:text-4xl font-[1000] text-slate-300 dark:text-slate-700 italic`}>₹</span>
                 <input 
                   type="text" inputMode="numeric" autoFocus placeholder="0" 
-                  className="w-full bg-transparent pt-4 pb-6 pl-8 sm:pl-10 text-5xl sm:text-6xl font-[1000] text-slate-900 dark:text-white outline-none" 
+                  className="w-full bg-transparent pt-4 pb-6 pl-8 sm:pl-10 text-4xl sm:text-6xl font-[1000] text-slate-900 dark:text-white outline-none" 
                   value={formatDisplayAmount(expenseData.amount)} 
                   onChange={handleAmountChange}
                   onKeyDown={(e) => { if(e.key === "ArrowUp" || e.key === "ArrowDown") e.preventDefault(); }}
@@ -206,54 +267,187 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                 />
               </div>
               <button disabled={!expenseData.amount || Number(expenseData.amount) <= 0} onClick={() => isEditMode ? setStep(4) : nextStep()} className={`w-full h-14 sm:h-16 rounded-2xl font-black uppercase text-[10px] sm:text-[11px] tracking-[0.3em] flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl ${currentWallet?.isVirtual ? 'bg-indigo-600 text-white' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'}`}>
-                {isEditMode ? "Update Amount" : "Continue"} <ArrowRight size={16} strokeWidth={3}/>
+                {isEditMode ? "Update Amount" : "Continue"} <ArrowRight size={14} strokeWidth={3}/>
               </button>
             </div>
           )}
 
           {step === 3 && (
-            <div className="space-y-5 animate-in fade-in slide-in-from-right-4 flex flex-col h-full">
+            <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-right-4 flex flex-col h-full">
+               
+               {/* STEP HEADER */}
                <div className="flex items-center justify-between">
-                 <button onClick={prevStep} className="text-[9px] sm:text-[10px] font-black text-emerald-500 uppercase flex items-center gap-1 active:opacity-70"><ArrowLeft size={12} strokeWidth={3}/> Back</button>
-                 <span className={`text-[10px] font-[1000] italic tabular-nums ${currentWallet?.isVirtual ? 'text-indigo-500' : 'text-slate-900 dark:text-white'}`}>₹{Number(expenseData.amount).toLocaleString('en-IN')}</span>
+                 <button onClick={prevStep} className="text-[9px] sm:text-[10px] font-black text-emerald-500 uppercase flex items-center gap-1 active:opacity-70">
+                   <ArrowLeft size={12} strokeWidth={3}/> Back
+                 </button>
+                 <span className={`text-[10px] font-[1000] italic tabular-nums ${currentWallet?.isVirtual ? 'text-indigo-500' : 'text-slate-900 dark:text-white'}`}>
+                   ₹{Number(expenseData.amount).toLocaleString('en-IN')}
+                 </span>
               </div>
               <div className="text-left">
                 <h2 className="text-xl sm:text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">Categorization</h2>
-                <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Target: {currentSub?.label || "Unclassified"}</p>
               </div>
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                <input type="text" placeholder="Search categories..." className="w-full bg-slate-50 dark:bg-slate-900 p-3.5 pl-10 rounded-xl text-[9px] font-black uppercase tracking-widest border border-slate-100 dark:border-slate-800 outline-none" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+
+              {/* STICKY SEARCH BAR */}
+              <div className="sticky top-0 z-10 bg-white dark:bg-[#020617] pb-2">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 -mt-1 text-slate-400" size={14} />
+                <input 
+                  type="text" 
+                  placeholder="Find category..." 
+                  className="w-full bg-slate-50 dark:bg-slate-900 p-3.5 sm:p-4 pl-10 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest border border-slate-100 dark:border-slate-800 outline-none focus:border-emerald-500/50 transition-colors" 
+                  value={searchQuery} 
+                  onChange={(e) => setSearchQuery(e.target.value)} 
+                />
               </div>
-              <div className="flex-1 overflow-y-auto no-scrollbar pb-10 min-h-75">
+
+              {/* DYNAMIC SCROLL AREA */}
+              <div className="flex-1 overflow-y-auto no-scrollbar pb-10">
+                
+                {/* STATE 1: SEARCH RESULTS (Dense List) */}
                 {searchQuery ? (
-                  <div className="grid grid-cols-1 gap-1">
+                  <div className="grid grid-cols-1 gap-2">
                     {filteredResults.map(res => (
-                      <button key={res._id} onClick={() => { setExpenseData({...expenseData, category: res._id}); isEditMode ? setStep(4) : nextStep(); }} className={`w-full flex items-center justify-between p-3.5 rounded-xl transition-all ${expenseData.category === res._id ? 'bg-emerald-500 text-white' : 'bg-slate-50 dark:bg-slate-900/50'}`}>
-                        <div className="text-left pr-2 truncate leading-tight"><p className="text-[10px] font-black uppercase tracking-widest truncate">{res.label}</p><p className={`text-[7px] font-bold uppercase ${expenseData.category === res._id ? 'text-white/70' : 'opacity-60'}`}>{res.parentLabel}</p></div>
-                        <Check size={14} className={expenseData.category === res._id ? "opacity-100" : "opacity-0"} />
+                      <button 
+                        key={res._id} 
+                        onClick={() => { setExpenseData({...expenseData, category: res._id}); isEditMode ? setStep(4) : nextStep(); }} 
+                        className={`w-full flex items-center justify-between p-4 rounded-xl transition-all border active:scale-[0.98] ${
+                          expenseData.category === res._id 
+                            ? 'bg-emerald-500 text-white border-emerald-600' 
+                            : 'bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="text-left pr-2 truncate leading-tight">
+                          <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest truncate">{res.label}</p>
+                          <p className={`text-[7px] font-bold uppercase tracking-widest mt-0.5 ${expenseData.category === res._id ? 'text-emerald-100' : 'text-slate-400'}`}>
+                            In {res.parentLabel}
+                          </p>
+                        </div>
+                        <Check size={16} className={expenseData.category === res._id ? "opacity-100" : "opacity-0"} />
                       </button>
                     ))}
                   </div>
+                
+                /* STATE 2: PARENT GROUPS (App Drawer UI) */
                 ) : !selectedParent ? (
-                  <div className="grid grid-cols-2 gap-2 pb-4">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-4 pb-4">
                     {categoryTree?.map(parent => (
-                      <button key={parent._id} onClick={() => setSelectedParent(parent)} className="flex items-center gap-2 sm:gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-transparent active:scale-95">
-                        <div className="p-1.5 bg-white dark:bg-slate-800 rounded-lg text-slate-400 shadow-sm shrink-0" style={{ color: parent.color }}><IconRenderer iconName={parent.icon} size={16} /></div>
-                        <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 text-left leading-tight truncate">{parent.label}</span>
+                      <button 
+                        key={parent._id} 
+                        onClick={() => setSelectedParent(parent)} 
+                        className="group flex flex-col items-center justify-start gap-2 p-3 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600 transition-all active:scale-95"
+                      >
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow" style={{ color: parent.color }}>
+                          <IconRenderer iconName={parent.icon} size={22} />
+                        </div>
+                        <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 text-center leading-tight">
+                          {parent.label}
+                        </span>
                       </button>
                     ))}
+
+                    {/* NEW: Inline Parent Creation Tile */}
+                    {!isAddingParent ? (
+                      <button 
+                        onClick={() => setIsAddingParent(true)} 
+                        className="group flex flex-col items-center justify-start gap-2 p-3 sm:p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/10 border border-dashed border-emerald-200 dark:border-emerald-900/30 hover:border-emerald-400 transition-all active:scale-95"
+                      >
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-800/40 flex items-center justify-center shadow-sm text-emerald-500">
+                          <Plus size={22} />
+                        </div>
+                        <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-500 text-center leading-tight">
+                          New
+                        </span>
+                      </button>
+                    ) : (
+                      <div className="col-span-3 sm:col-span-4 md:col-span-5 flex items-center bg-white dark:bg-slate-900 border-2 border-emerald-500 rounded-2xl p-1.5 shadow-sm animate-in fade-in zoom-in-95">
+                        <input 
+                          autoFocus
+                          value={newParentName}
+                          onChange={e => setNewParentName(e.target.value)}
+                          onKeyDown={e => e.key === "Enter" && handleCreateParent()}
+                          placeholder="GROUP NAME..."
+                          className="w-full bg-transparent px-3 py-2 text-[10px] sm:text-[11px] font-black uppercase outline-none text-slate-900 dark:text-white"
+                        />
+                        <button onClick={handleCreateParent} className="p-2 bg-emerald-500 text-white rounded-xl mr-1 hover:bg-emerald-600">
+                          <Check size={16}/>
+                        </button>
+                        <button onClick={() => { setIsAddingParent(false); setNewParentName(""); }} className="p-2 text-slate-400 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
+                          <X size={16}/>
+                        </button>
+                      </div>
+                    )}
                   </div>
+                
+                /* STATE 3: SUBCATEGORIES (File View) */
                 ) : (
-                  <div className="space-y-2">
-                    <button onClick={() => setSelectedParent(null)} className="w-full p-2.5 flex items-center justify-center gap-2 text-[8px] font-black text-emerald-500 uppercase bg-emerald-500/5 rounded-xl border border-emerald-500/10 mb-3 active:bg-emerald-500/10 transition-colors"><ArrowLeft size={12} strokeWidth={3} /> Change Group</button>
-                    <div className="grid grid-cols-1 gap-1">
+                  <div className="space-y-4 animate-in slide-in-from-right-2">
+                    
+                    {/* Parent Context Header */}
+                    <div className="flex items-center gap-3 pb-4 mb-2 border-b border-slate-100 dark:border-slate-800">
+                      <button 
+                        onClick={() => setSelectedParent(null)} 
+                        className="p-2.5 bg-slate-100 dark:bg-slate-900 rounded-xl text-slate-500 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors active:scale-95"
+                      >
+                        <ArrowLeft size={16} strokeWidth={3} />
+                      </button>
+                      <div className="flex items-center gap-2">
+                        <div style={{ color: selectedParent.color }}>
+                          <IconRenderer iconName={selectedParent.icon} size={18} />
+                        </div>
+                        <h3 className="text-sm sm:text-base font-[1000] uppercase italic tracking-tighter text-slate-900 dark:text-white">
+                          {selectedParent.label}
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Subcategory Pill Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 pb-4">
                       {selectedParent.subCategories?.map(sub => (
-                        <button key={sub._id} onClick={() => { setExpenseData({...expenseData, category: sub._id}); isEditMode ? setStep(4) : nextStep(); }} className={`flex items-center justify-between p-3.5 rounded-xl text-left transition-all border ${expenseData.category === sub._id ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800'}`}>
-                           <span className={`text-[10px] font-black uppercase tracking-widest ${expenseData.category === sub._id ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>{sub.label}</span>
-                           {expenseData.category === sub._id ? <Check size={12} /> : <CornerDownRight size={12} className="text-slate-300"/>}
+                        <button 
+                          key={sub._id} 
+                          onClick={() => { setExpenseData({...expenseData, category: sub._id}); isEditMode ? setStep(4) : nextStep(); }} 
+                          className={`flex items-center justify-between p-4 sm:p-5 rounded-2xl border transition-all active:scale-[0.97] ${
+                            expenseData.category === sub._id 
+                              ? 'bg-emerald-500 text-white border-emerald-600 shadow-md' 
+                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-500/40 text-slate-700 dark:text-slate-300 shadow-sm'
+                          }`}
+                        >
+                            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-left pr-2 truncate">
+                              {sub.label}
+                            </span>
+                            {expenseData.category === sub._id && <Check size={14} className="shrink-0" />}
                         </button>
                       ))}
+
+                      {/* NEW: Inline Subcategory Creation Tile */}
+                      {!isAddingSub ? (
+                        <button 
+                          onClick={() => setIsAddingSub(true)} 
+                          className="flex items-center justify-center p-4 sm:p-5 rounded-2xl border-2 border-dashed border-emerald-500/30 text-emerald-500 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all active:scale-[0.97]"
+                        >
+                          <Plus size={16} strokeWidth={3} className="mr-1"/> 
+                          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest">
+                            New Entry
+                          </span>
+                        </button>
+                      ) : (
+                        <div className="col-span-2 sm:col-span-3 flex items-center bg-white dark:bg-slate-900 border-2 border-emerald-500 rounded-2xl p-1.5 shadow-sm animate-in fade-in zoom-in-95">
+                          <input 
+                            autoFocus
+                            value={newSubName}
+                            onChange={e => setNewSubName(e.target.value)}
+                            onKeyDown={e => e.key === "Enter" && handleCreateSub()}
+                            placeholder="ENTRY NAME..."
+                            className="w-full bg-transparent px-3 py-2 text-[10px] sm:text-[11px] font-black uppercase outline-none text-slate-900 dark:text-white"
+                          />
+                          <button onClick={handleCreateSub} className="p-2 bg-emerald-500 text-white rounded-xl mr-1 hover:bg-emerald-600">
+                            <Check size={16}/>
+                          </button>
+                          <button onClick={() => { setIsAddingSub(false); setNewSubName(""); }} className="p-2 text-slate-400 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
+                            <X size={16}/>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

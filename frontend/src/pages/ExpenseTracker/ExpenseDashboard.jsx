@@ -35,15 +35,20 @@ const ExpenseDashboard = () => {
   }, [loadDashboardData, refreshKey]);
 
   return (
+    // pb-36 handles the bottom navigation spacing on mobile
     <div className="pb-36 lg:pb-24">
       <DashboardHeader 
         summary={{ ...summary, wallets }} 
         loading={loading} 
         loadDashboardData={loadDashboardData} 
       />
-      <div className="max-w-6xl mx-auto px-2 md:px-6 mt-6 md:mt-10">
+      
+      {/* Optimized wrapper: Adjusted mobile horizontal padding and top margin */}
+      <div className="max-w-6xl mx-auto px-4 md:px-6 mt-6 md:mt-10">
         <WalletGrid wallets={wallets} />
-        <div className="mt-12 text-left">
+        
+        {/* Adjusted top margin for mobile density */}
+        <div className="mt-20 md:mt-12 text-left">
           <GlobalFeed history={history} wallets={wallets} />
         </div>
       </div>

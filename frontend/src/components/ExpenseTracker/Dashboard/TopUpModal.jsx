@@ -6,7 +6,7 @@ import {
 // Helper for Indian Currency Formatting during typing
 const formatDisplayAmount = (val) => {
   if (!val) return "";
-  const number = val.replace(/[^0-9]/g, ""); // Remove non-numeric characters
+  const number = val.replace(/[^0-9]/g, ""); 
   return new Intl.NumberFormat('en-IN').format(number);
 };
 
@@ -43,9 +43,8 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
     setStep(prev => prev - 1);
   };
 
-  // Handle formatting while typing
   const handleAmountChange = (e) => {
-    const rawValue = e.target.value.replace(/[^0-9]/g, ""); // Keep only numbers for state
+    const rawValue = e.target.value.replace(/[^0-9]/g, "");
     setTopUpData({ ...topUpData, amount: rawValue });
   };
 
@@ -65,9 +64,9 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
       
       <div className="relative w-full max-w-2xl bg-white dark:bg-[#020617] rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col h-[85vh] sm:h-auto sm:max-h-[85vh] overflow-hidden border-t sm:border border-white/10 transition-transform">
         
-        {/* PROGRESS NAVIGATION */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-4 sm:py-5 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-[#0B1120] shrink-0">
-          <div className="flex items-center gap-3 sm:gap-4">
+        {/* PROGRESS NAVIGATION: Mobile-optimized padding */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-[#0B1120] shrink-0">
+          <div className="flex items-center gap-2 sm:gap-4">
             {[1, 2, 3].map((s) => (
               <button
                 key={s}
@@ -89,23 +88,23 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
             ))}
           </div>
           <button onClick={handleClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400 active:scale-90">
-            <X size={20} strokeWidth={3} />
+            <X size={18} strokeWidth={3} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto no-scrollbar p-5 sm:p-10 pb-10 sm:pb-10">
           
           {localError && (
-            <div className="mb-6 flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl animate-in fade-in slide-in-from-top-2">
-              <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
-              <p className="text-[10px] sm:text-[11px] font-bold text-red-600 dark:text-red-400 uppercase tracking-widest leading-tight">
+            <div className="mb-4 flex items-start gap-3 p-3 bg-red-500/10 border border-red-500/20 rounded-2xl animate-in fade-in slide-in-from-top-2">
+              <AlertCircle size={14} className="text-red-500 shrink-0 mt-0.5" />
+              <p className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-widest leading-tight">
                 {localError}
               </p>
             </div>
           )}
 
           {step === 1 && (
-            <div className="space-y-5 sm:space-y-6 animate-in fade-in slide-in-from-right-4">
+            <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-right-4">
               <div className="text-left">
                 <h2 className="text-xl sm:text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">Refill Destination</h2>
                 <p className="text-[9px] sm:text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-1">Select account for injection</p>
@@ -142,89 +141,83 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
           )}
 
           {step === 2 && (
-            <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-right-4">
+            <div className="space-y-4 sm:space-y-8 animate-in fade-in slide-in-from-right-4">
               <div className="flex items-center justify-between">
                  <button onClick={prevStep} className="text-[9px] sm:text-[10px] font-black text-emerald-500 uppercase flex items-center gap-1 active:opacity-70 transition-opacity">
-                   <ArrowLeft size={12} strokeWidth={3}/> Back
+                    <ArrowLeft size={12} strokeWidth={3}/> Back
                  </button>
                  <span className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest">Target: {currentWallet?.walletName}</span>
               </div>
               <div className="text-left">
                 <h2 className="text-xl sm:text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">Funding Amount</h2>
-                <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Specify volume to inject</p>
               </div>
               <div className="relative border-b-2 border-slate-100 dark:border-slate-800 focus-within:border-emerald-500 transition-colors">
-                <span className="absolute left-0 bottom-6 text-3xl sm:text-4xl font-[1000] text-slate-300 dark:text-slate-700 italic">₹</span>
+                <span className="absolute left-0 bottom-4 sm:bottom-6 text-3xl sm:text-4xl font-[1000] text-slate-300 dark:text-slate-700 italic">₹</span>
                 <input
-                    type="text" // CHANGED TO TEXT FOR FORMATTING
+                    type="text"
                     inputMode="numeric"
                     autoFocus 
                     placeholder="0"
-                    className="w-full bg-transparent pt-4 pb-6 pl-8 sm:pl-10 text-5xl sm:text-6xl font-[1000] text-slate-900 dark:text-white outline-none"
+                    className="w-full bg-transparent pt-4 pb-4 sm:pb-6 pl-8 sm:pl-10 text-4xl sm:text-6xl font-[1000] text-slate-900 dark:text-white outline-none"
                     value={formatDisplayAmount(topUpData.amount)} 
                     onChange={handleAmountChange}
-                  />
+                />
               </div>
               <button 
                 disabled={!topUpData.amount || Number(topUpData.amount) <= 0}
                 onClick={nextStep}
-                className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 h-14 sm:h-16 rounded-2xl font-black uppercase text-[10px] sm:text-[11px] tracking-[0.3em] sm:tracking-[0.4em] flex items-center justify-center gap-2 active:scale-95 disabled:opacity-20 transition-all shadow-xl"
+                className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 h-14 sm:h-16 rounded-2xl font-black uppercase text-[10px] sm:text-[11px] tracking-[0.3em] flex items-center justify-center gap-2 active:scale-95 disabled:opacity-20 transition-all shadow-xl"
               >
-                Proceed to Review <ArrowRight size={16} strokeWidth={3}/>
+                Proceed to Review <ArrowRight size={14} strokeWidth={3}/>
               </button>
             </div>
           )}
 
           {step === 3 && (
-            <div className="space-y-5 sm:space-y-6 animate-in fade-in slide-in-from-right-4">
+            <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-right-4">
                <button onClick={prevStep} disabled={loading} className="text-[9px] sm:text-[10px] font-black text-emerald-500 uppercase flex items-center gap-1 active:opacity-70 transition-opacity">
-                 <ArrowLeft size={12} strokeWidth={3}/> Back
+                  <ArrowLeft size={12} strokeWidth={3}/> Back
                </button>
 
                <div className="text-left">
                 <h2 className="text-xl sm:text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">Review Top-Up</h2>
-                <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                  {currentWallet?.isGeneralPool ? "External Deposit" : "Internal Transfer"}
-                </p>
-              </div>
-               
-               <div className="p-5 sm:p-6 bg-slate-900 dark:bg-white rounded-3xl space-y-4 shadow-2xl border border-white/5 dark:border-slate-100 overflow-hidden relative">
+               </div>
+                
+               <div className="p-4 sm:p-6 bg-slate-900 dark:bg-white rounded-3xl space-y-4 shadow-2xl border border-white/5 dark:border-slate-100 overflow-hidden relative">
                   <div className="flex justify-between items-end border-b border-white/10 dark:border-slate-100 pb-4">
                     <div className="space-y-1 text-left truncate pr-2">
                       <p className="text-[7px] sm:text-[8px] font-black text-emerald-500 uppercase tracking-widest">Injection Goal</p>
                       <p className="text-[10px] sm:text-xs font-black text-white dark:text-slate-900 uppercase tracking-widest truncate">{currentWallet?.walletName}</p>
                     </div>
-                    <p className="text-3xl sm:text-4xl font-[1000] text-white dark:text-slate-900 italic tracking-tighter shrink-0">+₹{Number(topUpData.amount).toLocaleString('en-IN')}</p>
+                    <p className="text-3xl font-[1000] text-white dark:text-slate-900 italic tracking-tighter shrink-0">+₹{Number(topUpData.amount).toLocaleString('en-IN')}</p>
                   </div>
                   <div className="flex justify-between items-center text-[7px] sm:text-[8px] font-black text-white/40 dark:text-slate-400 uppercase tracking-widest leading-none pt-1">
                     <span>New Balance: ₹{(currentWallet?.balance + Number(topUpData.amount)).toLocaleString('en-IN')}</span>
-                    <span className="flex items-center gap-1 text-emerald-400">Secure Protocol</span>
                   </div>
                </div>
 
                <div className="space-y-2 text-left">
                  <label className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Memo (Optional)</label>
                  <textarea 
-                   rows="2" placeholder="Note down source..."
-                   className="w-full bg-slate-50 dark:bg-slate-900 p-4 sm:p-5 rounded-2xl text-[11px] sm:text-xs font-bold text-slate-900 dark:text-white outline-none border border-slate-100 dark:border-slate-800 focus:border-emerald-500/20 transition-all no-scrollbar"
-                   value={topUpData.description} onChange={(e) => setTopUpData({...topUpData, description: e.target.value})} 
+                    rows="2" placeholder="Note down source..."
+                    className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl text-[11px] font-bold text-slate-900 dark:text-white outline-none border border-slate-100 dark:border-slate-800 focus:border-emerald-500/20 transition-all no-scrollbar"
+                    value={topUpData.description} onChange={(e) => setTopUpData({...topUpData, description: e.target.value})} 
                  />
                </div>
 
                <button 
                   onClick={handleFinalSubmit} 
                   disabled={loading}
-                  className="w-full bg-emerald-500 text-white h-16 sm:h-20 rounded-2xl font-[1000] uppercase text-[10px] sm:text-xs tracking-[0.4em] sm:tracking-[0.5em] shadow-xl active:scale-[0.98] flex items-center justify-center gap-3 transition-all disabled:opacity-50"
-                >
-                  {loading ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white" />
-                  ) : (
-                    <>Authorize Top-Up <Check size={18} strokeWidth={4}/></>
-                  )}
+                  className="w-full bg-emerald-500 text-white h-16 rounded-2xl font-[1000] uppercase text-[10px] sm:text-xs tracking-[0.4em] shadow-xl active:scale-[0.98] flex items-center justify-center gap-3 transition-all disabled:opacity-50"
+               >
+                 {loading ? (
+                   <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white" />
+                 ) : (
+                   <>Authorize Top-Up <Check size={16} strokeWidth={4}/></>
+                 )}
                </button>
             </div>
           )}
-          <div className="h-4 sm:hidden" />
         </div>
       </div>
     </div>
