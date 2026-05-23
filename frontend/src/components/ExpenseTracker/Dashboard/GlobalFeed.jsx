@@ -1,103 +1,132 @@
 import React from "react";
-import { ShieldCheck, Globe, Coins, Zap, Smartphone, Activity } from "lucide-react";
+import { Link } from "react-router-dom";
+import { History, Banknote, MoveUpRight, Globe, Zap, Coins } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 
-const formatINR = (amount) => {
-  return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(amount || 0);
+const IconRenderer = ({ iconName, className = "" }) => {
+  const IconComponent = LucideIcons[iconName] || Banknote;
+  return <IconComponent size={18} className={className} />;
 };
 
-const WalletGrid = ({ wallets }) => {
-  const cashWallets = wallets.filter(w => !w.isVirtual);
-  const virtualWallets = wallets.filter(w => w.isVirtual);
-  const totalLiquidity = cashWallets.reduce((acc, curr) => acc + curr.balance, 0);
+const GlobalFeed = ({ history, wallets }) => {
+  
+  // CRITICAL FIX: Ensure we detect virtuality even if the backend 
+  // only sends an ID or a partially populated object.
+  const getWalletDetails = (source) => {
+    // 1. Check if source is already a populated object from the backend
+    if (source && typeof source === 'object') {
+      return {
+        name: source.walletName || "Unknown",
+        isVirtual: !!source.isVirtual
+      };
+    }
+
+    // 2. Fallback: Find the wallet in our local 'wallets' state
+    const localMatch = wallets.find((w) => w._id === source);
+    return {
+      name: localMatch ? localMatch.walletName : "System",
+      isVirtual: localMatch ? !!localMatch.isVirtual : false
+    };
+  };
+
+  const recentHistory = history.slice(0, 10);
 
   return (
-    // Mobile: Full width with no margins. Desktop: Standard width with margin.
-    <div className="w-full lg:mb-8">
-      {/* Mobile: Sharp edges (rounded-none), no border-x. 
-          Desktop: Rounded-4xl, full border, shadow. 
-      */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 bg-white dark:bg-[#0B1120] rounded-none lg:rounded-4xl border-y lg:border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
-        
-        {/* LEFT: THE CASH VAULT (7/12) */}
-        <div className="lg:col-span-7 p-5 sm:p-6 md:p-8 flex flex-col justify-between bg-white dark:bg-[#0B1120]">
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-500">
-                <Coins size={14} />
-              </div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Cash Balance</p>
-            </div>
-
-            <div className="flex items-baseline gap-2 mb-6 lg:mb-8">
-              {/* Desktop sizes restored: md:text-6xl */}
-              <span className="text-4xl sm:text-5xl md:text-6xl font-[1000] text-slate-900 dark:text-white tracking-tighter italic tabular-nums leading-none">
-                ₹{formatINR(totalLiquidity)}
-              </span>
-              <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 rounded text-[8px] font-black text-emerald-500 uppercase tracking-widest">
-                <Activity size={8} /> Active
-              </div>
-            </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center px-1">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <History size={14} className="text-emerald-500" />
+            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+              Active Ledger
+            </h2>
           </div>
-
-          {/* PHYSICAL NODES GRID: Responsive columns */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 lg:mt-0">
-            {cashWallets.map((w) => (
-              <div key={w._id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-800 transition-all hover:border-emerald-500/30">
-                <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase truncate pr-2">{w.walletName}</span>
-                <span className="text-sm font-[1000] text-slate-900 dark:text-white italic tracking-tighter">₹{formatINR(w.balance)}</span>
-              </div>
-            ))}
-          </div>
+          <p className="text-[9px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest">
+            Cross-Node Transaction Feed
+          </p>
         </div>
+        
+        <Link to="/expenses/history" className="group flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl transition-all hover:border-emerald-500/50">
+          <span className="text-[10px] font-black text-slate-500 group-hover:text-emerald-600 uppercase tracking-widest">Archive</span>
+          <MoveUpRight size={12} className="text-slate-300 group-hover:text-emerald-500" />
+        </Link>
+      </div>
 
-        {/* RIGHT: THE DIGITAL PIPELINE (5/12) */}
-        <div className="lg:col-span-5 p-5 sm:p-6 md:p-8 bg-slate-50/50 dark:bg-white/2 border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-500">
-                <Globe size={14} />
-              </div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Digital Assets</p>
-            </div>
-            <ShieldCheck size={14} className="text-slate-300 dark:text-slate-700" />
-          </div>
+      <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+        <div className="divide-y divide-slate-50 dark:divide-slate-800/50">
+          {recentHistory.map((item) => {
+            const isPopulated = item.category && typeof item.category === 'object';
+            const categoryLabel = isPopulated ? item.category.label : "Misc";
+            const categoryIcon = isPopulated ? item.category.icon : "Banknote";
+            
+            // Get the Wallet data using our fixed helper
+            const sourceInfo = getWalletDetails(item.sourceWallet);
+            const isVirt = sourceInfo.isVirtual;
 
-          <div className="space-y-2 flex-1">
-            {virtualWallets.map((w) => (
-              <div key={w._id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-900/80 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm group">
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 shrink-0">
-                    <Smartphone size={14} />
+            return (
+              <div key={item._id} className="group relative flex items-center justify-between p-4 sm:p-5 hover:bg-slate-50/50 dark:hover:bg-white/2 transition-all">
+                
+                {/* 1. THE VERTICAL CUE: Indigo (Virtual) vs Emerald (Cash) */}
+                <div className={`absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r-full transition-all ${
+                  isVirt ? "bg-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.8)]" : "bg-emerald-500"
+                }`} />
+
+                <div className="flex items-center gap-4 text-left min-w-0 ml-2">
+                  {/* 2. ICON BOX: Swaps color theme based on isVirt */}
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${
+                    isVirt 
+                      ? "bg-indigo-600 text-white border-indigo-400 shadow-lg shadow-indigo-500/20" 
+                      : "bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-400"
+                  }`}>
+                    <IconRenderer iconName={categoryIcon} className={!isVirt ? "group-hover:text-emerald-500" : ""} />
                   </div>
-                  <div className="text-left">
-                    <p className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none mb-1">{w.walletName}</p>
-                    <div className="flex items-center gap-1">
-                      <div className="w-1 h-1 rounded-full bg-indigo-500 animate-pulse" />
-                      <span className="text-[7px] font-black text-indigo-400 uppercase tracking-widest">Linked</span>
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="text-[13px] font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none">
+                        {categoryLabel}
+                      </h4>
+                      {/* 3. TYPE BADGE: High-contrast pill for Virtual */}
+                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
+                        isVirt 
+                          ? "bg-indigo-100 text-indigo-600 border border-indigo-200" 
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+                      }`}>
+                        {isVirt ? <Zap size={8} fill="currentColor" /> : <Coins size={8} />}
+                        {sourceInfo.name}
+                      </div>
+                    </div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">
+                      {item.description || "System Verified"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 4. AMOUNT: Color coded for Digital Drain */}
+                <div className="text-right shrink-0 ml-4">
+                  <div className="flex flex-col items-end gap-1">
+                    <p className={`text-lg font-[1000] italic leading-none tracking-tighter tabular-nums ${
+                      item.type === "DEBIT" 
+                        ? (isVirt ? "text-indigo-600 dark:text-indigo-400" : "text-red-500") 
+                        : "text-emerald-500"
+                    }`}>
+                      {item.type === "DEBIT" ? "-" : "+"}₹{item.amount.toLocaleString('en-IN')}
+                    </p>
+                    <div className={`flex items-center gap-1 text-[9px] font-black uppercase tracking-widest leading-none ${
+                       isVirt ? "text-indigo-400" : "text-slate-300 dark:text-slate-700"
+                    }`}>
+                       {isVirt && <Globe size={8} className="animate-pulse" />}
+                       {new Date(item.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
                     </div>
                   </div>
                 </div>
-                <Zap size={12} className="text-slate-200 dark:text-slate-800 group-hover:text-indigo-500 transition-colors" />
               </div>
-            ))}
-
-            {virtualWallets.length === 0 && (
-              <div className="h-full min-h-20 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-center opacity-40">
-                <p className="text-[8px] font-black uppercase tracking-widest">No Digital Streams</p>
-              </div>
-            )}
-          </div>
-
-          {/* STATUS FOOTER */}
-          <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
-            <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-relaxed italic">
-              Digital nodes reflect external UPI/Bank activity. Balances tracked externally.
-            </p>
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>
   );
 };
 
-export default WalletGrid;
+export default GlobalFeed;

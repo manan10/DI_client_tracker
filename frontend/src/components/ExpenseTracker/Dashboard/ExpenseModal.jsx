@@ -168,7 +168,8 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
     <div className="fixed inset-0 z-100 flex items-end sm:items-center justify-center p-0 sm:p-4 text-left">
       <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-md" onClick={handleClose} />
       
-      <div className="relative w-full max-w-2xl bg-white dark:bg-[#020617] rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col h-[92vh] sm:h-auto sm:max-h-[85vh] overflow-hidden border-t sm:border border-white/10">
+      {/* FIX 1: Changed h-[92vh] to h-[80vh] so it never blocks the top 20% of the screen */}
+      <div className="relative w-full max-w-2xl bg-white dark:bg-[#020617] rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col h-[80vh] sm:h-auto sm:max-h-[85vh] overflow-hidden border-t sm:border border-white/10">
         
         <div className="flex items-center justify-between px-5 sm:px-6 py-4 sm:py-5 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-[#0B1120] shrink-0">
           <div className="flex items-center gap-3 sm:gap-4">
@@ -182,7 +183,8 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
           <button onClick={handleClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400 active:scale-90"><X size={20} strokeWidth={3} /></button>
         </div>
 
-        <div className="flex-1 overflow-y-auto no-scrollbar p-5 sm:p-10">
+        {/* FIX 2: Added scrollbar hiding classes [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] */}
+        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-5 sm:p-10">
           {localError && (
             <div className="mb-6 flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl animate-in fade-in slide-in-from-top-2">
               <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
@@ -300,8 +302,8 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                 />
               </div>
 
-              {/* DYNAMIC SCROLL AREA */}
-              <div className="flex-1 overflow-y-auto no-scrollbar pb-10">
+              {/* FIX 2: Applied identical scrollbar hiding classes here as well */}
+              <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-10">
                 
                 {/* STATE 1: SEARCH RESULTS (Dense List) */}
                 {searchQuery ? (
@@ -345,7 +347,7 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                       </button>
                     ))}
 
-                    {/* NEW: Inline Parent Creation Tile */}
+                    {/* Inline Parent Creation Tile */}
                     {!isAddingParent ? (
                       <button 
                         onClick={() => setIsAddingParent(true)} 
@@ -419,7 +421,7 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                         </button>
                       ))}
 
-                      {/* NEW: Inline Subcategory Creation Tile */}
+                      {/* Inline Subcategory Creation Tile */}
                       {!isAddingSub ? (
                         <button 
                           onClick={() => setIsAddingSub(true)} 
