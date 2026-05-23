@@ -87,13 +87,14 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
       }));
       setCategoryTree(sortedTree);
 
-      // If a parent is selected, update its reference to reflect newly added subs
-      if (selectedParent) {
-        const updatedParent = sortedTree.find(p => p._id === selectedParent._id);
-        if (updatedParent) setSelectedParent(updatedParent);
-      }
+      // FIX: Use functional state update to prevent infinite re-renders
+      setSelectedParent(prev => {
+        if (!prev) return null;
+        const updatedParent = sortedTree.find(p => p._id === prev._id);
+        return updatedParent || null;
+      });
     } catch (err) { console.error(err); }
-  }, [request, selectedParent]);
+  }, [request]); // selectedParent is successfully removed from dependencies
 
   useEffect(() => {
     if (isOpen) {
@@ -274,20 +275,39 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
             </div>
           )}
 
-          {step === 3 && (
+{step === 3 && (
             <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-right-4 flex flex-col h-full">
                
-               {/* STEP HEADER */}
+               {/* SMART STEP HEADER: Resolves state routing dynamically */}
                <div className="flex items-center justify-between">
-                 <button onClick={prevStep} className="text-[9px] sm:text-[10px] font-black text-emerald-500 uppercase flex items-center gap-1 active:opacity-70">
+                 <button 
+                   onClick={() => {
+                     // Walks backwards through the state stack logically
+                     if (isAddingSub) setIsAddingSub(false);
+                     else if (isAddingParent) setIsAddingParent(false);
+                     else if (searchQuery) setSearchQuery("");
+                     else if (selectedParent) setSelectedParent(null);
+                     else prevStep();
+                   }} 
+                   className="text-[9px] sm:text-[10px] font-black text-emerald-500 uppercase flex items-center gap-1 active:opacity-70 transition-opacity"
+                 >
                    <ArrowLeft size={12} strokeWidth={3}/> Back
                  </button>
                  <span className={`text-[10px] font-[1000] italic tabular-nums ${currentWallet?.isVirtual ? 'text-indigo-500' : 'text-slate-900 dark:text-white'}`}>
                    ₹{Number(expenseData.amount).toLocaleString('en-IN')}
                  </span>
               </div>
-              <div className="text-left">
-                <h2 className="text-xl sm:text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">Categorization</h2>
+              
+              {/* DYNAMIC HEADER: Updates contextually based on selected folder */}
+              <div className="text-left flex items-center gap-3">
+                {selectedParent && (
+                  <div style={{ color: selectedParent.color }} className="p-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg shadow-sm">
+                    <IconRenderer iconName={selectedParent.icon} size={16} />
+                  </div>
+                )}
+                <h2 className="text-xl sm:text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">
+                  {selectedParent ? selectedParent.label : "Categorization"}
+                </h2>
               </div>
 
               {/* STICKY SEARCH BAR */}
@@ -302,10 +322,10 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                 />
               </div>
 
-              {/* FIX 2: Applied identical scrollbar hiding classes here as well */}
+              {/* DYNAMIC SCROLL AREA */}
               <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-10">
                 
-                {/* STATE 1: SEARCH RESULTS (Dense List) */}
+                {/* STATE 1: SEARCH RESULTS */}
                 {searchQuery ? (
                   <div className="grid grid-cols-1 gap-2">
                     {filteredResults.map(res => (
@@ -329,7 +349,7 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                     ))}
                   </div>
                 
-                /* STATE 2: PARENT GROUPS (App Drawer UI) */
+                /* STATE 2: PARENT GROUPS */
                 ) : !selectedParent ? (
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-4 pb-4">
                     {categoryTree?.map(parent => (
@@ -373,36 +393,13 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                         <button onClick={handleCreateParent} className="p-2 bg-emerald-500 text-white rounded-xl mr-1 hover:bg-emerald-600">
                           <Check size={16}/>
                         </button>
-                        <button onClick={() => { setIsAddingParent(false); setNewParentName(""); }} className="p-2 text-slate-400 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
-                          <X size={16}/>
-                        </button>
                       </div>
                     )}
                   </div>
                 
-                /* STATE 3: SUBCATEGORIES (File View) */
+                /* STATE 3: SUBCATEGORIES */
                 ) : (
-                  <div className="space-y-4 animate-in slide-in-from-right-2">
-                    
-                    {/* Parent Context Header */}
-                    <div className="flex items-center gap-3 pb-4 mb-2 border-b border-slate-100 dark:border-slate-800">
-                      <button 
-                        onClick={() => setSelectedParent(null)} 
-                        className="p-2.5 bg-slate-100 dark:bg-slate-900 rounded-xl text-slate-500 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors active:scale-95"
-                      >
-                        <ArrowLeft size={16} strokeWidth={3} />
-                      </button>
-                      <div className="flex items-center gap-2">
-                        <div style={{ color: selectedParent.color }}>
-                          <IconRenderer iconName={selectedParent.icon} size={18} />
-                        </div>
-                        <h3 className="text-sm sm:text-base font-[1000] uppercase italic tracking-tighter text-slate-900 dark:text-white">
-                          {selectedParent.label}
-                        </h3>
-                      </div>
-                    </div>
-
-                    {/* Subcategory Pill Grid */}
+                  <div className="space-y-4 animate-in slide-in-from-right-2 mt-2">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 pb-4">
                       {selectedParent.subCategories?.map(sub => (
                         <button 
@@ -444,9 +441,6 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                           />
                           <button onClick={handleCreateSub} className="p-2 bg-emerald-500 text-white rounded-xl mr-1 hover:bg-emerald-600">
                             <Check size={16}/>
-                          </button>
-                          <button onClick={() => { setIsAddingSub(false); setNewSubName(""); }} className="p-2 text-slate-400 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
-                            <X size={16}/>
                           </button>
                         </div>
                       )}
