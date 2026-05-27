@@ -31,12 +31,10 @@ const SubmissionSchema = new mongoose.Schema({
       'OTHERS'
     ],
     required: function() { return this.type === 'NON_FINANCIAL'; },
-    // SETTER: Convert empty strings to undefined to bypass Enum check
     set: v => (v === "" || v === null) ? undefined : v
   },
   schemeName: { 
     type: String, 
-    // Only required for money-moving transactions
     required: function() { return this.type !== 'NON_FINANCIAL'; },
     uppercase: true 
   },
@@ -44,11 +42,15 @@ const SubmissionSchema = new mongoose.Schema({
     type: String, 
     default: 'NEW' 
   },
+  // NEW FIELD: Allows manual overrides of when the document/request was actually signed/created
+  creationDate: {
+    type: Date,
+    default: Date.now
+  },
 
   // --- FINANCIALS ---
   amount: {
     type: Number,
-    // Set required to false if it's a Non-Financial transaction
     required: function() { return this.type !== 'NON_FINANCIAL'; },
     default: 0
   },
@@ -97,7 +99,6 @@ const SubmissionSchema = new mongoose.Schema({
     type: String,
     enum: ['NOT_APPLICABLE', 'WAITING', 'PAID', 'VERIFIED'],
     default: function() {
-      // Redemptions, SWPs, and ALL Non-Financials don't need payment tracking
       const noPaymentTypes = ['REDEMPTION', 'SWP', 'NON_FINANCIAL'];
       return noPaymentTypes.includes(this.type) ? 'NOT_APPLICABLE' : 'WAITING';
     }
@@ -108,6 +109,13 @@ const SubmissionSchema = new mongoose.Schema({
     enum: ['UPI', 'NET_BANKING', 'CHEQUE', 'MANDATE', 'OTHER']
   },
   
+  // --- FLEXIBLE METADATA ---
+  metadata: {
+    type: Map,
+    of: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+
   // --- METADATA ---
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

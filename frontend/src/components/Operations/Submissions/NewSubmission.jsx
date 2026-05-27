@@ -1,11 +1,109 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { 
   X, Check, Loader2, Search, ChevronRight, User, 
   Landmark, IndianRupee, ShieldCheck, Hash, 
-  Activity, CreditCard, Send, ChevronDown, FileText, Settings
+  Activity, CreditCard, Send, ChevronDown, FileText, Settings, Calendar,
+  ChevronLeft
 } from "lucide-react";
 import { useApi } from "../../../hooks/useApi";
 import { toast } from "sonner";
+
+// --- CUSTOM DATE PICKER COMPONENT ---
+const CustomDatePicker = ({ value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentDate, setCurrentDate] = useState(value ? new Date(value) : new Date());
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) setIsOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+
+  const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+
+  const handleSelectDate = (day) => {
+    const selected = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), day));
+    onChange(selected.toISOString().split('T')[0]);
+    setIsOpen(false);
+  };
+
+  const formatDisplayDate = (dateString) => {
+    if (!dateString) return "SELECT DATE";
+    const d = new Date(dateString);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+  };
+
+  const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full bg-slate-50 dark:bg-white/5 border ${isOpen ? 'border-emerald-500 ring-2 ring-emerald-500/10' : 'border-slate-200 dark:border-white/10'} rounded-lg px-4 py-3 md:py-4 text-[10px] md:text-[11px] font-black uppercase flex justify-between items-center transition-all shadow-sm`}
+      >
+        <span className={value ? "text-slate-900 dark:text-white font-mono tracking-wider" : "text-slate-400"}>
+          {formatDisplayDate(value)}
+        </span>
+        <Calendar size={12} md:size={14} className={isOpen ? "text-emerald-500" : "text-slate-400"} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-2 p-4 bg-white dark:bg-[#121418] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl z-100 min-w-65 animate-in zoom-in-95 duration-200">
+          <div className="flex items-center justify-between mb-4">
+            <button type="button" onClick={handlePrevMonth} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-md text-slate-400 hover:text-emerald-500 transition-colors">
+              <ChevronLeft size={16} />
+            </button>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white">
+              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+            </span>
+            <button type="button" onClick={handleNextMonth} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-md text-slate-400 hover:text-emerald-500 transition-colors">
+              <ChevronRight size={16} />
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].map(day => (
+              <div key={day} className="text-center text-[8px] font-black text-slate-400 uppercase">{day}</div>
+            ))}
+          </div>
+          
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+              <div key={`empty-${i}`} className="h-8" />
+            ))}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const isSelected = value === new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), day)).toISOString().split('T')[0];
+              const isToday = new Date().toISOString().split('T')[0] === new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), day)).toISOString().split('T')[0];
+              
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => handleSelectDate(day)}
+                  className={`h-8 rounded-md text-[10px] font-bold font-mono transition-all flex items-center justify-center
+                    ${isSelected ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' 
+                    : isToday ? 'border border-emerald-500/50 text-emerald-500' 
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10'}`}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const NewSubmission = ({ isOpen, onClose, onCreated }) => {
   const { request } = useApi();
@@ -19,9 +117,12 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
   const [showPayDrop, setShowPayDrop] = useState(false);
   const [category, setCategory] = useState("FINANCIAL");
 
+  const today = new Date().toISOString().split('T')[0];
+
   const [formData, setFormData] = useState({
     client: "",
     clientName: "",
+    creationDate: today,
     type: "PURCHASE_SIP",
     subType: "",
     schemeName: "",
@@ -99,7 +200,7 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
 
   const handleClose = () => {
     setFormData({ 
-      client: "", clientName: "", type: "PURCHASE_SIP", subType: "",
+      client: "", clientName: "", creationDate: today, type: "PURCHASE_SIP", subType: "",
       schemeName: "", amount: "", folioNumber: "NEW", 
       submissionMode: "DIGITAL", paymentMode: "UPI",
       paymentStatus: "WAITING"
@@ -192,8 +293,21 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
              </div>
           </div>
 
-          {/* DYNAMIC TYPE SELECTOR */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+          {/* DYNAMIC LOGISTICS SELECTORS (3-Col Grid) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 text-left relative z-20">
+            
+            {/* CUSTOM DATE SELECTION */}
+            <div className="space-y-2 md:space-y-3">
+              <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <Calendar size={10} md:size={12} strokeWidth={3} /> App Date
+              </label>
+              <CustomDatePicker 
+                value={formData.creationDate}
+                onChange={(val) => setFormData({...formData, creationDate: val})}
+              />
+            </div>
+
+            {/* TYPE SELECTION */}
             <div className="space-y-2 md:space-y-3 relative">
               <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                 <Hash size={10} md:size={12} strokeWidth={3} /> {category === 'FINANCIAL' ? 'Type' : 'Service Type'}
@@ -229,17 +343,18 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
               )}
             </div>
 
+            {/* MODE SELECTION */}
             <div className="space-y-2 md:space-y-3">
               <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                 <Send size={10} md:size={12} strokeWidth={3} /> Mode
               </label>
-              <div className="flex p-1 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10">
+              <div className="flex p-1 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10 h-10.5 md:h-12">
                 {["DIGITAL", "PHYSICAL"].map((m) => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => setFormData({...formData, submissionMode: m})}
-                    className={`flex-1 py-2 rounded text-[8px] md:text-[9px] font-black uppercase transition-all ${formData.submissionMode === m ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-400"}`}
+                    className={`flex-1 rounded text-[8px] md:text-[9px] font-black uppercase transition-all ${formData.submissionMode === m ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
                   >
                     {m}
                   </button>
@@ -248,48 +363,73 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
             </div>
           </div>
 
-          {/* CLIENT SEARCH */}
-          <div className="space-y-2 md:space-y-3 text-left">
+          {/* CLIENT SEARCH & SELECTION */}
+          <div className="space-y-2 md:space-y-3 text-left relative z-10">
             <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <User size={10} md:size={12} strokeWidth={3} /> Client
+              <User size={10} md:size={12} strokeWidth={3} /> Client Identity
             </label>
-            <div className="relative">
-              <div className={`flex items-center gap-3 md:gap-4 px-4 py-3 md:py-4 rounded-lg border transition-all ${formData.client ? "border-emerald-500 bg-emerald-500/5" : "border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/2"}`}>
-                {isSearching ? <Loader2 size={16} className="animate-spin text-emerald-500" /> : <Search size={16} className="text-slate-300" />}
-                <input
-                  placeholder={formData.clientName || "SEARCH BY NAME OR PAN..."}
-                  className="bg-transparent border-none outline-none text-[10px] md:text-xs font-black w-full uppercase placeholder:text-slate-300"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    if (formData.client) setFormData({ ...formData, client: "", clientName: "" });
-                  }}
-                />
-              </div>
-
-              {searchTerm && !formData.client && clients.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#121418] border border-slate-200 dark:border-white/10 rounded-lg shadow-2xl z-50 overflow-hidden">
-                  {clients.map((c) => (
-                    <button
-                      key={c._id}
-                      type="button"
-                      onClick={() => { setFormData({ ...formData, client: c._id, clientName: c.name }); setSearchTerm(""); }}
-                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 border-b border-slate-50 dark:border-white/5 last:border-0 transition-colors"
-                    >
-                      <div className="text-left">
-                        <div className="text-[10px] font-black uppercase tracking-tight">{c.name}</div>
-                        <div className="text-[8px] font-mono font-bold text-slate-400">{c.pan}</div>
-                      </div>
-                      <ChevronRight size={12} className="text-slate-300" />
-                    </button>
-                  ))}
+            
+            {formData.client ? (
+              /* --- PREMIUM POST-SELECTION LOCKED STATE --- */
+              <div className="flex items-center justify-between p-4 bg-slate-900 dark:bg-white border border-slate-900 dark:border-white rounded-xl shadow-lg transition-all animate-in fade-in zoom-in-95 duration-300">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-white/10 dark:bg-black/10 flex items-center justify-center shrink-0">
+                    <Check size={18} strokeWidth={3} className="text-white dark:text-black" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs md:text-sm font-[1000] text-white dark:text-black uppercase tracking-widest truncate">
+                      {formData.clientName}
+                    </p>
+                    <p className="text-[9px] font-black text-emerald-400 dark:text-emerald-600 uppercase tracking-widest mt-0.5">
+                      Identity Confirmed
+                    </p>
+                  </div>
                 </div>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => { setFormData({ ...formData, client: "", clientName: "" }); setSearchTerm(""); }}
+                  className="p-3 text-slate-400 dark:text-slate-500 hover:text-rose-400 dark:hover:text-rose-500 transition-colors bg-white/5 dark:bg-black/5 rounded-lg"
+                >
+                  <X size={16} strokeWidth={3} />
+                </button>
+              </div>
+            ) : (
+              /* --- SEARCH STATE --- */
+              <div className="relative">
+                <div className="flex items-center gap-3 md:gap-4 px-4 py-3 md:py-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/2 transition-all focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10">
+                  {isSearching ? <Loader2 size={16} className="animate-spin text-emerald-500" /> : <Search size={16} className="text-slate-300" />}
+                  <input
+                    placeholder="SEARCH BY NAME OR PAN..."
+                    className="bg-transparent border-none outline-none text-[10px] md:text-xs font-black w-full uppercase placeholder:text-slate-300"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                {searchTerm && clients.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#121418] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden animate-in slide-in-from-top-2">
+                    {clients.map((c) => (
+                      <button
+                        key={c._id}
+                        type="button"
+                        onClick={() => { setFormData({ ...formData, client: c._id, clientName: c.name }); setSearchTerm(""); }}
+                        className="w-full px-5 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 border-b border-slate-50 dark:border-white/5 last:border-0 transition-colors"
+                      >
+                        <div className="text-left">
+                          <div className="text-[11px] font-[1000] uppercase tracking-tight text-slate-800 dark:text-white">{c.name}</div>
+                          <div className="text-[9px] font-mono font-bold text-slate-400 mt-0.5">{c.pan}</div>
+                        </div>
+                        <ChevronRight size={14} className="text-slate-300" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* SPECIFICATIONS */}
-          <div className="bg-slate-50 dark:bg-white/1 p-5 md:p-8 rounded-lg md:rounded-xl border border-slate-100 dark:border-white/5 space-y-4 md:space-y-6 text-left">
+          <div className="bg-slate-50 dark:bg-white/1 p-5 md:p-8 rounded-lg md:rounded-xl border border-slate-100 dark:border-white/5 space-y-4 md:space-y-6 text-left relative z-0">
             <div className="space-y-2 md:space-y-3">
               <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                 <Landmark size={10} md:size={12} strokeWidth={3} /> 
@@ -340,7 +480,7 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
 
           {/* PAYMENT */}
           {category === 'FINANCIAL' && !formData.type.includes('REDEMPTION') && !formData.type.includes('SWP') && (
-            <div className="grid grid-cols-2 gap-4 md:gap-6 text-left relative">
+            <div className="grid grid-cols-2 gap-4 md:gap-6 text-left relative z-10">
               <div className="space-y-2 md:space-y-3">
                 <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                   <CreditCard size={10} md:size={12} strokeWidth={3} /> Payment Mode
@@ -372,13 +512,14 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
 
               <div className="space-y-2 md:space-y-3">
                 <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest">Initial Status</label>
-                <div className="flex p-1 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10">
+                <div className="flex p-1 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10 h-10.5 md:h-
+                [48px]">
                   {["WAITING", "PAID"].map((s) => (
                     <button
                       key={s}
                       type="button"
                       onClick={() => setFormData({...formData, paymentStatus: s})}
-                      className={`flex-1 py-2.5 rounded text-[8px] md:text-[9px] font-black uppercase transition-all ${formData.paymentStatus === s ? "bg-emerald-500 text-white shadow-sm" : "text-slate-400"}`}
+                      className={`flex-1 rounded text-[8px] md:text-[9px] font-black uppercase transition-all ${formData.paymentStatus === s ? "bg-emerald-500 text-white shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
                     >
                       {s}
                     </button>

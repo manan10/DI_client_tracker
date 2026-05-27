@@ -99,7 +99,7 @@ exports.getSubmissionById = async (req, res) => {
 };
 
 /**
- * @desc    Update logic with manual Finalization control
+ * @desc    Update logic with manual Finalization control & Metadata support
  */
 exports.updateSubmission = async (req, res) => {
   try {
@@ -108,8 +108,9 @@ exports.updateSubmission = async (req, res) => {
     const oldDoc = await Submission.findById(id);
     if (!oldDoc) return res.status(404).json({ success: false, message: "Record not found" });
 
-    const updateData = { ...req.body };
+    let updateData = { ...req.body };
     const auditLogs = [];
+    const query = { $set: {} };
 
     // 1. Log Status Transitions (e.g., PENDING -> SETTLED)
     if (updateData.status && updateData.status !== oldDoc.status) {
@@ -144,9 +145,20 @@ exports.updateSubmission = async (req, res) => {
       delete updateData.auditTrail;
     }
 
-    // REMOVED: Automatic isFinalized = true logic here
+    // 4. Handle Flexible Metadata Updates securely
+    // If the frontend sends specific metadata keys (e.g. metadata.Courier = "BlueDart"),
+    // we map them properly so we don't accidentally overwrite the entire metadata object.
+    for (const key in updateData) {
+       if (key === 'metadata' && typeof updateData.metadata === 'object') {
+           // If they passed a whole object, set the individual keys to preserve existing ones
+           for (const metaKey in updateData.metadata) {
+               query.$set[`metadata.${metaKey}`] = updateData.metadata[metaKey];
+           }
+       } else {
+           query.$set[key] = updateData[key];
+       }
+    }
 
-    const query = { $set: updateData };
     if (auditLogs.length > 0) {
       query.$push = { auditTrail: { $each: auditLogs } };
     }

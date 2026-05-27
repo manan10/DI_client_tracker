@@ -3,7 +3,7 @@ import {
   X, CheckCircle2, Plus, ShieldAlert, Clock, User, Trash2, 
   CreditCard, Lock, Unlock, Check, AlertTriangle, Landmark, 
   Fingerprint, Share2, MessageCircle, Activity, Send, Loader2, Paperclip,
-  ChevronDown, Settings, FileText
+  ChevronDown, Settings, FileText, Database
 } from 'lucide-react';
 import { useApi } from '../../../hooks/useApi';
 import { toast } from 'sonner';
@@ -65,6 +65,11 @@ const SubmissionDetail = ({ submissionId, isOpen, onClose, onUpdate, onDelete })
   const [comment, setComment] = useState("");
   const [isExecuting, setIsExecuting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  // States for Dynamic Metadata
+  const [newMetaKey, setNewMetaKey] = useState("");
+  const [newMetaValue, setNewMetaValue] = useState("");
+
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -148,9 +153,59 @@ const SubmissionDetail = ({ submissionId, isOpen, onClose, onUpdate, onDelete })
     }
   };
 
+  // --- Dynamic Metadata Handlers ---
+  const addMetadata = async (e) => {
+    e.preventDefault();
+    if (!newMetaKey.trim() || !newMetaValue.trim()) return;
+    
+    const formattedKey = newMetaKey.trim().toUpperCase();
+    const currentMeta = submission.metadata || {};
+    
+    await handleUpdate({
+      metadata: {
+        ...currentMeta,
+        [formattedKey]: newMetaValue.trim()
+      }
+    });
+
+    setNewMetaKey("");
+    setNewMetaValue("");
+    toast.success("Information Added");
+  };
+
+  const removeMetadata = async (keyToRemove) => {
+    const currentMeta = { ...(submission.metadata || {}) };
+    delete currentMeta[keyToRemove];
+    
+    const res = await request(`/submissions/${submissionId}`, 'PATCH', { metadata: currentMeta });
+    if (res?.success) {
+        setSubmission(res.data);
+        onUpdate(res.data);
+        toast.success("Information Removed");
+    }
+  };
+
+  // Helper to nicely format dates coming from the meta-value store
+  const formatMetaValue = (val) => {
+    // If it's a YYYY-MM-DD string, format it to DD MMM YYYY
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+        return new Date(val).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+    }
+    return val;
+  };
+
   if (!isOpen || !submission) return null;
 
   const isNFT = submission.type === 'NON_FINANCIAL';
+  
+  // Format date for inputs
+  const formatDateForInput = (dateString) => {
+      if (!dateString) return '';
+      return new Date(dateString).toISOString().split('T')[0];
+  };
+
+  // Determine if the current meta key looks like it needs a date picker
+  const isDateKey = newMetaKey.toLowerCase().includes('date');
 
   return (
     <>
@@ -186,7 +241,7 @@ const SubmissionDetail = ({ submissionId, isOpen, onClose, onUpdate, onDelete })
         <div className="flex px-4 md:px-10 bg-white dark:bg-[#0D0E12] border-b border-slate-200 dark:border-white/10 overflow-x-auto no-scrollbar">
           {[
             { id: 'CHECKLIST', label: '1. Checklist', icon: CheckCircle2 },
-            { id: 'LOGISTICS', label: isNFT ? '2. Details' : '2. Settlement', icon: isNFT ? FileText : CreditCard },
+            { id: 'LOGISTICS', label: isNFT ? '2. Details & Info' : '2. Settlement & Info', icon: isNFT ? FileText : CreditCard },
             { id: 'ACTIVITY', label: '3. Feed', icon: MessageCircle }
           ].map(tab => (
             <button
@@ -305,10 +360,16 @@ const SubmissionDetail = ({ submissionId, isOpen, onClose, onUpdate, onDelete })
             </div>
           )}
 
-          {/* TAB 2: LOGISTICS */}
+          {/* TAB 2: LOGISTICS & FIELDS */}
           {activeTab === 'LOGISTICS' && (
             <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 no-scrollbar text-left">
+               
+               {/* Primary Fields */}
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+                  <div className="space-y-2">
+                    <label className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase">Creation / App Date</label>
+                    <input type="date" className="w-full bg-white dark:bg-[#0D0E12] border border-slate-200 dark:border-white/10 rounded-xl px-4 md:px-6 py-4 text-xs font-mono font-bold uppercase outline-none" defaultValue={formatDateForInput(submission.creationDate)} onBlur={(e) => handleUpdate({ creationDate: e.target.value })} />
+                  </div>
                   <div className="space-y-2">
                     <label className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase">{isNFT ? 'RTA Request No.' : 'RTA Confirmation ID'}</label>
                     <input className="w-full bg-white dark:bg-[#0D0E12] border border-slate-200 dark:border-white/10 rounded-xl px-4 md:px-6 py-4 text-xs font-mono font-bold uppercase outline-none" placeholder="ID..." defaultValue={submission.rtaReference} onBlur={(e) => handleUpdate({ rtaReference: e.target.value })} />
@@ -334,6 +395,58 @@ const SubmissionDetail = ({ submissionId, isOpen, onClose, onUpdate, onDelete })
                     />
                  </div>
                )}
+
+               {/* --- OTHER INFORMATION SECTION (Dynamic Metadata) --- */}
+               <div className="border border-slate-200 dark:border-white/10 rounded-2xl md:rounded-3xl overflow-hidden shadow-sm bg-white dark:bg-[#0D0E12]">
+                  <div className="px-6 py-5 bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10 flex items-center gap-3">
+                     <Database size={16} className="text-slate-400" />
+                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Other Information</h3>
+                  </div>
+                  
+                  {/* Render Existing Info */}
+                  <div className="divide-y divide-slate-100 dark:divide-white/5">
+                     {submission.metadata && Object.keys(submission.metadata).length > 0 ? (
+                        Object.entries(submission.metadata).map(([key, val]) => (
+                           <div key={key} className="flex items-center justify-between px-6 py-4 group hover:bg-slate-50 dark:hover:bg-white/1 transition-all">
+                              <div className="flex-1 min-w-0 pr-4">
+                                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{key}</p>
+                                 <p className="text-[11px] font-bold text-slate-900 dark:text-white uppercase mt-1 truncate">
+                                     {formatMetaValue(val)}
+                                 </p>
+                              </div>
+                              <button onClick={() => removeMetadata(key)} className="p-2 text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
+                                 <X size={14} strokeWidth={3} />
+                              </button>
+                           </div>
+                        ))
+                     ) : (
+                        <div className="px-6 py-8 text-center opacity-40">
+                           <p className="text-[9px] font-black uppercase tracking-widest">No Additional Information Logged</p>
+                        </div>
+                     )}
+                  </div>
+
+                  {/* Add New Information Form */}
+                  <form onSubmit={addMetadata} className="p-4 bg-slate-50/50 dark:bg-white/1 border-t border-slate-100 dark:border-white/5 flex flex-col md:flex-row gap-3">
+                     <input 
+                       className="flex-1 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-3 text-[10px] font-black uppercase outline-none focus:border-emerald-500 transition-colors" 
+                       placeholder="FIELD NAME (e.g. Courier Date)" 
+                       value={newMetaKey} 
+                       onChange={(e) => setNewMetaKey(e.target.value)} 
+                     />
+                     {/* DYNAMIC INPUT: Swaps to Date Picker if Key includes 'date' */}
+                     <input 
+                       type={isDateKey ? 'date' : 'text'}
+                       className={`flex-1 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-3 text-[10px] font-bold uppercase outline-none focus:border-emerald-500 transition-colors ${isDateKey ? 'font-mono' : ''}`} 
+                       placeholder={isDateKey ? '' : 'VALUE'} 
+                       value={newMetaValue} 
+                       onChange={(e) => setNewMetaValue(e.target.value)} 
+                     />
+                     <button type="submit" disabled={!newMetaKey || !newMetaValue} className="px-6 py-3 bg-emerald-500 disabled:opacity-50 text-white rounded-lg font-black text-[9px] uppercase hover:bg-emerald-600 transition-colors shrink-0">
+                        ADD FIELD
+                     </button>
+                  </form>
+               </div>
 
                <div className="p-8 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl flex flex-col items-center opacity-30">
                   <Paperclip size={24} className="mb-4" />

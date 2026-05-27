@@ -275,7 +275,7 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
             </div>
           )}
 
-{step === 3 && (
+          {step === 3 && (
             <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-right-4 flex flex-col h-full">
                
                {/* SMART STEP HEADER: Resolves state routing dynamically */}

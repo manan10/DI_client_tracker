@@ -1,81 +1,97 @@
 import React, { useState } from "react";
-import { Search, Calendar, ChevronDown } from "lucide-react";
+import { Search, Calendar, ChevronDown, Sparkles, X } from "lucide-react";
 
 const HistoryHeader = ({ selectedMonth, setSelectedMonth, selectedYear, setSelectedYear, searchQuery, setSearchQuery }) => {
   const [showPicker, setShowPicker] = useState(false);
-  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const years = [2024, 2025, 2026];
 
   return (
-    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 md:gap-10 mb-8 md:mb-12 border-b border-slate-100 dark:border-slate-800 pb-8 md:pb-12 px-4 sm:px-0">
+    <div className="w-full mb-12 relative group">
+      {/* GLOW EFFECT */}
+      <div className="absolute -top-10 left-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl transition-transform duration-700 group-hover:scale-150" />
       
-      {/* TITLE SECTION: Scaled for mobile */}
-      <div className="space-y-1 md:space-y-2">
-        <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-slate-900 dark:text-white uppercase leading-none">
-          SPENDING <span className="text-emerald-500 font-light italic">HISTORY</span>
-        </h1>
-        <p className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-[0.4em]">Spend Audit Dashboard</p>
+      {/* HEADER IDENTITY */}
+      <div className="flex items-end justify-between mb-8">
+        <div>
+           <p className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.3em] mb-1 flex items-center gap-2">
+             <Sparkles size={10} /> Spending
+           </p>
+           <h1 className="text-5xl sm:text-7xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic leading-none">
+              History
+           </h1>
+        </div>
+        
+        <button 
+          onClick={() => setShowPicker(!showPicker)}
+          className="flex items-center gap-3 bg-white dark:bg-slate-900 px-6 py-3.5 rounded-full border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all active:scale-95"
+        >
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300">
+             {months[selectedMonth]} {selectedYear}
+          </span>
+          <ChevronDown size={12} className="text-emerald-500" />
+        </button>
       </div>
 
-      {/* SEARCH & PICKER GROUP */}
-      <div className="flex flex-col md:flex-row items-center gap-3 w-full lg:w-auto">
-        
-        {/* Search Input: Full width on mobile */}
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-          <input 
-            value={searchQuery} 
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="SEARCH ENTRY..."
-            className="w-full bg-slate-50 dark:bg-slate-900/50 p-4 pl-12 rounded-xl text-[10px] font-bold uppercase tracking-widest outline-none border border-slate-100 dark:border-slate-800 focus:border-emerald-500/50 transition-all" 
-          />
+      {/* SEARCH COMMAND */}
+      <div className="relative p-1 bg-slate-100 dark:bg-slate-800 rounded-4xl shadow-inner">
+        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-emerald-500">
+            <Search size={18} />
         </div>
+        <input 
+          value={searchQuery} 
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="SEARCH TRANSACTIONS..."
+          className="w-full bg-transparent py-5 pl-14 pr-6 text-[11px] font-black uppercase tracking-[0.2em] outline-none placeholder:text-slate-400 dark:placeholder:text-slate-600" 
+        />
+        <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        </div>
+      </div>
 
-        {/* Date Picker: Now full width on mobile to match search */}
-        <div className="relative w-full md:w-auto">
-          <button 
-            onClick={() => setShowPicker(!showPicker)}
-            className="w-full md:w-auto flex items-center justify-between md:justify-start gap-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 dark:hover:bg-slate-100 transition-all cursor-pointer shadow-lg md:shadow-none"
-          >
-            <div className="flex items-center gap-3">
-                <Calendar size={14} />
-                <span>{months[selectedMonth]} {selectedYear}</span>
-            </div>
-            <ChevronDown size={14} className={`${showPicker ? "rotate-180" : ""} transition-transform`} />
-          </button>
-
-          {showPicker && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowPicker(false)} />
-              {/* Dropdown: Adjusted to be full-width on mobile for consistency */}
-              <div className="absolute top-16 right-0 left-0 md:left-auto md:w-72 z-50 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-4 animate-in fade-in zoom-in-95">
-                <div className="grid grid-cols-3 gap-1 mb-4">
-                  {months.map((m, i) => (
-                    <button 
-                        key={m} 
-                        onClick={() => { setSelectedMonth(i); setShowPicker(false); }} 
-                        className={`py-2.5 text-[8px] font-bold uppercase rounded-lg transition-colors ${selectedMonth === i ? 'bg-emerald-500 text-white' : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400'}`}
-                    >
-                      {m.substring(0, 3)}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-1 border-t border-slate-100 dark:border-slate-800 pt-4">
-                  {years.map(y => (
+      {/* REFINED DATE PICKER MODAL */}
+      {showPicker && (
+        <>
+          <div className="fixed inset-0 z-40 bg-slate-900/10 backdrop-blur-sm" onClick={() => setShowPicker(false)} />
+          <div className="absolute top-44 right-0 w-full sm:w-100 z-50 bg-white dark:bg-[#0B1120] border border-slate-100 dark:border-slate-800 rounded-[2.5rem] shadow-2xl p-8 animate-in slide-in-from-top-4 duration-300">
+             <div className="flex items-center justify-between mb-6">
+                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Select Date</p>
+                 <button onClick={() => setShowPicker(false)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors">
+                    <X size={14} className="text-slate-500" />
+                 </button>
+             </div>
+             
+             {/* Year Selector */}
+             <div className="flex gap-2 mb-6">
+                {years.map(y => (
                     <button 
                         key={y} 
-                        onClick={() => { setSelectedYear(y); setShowPicker(false); }} 
-                        className={`flex-1 py-2.5 text-[9px] font-bold uppercase rounded-lg transition-colors ${selectedYear === y ? 'bg-emerald-500 text-white' : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400'}`}
+                        onClick={() => setSelectedYear(y)} 
+                        className={`flex-1 py-3 text-[10px] font-black uppercase rounded-2xl transition-all ${selectedYear === y ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 hover:bg-slate-100'}`}
                     >
-                      {y}
+                        {y}
                     </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+                ))}
+             </div>
+
+             {/* Month Grid */}
+             <div className="grid grid-cols-4 gap-2">
+                {months.map((m, i) => (
+                    <button 
+                        key={m} 
+                        onClick={() => { 
+                            setSelectedMonth(i); 
+                            setShowPicker(false); // Auto-close enabled
+                        }} 
+                        className={`py-4 text-[10px] font-black uppercase rounded-2xl transition-all ${selectedMonth === i ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-slate-50 dark:bg-slate-800 text-slate-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10'}`}
+                    >
+                        {m}
+                    </button>
+                ))}
+             </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

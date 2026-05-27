@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, Plus, Clock, Inbox, CheckCircle, 
   Repeat, Wallet, LogOut, Layers, FileText, 
-  ChevronRight, Activity, Landmark
+  ChevronRight, Activity, Landmark, Database
 } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
 import NewSubmission from './Submissions/NewSubmission';
@@ -91,6 +91,12 @@ const Submissions = () => {
     setSubmissions(prev => prev.filter(s => s._id !== deletedId));
   };
 
+  // Helper for Displaying Dates
+  const formatDisplayDate = (dateStr) => {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+  };
+
   return (
     <div className="space-y-4 md:space-y-8 animate-in fade-in duration-500 pb-20 md:pb-0">
       
@@ -99,7 +105,6 @@ const Submissions = () => {
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 md:gap-6 relative z-10">
           <div className="space-y-2 md:space-y-3">
             <div className="flex items-center gap-2 md:gap-3">
-              {/* More professional, less pill-like on mobile */}
               <div className="p-2 md:p-3 bg-emerald-500/10 rounded-lg md:rounded-2xl border border-emerald-500/20 shadow-inner">
                 <Activity size={18} className="text-emerald-500 md:w-6 md:h-6" />
               </div>
@@ -119,7 +124,7 @@ const Submissions = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4 w-full lg:w-auto">
-            {/* SEGMENTED VIEW TOGGLE - Compacted on mobile */}
+            {/* SEGMENTED VIEW TOGGLE */}
             <div className="inline-flex p-1 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg md:rounded-2xl shadow-inner h-10 md:h-14">
               <button 
                 onClick={() => setViewMode('ACTIVE')}
@@ -143,7 +148,7 @@ const Submissions = () => {
               </button>
             </div>
 
-            {/* SEARCH & ADD GROUP - Compacted on mobile */}
+            {/* SEARCH & ADD GROUP */}
             <div className="flex items-center gap-2 h-10 md:h-14">
               <div className="relative flex-1 sm:w-72 h-full">
                 <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
@@ -168,14 +173,13 @@ const Submissions = () => {
         </div>
       </div>
 
-      {/* COMMAND CATEGORY CARDS - Grid on Mobile, Flex on Desktop */}
+      {/* COMMAND CATEGORY CARDS */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:flex md:flex-row md:items-center md:gap-4 overflow-x-auto md:no-scrollbar md:-mx-4 md:px-4 lg:mx-0 lg:px-0">
         {subTabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveCategory(tab.id)}
             className={`w-full md:min-w-45 flex-col items-start gap-1 md:gap-1.5 p-3 md:px-6 md:py-5 rounded-xl md:rounded-4xl border transition-all duration-500 relative
-              /* Make the 5th item span 2 columns on small mobile to balance grid */
               last:col-span-2 sm:last:col-span-1 md:last:col-span-auto
               ${activeCategory === tab.id 
                 ? 'bg-white dark:bg-[#0D0E12] border-emerald-500 shadow-md md:shadow-2xl shadow-emerald-500/10 md:-translate-y-1' 
@@ -198,18 +202,18 @@ const Submissions = () => {
       </div>
 
       {/* CONTENT REGISTRY */}
-      {/* Mobile uses rounded-xl, Desktop uses rounded-[2.5rem] */}
       <div className="bg-white dark:bg-[#0A0B0D] border border-slate-200 dark:border-white/5 rounded-xl md:rounded-[2.5rem] shadow-sm md:shadow-2xl overflow-hidden min-h-75 md:min-h-100">
         
-        {/* DESKTOP TABLE - EXACTLY AS ORIGINAL */}
+        {/* DESKTOP TABLE */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-slate-50/50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5">
-                <th className="px-10 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-left">Submission Detail</th>
+                <th className="px-10 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-left">Date & Detail</th>
                 <th className="px-10 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-left">Client Info</th>
+                <th className="px-10 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-left">Other Information</th>
                 <th className="px-10 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-left">Logistics</th>
-                <th className="px-10 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-left">Current Status</th>
+                <th className="px-10 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-left">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-white/5">
@@ -221,9 +225,12 @@ const Submissions = () => {
                 >
                   <td className="px-10 py-6">
                     <div className="space-y-1">
-                      <span className="text-[11px] font-black text-slate-900 dark:text-white uppercase leading-tight tracking-tight">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                        <Clock size={10} /> {formatDisplayDate(sub.creationDate || sub.createdAt)}
+                      </p>
+                      <div className="text-[11px] font-black text-slate-900 dark:text-white uppercase leading-tight tracking-tight">
                         {sub.schemeName || sub.subType?.replace(/_/g, ' ')}
-                      </span>
+                      </div>
                       {sub.type !== 'NON_FINANCIAL' ? (
                         <p className="text-base font-bold text-slate-900 dark:text-white tabular-nums tracking-tighter">
                           {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(sub.amount)}
@@ -238,6 +245,25 @@ const Submissions = () => {
                   <td className="px-10 py-6">
                     <p className="text-xs font-black text-slate-900 dark:text-white uppercase">{sub.client?.name}</p>
                     <p className="text-[10px] font-mono text-slate-400 tracking-widest uppercase">{sub.client?.pan}</p>
+                  </td>
+                  <td className="px-10 py-6 max-w-50">
+                    {sub.metadata && Object.keys(sub.metadata).length > 0 ? (
+                      <div className="space-y-1.5">
+                        {Object.entries(sub.metadata).slice(0, 2).map(([k, v]) => (
+                          <div key={k} className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest truncate">
+                            <span className="text-slate-400 shrink-0">{k}:</span>
+                            <span className="text-slate-700 dark:text-slate-300 truncate">{String(v)}</span>
+                          </div>
+                        ))}
+                        {Object.keys(sub.metadata).length > 2 && (
+                          <span className="inline-flex items-center gap-1 text-[8px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded tracking-widest">
+                            <Database size={8} /> +{Object.keys(sub.metadata).length - 2} MORE
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-[9px] font-black text-slate-200 dark:text-white/10 uppercase tracking-widest">—</span>
+                    )}
                   </td>
                   <td className="px-10 py-6">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest border border-slate-100 dark:border-white/5 px-2 py-1 rounded">
@@ -258,36 +284,56 @@ const Submissions = () => {
           </table>
         </div>
 
-        {/* MOBILE CARDS - Compact padding */}
+        {/* MOBILE CARDS */}
         <div className="md:hidden divide-y divide-slate-100 dark:divide-white/5">
           {filteredData.map((sub) => (
             <div 
               key={sub._id} 
               onClick={() => { setSelectedSubmissionId(sub._id); setIsDetailOpen(true); }}
-              className="p-4 active:bg-slate-50 dark:active:bg-white/5 transition-all flex items-center justify-between"
+              className="p-4 active:bg-slate-50 dark:active:bg-white/5 transition-all flex flex-col gap-3 cursor-pointer"
             >
-              <div className="space-y-1 flex-1 pr-3 min-w-0">
-                <div className="flex items-center gap-2">
-                   <div className={`shrink-0 w-1.5 h-1.5 rounded-full ${sub.status === 'SETTLED' ? 'bg-emerald-500' : 'bg-blue-500 animate-pulse'}`} />
-                   <p className="text-[10px] font-black text-slate-900 dark:text-white uppercase truncate">
-                     {sub.schemeName || sub.subType?.replace(/_/g, ' ')}
-                   </p>
-                </div>
-                <div className="flex justify-between items-end gap-2">
-                   <div className="min-w-0">
-                      <p className="text-[9px] font-bold text-slate-500 uppercase truncate">{sub.client?.name}</p>
-                      {sub.type !== 'NON_FINANCIAL' ? (
-                        <p className="text-[13px] font-black text-slate-900 dark:text-white tabular-nums tracking-tighter truncate mt-0.5">
-                           {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(sub.amount)}
-                        </p>
-                      ) : (
-                        <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mt-1">Request Item</p>
-                      )}
-                   </div>
-                   <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest shrink-0">{sub.status}</span>
-                </div>
+              <div className="flex items-start justify-between w-full gap-2">
+                 <div className="flex items-center gap-2 min-w-0">
+                    <div className={`shrink-0 w-1.5 h-1.5 rounded-full ${sub.status === 'SETTLED' ? 'bg-emerald-500' : 'bg-blue-500 animate-pulse'}`} />
+                    <p className="text-[10px] font-black text-slate-900 dark:text-white uppercase truncate">
+                      {sub.schemeName || sub.subType?.replace(/_/g, ' ')}
+                    </p>
+                 </div>
+                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest shrink-0 bg-slate-50 dark:bg-white/5 px-2 py-0.5 rounded">
+                    {formatDisplayDate(sub.creationDate || sub.createdAt)}
+                 </span>
               </div>
-              <ChevronRight size={16} className="text-slate-300 shrink-0" />
+              
+              <div className="flex justify-between items-end gap-2 pl-3.5">
+                 <div className="min-w-0">
+                    <p className="text-[9px] font-bold text-slate-500 uppercase truncate">{sub.client?.name}</p>
+                    {sub.type !== 'NON_FINANCIAL' ? (
+                      <p className="text-[13px] font-black text-slate-900 dark:text-white tabular-nums tracking-tighter truncate mt-0.5">
+                         {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(sub.amount)}
+                      </p>
+                    ) : (
+                      <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mt-1">Request Item</p>
+                    )}
+                 </div>
+                 <div className="flex flex-col items-end gap-1.5 shrink-0">
+                   <ChevronRight size={14} className="text-slate-300" />
+                   <span className={`text-[7px] font-black uppercase tracking-widest ${sub.status === 'SETTLED' ? 'text-emerald-500' : sub.status === 'REJECTED' ? 'text-rose-500' : 'text-blue-500'}`}>
+                     {sub.status}
+                   </span>
+                 </div>
+              </div>
+
+              {/* HORIZONTAL METADATA SCROLL FOR MOBILE */}
+              {sub.metadata && Object.keys(sub.metadata).length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1 pl-3.5 pb-1">
+                  {Object.entries(sub.metadata).map(([k, v]) => (
+                    <div key={k} className="shrink-0 flex items-center gap-1 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest max-w-35">
+                      <span className="text-slate-400 shrink-0">{k}:</span>
+                      <span className="text-slate-700 dark:text-slate-300 truncate">{String(v)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
