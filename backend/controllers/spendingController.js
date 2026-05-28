@@ -1,5 +1,7 @@
 const Spending = require('../models/Spending');
 const Wallet = require('../models/Wallet');
+const Category = require('../models/Category');
+
 const mongoose = require('mongoose');
 
 // @desc    Add a new spending entry
@@ -363,6 +365,7 @@ exports.getWalletHistory = async (req, res) => {
 };
 
 
+
 exports.getDetailedAnalytics = async (req, res) => {
     try {
         // 1. Get month/year from query params (e.g., ?month=5&year=2026)
@@ -379,7 +382,7 @@ exports.getDetailedAnalytics = async (req, res) => {
         // 3. Get Wallets (Current Balances)
         const wallets = await Wallet.find({}).populate('user', 'name');
 
-        // 4. Aggregate Spending for the Selected Period
+        // 4. Aggregate Spending for the Selected Period (Wallet Wise)
         const spendStats = await Spending.aggregate([
             { 
                 $match: { 
@@ -404,9 +407,47 @@ exports.getDetailedAnalytics = async (req, res) => {
             }
         ]);
 
-        // 5. Build Wallet-wise Data
+        // 5. Aggregate Spending by Category (For the specific month viewed)
+        const categoryStats = await Spending.aggregate([
+            { 
+                $match: { 
+                    date: { $gte: startDate, $lte: endDate },
+                    type: 'DEBIT' 
+                } 
+            },
+            {
+                $group: {
+                    _id: "$category", // Group by the category ObjectId stored in the Spending document
+                    amount: { $sum: "$amount" }
+                }
+            },
+            {
+                $lookup: {
+                    from: "categories", // MongoDB collection name for your Category model
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "categoryDoc"
+                }
+            },
+            { 
+                $unwind: { 
+                    path: "$categoryDoc", 
+                    preserveNullAndEmptyArrays: true 
+                } 
+            },
+            {
+                $project: {
+                    _id: 0,
+                    category: { $ifNull: ["$categoryDoc.label", "Uncategorized"] },
+                    amount: 1
+                }
+            },
+            { $sort: { amount: -1 } } // Sort highest spend first
+        ]);
+
+        // 6. Build Wallet-wise Data
         const walletData = wallets.map(wallet => {
-            const stats = spendStats.find(s => s._id.toString() === wallet._id.toString()) || { yearSpend: 0, monthSpend: 0 };
+            const stats = spendStats.find(s => s._id && s._id.toString() === wallet._id.toString()) || { yearSpend: 0, monthSpend: 0 };
             return {
                 name: wallet.walletName,
                 user: wallet.user?.name || 'General',
@@ -424,7 +465,8 @@ exports.getDetailedAnalytics = async (req, res) => {
                 monthNetSpend: walletData.reduce((acc, w) => acc + w.monthSpend, 0),
                 yearNetSpend: walletData.reduce((acc, w) => acc + w.yearSpend, 0)
             },
-            walletWise: walletData.sort((a, b) => a.name.localeCompare(b.name))
+            walletWise: walletData.sort((a, b) => a.name.localeCompare(b.name)),
+            categoryWise: categoryStats // Added the calculated category statistics here!
         });
 
     } catch (error) {
