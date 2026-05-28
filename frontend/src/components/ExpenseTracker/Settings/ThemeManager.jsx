@@ -20,13 +20,17 @@ const ThemeManager = ({ isDark, onToggle }) => {
   ];
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-3 duration-500 text-left">
-      <div className="text-left">
-        <h3 className="text-3xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic leading-none pt-1">Appearance</h3>
-        <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em] mt-3 italic leading-none">Visual Configuration</p>
+    <div className="animate-in fade-in duration-500 text-left pb-10">
+      
+      {/* HEADER SECTION */}
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-6">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tight italic leading-none">Appearance</h2>
+          <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">Visual Configuration</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {themes.map((theme) => (
           <button
             key={theme.id}
@@ -35,46 +39,49 @@ const ThemeManager = ({ isDark, onToggle }) => {
                 onToggle();
               }
             }}
-            className={`flex items-center justify-between p-8 rounded-[2.5rem] border transition-all duration-500 group ${
+            className={`flex items-center justify-between p-4 sm:p-5 rounded-2xl border transition-all duration-300 w-full text-left group active:scale-[0.98] ${
               theme.active 
-                ? "bg-slate-900 dark:bg-white border-transparent shadow-2xl scale-[1.02]" 
-                : "bg-slate-50 dark:bg-[#161B22]/50 border-slate-100 dark:border-slate-800 hover:border-amber-500/30"
+                ? "bg-slate-900 dark:bg-white border-slate-900 dark:border-white shadow-lg" 
+                : "bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm"
             }`}
           >
-            <div className="flex items-center gap-6">
-              <div className={`p-4 rounded-2xl transition-colors ${
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
                 theme.active 
-                  ? "bg-white/10 dark:bg-slate-900/5 text-white dark:text-slate-900" 
-                  : "bg-white dark:bg-slate-800 text-slate-400"
+                  ? "bg-white/10 dark:bg-slate-900/10 text-white dark:text-slate-900" 
+                  : "bg-slate-50 dark:bg-slate-800/50 text-slate-400 group-hover:text-amber-500 transition-colors"
               }`}>
-                <theme.icon size={28} strokeWidth={2.5} />
+                <theme.icon size={20} strokeWidth={2.5} />
               </div>
-              <div className="text-left">
-                <p className={`text-sm font-[1000] uppercase tracking-widest ${
+              <div>
+                <p className={`text-xs sm:text-sm font-black uppercase tracking-widest ${
                   theme.active ? "text-white dark:text-slate-900" : "text-slate-900 dark:text-white"
                 }`}>
                   {theme.label}
                 </p>
-                <p className={`text-[9px] font-bold uppercase tracking-tight mt-1 ${
-                  theme.active ? "opacity-60 text-white dark:text-slate-900" : "text-slate-400"
+                <p className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mt-1 ${
+                  theme.active ? "text-slate-400 dark:text-slate-500" : "text-slate-500 dark:text-slate-400"
                 }`}>
                   {theme.desc}
                 </p>
               </div>
             </div>
 
-            {theme.active && (
-              <div className="bg-amber-500 p-2 rounded-full text-white">
-                <Check size={16} strokeWidth={4} />
-              </div>
-            )}
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
+              theme.active ? "bg-amber-500 text-white scale-100 opacity-100" : "scale-50 opacity-0"
+            }`}>
+              <Check size={14} strokeWidth={4} />
+            </div>
           </button>
         ))}
       </div>
 
-      <div className="p-8 bg-amber-500/5 border border-amber-500/10 rounded-3xl flex items-center gap-4">
-        <Monitor className="text-amber-500 shrink-0" size={20} />
-        <p className="text-[9px] font-black text-amber-600 dark:text-amber-500 uppercase tracking-widest leading-relaxed">
+      {/* INFO BANNER */}
+      <div className="mt-6 flex items-start sm:items-center gap-3 p-4 sm:p-5 bg-amber-50 dark:bg-amber-500/10 rounded-2xl border border-amber-100 dark:border-amber-500/20 shadow-sm">
+        <div className="p-2 bg-white dark:bg-amber-500/20 rounded-lg shrink-0 mt-0.5 sm:mt-0 border border-amber-200 dark:border-amber-500/30">
+          <Monitor size={16} className="text-amber-600 dark:text-amber-400" />
+        </div>
+        <p className="text-[10px] text-amber-800 dark:text-amber-300 uppercase font-bold tracking-widest leading-relaxed">
           System will store your preference locally to maintain consistency across family sessions.
         </p>
       </div>
