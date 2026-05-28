@@ -4,8 +4,12 @@ import { Wallet, CreditCard, Activity, ArrowDownRight, RefreshCcw } from "lucide
 const formatINR = (num) => new Intl.NumberFormat('en-IN').format(num || 0);
 
 const AnalyticsHero = ({ data, loading, onRefresh, isRefreshing }) => {
-  const physical = data?.walletWise?.filter(w => !w.isVirtual) || [];
-  const digital = data?.walletWise?.filter(w => w.isVirtual) || [];
+  // Filter and sort wallets by amount spent from high to low
+  const physical = (data?.walletWise?.filter(w => !w.isVirtual) || [])
+    .sort((a, b) => b.monthSpend - a.monthSpend);
+    
+  const digital = (data?.walletWise?.filter(w => w.isVirtual) || [])
+    .sort((a, b) => b.monthSpend - a.monthSpend);
   
   const totalSpend = data?.aggregated?.monthNetSpend || 0;
 
@@ -76,9 +80,8 @@ const AnalyticsHero = ({ data, loading, onRefresh, isRefreshing }) => {
                     <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{w.user}</span>
                   </div>
                   <div className="text-right flex flex-col items-end">
-                    {/* EXPLICIT "SPENT" MENTION HERE */}
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Spent</span>
+                      <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Spent</span>
                       <span className="text-sm font-bold text-slate-900 dark:text-white">₹{formatINR(w.monthSpend)}</span>
                     </div>
                     <div className="flex items-center gap-1 mt-0.5">
@@ -112,9 +115,8 @@ const AnalyticsHero = ({ data, loading, onRefresh, isRefreshing }) => {
                     <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{w.user}</span>
                   </div>
                   <div className="text-right flex flex-col items-end">
-                    {/* EXPLICIT "SPENT" MENTION HERE */}
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Spent</span>
+                      <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Spent</span>
                       <span className="text-sm font-bold text-slate-900 dark:text-white">₹{formatINR(w.monthSpend)}</span>
                     </div>
                     <div className="flex items-center gap-1 mt-0.5">
