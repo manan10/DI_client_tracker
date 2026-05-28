@@ -22,7 +22,7 @@ const AnalyticsHero = ({ data, loading, onRefresh, isRefreshing }) => {
               <div className="flex items-center justify-between mb-4">
                 <p className="text-xs font-bold text-indigo-200 uppercase tracking-widest flex items-center gap-2">
                   <Activity size={14} className="text-indigo-300" />
-                  Net Expenditure
+                  Total Spent This Month
                 </p>
                 
                 {/* UPGRADED HERO SYNC BUTTON */}
@@ -32,7 +32,7 @@ const AnalyticsHero = ({ data, loading, onRefresh, isRefreshing }) => {
                   className="group flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-lg text-[10px] font-black tracking-widest uppercase border border-white/10 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                 >
                   <RefreshCcw size={12} className={isRefreshing ? 'animate-spin text-white' : 'text-indigo-200 group-hover:text-white transition-colors'} />
-                  <span className="text-white hidden sm:inline-block">{isRefreshing ? 'Syncing...' : 'Force Sync'}</span>
+                  <span className="text-white hidden sm:inline-block">{isRefreshing ? 'Syncing...' : 'Refresh'}</span>
                   <span className="text-white sm:hidden">Sync</span>
                 </button>
               </div>
@@ -43,11 +43,11 @@ const AnalyticsHero = ({ data, loading, onRefresh, isRefreshing }) => {
 
             <div className="mt-8 pt-6 border-t border-white/10 grid grid-cols-2 gap-4">
               <div>
-                <p className="text-[10px] font-bold text-indigo-200/70 uppercase tracking-widest mb-1">Total Liquidity</p>
+                <p className="text-[10px] font-bold text-indigo-200/70 uppercase tracking-widest mb-1">Current Total Balance</p>
                 <p className="text-lg font-bold text-white">₹{formatINR(data?.aggregated?.totalCashBalance)}</p>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-indigo-200/70 uppercase tracking-widest mb-1 text-right">YTD Spending</p>
+                <p className="text-[10px] font-bold text-indigo-200/70 uppercase tracking-widest mb-1 text-right">YTD Spending (Until Selected Month)</p>
                 <p className="text-lg font-bold text-white text-right">₹{formatINR(data?.aggregated?.yearNetSpend)}</p>
               </div>
             </div>
@@ -63,7 +63,7 @@ const AnalyticsHero = ({ data, loading, onRefresh, isRefreshing }) => {
               <div className="p-2 bg-amber-50 dark:bg-amber-500/10 rounded-lg">
                 <Wallet size={16} className="text-amber-600 dark:text-amber-500" />
               </div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Physical Cash</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Cash Wallets</h3>
             </div>
             
             <div className="space-y-4 flex-1">
@@ -76,7 +76,11 @@ const AnalyticsHero = ({ data, loading, onRefresh, isRefreshing }) => {
                     <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{w.user}</span>
                   </div>
                   <div className="text-right flex flex-col items-end">
-                    <span className="text-sm font-bold text-slate-900 dark:text-white">₹{formatINR(w.monthSpend)}</span>
+                    {/* EXPLICIT "SPENT" MENTION HERE */}
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Spent</span>
+                      <span className="text-sm font-bold text-slate-900 dark:text-white">₹{formatINR(w.monthSpend)}</span>
+                    </div>
                     <div className="flex items-center gap-1 mt-0.5">
                       <ArrowDownRight size={10} className="text-amber-500" />
                       <span className="text-[10px] font-bold text-amber-600 dark:text-amber-500">
@@ -95,7 +99,7 @@ const AnalyticsHero = ({ data, loading, onRefresh, isRefreshing }) => {
               <div className="p-2 bg-sky-50 dark:bg-sky-500/10 rounded-lg">
                 <CreditCard size={16} className="text-sky-600 dark:text-sky-500" />
               </div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Digital & Bank</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Digital Wallets</h3>
             </div>
 
             <div className="space-y-4 flex-1">
@@ -108,7 +112,11 @@ const AnalyticsHero = ({ data, loading, onRefresh, isRefreshing }) => {
                     <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{w.user}</span>
                   </div>
                   <div className="text-right flex flex-col items-end">
-                    <span className="text-sm font-bold text-slate-900 dark:text-white">₹{formatINR(w.monthSpend)}</span>
+                    {/* EXPLICIT "SPENT" MENTION HERE */}
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Spent</span>
+                      <span className="text-sm font-bold text-slate-900 dark:text-white">₹{formatINR(w.monthSpend)}</span>
+                    </div>
                     <div className="flex items-center gap-1 mt-0.5">
                       <ArrowDownRight size={10} className="text-sky-500" />
                       <span className="text-[10px] font-bold text-sky-600 dark:text-sky-500">
