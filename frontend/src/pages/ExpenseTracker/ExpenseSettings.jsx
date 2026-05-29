@@ -117,7 +117,7 @@ const ExpenseSettings = () => {
               </span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-[1000] italic uppercase tracking-tighter text-slate-900 dark:text-white leading-none">
-              Expense <span className="text-emerald-500">Settings</span>
+              Settings & <span className="text-emerald-500">Preferences</span>
             </h1>
           </div>
         </header>
