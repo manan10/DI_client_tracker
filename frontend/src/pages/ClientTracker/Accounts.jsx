@@ -13,7 +13,7 @@ const Accounts = () => {
   const [activeTab, setActiveTab] = useState("balances");
 
   const tabs = [
-    { id: "audit", name: "Audit Manager", icon: FileText, isLocked: true },
+    { id: "audit", name: "Audit Manager", icon: FileText, isLocked: false },
     { id: "balances", name: "Account Balances", icon: Wallet, isLocked: false },
     { id: "commissions", name: "Commissions", icon: PieChart, isLocked: false },
   ];

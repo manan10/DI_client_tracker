@@ -2,7 +2,6 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, Info, Check, Calendar as CalendarIcon, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 
-// FIXED: Calling onUpdateTransaction straight out of the destructured top-level prop array parameters cleanly
 const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activePickerId, setActivePickerId] = useState(null);
@@ -20,6 +19,7 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
   
   const weekDays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
+  // Click outside to close the picker
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (pickerRef.current && !pickerRef.current.contains(e.target)) {
@@ -30,13 +30,22 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
+  // Responsive Portal Positioning Logic
   useEffect(() => {
     if (activePickerId && activeTriggerRef.current) {
       const updatePosition = () => {
+        // Mobile: Let Flexbox handle centering, skip inline coordinate math entirely
+        if (window.innerWidth < 1024) {
+          setPickerCoords({ top: null, left: null });
+          return;
+        }
+
+        // Desktop: Calculate absolute coordinates relative to the page
         const rect = activeTriggerRef.current.getBoundingClientRect();
         let targetLeft = rect.right + window.scrollX + 12;
         let targetTop = rect.top + window.scrollY - 100;
 
+        // Safety bounds
         if (targetLeft + 288 > window.innerWidth) {
           targetLeft = rect.left + window.scrollX - 300;
         }
@@ -154,182 +163,290 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
   }, [pickerNav.month, pickerNav.year]);
 
   return (
-    <div className="h-full w-full bg-white dark:bg-[#08090A] flex flex-col overflow-hidden text-left text-slate-800 dark:text-slate-200 font-sans">
+    <div className="h-full w-full bg-slate-50 dark:bg-[#08090A] lg:bg-white flex flex-col overflow-hidden text-left text-slate-800 dark:text-slate-200 font-sans relative">
       
       {/* SEARCH AND FILTER SUBBAR */}
-      <div className="px-12 py-5 bg-slate-50/80 dark:bg-[#0B0C10]/40 border-b border-slate-200 dark:border-white/5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 shrink-0">
-        <div className="space-y-1">
-          <h2 className="text-base font-[1000] uppercase tracking-tight text-slate-900 dark:text-white italic">
-            Sales Voucher Validation Workbench
+      <div className="px-4 lg:px-12 py-4 lg:py-5 bg-white lg:bg-slate-50/80 dark:bg-[#0B0C10]/40 border-b border-slate-200 dark:border-white/5 flex flex-col sm:flex-row justify-between sm:items-center gap-3 lg:gap-4 shrink-0 z-10">
+        <div className="space-y-0.5 lg:space-y-1">
+          <h2 className="text-sm lg:text-base font-[1000] uppercase tracking-tight text-slate-900 dark:text-white italic">
+            Sales Voucher Validation
           </h2>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-            Compliance Profile: 
-            <span className={`font-black px-2 py-0.5 rounded text-[9px] ${isGstCompliant ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/10 text-amber-600'}`}>
+          <p className="text-[8px] lg:text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+            Compliance: 
+            <span className={`font-black px-1.5 py-0.5 rounded text-[7px] lg:text-[9px] ${isGstCompliant ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/10 text-amber-600'}`}>
               {isGstCompliant ? `GST COMPLIANT (${activeArnObject?.nickname || 'ACTIVE'})` : "NON-GST EXEMPT"}
             </span>
           </p>
         </div>
         
         <div className="relative w-full sm:w-80">
-          <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Search size={14} className="absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
             type="text"
             placeholder="Search mutual fund broker accounts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white dark:bg-[#121318] border border-slate-200 dark:border-white/10 rounded-2xl pl-11 pr-4 py-3 text-[11px] font-black uppercase tracking-wider outline-none focus:border-emerald-500 shadow-sm transition-all"
+            className="w-full bg-slate-50 lg:bg-white dark:bg-[#121318] border border-slate-200 dark:border-white/10 rounded-xl lg:rounded-2xl pl-9 lg:pl-11 pr-4 py-2.5 lg:py-3 text-[10px] lg:text-[11px] font-black uppercase tracking-wider outline-none focus:border-emerald-500 shadow-sm transition-all"
           />
         </div>
       </div>
 
       {/* COMPACT SUMMARY CONSOLE TOP COUNTER BAR */}
-      <div className="px-12 py-3 bg-slate-100/40 dark:bg-white/1 flex justify-between items-center shrink-0 border-b border-slate-200/50 dark:border-white/5 text-[10px] font-black uppercase tracking-widest text-slate-400 select-none">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/> {approvedCount} Vouchers Staged</span>
+      <div className="px-4 lg:px-12 py-2.5 lg:py-3 bg-white lg:bg-slate-100/40 dark:bg-[#0B0C10] flex flex-wrap justify-between items-center shrink-0 border-b border-slate-200/50 dark:border-white/5 text-[8px] lg:text-[10px] font-black uppercase tracking-widest text-slate-400 select-none z-10">
+        <div className="flex items-center gap-2 lg:gap-4">
+          <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/> 
+            {approvedCount} Staged
+          </span>
           <span className="text-slate-200 dark:text-slate-800">|</span>
-          <span>{filteredAndSortedRows.length} Items Listed</span>
+          <span>{filteredAndSortedRows.length} Items</span>
         </div>
-        <span className="italic font-bold text-slate-400/60 dark:text-slate-500 font-mono">Accrual Match Studio v5.3</span>
+        <span className="hidden sm:block italic font-bold text-slate-400/60 dark:text-slate-500 font-mono">Accrual Match Studio v5.3</span>
       </div>
 
-      {/* SPREADSHEET TABLE GRID */}
-      <div className="flex-1 overflow-y-auto px-12 py-6 no-scrollbar min-h-0 relative">
+      {/* MAIN WORKSPACE AREA */}
+      <div className="flex-1 overflow-hidden relative">
+        
         {filteredAndSortedRows.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center opacity-20 gap-2">
             <Info size={28} strokeWidth={1.5} />
-            <p className="text-[11px] font-black uppercase tracking-widest">No matching records found.</p>
+            <p className="text-[9px] lg:text-[11px] font-black uppercase tracking-widest">No matching records found.</p>
           </div>
         ) : (
-          <table className="w-full border-collapse table-fixed text-[12px]">
-            <thead>
-              <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-white/10 pb-4 bg-white dark:bg-[#08090A] z-20 select-none">
-                <th className="pb-4 w-16 text-center">Selection</th>
-                <th className="pb-4 w-[24%] pl-2 text-left tracking-wider">Mutual Fund Company Particulars</th>
-                <th className="pb-4 text-center w-[18%] tracking-wider">Invoice Billing Date</th>
-                <th className="pb-4 text-right pr-4 w-[11%] tracking-wider">Base Comm</th>
-                <th className="pb-4 text-right pr-4 w-[11%] tracking-wider">CGST (9%)</th>
-                <th className="pb-4 text-right pr-4 w-[11%] tracking-wider">SGST (9%)</th>
-                <th className="pb-4 text-right pr-4 w-[11%] tracking-wider">IGST (18%)</th>
-                <th className="pb-4 text-right w-[12%] tracking-wider">Gross Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-white/5 font-bold">
-              {filteredAndSortedRows.map((row) => {
-                return (
-                  <tr key={row._id} className="bg-transparent hover:bg-slate-50/40 dark:hover:bg-white/1">
-                    <td className="py-5 text-center">
-                      <button 
-                        disabled={!row.invoiceBillingDate}
-                        // FIXED: Re-targeted target callback pointer directly onto the uninsulated prop
-                        onClick={() => onUpdateTransaction(row._id, { isSalesApproved: !row.isSalesApproved })} 
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                          row.isSalesApproved 
-                            ? 'bg-emerald-500 border-emerald-500 text-white scale-105 shadow-md shadow-emerald-500/20 active:scale-95' 
-                            : !row.invoiceBillingDate 
-                              ? 'bg-slate-100 border-slate-200 dark:bg-white/5 dark:border-white/5 text-transparent cursor-not-allowed opacity-50' 
-                              : 'bg-white border-slate-300 dark:bg-[#121318] dark:border-white/20 text-transparent hover:border-slate-400 dark:hover:border-white/40 active:scale-90 cursor-pointer'
-                        }`}
-                      >
-                        <Check size={12} strokeWidth={4} className={row.isSalesApproved ? "block" : "hidden"} />
-                      </button>
-                    </td>
+          <>
+            {/* ---------------------------------------------------------------------
+                MOBILE VIEW: CARD LIST
+                --------------------------------------------------------------------- */}
+            <div className="lg:hidden h-full overflow-y-auto no-scrollbar p-3 space-y-3 pb-24">
+              {filteredAndSortedRows.map((row) => (
+                <div key={row._id} className="bg-white dark:bg-[#111214] border border-slate-200 dark:border-white/10 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
+                  
+                  {/* Top Row: Info & Check */}
+                  <div className="flex gap-3 items-start justify-between">
+                     <button 
+                       disabled={!row.invoiceBillingDate}
+                       onClick={() => onUpdateTransaction(row._id, { isSalesApproved: !row.isSalesApproved })} 
+                       className={`shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all mt-0.5 ${
+                         row.isSalesApproved 
+                           ? 'bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20' 
+                           : !row.invoiceBillingDate 
+                             ? 'bg-slate-50 border-slate-100 dark:bg-white/5 dark:border-white/5 text-transparent cursor-not-allowed opacity-50' 
+                             : 'bg-white border-slate-200 dark:bg-[#121318] dark:border-white/20 text-transparent hover:border-slate-300'
+                       }`}
+                     >
+                       <Check size={14} strokeWidth={4} className={row.isSalesApproved ? "block" : "hidden"} />
+                     </button>
+                     <div className="flex flex-col min-w-0 flex-1">
+                       <span className={`text-[11px] uppercase font-[1000] tracking-tight truncate transition-colors ${row.isSalesApproved ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
+                         {row.ledgerName}
+                       </span>
+                       <span className="text-[9px] text-slate-400 font-black uppercase tracking-wider truncate font-mono mt-0.5">
+                         {row.narration}
+                       </span>
+                     </div>
+                  </div>
 
-                    <td className="py-5 pl-2 text-left truncate">
-                      <span className={`uppercase font-[1000] tracking-tight block truncate text-[12.5px] font-sans transition-colors ${row.isSalesApproved ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>{row.ledgerName}</span>
-                      <span className="text-[9px] text-slate-400 font-black uppercase tracking-wider block mt-0.5 truncate max-w-xs font-mono">{row.narration}</span>
-                    </td>
+                  {/* Middle Row: GST Breakdown Matrix */}
+                  <div className="grid grid-cols-4 gap-1.5 bg-slate-50 dark:bg-white/5 p-2.5 rounded-xl text-center border border-slate-100 dark:border-white/5">
+                     <div className="flex flex-col gap-0.5">
+                       <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Base</span>
+                       <span className="text-[9px] font-mono font-bold text-slate-700 dark:text-slate-300 truncate">{formatINR(row.baseAmount)}</span>
+                     </div>
+                     <div className="flex flex-col gap-0.5 border-l border-slate-200 dark:border-white/10">
+                       <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">CGST</span>
+                       <span className="text-[9px] font-mono font-bold text-amber-600 dark:text-amber-400 truncate">{row.cgst > 0 ? formatINR(row.cgst) : '—'}</span>
+                     </div>
+                     <div className="flex flex-col gap-0.5 border-l border-slate-200 dark:border-white/10">
+                       <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">SGST</span>
+                       <span className="text-[9px] font-mono font-bold text-amber-600 dark:text-amber-400 truncate">{row.sgst > 0 ? formatINR(row.sgst) : '—'}</span>
+                     </div>
+                     <div className="flex flex-col gap-0.5 border-l border-slate-200 dark:border-white/10">
+                       <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">IGST</span>
+                       <span className="text-[9px] font-mono font-bold text-blue-600 dark:text-blue-400 truncate">{row.igst > 0 ? formatINR(row.igst) : '—'}</span>
+                     </div>
+                  </div>
 
-                    <td className="py-5 text-center">
-                      <div className="inline-block">
-                        <button
-                          onClick={(e) => handleOpenPickerContext(e, row)}
-                          className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all select-none hover:scale-[1.02] active:scale-95 ${
-                            row.invoiceBillingDate 
-                              ? 'bg-emerald-50 text-emerald-600 border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400' 
-                              : 'bg-white dark:bg-[#121318] text-slate-400 border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 shadow-sm'
+                  {/* Bottom Row: Date Picker & Gross */}
+                  <div className="flex justify-between items-center gap-3 pt-1">
+                    <button
+                       onClick={(e) => handleOpenPickerContext(e, row)}
+                       className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-[9px] font-black uppercase tracking-wider transition-all select-none ${
+                         row.invoiceBillingDate 
+                           ? 'bg-emerald-50 text-emerald-600 border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400' 
+                           : 'bg-white dark:bg-[#121318] text-slate-400 border-slate-200 dark:border-white/10 shadow-sm'
+                       }`}
+                     >
+                       <CalendarIcon size={12} className={row.invoiceBillingDate ? "text-emerald-500" : "opacity-40"} />
+                       {row.invoiceBillingDate ? row.invoiceBillingDate : "Select Date"}
+                     </button>
+
+                     <div className="text-right shrink-0 min-w-17.5">
+                       <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Gross</p>
+                       <p className={`text-[13px] font-[1000] tabular-nums leading-none transition-colors ${row.isSalesApproved ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
+                          {formatINR(row.grossVoucherTotal)}
+                       </p>
+                     </div>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+
+            {/* ---------------------------------------------------------------------
+                DESKTOP VIEW: SPREADSHEET TABLE GRID (Fixed Sticky Headers)
+                --------------------------------------------------------------------- */}
+            <div className="hidden lg:block h-full overflow-y-auto px-12 pt-0 pb-12 no-scrollbar relative">
+              <table className="w-full border-separate border-spacing-0 table-fixed text-[12px]">
+                
+                {/* 1. SOLID BG ON THEAD ensures rows don't show through the header */}
+                <thead className="sticky top-0 z-30 bg-white dark:bg-[#08090A] shadow-[0_4px_10px_-10px_rgba(0,0,0,0.1)]">
+                  <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest select-none">
+                    {/* 2. PY-5 instead of PB-4 vertically centers text and covers scrolling data */}
+                    <th className="py-5 w-16 text-center border-b border-slate-200 dark:border-white/10">Done</th>
+                    <th className="py-5 w-[24%] pl-2 text-left tracking-wider border-b border-slate-200 dark:border-white/10">MF Particulars</th>
+                    <th className="py-5 text-center w-[18%] tracking-wider border-b border-slate-200 dark:border-white/10">Billing Date</th>
+                    <th className="py-5 text-right pr-4 w-[11%] tracking-wider border-b border-slate-200 dark:border-white/10">Base</th>
+                    <th className="py-5 text-right pr-4 w-[11%] tracking-wider border-b border-slate-200 dark:border-white/10">CGST (9%)</th>
+                    <th className="py-5 text-right pr-4 w-[11%] tracking-wider border-b border-slate-200 dark:border-white/10">SGST (9%)</th>
+                    <th className="py-5 text-right pr-4 w-[11%] tracking-wider border-b border-slate-200 dark:border-white/10">IGST (18%)</th>
+                    <th className="py-5 text-right w-[12%] tracking-wider border-b border-slate-200 dark:border-white/10">Gross</th>
+                  </tr>
+                </thead>
+                
+                <tbody className="font-bold">
+                  {filteredAndSortedRows.map((row) => (
+                    <tr key={row._id} className="bg-transparent hover:bg-slate-50/40 dark:hover:bg-white/1 transition-colors group">
+                      
+                      {/* Added border-b to TDs for clean separation without border-collapse */}
+                      <td className="py-5 text-center border-b border-slate-100 dark:border-white/5">
+                        <button 
+                          disabled={!row.invoiceBillingDate}
+                          onClick={() => onUpdateTransaction(row._id, { isSalesApproved: !row.isSalesApproved })} 
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all mx-auto ${
+                            row.isSalesApproved 
+                              ? 'bg-emerald-500 border-emerald-500 text-white scale-105 shadow-md shadow-emerald-500/20 active:scale-95' 
+                              : !row.invoiceBillingDate 
+                                ? 'bg-slate-100 border-slate-200 dark:bg-white/5 dark:border-white/5 text-transparent cursor-not-allowed opacity-50' 
+                                : 'bg-white border-slate-300 dark:bg-[#121318] dark:border-white/20 text-transparent hover:border-slate-400 dark:hover:border-white/40 active:scale-90 cursor-pointer'
                           }`}
                         >
-                          <CalendarIcon size={11} className={row.invoiceBillingDate ? "text-emerald-500" : "opacity-40"} />
-                          {row.invoiceBillingDate ? row.invoiceBillingDate : "Select Date"}
+                          <Check size={12} strokeWidth={4} className={row.isSalesApproved ? "block" : "hidden"} />
                         </button>
+                      </td>
 
-                        {activePickerId === row._id && createPortal(
-                          <div 
-                            ref={pickerRef} 
-                            style={{ position: 'absolute', top: `${pickerCoords.top}px`, left: `${pickerCoords.left}px`, zIndex: 999999 }}
-                            className="bg-white dark:bg-[#121318] border border-slate-200 dark:border-white/10 rounded-2xl p-4 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3)] w-72 animate-in fade-in zoom-in-95 duration-100 text-left font-sans"
+                      <td className="py-5 pl-2 text-left truncate border-b border-slate-100 dark:border-white/5">
+                        <span className={`uppercase font-[1000] tracking-tight block truncate text-[12.5px] font-sans transition-colors ${row.isSalesApproved ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>{row.ledgerName}</span>
+                        <span className="text-[9px] text-slate-400 font-black uppercase tracking-wider block mt-0.5 truncate max-w-xs font-mono">{row.narration}</span>
+                      </td>
+
+                      <td className="py-5 text-center border-b border-slate-100 dark:border-white/5">
+                        <div className="inline-block">
+                          <button
+                            onClick={(e) => handleOpenPickerContext(e, row)}
+                            className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all select-none hover:scale-[1.02] active:scale-95 ${
+                              row.invoiceBillingDate 
+                                ? 'bg-emerald-50 text-emerald-600 border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400' 
+                                : 'bg-white dark:bg-[#121318] text-slate-400 border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 shadow-sm'
+                            }`}
                           >
-                            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3 mb-3 select-none">
-                              <button onClick={() => shiftMonthNavigation(-1)} className="p-1.5 hover:bg-slate-50 dark:hover:bg-white/5 text-slate-400 hover:text-slate-950 dark:hover:text-white rounded-lg transition-colors">
-                                <ChevronLeft size={14} strokeWidth={2.5} />
-                              </button>
-                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-800 dark:text-slate-200">
-                                {monthsList[pickerNav.month - 1]} {pickerNav.year}
-                              </span>
-                              <button onClick={() => shiftMonthNavigation(1)} className="p-1.5 hover:bg-slate-50 dark:hover:bg-white/5 text-slate-400 hover:text-slate-950 dark:hover:text-white rounded-lg transition-colors">
-                                <ChevronRight size={14} strokeWidth={2.5} />
-                              </button>
-                            </div>
+                            <CalendarIcon size={11} className={row.invoiceBillingDate ? "text-emerald-500" : "opacity-40"} />
+                            {row.invoiceBillingDate ? row.invoiceBillingDate : "Select Date"}
+                          </button>
+                        </div>
+                      </td>
 
-                            <div className="grid grid-cols-7 gap-1 text-center text-[9px] font-black uppercase tracking-widest text-slate-300 dark:text-slate-600 mb-2 select-none">
-                              {weekDays.map(d => <div key={d}>{d}</div>)}
-                            </div>
-
-                            <div className="grid grid-cols-7 gap-1">
-                              {Array.from({ length: calendarGridData.firstDayOffset }).map((_, emptyIdx) => (
-                                <div key={`empty-${emptyIdx}`} className="p-2" />
-                              ))}
-                              {Array.from({ length: calendarGridData.totalDays }).map((_, dIdx) => {
-                                const dayNum = dIdx + 1;
-                                return (
-                                  <button
-                                    key={dayNum}
-                                    // FIXED: Re-targeted picker apply logic to fire up straight into prop stream cleanly
-                                    onClick={() => {
-                                      const paddedMonth = String(pickerNav.month).padStart(2, '0');
-                                      const paddedDay = String(dayNum).padStart(2, '0');
-                                      const computedFullString = `${pickerNav.year}-${paddedMonth}-${paddedDay}`;
-                                      onUpdateTransaction(row._id, { invoiceBillingDate: computedFullString });
-                                      setActivePickerId(null);
-                                    }}
-                                    className="p-2 text-[10px] font-mono font-[1000] rounded-lg border border-transparent hover:border-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 text-center transition-all bg-slate-50/40 dark:bg-white/2 text-slate-700 dark:text-slate-300 active:scale-90"
-                                  >
-                                    {dayNum}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>,
-                          document.body
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="py-5 text-right font-mono text-[11px] tabular-nums text-slate-600 dark:text-slate-400 pr-4 select-all">{formatINR(row.baseAmount)}</td>
-                    <td className="py-5 text-right font-mono text-[11px] tabular-nums pr-4 select-all">
-                      {row.cgst > 0 ? <span className="text-amber-600 dark:text-amber-400 font-black">{formatINR(row.cgst)}</span> : <span className="text-slate-300 dark:text-slate-700 font-medium opacity-40">——</span>}
-                    </td>
-                    <td className="py-5 text-right font-mono text-[11px] tabular-nums pr-4 select-all">
-                      {row.sgst > 0 ? <span className="text-amber-600 dark:text-amber-400 font-black">{formatINR(row.sgst)}</span> : <span className="text-slate-300 dark:text-slate-700 font-medium opacity-40">——</span>}
-                    </td>
-                    <td className="py-5 text-right font-mono text-[11px] tabular-nums pr-4 select-all">
-                      {row.igst > 0 ? <span className="text-blue-600 dark:text-blue-400 font-black">{formatINR(row.igst)}</span> : <span className="text-slate-300 dark:text-slate-700 font-medium opacity-40">——</span>}
-                    </td>
-                    <td className={`py-5 text-right tabular-nums font-[1000] text-[13px] font-sans pr-1 select-all transition-colors ${row.isSalesApproved ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
-                      {formatINR(row.grossVoucherTotal)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <td className="py-5 text-right font-mono text-[11px] tabular-nums text-slate-600 dark:text-slate-400 pr-4 border-b border-slate-100 dark:border-white/5 select-all">{formatINR(row.baseAmount)}</td>
+                      
+                      <td className="py-5 text-right font-mono text-[11px] tabular-nums pr-4 border-b border-slate-100 dark:border-white/5 select-all">
+                        {row.cgst > 0 ? <span className="text-amber-600 dark:text-amber-400 font-black">{formatINR(row.cgst)}</span> : <span className="text-slate-300 dark:text-slate-700 font-medium opacity-40">——</span>}
+                      </td>
+                      
+                      <td className="py-5 text-right font-mono text-[11px] tabular-nums pr-4 border-b border-slate-100 dark:border-white/5 select-all">
+                        {row.sgst > 0 ? <span className="text-amber-600 dark:text-amber-400 font-black">{formatINR(row.sgst)}</span> : <span className="text-slate-300 dark:text-slate-700 font-medium opacity-40">——</span>}
+                      </td>
+                      
+                      <td className="py-5 text-right font-mono text-[11px] tabular-nums pr-4 border-b border-slate-100 dark:border-white/5 select-all">
+                        {row.igst > 0 ? <span className="text-blue-600 dark:text-blue-400 font-black">{formatINR(row.igst)}</span> : <span className="text-slate-300 dark:text-slate-700 font-medium opacity-40">——</span>}
+                      </td>
+                      
+                      <td className={`py-5 text-right tabular-nums font-[1000] text-[13px] font-sans pr-1 select-all transition-colors border-b border-slate-100 dark:border-white/5 ${row.isSalesApproved ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
+                        {formatINR(row.grossVoucherTotal)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
-      <div className="px-12 py-4 bg-slate-50 dark:bg-[#0B0C10] border-t border-slate-200 dark:border-white/10 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 select-none shrink-0">
+      {/* INFO FOOTER */}
+      <div className="hidden lg:flex px-12 py-4 bg-slate-50 dark:bg-[#0B0C10] border-t border-slate-200 dark:border-white/10 text-[10px] font-bold text-slate-400 uppercase tracking-wider items-center gap-2 select-none shrink-0">
         <AlertCircle size={14} className="text-slate-400 shrink-0"/> 
         Vouchers compile dynamically onto downstream summary maps based on individual invoice row definitions.
       </div>
+
+      {/* =========================================================================
+          PORTAL: DATE PICKER (Responsive Auto-Centering Modal)
+          ========================================================================= */}
+      {activePickerId && createPortal(
+        <div className="fixed inset-0 z-999998 lg:absolute lg:inset-auto lg:z-auto pointer-events-none flex items-center justify-center">
+          
+          {/* Mobile Blurred Backdrop (Closes picker on tap) */}
+          <div 
+            className="lg:hidden absolute inset-0 bg-black/50 backdrop-blur-sm pointer-events-auto" 
+            onClick={() => setActivePickerId(null)} 
+          />
+          
+          <div 
+            ref={pickerRef} 
+            style={pickerCoords.top !== null ? { position: 'absolute', top: `${pickerCoords.top}px`, left: `${pickerCoords.left}px`, zIndex: 999999 } : { zIndex: 999999 }}
+            className="relative pointer-events-auto bg-white dark:bg-[#121318] border border-slate-200 dark:border-white/10 rounded-2xl p-4 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3)] w-70 lg:w-72 animate-in fade-in zoom-in-95 duration-100 text-left font-sans"
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3 mb-3 select-none">
+              <button onClick={() => shiftMonthNavigation(-1)} className="p-1.5 hover:bg-slate-50 dark:hover:bg-white/5 text-slate-400 hover:text-slate-950 dark:hover:text-white rounded-lg transition-colors">
+                <ChevronLeft size={14} strokeWidth={2.5} />
+              </button>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-800 dark:text-slate-200">
+                {monthsList[pickerNav.month - 1]} {pickerNav.year}
+              </span>
+              <button onClick={() => shiftMonthNavigation(1)} className="p-1.5 hover:bg-slate-50 dark:hover:bg-white/5 text-slate-400 hover:text-slate-950 dark:hover:text-white rounded-lg transition-colors">
+                <ChevronRight size={14} strokeWidth={2.5} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 text-center text-[9px] font-black uppercase tracking-widest text-slate-300 dark:text-slate-600 mb-2 select-none">
+              {weekDays.map(d => <div key={d}>{d}</div>)}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1">
+              {Array.from({ length: calendarGridData.firstDayOffset }).map((_, emptyIdx) => (
+                <div key={`empty-${emptyIdx}`} className="p-2" />
+              ))}
+              {Array.from({ length: calendarGridData.totalDays }).map((_, dIdx) => {
+                const dayNum = dIdx + 1;
+                return (
+                  <button
+                    key={dayNum}
+                    onClick={() => {
+                      const paddedMonth = String(pickerNav.month).padStart(2, '0');
+                      const paddedDay = String(dayNum).padStart(2, '0');
+                      const computedFullString = `${pickerNav.year}-${paddedMonth}-${paddedDay}`;
+                      onUpdateTransaction(activePickerId, { invoiceBillingDate: computedFullString });
+                      setActivePickerId(null);
+                    }}
+                    className="p-2 text-[10px] font-mono font-[1000] rounded-lg border border-transparent hover:border-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 text-center transition-all bg-slate-50/40 dark:bg-white/2 text-slate-700 dark:text-slate-300 active:scale-90"
+                  >
+                    {dayNum}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };
