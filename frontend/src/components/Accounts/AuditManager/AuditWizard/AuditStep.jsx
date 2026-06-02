@@ -28,10 +28,11 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
     return (selection.stagedData?.transactions || []).filter(t => t.narration !== "EMPTY_FILE_MARKER");
   }, [selection.stagedData]);
 
+  // Using Math.abs ensures totals stay positive even if the backend parser reads a negative bank withdrawal
   const totals = useMemo(() => {
     return transactions.reduce((acc, curr) => {
-      if (curr.type === 'RECEIPT') acc.receipts += curr.amount;
-      if (curr.type === 'PAYMENT') acc.payments += curr.amount;
+      if (curr.type === 'RECEIPT') acc.receipts += Math.abs(curr.amount);
+      if (curr.type === 'PAYMENT') acc.payments += Math.abs(curr.amount);
       return acc;
     }, { receipts: 0, payments: 0 });
   }, [transactions]);
@@ -69,6 +70,39 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
     }
   };
 
+  const handleSelectAll = async () => {
+    if (!displayTransactions.length) return;
+
+    const allDisplayedIds = displayTransactions.map(tx => tx._id);
+    const currentlyVerified = selection.verifiedIds || [];
+    const isAllSelected = allDisplayedIds.every(id => currentlyVerified.includes(id));
+    const targetState = !isAllSelected;
+
+    setSelection(prev => {
+      let newVerified = [...(prev.verifiedIds || [])];
+      if (targetState) {
+        newVerified = [...new Set([...newVerified, ...allDisplayedIds])];
+      } else {
+        newVerified = newVerified.filter(id => !allDisplayedIds.includes(id));
+      }
+      return { ...prev, verifiedIds: newVerified };
+    });
+
+    try {
+      const idsToUpdate = allDisplayedIds.filter(id => currentlyVerified.includes(id) !== targetState);
+      if (idsToUpdate.length > 0) {
+        await Promise.all(
+          idsToUpdate.map(id => request(`/audit/transactions/${id}`, 'PATCH', { isChecked: targetState }))
+        );
+        toast.success(targetState ? `Verified ${idsToUpdate.length} records` : `Unverified ${idsToUpdate.length} records`);
+      }
+    } catch {
+      toast.error("Sync failed for some transactions");
+    }
+  };
+
+  const isAllDisplayedChecked = displayTransactions.length > 0 && displayTransactions.every(tx => (selection.verifiedIds || []).includes(tx._id));
+
   const groupedLedgers = useMemo(() => {
     const filtered = companyLedgers.filter(l => 
       l.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -104,7 +138,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
               <p className="text-[8px] lg:text-[9px] font-bold text-slate-400 uppercase tracking-widest">{selection.tallyCompany}</p>
             </div>
 
-            {/* Mobile-only Verified Count (Moved to right on small screens) */}
             <div className="flex lg:hidden flex-col text-right">
                 <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Verified</p>
                 <p className="text-xs font-black text-slate-900 dark:text-white tabular-nums italic">
@@ -112,7 +145,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                 </p>
             </div>
             
-            {/* Desktop Tabs */}
             <div className="hidden lg:flex bg-slate-100 dark:bg-white/5 p-1 rounded-lg">
               {['RECEIPT', 'PAYMENT'].map(tab => (
                 <button 
@@ -126,7 +158,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
             </div>
           </div>
 
-          {/* Mobile Tabs */}
           <div className="flex lg:hidden bg-slate-100 dark:bg-white/5 p-1 rounded-lg w-full shrink-0">
               {['RECEIPT', 'PAYMENT'].map(tab => (
                 <button 
@@ -148,7 +179,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                <p className="text-[7px] lg:text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5 lg:mb-1">Payments</p>
                <p className="text-[11px] lg:text-xs font-black text-rose-500 tabular-nums italic">{formatINR(totals.payments)}</p>
             </div>
-            {/* Desktop Verified Count */}
             <div className="hidden lg:flex flex-col text-right">
                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 text-center">Verified</p>
                 <p className="text-xs font-black text-slate-900 dark:text-white tabular-nums italic">
@@ -169,12 +199,25 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                 MOBILE VIEW: CARD LIST
                 --------------------------------------------------------------------- */}
             <div className="lg:hidden flex-1 overflow-y-auto no-scrollbar p-3 space-y-3">
+               
+               {displayTransactions.length > 0 && (
+                 <div className="flex items-center justify-between px-2 pb-1">
+                   <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Select All</span>
+                   <button 
+                     onClick={handleSelectAll}
+                     className={`shrink-0 w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all mt-0.5 ${isAllDisplayedChecked ? 'bg-emerald-500 border-emerald-500 text-white shadow-md' : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-transparent hover:border-emerald-500'}`}
+                   >
+                     <Check size={16} strokeWidth={4} />
+                   </button>
+                 </div>
+               )}
+
                {displayTransactions.map((tx) => {
                   const isChecked = (selection.verifiedIds || []).includes(tx._id);
                   const isEditing = editingId === tx._id;
                   const conf = Math.round((tx.confidence || 0) * 100);
                   const confColor = conf > 80 ? 'text-emerald-500' : 'text-amber-500';
-                  const amountColor = activeTab === 'RECEIPT' ? 'text-emerald-500' : 'text-slate-900 dark:text-white';
+                  const amountColor = activeTab === 'RECEIPT' ? 'text-emerald-500' : 'text-slate-200 dark:text-white';
 
                   return (
                     <div 
@@ -182,7 +225,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                       style={{ zIndex: isEditing ? 50 : 1 }}
                       className={`relative flex flex-col p-3.5 rounded-2xl transition-all shadow-sm ${isChecked ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-500/20' : 'bg-white dark:bg-[#111214] border border-slate-200 dark:border-white/5'}`}
                     >
-                      {/* Top Row: Info + Amount + Checkbox */}
                       <div className="flex justify-between items-start gap-3 mb-3">
                          <div className="flex gap-3 items-start flex-1 min-w-0">
                            <button 
@@ -206,11 +248,11 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                            </div>
                          </div>
                          <div className={`text-sm font-[1000] tabular-nums italic shrink-0 ${amountColor}`}>
-                            {formatINR(tx.amount).replace('₹', tx.type === 'RECEIPT' ? '+' : '-')}
+                            {/* REMOVED REPLACE LOGIC, USING MATH.ABS */}
+                            {formatINR(Math.abs(tx.amount))}
                          </div>
                       </div>
 
-                      {/* Middle Row: Tally Mapping Dropdown */}
                       <div className="relative mb-3">
                         <div 
                           onClick={() => !isChecked && setEditingId(isEditing ? null : tx._id)} 
@@ -232,7 +274,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                           )}
                         </div>
 
-                        {/* Dropdown Menu (Absolute but constrained within Card Stack via z-index) */}
                         {isEditing && !isChecked && (
                           <div className="absolute top-[calc(100%-4px)] left-0 right-0 bg-white dark:bg-[#1A1C20] border-2 border-emerald-500 rounded-b-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
                              <div className="p-2 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-transparent">
@@ -260,7 +301,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                         )}
                       </div>
 
-                      {/* Bottom Row: Actions */}
                       <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-white/5">
                         <button 
                           onClick={() => handleUpdate(tx._id, { isMarkedForManualEntry: !tx.isMarkedForManualEntry })}
@@ -293,7 +333,17 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
               <table className="w-full border-collapse text-left table-fixed">
                 <thead className="sticky top-0 bg-slate-50 dark:bg-[#111218] border-b border-slate-200 dark:border-white/10 z-20">
                   <tr className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                    <th className="w-20 px-6 py-4 text-center">Done</th>
+                    <th className="w-20 px-6 py-4 text-center">
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <button 
+                          onClick={handleSelectAll}
+                          className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all ${isAllDisplayedChecked ? 'bg-emerald-500 border-emerald-500 text-white shadow-md' : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-transparent hover:border-emerald-500'}`}
+                        >
+                          <Check size={16} strokeWidth={4} />
+                        </button>
+                        <span className="text-[7px] leading-none opacity-50">ALL</span>
+                      </div>
+                    </th>
                     <th className="w-32 px-4 py-4">Date</th>
                     <th className="w-auto px-4 py-4">Particulars</th>
                     <th className="w-72 px-4 py-4">Tally Mapping</th>
@@ -311,7 +361,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                     return (
                       <tr key={tx._id} className={`transition-all ${isChecked ? 'bg-emerald-50/20 dark:bg-emerald-500/1' : 'bg-white dark:bg-transparent'}`}>
                         
-                        {/* 1. CHECKBOX */}
                         <td className="px-6 py-3 text-center">
                           <button 
                             onClick={() => handleUpdate(tx._id, { isChecked: !isChecked })}
@@ -321,12 +370,10 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                           </button>
                         </td>
 
-                        {/* 2. DATE */}
                         <td className="px-4 py-3 text-[13px] font-black tabular-nums text-slate-600 dark:text-slate-400 uppercase italic">
                           {new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
                         </td>
 
-                        {/* 3. NARRATION */}
                         <td className="px-4 py-3 min-w-0">
                           <div className="flex flex-col">
                             <p className={`text-[12px] font-bold uppercase tracking-tight leading-tight italic transition-all ${isChecked ? 'text-slate-400' : 'text-slate-800 dark:text-slate-200'}`}>
@@ -340,7 +387,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                           </div>
                         </td>
 
-                        {/* 4. DROPDOWN (SMOOTHED) */}
                         <td className="px-4 py-3 relative">
                           <div 
                             onClick={() => !isChecked && setEditingId(isEditing ? null : tx._id)} 
@@ -362,7 +408,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                             )}
                           </div>
 
-                          {/* ACTUAL DROPDOWN LIST */}
                           {isEditing && !isChecked && (
                             <div className="absolute top-[calc(100%-8px)] left-4 right-4 z-100 bg-white dark:bg-[#111214] border-2 border-emerald-500 rounded-b-xl shadow-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200">
                                <div className="p-2 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-transparent">
@@ -390,12 +435,11 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                           )}
                         </td>
 
-                        {/* 5. AMOUNT */}
                         <td className={`px-4 py-3 text-right text-[15px] font-[1000] tabular-nums italic ${activeTab === 'RECEIPT' ? 'text-emerald-500' : 'text-slate-900 dark:text-white'}`}>
-                          {formatINR(tx.amount).replace('₹', tx.type === 'RECEIPT' ? '+' : '-')}
+                          {/* REMOVED REPLACE LOGIC, USING MATH.ABS */}
+                          {formatINR(Math.abs(tx.amount))}
                         </td>
 
-                        {/* 6. ACTIONS (TEXT LABELS) */}
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-2">
                             <button 

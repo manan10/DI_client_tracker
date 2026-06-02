@@ -1,11 +1,12 @@
+// src/pages/TallyTest.jsx
+
 import React, { useState, useMemo } from 'react';
 import { useApi } from '../../hooks/useApi';
 import { tallyTemplates } from '../../utils/tallyTemplates';
 import Navbar from '../../components/Navbar';
 import { 
     Activity, CheckCircle2, RefreshCw, SendHorizontal, 
-    Library, LayoutDashboard, Database, Edit3, Search, 
-    Copy, Check, FileCode2, AlertCircle
+    Database, Search, Copy, Check 
 } from 'lucide-react';
 
 const TallyTest = () => {
@@ -27,16 +28,24 @@ const TallyTest = () => {
     const [searchTerm, setSearchTerm] = useState("");
 
     // Entry Data
-    const [voucherType, setVoucherType] = useState("Receipt");
+    const [voucherType, setVoucherType] = useState("Sales");
     const [voucherData, setVoucherData] = useState({
         date: new Date().toISOString().split('T')[0],
-        ledgerName: "",
-        bankAccount: "",
+        invoiceNumber: "10", 
+        ledgerName: "",    
+        bankAccount: "",   
+        incomeLedger: "MF COMMISION INCOME",  
         amount: "",
-        narration: "Bridge Sync via MFD Portal"
+        gstType: "NONE", // NONE, LOCAL, INTERSTATE
+        cgstLedger: "CGST",
+        sgstLedger: "SGST",
+        igstLedger: "IGST",
+        cgstAmount: "",
+        sgstAmount: "",
+        igstAmount: "",
+        narration: "Commission Entry via Bridge"
     });
 
-    // FIXED: Derived XML directly in useMemo to avoid cascading renders
     const generatedXml = useMemo(() => {
         if (!selectedCompany) return "";
         return tallyTemplates.generateVoucher({
@@ -46,7 +55,6 @@ const TallyTest = () => {
         });
     }, [voucherData, voucherType, selectedCompany]);
 
-    // Choose between auto-generated or manual edits
     const displayXml = isUserEditing ? manualXml : generatedXml;
 
     const filteredGroupedLedgers = useMemo(() => {
@@ -116,6 +124,7 @@ const TallyTest = () => {
             } else {
                 logActivity("Tally rejected the entry.", "error");
             }
+            setViewMode('response');
         } catch (err) {
             logActivity(`Transmission Error: ${err.message}`, "error");
         }
@@ -123,7 +132,25 @@ const TallyTest = () => {
 
     const handleFormChange = (updates) => {
         setVoucherData(prev => ({ ...prev, ...updates }));
-        setIsUserEditing(false); // Reset to auto-gen mode when form changes
+        setIsUserEditing(false); 
+    };
+
+    const handleAmountChange = (val, currentGstType = voucherData.gstType) => {
+        const base = parseFloat(val) || 0;
+        if (currentGstType === 'LOCAL') {
+            const tax = (base * 0.09).toFixed(2);
+            handleFormChange({ amount: val, cgstAmount: tax, sgstAmount: tax, igstAmount: "" });
+        } else if (currentGstType === 'INTERSTATE') {
+            const tax = (base * 0.18).toFixed(2);
+            handleFormChange({ amount: val, igstAmount: tax, cgstAmount: "", sgstAmount: "" });
+        } else {
+            handleFormChange({ amount: val, cgstAmount: "", sgstAmount: "", igstAmount: "" });
+        }
+    };
+
+    const handleGstTypeChange = (type) => {
+        handleFormChange({ gstType: type });
+        handleAmountChange(voucherData.amount, type); 
     };
 
     return (
@@ -131,9 +158,7 @@ const TallyTest = () => {
             <Navbar />
             <div className="max-w-400 mx-auto p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 h-[calc(100vh-100px)]">
                 
-                {/* Workflow Column */}
                 <div className="lg:col-span-5 space-y-6 overflow-y-auto pr-4 custom-scrollbar">
-                    {/* Bridge Setup Section */}
                     <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6 space-y-6">
                         <div className="flex items-center justify-between">
                             <h2 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">01. Bridge Setup</h2>
@@ -156,7 +181,6 @@ const TallyTest = () => {
                         </div>
                     </div>
 
-                    {/* Entry Helper Section */}
                     <div className={`bg-white border border-slate-200 rounded-3xl shadow-sm p-6 transition-all ${ledgers.length === 0 ? 'opacity-20 pointer-events-none' : ''}`}>
                         <h2 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-6">02. New Entry</h2>
                         <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
@@ -180,7 +204,7 @@ const TallyTest = () => {
                                     />
                                 </div>
                                 <select className="w-full bg-white border border-slate-200 p-3 rounded-xl text-xs font-bold outline-none" value={voucherData.ledgerName} onChange={e => handleFormChange({ ledgerName: e.target.value })}>
-                                    <option value="">-- Choose Account --</option>
+                                    <option value="">{voucherType === 'Sales' ? '-- Choose Party (Debtor) --' : '-- Choose Account --'}</option>
                                     {Object.entries(filteredGroupedLedgers).map(([group, names]) => (
                                         <optgroup key={group} label={group.toUpperCase()}>
                                             {names.map(n => <option key={n} value={n}>{n}</option>)}
@@ -189,22 +213,69 @@ const TallyTest = () => {
                                 </select>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="col-span-2">
-                                    <select className="w-full bg-indigo-50 border border-indigo-100 p-3 rounded-xl text-xs font-bold text-indigo-700 outline-none" value={voucherData.bankAccount} onChange={e => handleFormChange({ bankAccount: e.target.value })}>
-                                        <option value="">-- Choose Bank --</option>
-                                        {ledgers.filter(l => l.parent.includes("Bank") || l.parent.includes("Cash")).map(l => <option key={l.name} value={l.name}>{l.name}</option>)}
+                            {voucherType === 'Sales' ? (
+                                <>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <input type="text" placeholder="Invoice No. (Ref)" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold outline-none" value={voucherData.invoiceNumber} onChange={e => handleFormChange({ invoiceNumber: e.target.value })} />
+                                        <input type="date" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold outline-none" value={voucherData.date} onChange={e => handleFormChange({ date: e.target.value })} />
+                                    </div>
+                                    <select className="w-full bg-indigo-50 border border-indigo-100 p-3 rounded-xl text-xs font-bold text-indigo-700 outline-none" value={voucherData.incomeLedger} onChange={e => handleFormChange({ incomeLedger: e.target.value })}>
+                                        <option value="">-- Choose Sales/Income Ledger --</option>
+                                        <option value="MF COMMISION INCOME">MF COMMISION INCOME</option>
+                                        <option value="MF COMMISION (IGST)">MF COMMISION (IGST)</option>
+                                        <option value="MF COMMISSION (LOC)">MF COMMISSION (LOC)</option>
+                                        {ledgers.filter(l => l.parent.toLowerCase().includes("income") || l.parent.toLowerCase().includes("sales")).map(l => <option key={l.name} value={l.name}>{l.name}</option>)}
                                     </select>
+                                    
+                                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+                                        <div className="flex gap-4">
+                                            <select className="bg-white border border-slate-200 p-2 rounded-lg text-xs font-bold outline-none w-1/3" value={voucherData.gstType} onChange={e => handleGstTypeChange(e.target.value)}>
+                                                <option value="NONE">Non-GST ARN</option>
+                                                <option value="LOCAL">GST ARN (Local 9%+9%)</option>
+                                                <option value="INTERSTATE">GST ARN (Interstate 18%)</option>
+                                            </select>
+                                            <input type="number" placeholder="Base Commission Amt" className="flex-1 bg-white border border-slate-200 p-2 rounded-lg text-sm font-black text-indigo-600 outline-none" value={voucherData.amount} onChange={e => handleAmountChange(e.target.value)} />
+                                        </div>
+
+                                        {voucherData.gstType === 'LOCAL' && (
+                                            <div className="grid grid-cols-2 gap-4 animate-in fade-in zoom-in duration-200">
+                                                <div className="space-y-1">
+                                                    <input type="text" className="w-full bg-transparent text-[10px] font-bold text-slate-400 outline-none" value={voucherData.cgstLedger} onChange={e => handleFormChange({ cgstLedger: e.target.value })} />
+                                                    <input type="number" readOnly className="w-full bg-slate-100 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-600 outline-none cursor-not-allowed" value={voucherData.cgstAmount} placeholder="Auto-calculated" />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <input type="text" className="w-full bg-transparent text-[10px] font-bold text-slate-400 outline-none" value={voucherData.sgstLedger} onChange={e => handleFormChange({ sgstLedger: e.target.value })} />
+                                                    <input type="number" readOnly className="w-full bg-slate-100 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-600 outline-none cursor-not-allowed" value={voucherData.sgstAmount} placeholder="Auto-calculated" />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {voucherData.gstType === 'INTERSTATE' && (
+                                            <div className="animate-in fade-in zoom-in duration-200 space-y-1">
+                                                <input type="text" className="w-full bg-transparent text-[10px] font-bold text-slate-400 outline-none" value={voucherData.igstLedger} onChange={e => handleFormChange({ igstLedger: e.target.value })} />
+                                                <input type="number" readOnly className="w-full bg-slate-100 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-600 outline-none cursor-not-allowed" value={voucherData.igstAmount} placeholder="Auto-calculated" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="col-span-2">
+                                        <select className="w-full bg-indigo-50 border border-indigo-100 p-3 rounded-xl text-xs font-bold text-indigo-700 outline-none" value={voucherData.bankAccount} onChange={e => handleFormChange({ bankAccount: e.target.value })}>
+                                            <option value="">-- Choose Bank --</option>
+                                            {ledgers.filter(l => l.parent.includes("Bank") || l.parent.includes("Cash")).map(l => <option key={l.name} value={l.name}>{l.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <input type="number" placeholder="Amount" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-black text-indigo-600 outline-none" value={voucherData.amount} onChange={e => handleFormChange({ amount: e.target.value })} />
+                                    <input type="date" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold outline-none" value={voucherData.date} onChange={e => handleFormChange({ date: e.target.value })} />
                                 </div>
-                                <input type="number" placeholder="Amount" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-black text-indigo-600 outline-none" value={voucherData.amount} onChange={e => handleFormChange({ amount: e.target.value })} />
-                                <input type="date" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold outline-none" value={voucherData.date} onChange={e => handleFormChange({ date: e.target.value })} />
-                                <textarea rows="2" className="col-span-2 bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-medium outline-none" placeholder="Narration..." value={voucherData.narration} onChange={e => handleFormChange({ narration: e.target.value })} />
-                            </div>
+                            )}
+                            
+                            <textarea rows="2" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-medium outline-none" placeholder="Narration..." value={voucherData.narration} onChange={e => handleFormChange({ narration: e.target.value })} />
                         </div>
                     </div>
                 </div>
 
-                {/* Technical Inspector Column */}
                 <div className="lg:col-span-7 flex flex-col gap-6 h-full overflow-hidden">
                     <div className="bg-white border border-slate-200 rounded-4xl shadow-xl flex flex-col overflow-hidden h-3/5 relative">
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
@@ -237,7 +308,6 @@ const TallyTest = () => {
                         />
                     </div>
 
-                    {/* Activity Feed */}
                     <div className="bg-white border border-slate-200 rounded-4xl shadow-sm flex flex-col overflow-hidden h-2/5 relative">
                         <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2"><Activity className="w-3.5 h-3.5 text-indigo-500"/> Connection Activity</span>

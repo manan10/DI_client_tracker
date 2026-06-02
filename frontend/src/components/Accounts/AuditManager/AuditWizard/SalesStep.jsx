@@ -106,6 +106,14 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
         }
       }
 
+      // Automatically default to the bank transaction date if missing
+      let defaultDate = "";
+      try {
+        if (tx.date) defaultDate = new Date(tx.date).toISOString().split('T')[0];
+      } catch {
+        defaultDate = "";
+      }
+
       return {
         ...tx,
         ledgerName,
@@ -115,7 +123,9 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
         cgst,               
         sgst,               
         igst,               
-        grossVoucherTotal   
+        grossVoucherTotal,
+        originalInvoiceBillingDate: tx.invoiceBillingDate,
+        invoiceBillingDate: tx.invoiceBillingDate || defaultDate
       };
     });
   }, [selection.stagedData?.transactions, isGstCompliant]);
@@ -130,6 +140,33 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
   const approvedCount = useMemo(() => {
     return filteredAndSortedRows.filter(r => r.isSalesApproved).length;
   }, [filteredAndSortedRows]);
+
+  const isAllApproved = filteredAndSortedRows.length > 0 && approvedCount === filteredAndSortedRows.length;
+
+  const handleSelectAll = () => {
+    if (!filteredAndSortedRows.length) return;
+    const targetState = !isAllApproved;
+    
+    filteredAndSortedRows.forEach(row => {
+      if (row.isSalesApproved !== targetState) {
+        const payload = { isSalesApproved: targetState };
+        // If it's being approved and relies on the default date, save it explicitly
+        if (targetState && !row.originalInvoiceBillingDate) {
+           payload.invoiceBillingDate = row.invoiceBillingDate;
+        }
+        onUpdateTransaction(row._id, payload);
+      }
+    });
+  };
+
+  const handleToggleRow = (row) => {
+    const payload = { isSalesApproved: !row.isSalesApproved };
+    // If it's being approved and relies on the default date, save it explicitly
+    if (!row.isSalesApproved && !row.originalInvoiceBillingDate) {
+      payload.invoiceBillingDate = row.invoiceBillingDate;
+    }
+    onUpdateTransaction(row._id, payload);
+  };
 
   const handleOpenPickerContext = (e, row) => {
     e.stopPropagation();
@@ -218,6 +255,18 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
                 MOBILE VIEW: CARD LIST
                 --------------------------------------------------------------------- */}
             <div className="lg:hidden h-full overflow-y-auto no-scrollbar p-3 space-y-3 pb-24">
+              
+              {/* Mobile Select All Action Strip */}
+              <div className="flex items-center justify-between px-2 pb-1">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Select All</span>
+                <button 
+                  onClick={handleSelectAll}
+                  className={`shrink-0 w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all mt-0.5 ${isAllApproved ? 'bg-emerald-500 border-emerald-500 text-white shadow-md' : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-transparent hover:border-emerald-500'}`}
+                >
+                  <Check size={16} strokeWidth={4} />
+                </button>
+              </div>
+
               {filteredAndSortedRows.map((row) => (
                 <div key={row._id} className="bg-white dark:bg-[#111214] border border-slate-200 dark:border-white/10 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
                   
@@ -225,7 +274,7 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
                   <div className="flex gap-3 items-start justify-between">
                      <button 
                        disabled={!row.invoiceBillingDate}
-                       onClick={() => onUpdateTransaction(row._id, { isSalesApproved: !row.isSalesApproved })} 
+                       onClick={() => handleToggleRow(row)} 
                        className={`shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all mt-0.5 ${
                          row.isSalesApproved 
                            ? 'bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20' 
@@ -302,7 +351,17 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
                 <thead className="sticky top-0 z-30 bg-white dark:bg-[#08090A] shadow-[0_4px_10px_-10px_rgba(0,0,0,0.1)]">
                   <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest select-none">
                     {/* 2. PY-5 instead of PB-4 vertically centers text and covers scrolling data */}
-                    <th className="py-5 w-16 text-center border-b border-slate-200 dark:border-white/10">Done</th>
+                    <th className="py-5 w-16 text-center border-b border-slate-200 dark:border-white/10">
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <button 
+                          onClick={handleSelectAll}
+                          className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${isAllApproved ? 'bg-emerald-500 border-emerald-500 text-white shadow-md' : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-transparent hover:border-emerald-500'}`}
+                        >
+                          <Check size={14} strokeWidth={4} />
+                        </button>
+                        <span className="text-[7px] leading-none opacity-50 block mt-0.5">ALL</span>
+                      </div>
+                    </th>
                     <th className="py-5 w-[24%] pl-2 text-left tracking-wider border-b border-slate-200 dark:border-white/10">MF Particulars</th>
                     <th className="py-5 text-center w-[18%] tracking-wider border-b border-slate-200 dark:border-white/10">Billing Date</th>
                     <th className="py-5 text-right pr-4 w-[11%] tracking-wider border-b border-slate-200 dark:border-white/10">Base</th>
@@ -321,7 +380,7 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
                       <td className="py-5 text-center border-b border-slate-100 dark:border-white/5">
                         <button 
                           disabled={!row.invoiceBillingDate}
-                          onClick={() => onUpdateTransaction(row._id, { isSalesApproved: !row.isSalesApproved })} 
+                          onClick={() => handleToggleRow(row)} 
                           className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all mx-auto ${
                             row.isSalesApproved 
                               ? 'bg-emerald-500 border-emerald-500 text-white scale-105 shadow-md shadow-emerald-500/20 active:scale-95' 

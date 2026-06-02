@@ -1,5 +1,6 @@
 const csv = require('csv-parser');
 const { Readable } = require('stream');
+const xlsx = require('xlsx'); 
 const Transaction = require('../models/Transaction');
 const Audit = require('../models/Audit');
 const { Account } = require('../models/Account');
@@ -19,7 +20,7 @@ const HEADER_VARIANTS = {
 const mapHeadersToStandard = (headers) => {
     const mapping = {};
     headers.forEach(h => {
-        const clean = h.toLowerCase().trim();
+        const clean = String(h).toLowerCase().trim();
         Object.keys(HEADER_VARIANTS).forEach(standardKey => {
             if (!mapping[standardKey] && HEADER_VARIANTS[standardKey].some(variant => clean.includes(variant))) {
                 mapping[standardKey] = h;
@@ -47,7 +48,7 @@ const parseRobust = (buffer) => {
             line.toLowerCase().includes('date') && 
             (line.toLowerCase().includes('narration') || line.toLowerCase().includes('particulars'))
         );
-        if (headerIndex === -1) return reject(new Error("Header row not found."));
+        if (headerIndex === -1) return reject(new Error("Header row not found in CSV."));
         const cleanContent = lines.slice(headerIndex).join('\n');
         const results = [];
         let columnMap = null;
@@ -73,6 +74,86 @@ const parseRobust = (buffer) => {
             .on('end', () => resolve(results))
             .on('error', reject);
     });
+};
+
+const parseExcel = async (buffer, password = null) => {
+    let workbook;
+    try {
+        workbook = xlsx.read(buffer, { type: 'buffer', cellDates: true, password: password });
+    } catch (error) {
+        if (error.message.toLowerCase().includes('password') || error.message.toLowerCase().includes('encrypted') || error.message.includes('CFB')) {
+            throw new Error("LOCKED_FILE");
+        }
+        throw new Error("Failed to read Excel file format.");
+    }
+
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    
+    // Convert sheet to a raw 2D array to hunt for headers manually
+    const rows = xlsx.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+    
+    let headerIndex = -1;
+    for (let i = 0; i < rows.length; i++) {
+        const rowStr = rows[i].map(c => String(c).toLowerCase()).join(' ');
+        
+        // BUG FIX: Added 'details' to the search condition to match SBI's header format
+        if (
+            (rowStr.includes('date') || rowStr.includes('txn date')) && 
+            (rowStr.includes('description') || rowStr.includes('narration') || rowStr.includes('particulars') || rowStr.includes('details'))
+        ) {
+            headerIndex = i;
+            break;
+        }
+    }
+    
+    if (headerIndex === -1) throw new Error("Header row not found in Excel file.");
+    
+    const rawHeaders = rows[headerIndex].map(String);
+    const columnMap = mapHeadersToStandard(rawHeaders);
+    const results = [];
+    
+    // Process the data rows
+    for (let i = headerIndex + 1; i < rows.length; i++) {
+        const row = rows[i];
+        const rowObj = {};
+        
+        rawHeaders.forEach((h, idx) => {
+            rowObj[h] = row[idx];
+        });
+
+        let rawDate = rowObj[columnMap.date];
+        if (!columnMap || !rawDate || String(rawDate).trim() === '') continue; 
+        
+        // Handle Excel Date Objects vs Strings safely before feeding to standardizeDate
+        let finalDateStr = "";
+        if (rawDate instanceof Date) {
+            const d = String(rawDate.getDate()).padStart(2, '0');
+            const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+            const m = months[rawDate.getMonth()];
+            const y = rawDate.getFullYear();
+            finalDateStr = `${d}-${m}-${y}`;
+        } else {
+            finalDateStr = standardizeDate(String(rawDate));
+        }
+
+        const cleanNum = (val) => val ? parseFloat(String(val).replace(/,/g, '').trim()) || 0 : 0;
+        const dr = cleanNum(rowObj[columnMap.debit]);
+        const cr = cleanNum(rowObj[columnMap.credit]);
+        
+        if (dr === 0 && cr === 0) continue;
+        
+        results.push({
+            date: finalDateStr,
+            narration: String(rowObj[columnMap.narration] || "N/A").replace(/\s+/g, ' ').trim(),
+            refNo: String(rowObj[columnMap.refNo] || "N/A").trim(),
+            amount: dr > 0 ? dr : cr,
+            type: dr > 0 ? 'PAYMENT' : 'RECEIPT',
+            balance: cleanNum(rowObj[columnMap.balance])
+        });
+    }
+    
+    return results;
 };
 
 // --- CONTROLLER EXPORTS ---
@@ -116,14 +197,13 @@ exports.initializeAudit = async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 };
 
-
-
 exports.processBulkStatements = async (req, res) => {
     try {
         console.log("--- TALLY-HYBRID UPLOAD START ---");
-        const { tallyCompany, tallyLedger, month, year } = req.body;
+        // Added excelPassword capability just in case it is sent from frontend
+        const { tallyCompany, tallyLedger, month, year, excelPassword } = req.body;
 
-        // 1. RESOLVE ARN CONTEXT (Hierarchy: Company -> ARN)
+        // 1. RESOLVE ARN CONTEXT 
         const arnDoc = await Arn.findOne({ linkedTallyFirms: tallyCompany }).lean();
         if (!arnDoc) {
             return res.status(404).json({ 
@@ -132,13 +212,13 @@ exports.processBulkStatements = async (req, res) => {
             });
         }
 
-        // 2. RESOLVE LOCAL ACCOUNT (Hierarchy: Ledger -> Account)
+        // 2. RESOLVE LOCAL ACCOUNT 
         const account = await Account.findOne({
             "tallyMapping.companyName": tallyCompany,
             "tallyMapping.ledgerName": tallyLedger
         }).lean();
 
-        // 3. FETCH LEDGER MASTER (For AI Suggestions)
+        // 3. FETCH LEDGER MASTER 
         const ledgerMaster = await Ledger.find({ tallyCompanyName: tallyCompany }).lean();
 
         // 4. MANAGE AUDIT SESSION
@@ -166,7 +246,26 @@ exports.processBulkStatements = async (req, res) => {
         // 5. PARSE & ENRICH
         const allTransactions = [];
         for (const file of req.files) {
-            const parsedRows = await parseRobust(file.buffer); // Expects row format: { date, narration, type, amount, statementBalance, ... }
+            const fileName = file.originalname.toLowerCase();
+            let parsedRows = [];
+            
+            try {
+                if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+                    // Pass the optional password down
+                    parsedRows = await parseExcel(file.buffer, excelPassword);
+                } else {
+                    parsedRows = await parseRobust(file.buffer); 
+                }
+            } catch (parseError) {
+                // Graceful handling of encrypted files
+                if (parseError.message === "LOCKED_FILE") {
+                    return res.status(422).json({
+                        success: false,
+                        message: `The file "${file.originalname}" is password protected. Please open it in Excel, click 'Save As', and save a copy without a password before uploading.`
+                    });
+                }
+                throw parseError; // Rethrow other actual parsing errors
+            }
             
             const enriched = parsedRows.map(t => {
                 const match = performLedgerMatch(t.narration, ledgerMaster);
@@ -192,22 +291,19 @@ exports.processBulkStatements = async (req, res) => {
         }
 
         // 6. SORT & CALCULATE ACCOUNT BALANCES ACCURATELY
-        // Sort transactions chronologically using timestamps or raw date elements
         const sortedTransactions = [...allTransactions].sort((a, b) => new Date(a.date) - new Date(b.date));
 
         const firstTx = sortedTransactions[0];
         const lastTx = sortedTransactions[sortedTransactions.length - 1];
 
-        const firstRunningBalance = firstTx.statementBalance || 0;
+        const firstRunningBalance = firstTx.balance || 0;
         const firstTxAmount = firstTx.amount || 0;
 
-        // Accounting Formula: Reverse calculate the exact balance prior to index item 1 executing
-        // Opening = Current Balance + Money That Left (PAYMENT) - Money That Arrived (RECEIPT)
         const openingBalance = firstTx.type === 'PAYMENT' 
             ? firstRunningBalance + firstTxAmount 
             : firstRunningBalance - firstTxAmount;
 
-        const closingBalance = lastTx.statementBalance || 0;
+        const closingBalance = lastTx.balance || 0;
 
         // 7. COMPUTE SUMMARY STATS
         const receipts = sortedTransactions.filter(t => t.type === 'RECEIPT');
@@ -281,16 +377,11 @@ exports.deleteAuditSession = async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 };
 
-/**
- * Persists selected sales voucher row changes in a optimized atomic batch execution block
- * PUT /:auditId/sales-checkpoint
- */
 exports.saveSalesCheckpoint = async (req, res) => {
   try {
     const { auditId } = req.params;
     const { transactions } = req.body; 
 
-    // Validate payload shape context bounds
     if (!transactions || !Array.isArray(transactions)) {
       return res.status(400).json({ 
         success: false, 
@@ -298,7 +389,6 @@ exports.saveSalesCheckpoint = async (req, res) => {
       });
     }
 
-    // Map modified elements into clean, discrete database mutation commands
     const bulkOperations = transactions.map(tx => ({
       updateOne: {
         filter: { 
@@ -323,7 +413,6 @@ exports.saveSalesCheckpoint = async (req, res) => {
       });
     }
 
-    // Execute atomic modification stream
     const result = await Transaction.bulkWrite(bulkOperations);
 
     return res.json({
