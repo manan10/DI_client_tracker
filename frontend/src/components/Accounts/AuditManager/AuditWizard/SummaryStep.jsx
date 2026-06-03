@@ -6,7 +6,6 @@ const SummaryStep = ({ selection, arns = [] }) => {
   const [isMapperOpen, setIsMapperOpen] = useState(false);
   const [isCommissionCommitted, setIsCommissionCommitted] = useState(false);
 
-  // Keep critical transaction streams expanded by default for rapid scanning
   const [expandedSections, setExpandedSections] = useState({
     sales: true,
     receipts: true,
@@ -27,7 +26,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
       style: 'currency',
       currency: 'INR',
       maximumFractionDigits: 2
-    }).format(amount || 0);
+    }).format(Math.abs(amount || 0)).replace('₹', '₹ ');
   };
 
   const toggleSection = (sectionKey) => {
@@ -38,7 +37,6 @@ const SummaryStep = ({ selection, arns = [] }) => {
     return arns.find(a => a._id === selection?.arnId || a.arnCode === selection?.arnId)?.gstCompliant || false;
   }, [arns, selection?.arnId]);
 
-  // READ LIVE ACCOUNT COORDINATES DIRECTLY FROM BACKEND AUDIT SESSION METRICS
   const balanceMetrics = useMemo(() => {
     return {
       opening: selection?.audit?.summary?.openingBalance || 0,
@@ -46,38 +44,53 @@ const SummaryStep = ({ selection, arns = [] }) => {
     };
   }, [selection?.audit?.summary]);
 
-  // EXTRACT AND COMPUTE SEPARATE VOUCHER STREAMS
   const voucherData = useMemo(() => {
-    // Isolate automated items vs explicit manual entries cleanly
-    const receipts = transactions.filter(t => t?.type === 'RECEIPT' && !t?.isMarkedForManualEntry);
-    const payments = transactions.filter(t => t?.type === 'PAYMENT' && !t?.isMarkedForManualEntry);
+    // FIX: Explicitly require isChecked so the Summary perfectly mirrors the final Result list
+    const receipts = transactions.filter(t => t?.type === 'RECEIPT' && t?.isChecked && !t?.isCommission && !t?.isMarkedForManualEntry);
+    const payments = transactions.filter(t => t?.type === 'PAYMENT' && t?.isChecked && !t?.isMarkedForManualEntry);
     const salesInvoices = transactions.filter(t => t?.isCommission && t?.type === 'RECEIPT' && t?.isSalesApproved && !t?.isMarkedForManualEntry);
-    const manualEntries = transactions.filter(t => t?.isMarkedForManualEntry || !t?.suggestedLedger);
+    const manualEntries = transactions.filter(t => t?.isMarkedForManualEntry || (t?.isChecked && !t?.suggestedLedger));
 
-    // FIX: Read explicitly saved tax values from SalesStep instead of recalculating
+    // Natively calculate GST values here so UI doesn't rely on fragile saved state
     const normalizedSalesRows = salesInvoices.map(tx => {
+      const net = Math.abs(tx.amount || 0);
       const ledgerName = tx.suggestedLedger || tx.ledgerName || "SUSPENSE SALES LEDGER";
+      const normalizedLedger = ledgerName.toUpperCase();
+      const isLocal = normalizedLedger.includes("NJ") || normalizedLedger.includes("LOCAL") || normalizedLedger.includes("STATE");
       
+      let cgst = 0, sgst = 0, igst = 0;
+      let grossTotal = net;
+
+      if (isGstCompliant) {
+        if (isLocal) {
+          cgst = net * 0.09;
+          sgst = net * 0.09;
+          grossTotal = net + cgst + sgst;
+        } else {
+          igst = net * 0.18;
+          grossTotal = net + igst;
+        }
+      }
       return {
         ...tx,
         ledgerName,
-        baseAmount: tx.baseAmount !== undefined ? tx.baseAmount : (tx.amount || 0),
-        cgst: tx.cgst || 0,
-        sgst: tx.sgst || 0,
-        igst: tx.igst || 0,
-        grossTotal: tx.grossVoucherTotal || tx.amount || 0
+        baseAmount: net,
+        cgst,
+        sgst,
+        igst,
+        grossTotal
       };
     });
 
     return {
       receiptList: receipts,
-      receiptTotal: receipts.reduce((sum, t) => sum + (t?.amount || 0), 0),
+      receiptTotal: receipts.reduce((sum, t) => sum + Math.abs(t?.amount || 0), 0),
       paymentList: payments,
-      paymentTotal: payments.reduce((sum, t) => sum + (t?.amount || 0), 0),
+      paymentTotal: payments.reduce((sum, t) => sum + Math.abs(t?.amount || 0), 0),
       salesList: normalizedSalesRows,
       salesTotal: normalizedSalesRows.reduce((sum, t) => sum + t.grossTotal, 0),
       manualList: manualEntries,
-      manualTotal: manualEntries.reduce((sum, t) => sum + (t?.amount || 0), 0),
+      manualTotal: manualEntries.reduce((sum, t) => sum + Math.abs(t?.amount || 0), 0),
       commissionLines: transactions.filter(t => t?.isCommission)
     };
   }, [transactions, isGstCompliant]);
@@ -102,7 +115,6 @@ const SummaryStep = ({ selection, arns = [] }) => {
       `}} />
       <div className="h-full w-full bg-slate-50 dark:bg-[#08090A] flex flex-col overflow-hidden text-left font-sans text-slate-800 dark:text-slate-200">
         
-        {/* HEADER CONTROL STRIP (Responsive) */}
         <div className="px-4 lg:px-12 py-4 lg:py-5 bg-white lg:bg-slate-50 dark:bg-[#0B0C10] border-b border-slate-200 dark:border-white/5 flex flex-col sm:flex-row justify-between sm:items-center gap-3 lg:gap-0 shrink-0">
           <div className="space-y-0.5 lg:space-y-1">
             <h2 className="text-sm lg:text-base font-black uppercase tracking-wide text-slate-900 dark:text-white">
@@ -121,10 +133,8 @@ const SummaryStep = ({ selection, arns = [] }) => {
           </div>
         </div>
 
-        {/* MAIN CONTENT AREA */}
-        <div className="flex-1 overflow-y-auto no-scrollbar px-4 lg:px-12 py-4 lg:py-6 space-y-4 lg:space-y-6">
+        <div className="flex-1 overflow-y-auto no-scrollbar px-4 lg:px-12 py-4 lg:py-6 space-y-4 lg:space-y-6 pb-24">
           
-          {/* EXECUTIVE HIGHLIGHT REAL WORLD METRICS (Horizontal scroll on mobile) */}
           <div className="flex overflow-x-auto no-scrollbar gap-3 lg:grid lg:grid-cols-3 lg:gap-6 shrink-0 select-none pb-1 lg:pb-0">
             <div className="bg-white lg:bg-slate-50 dark:bg-[#121318] border border-slate-200 dark:border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-sm min-w-50 lg:min-w-0">
               <span className="text-[8px] lg:text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1 lg:mb-1.5">Opening Balance</span>
@@ -140,7 +150,6 @@ const SummaryStep = ({ selection, arns = [] }) => {
             </div>
           </div>
 
-          {/* MUTUAL FUND ADVISORY AUTOMATION LOGGER HUB BAR (Stacked on mobile) */}
           {voucherData.commissionLines.length > 0 && (
             <div className="bg-emerald-500/10 dark:bg-emerald-500/5 border border-emerald-500/20 rounded-xl lg:rounded-2xl p-4 lg:p-5 flex flex-col md:flex-row md:items-center justify-between shadow-sm gap-4 md:gap-0">
               <div className="flex items-center gap-3 lg:gap-4">
@@ -201,7 +210,6 @@ const SummaryStep = ({ selection, arns = [] }) => {
                   </div>
                 ) : (
                   <>
-                    {/* MOBILE CARD VIEW */}
                     <div className="lg:hidden space-y-3">
                       {voucherData.salesList.map(row => (
                         <div key={row._id} className="bg-white dark:bg-[#111214] border border-slate-200 dark:border-white/10 rounded-lg p-3 shadow-sm flex flex-col gap-2.5">
@@ -222,8 +230,6 @@ const SummaryStep = ({ selection, arns = [] }) => {
                         </div>
                       ))}
                     </div>
-
-                    {/* DESKTOP TABLE VIEW */}
                     <div className="hidden lg:block overflow-x-auto no-scrollbar">
                       <table className="w-full text-[11.5px] border-collapse table-fixed">
                         <thead>
@@ -241,7 +247,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                           {voucherData.salesList.map((row) => (
                             <tr key={row._id} className="hover:bg-slate-50/50 dark:hover:bg-white/1 transition-colors">
                               <td className="py-3.5 text-slate-900 dark:text-white font-[1000] truncate text-[12.5px]">{row.ledgerName}</td>
-                              <td className="py-3.5 text-center text-blue-600 dark:text-blue-400 font-mono text-[11px]">{row.invoiceBillingDate || '——'}</td>
+                              <td className="py-3.5 text-center text-blue-600 dark:text-blue-400 font-mono text-[11px]">{row.invoiceBillingDate ? new Date(row.invoiceBillingDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase() : '——'}</td>
                               <td className="py-3.5 text-right font-mono text-slate-600 dark:text-slate-400">{formatINR(row.baseAmount).replace('₹','')}</td>
                               <td className="py-3.5 text-right font-mono text-amber-600 dark:text-amber-500">{row.cgst > 0 ? formatINR(row.cgst).replace('₹','') : '——'}</td>
                               <td className="py-3.5 text-right font-mono text-amber-600 dark:text-amber-500">{row.sgst > 0 ? formatINR(row.sgst).replace('₹','') : '——'}</td>
@@ -287,7 +293,6 @@ const SummaryStep = ({ selection, arns = [] }) => {
                   </div>
                 ) : (
                   <>
-                    {/* MOBILE CARD VIEW */}
                     <div className="lg:hidden space-y-3">
                       {voucherData.receiptList.map(row => (
                          <div key={row._id} className="bg-white dark:bg-[#111214] border border-slate-200 dark:border-white/10 rounded-lg p-3 shadow-sm flex flex-col gap-2">
@@ -304,8 +309,6 @@ const SummaryStep = ({ selection, arns = [] }) => {
                          </div>
                       ))}
                     </div>
-
-                    {/* DESKTOP TABLE VIEW */}
                     <div className="hidden lg:block overflow-x-auto no-scrollbar">
                       <table className="w-full text-[11.5px] border-collapse table-fixed">
                         <thead>
@@ -365,7 +368,6 @@ const SummaryStep = ({ selection, arns = [] }) => {
                   </div>
                 ) : (
                   <>
-                    {/* MOBILE CARD VIEW */}
                     <div className="lg:hidden space-y-3">
                       {voucherData.paymentList.map(row => (
                          <div key={row._id} className="bg-white dark:bg-[#111214] border border-slate-200 dark:border-white/10 rounded-lg p-3 shadow-sm flex flex-col gap-2">
@@ -382,8 +384,6 @@ const SummaryStep = ({ selection, arns = [] }) => {
                          </div>
                       ))}
                     </div>
-
-                    {/* DESKTOP TABLE VIEW */}
                     <div className="hidden lg:block overflow-x-auto no-scrollbar">
                       <table className="w-full text-[11.5px] border-collapse table-fixed">
                         <thead>
@@ -443,7 +443,6 @@ const SummaryStep = ({ selection, arns = [] }) => {
                   </div>
                 ) : (
                   <>
-                    {/* MOBILE CARD VIEW */}
                     <div className="lg:hidden space-y-3">
                       {voucherData.manualList.map(row => (
                          <div key={row._id} className="bg-white dark:bg-[#111214] border border-amber-200/50 dark:border-amber-500/20 rounded-lg p-3 shadow-sm flex flex-col gap-2">
@@ -460,8 +459,6 @@ const SummaryStep = ({ selection, arns = [] }) => {
                          </div>
                       ))}
                     </div>
-
-                    {/* DESKTOP TABLE VIEW */}
                     <div className="hidden lg:block overflow-x-auto no-scrollbar">
                       <table className="w-full text-[11.5px] border-collapse table-fixed">
                         <thead>
@@ -493,30 +490,6 @@ const SummaryStep = ({ selection, arns = [] }) => {
           </div>
 
         </div>
-
-        {/* FOOTER SYSTEM CONTROL BAR (Stacked on mobile) */}
-        <footer className="px-4 lg:px-8 py-4 lg:py-5 border-t border-slate-200 dark:border-white/10 bg-white lg:bg-slate-50 dark:bg-[#0B0C10] flex flex-col lg:flex-row items-center justify-between shrink-0 shadow-2xl gap-3 lg:gap-0 z-10">
-          <div className="flex items-center justify-center lg:justify-start gap-2 lg:gap-4 text-center lg:text-left select-none w-full lg:w-auto">
-            <ShieldCheck size={14} className="text-emerald-500 lg:w-4 lg:h-4 shrink-0" />
-            <p className="text-[8px] lg:text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed lg:leading-none">
-              Pre-flight generation locks verified <span className="hidden lg:inline mx-2 text-slate-200 dark:text-white/5">|</span><br className="lg:hidden"/> Ready to stream batch XML to Tally proxy
-            </p>
-          </div>
-          
-          <div className="flex flex-wrap lg:flex-nowrap justify-center lg:justify-end items-center gap-3 lg:gap-6 text-[9px] lg:text-[10.5px] font-black uppercase text-slate-400 tracking-wider select-none w-full lg:w-auto">
-            <div className="bg-slate-50 dark:bg-white/5 lg:bg-transparent px-2 py-1 lg:p-0 rounded-md">
-              Rx: <span className="text-emerald-600 dark:text-emerald-400 font-[1000] ml-0.5 lg:ml-1">{voucherData.receiptList.length}</span>
-            </div>
-            <div className="hidden lg:block h-4 w-px bg-slate-200 dark:bg-white/10" />
-            <div className="bg-slate-50 dark:bg-white/5 lg:bg-transparent px-2 py-1 lg:p-0 rounded-md">
-              Inv: <span className="text-blue-500 dark:text-blue-400 font-[1000] ml-0.5 lg:ml-1">{voucherData.salesList.length}</span>
-            </div>
-            <div className="hidden lg:block h-4 w-px bg-slate-200 dark:bg-white/10" />
-            <div className="bg-slate-50 dark:bg-white/5 lg:bg-transparent px-2 py-1 lg:p-0 rounded-md">
-              Px: <span className="text-rose-500 dark:text-rose-400 font-[1000] ml-0.5 lg:ml-1">{voucherData.paymentList.length}</span>
-            </div>
-          </div>
-        </footer>
 
         <CommissionMapperModal 
           isOpen={isMapperOpen} 

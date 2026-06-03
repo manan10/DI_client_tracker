@@ -3,13 +3,10 @@ import { CheckCircle2, XCircle, FileText, AlertCircle, TrendingUp, TrendingDown,
 import { useApi } from '../../../../hooks/useApi';
 import { tallyTemplates } from '../../../../utils/tallyTemplates';
 
-const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedger, onComplete }) => {
+const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedger, arns = [], arnId, onComplete }) => {
   const { request } = useApi();
   const safeTransactions = transactions || [];
 
-  // =========================================================================
-  // STATE DEFINITIONS
-  // =========================================================================
   const [phase, setPhase] = useState('READY'); // 'READY' | 'PROCESSING' | 'DONE'
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isCurrentlyCreating, setIsCurrentlyCreating] = useState(false);
@@ -21,22 +18,20 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
-  // =========================================================================
-  // TASK FLATTENER ENGINE (Decoupled & Normalized Vector Queue)
-  // =========================================================================
+  // FIX: Properly segregate tasks ensuring commissions are not double-booked as bank receipts
   const voucherTasks = useMemo(() => {
     const tasks = [];
     safeTransactions.forEach((tx) => {
-      // Task A: Standard Bank Ledger Match (Receipts / Payments)
-      if (tx.isChecked) {
+      // Standard Bank Ledgers (Exclude commissions and manuals)
+      if (tx.isChecked && !tx.isCommission && !tx.isMarkedForManualEntry) {
         tasks.push({
           id: `bank-${tx._id}`,
           vType: tx.type, // 'RECEIPT' or 'PAYMENT'
           rawTx: tx
         });
       }
-      // Task B: Commission Sales Invoice Match
-      if (tx.isCommission && tx.isSalesApproved) {
+      // Sales Invoices (Exclude manuals)
+      if (tx.isCommission && tx.isSalesApproved && !tx.isMarkedForManualEntry) {
         tasks.push({
           id: `sales-${tx._id}`,
           vType: 'SALES',
@@ -47,9 +42,6 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     return tasks;
   }, [safeTransactions]);
 
-  // =========================================================================
-  // FORMATTERS & METRIC AGGREGATORS
-  // =========================================================================
   const formatINR = (amount) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -74,9 +66,6 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     }, { RECEIPT: 0, PAYMENT: 0, SALES: 0 });
   }, [voucherTasks]);
 
-  // =========================================================================
-  // CONTROLLED TRANSLATION PUSH BUTTON LOGIC
-  // =========================================================================
   const handleStartSynchronization = async () => {
     if (voucherTasks.length === 0) {
       setPhase('DONE');
@@ -91,6 +80,8 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     setIsCurrentlyCreating(true);
 
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const activeArnObject = arns.find(a => a._id === arnId || a.arnCode === arnId);
+    const isGstCompliant = !!activeArnObject?.gstCompliant;
 
     for (let i = 0; i < voucherTasks.length; i++) {
       const task = voucherTasks[i];
@@ -100,10 +91,10 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
       setIsCurrentlyCreating(true);
 
       let xmlPayload = "";
-      let finalAmountForLog = Math.abs(task.vType === 'SALES' ? (tx.grossVoucherTotal || tx.amount) : tx.amount);
       let finalLedgerForLog = tx.suggestedLedger || tx.ledgerName || 'UNKNOWN LEDGER';
       let finalNarrationForLog = tx.customNarration || tx.narration || "Auto-generated via Accrual Bridge";
       let finalVoucherNoForLog = null;
+      let finalAmountForLog = 0;
 
       // Ensure proper YYYY-MM-DD Date Conversion avoiding UTC offset jumps
       let safeDate = "";
@@ -113,13 +104,31 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
           const yyyy = d.getFullYear();
           const mm = String(d.getMonth() + 1).padStart(2, '0');
           const dd = String(d.getDate()).padStart(2, '0');
-          safeDate = `${yyyy}-${mm}-${dd}`;
+          safeDate = `${yyyy}${mm}${dd}`; // Tally XML expects YYYYMMDD
       } catch {
-          safeDate = new Date().toISOString().split('T')[0];
+          const dt = new Date();
+          safeDate = `${dt.getFullYear()}${String(dt.getMonth()+1).padStart(2,'0')}${String(dt.getDate()).padStart(2,'0')}`;
       }
+
+      // GST AND VALUE RECALCULATION
+      let cgst = 0, sgst = 0, igst = 0;
+      let baseAmount = Math.abs(tx.amount || 0);
+      let grossTotal = baseAmount;
 
       const normalizedLedger = finalLedgerForLog.toUpperCase();
       const isLocalAmc = tx.isLocalAmc !== undefined ? tx.isLocalAmc : (normalizedLedger.includes("NJ") || normalizedLedger.includes("LOCAL") || normalizedLedger.includes("STATE"));
+
+      if (isGstCompliant) {
+          if (isLocalAmc) {
+              cgst = baseAmount * 0.09;
+              sgst = baseAmount * 0.09;
+              grossTotal = baseAmount + cgst + sgst;
+          } else {
+              igst = baseAmount * 0.18;
+              grossTotal = baseAmount + igst;
+          }
+      }
+
       const resolvedIncomeLedger = isLocalAmc ? "MF COMMISSION (LOC)" : (salesIncomeLedger || "MF COMMISION INCOME");
 
       // Deep Mapping Logic
@@ -130,18 +139,19 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
           invoiceNumber: tx.invoiceNumber || `INV-${tx._id.slice(-5).toUpperCase()}`,
           ledgerName: finalLedgerForLog,
           incomeLedger: resolvedIncomeLedger,
-          amount: Math.abs(tx.baseAmount !== undefined ? tx.baseAmount : tx.amount),
-          gstType: (tx.cgst > 0 || tx.sgst > 0) ? "LOCAL" : (tx.igst > 0 ? "INTERSTATE" : "NONE"),
+          amount: baseAmount,
+          gstType: (cgst > 0 || sgst > 0) ? "LOCAL" : (igst > 0 ? "INTERSTATE" : "NONE"),
           cgstLedger: "CGST",
           sgstLedger: "SGST",
           igstLedger: "IGST",
-          cgstAmount: Math.abs(tx.cgst || 0),
-          sgstAmount: Math.abs(tx.sgst || 0),
-          igstAmount: Math.abs(tx.igst || 0),
+          cgstAmount: cgst,
+          sgstAmount: sgst,
+          igstAmount: igst,
           narration: finalNarrationForLog
         };
         xmlPayload = tallyTemplates.generateSalesVoucher(salesData);
         finalVoucherNoForLog = salesData.invoiceNumber;
+        finalAmountForLog = grossTotal;
       } else {
         const bankData = {
           company: companyName,
@@ -149,10 +159,11 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
           date: safeDate,
           ledgerName: finalLedgerForLog,
           bankAccount: bankLedgerName,
-          amount: Math.abs(tx.amount),
+          amount: baseAmount,
           narration: finalNarrationForLog
         };
         xmlPayload = tallyTemplates.generateVoucher(bankData);
+        finalAmountForLog = baseAmount;
       }
 
       let isSuccess = false;
@@ -178,7 +189,7 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
         vType: task.vType,
         ledger: finalLedgerForLog,
         amount: finalAmountForLog,
-        date: safeDate,
+        date: tx.invoiceBillingDate || tx.date || new Date().toISOString(),
         narration: finalNarrationForLog,
         voucherNumber: finalVoucherNoForLog,
         status: isSuccess ? 'SUCCESS' : 'FAILED',
@@ -199,9 +210,6 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     if (onCompleteRef.current) onCompleteRef.current();
   };
 
-  // =========================================================================
-  // VIEW GROUP BUILDER (Summary Stage Mapping)
-  // =========================================================================
   const groupedResults = useMemo(() => {
     return finalResults.reduce((acc, curr) => {
       const type = curr.vType || 'UNKNOWN';
@@ -224,9 +232,6 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     }
   };
 
-  // =========================================================================
-  // PHASE VIEW 1: MANUALLY TRIGGERED GATEWAY ZONE (Safe Landing)
-  // =========================================================================
   if (phase === 'READY') {
     return (
       <div className="h-full w-full bg-slate-50/50 dark:bg-[#08090A] lg:bg-white flex flex-col items-center justify-center p-6 lg:p-12">
@@ -244,7 +249,6 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
             </p>
           </div>
 
-          {/* Setup Breakdown Metrics Info Cards */}
           <div className="grid grid-cols-3 gap-2.5 pt-2">
             <div className="bg-slate-50 dark:bg-white/2 border border-slate-100 dark:border-white/5 p-3 rounded-xl flex flex-col items-center text-center">
               <TrendingUp size={14} className="text-emerald-500 mb-1" />
@@ -274,9 +278,6 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     );
   }
 
-  // =========================================================================
-  // PHASE VIEW 2: REAL-TIME PROGRESSIVE WRITER FEED
-  // =========================================================================
   if (phase === 'PROCESSING') {
     const activeTask = voucherTasks[currentIndex];
     const progressPercent = (currentIndex / Math.max(1, voucherTasks.length)) * 100;
@@ -332,7 +333,6 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
               </div>
             </div>
 
-            {/* Structured History Log Rows */}
             <div className="flex flex-col gap-2.5 px-2 mt-2">
               {completedLogs.map((log, idx) => {
                 const opacityClass = idx === completedLogs.length - 1 ? 'opacity-100' : idx === completedLogs.length - 2 ? 'opacity-60' : 'opacity-30';
@@ -363,13 +363,9 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     );
   }
 
-  // =========================================================================
-  // PHASE VIEW 3: CARD-BASED SUMMARY BREAKDOWN SCREEN
-  // =========================================================================
   return (
     <div className="h-full w-full bg-[#FAFAFA] dark:bg-[#08090A] lg:bg-slate-50/50 flex flex-col overflow-hidden text-left text-slate-800 dark:text-slate-200 font-sans relative animate-in fade-in zoom-in-95 duration-500">
       
-      {/* HEADER BAR */}
       <div className="px-5 lg:px-12 py-5 bg-white dark:bg-[#0B0C10] border-b border-slate-200 dark:border-white/5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 shrink-0 z-10 shadow-sm">
         <div className="space-y-1">
           <h2 className="text-lg lg:text-xl font-[1000] uppercase tracking-tight text-slate-900 dark:text-white italic">
@@ -406,7 +402,6 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
         </div>
       </div>
 
-      {/* COMPACT SECTIONAL CARDS SUMMARY LISTS */}
       <div className="flex-1 overflow-y-auto no-scrollbar p-5 lg:p-12 space-y-8 lg:space-y-10 pb-24">
         {Object.keys(groupedResults).length === 0 ? (
            <div className="h-full flex flex-col items-center justify-center opacity-20 gap-3">
@@ -419,7 +414,6 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
             return (
               <div key={type} className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 
-                {/* Accordion Card Category Header */}
                 <div className="flex items-end justify-between border-b-2 border-slate-200 dark:border-white/10 pb-3">
                   <div className="flex items-center gap-2.5">
                     <div className={`p-2 rounded-lg ${config.bg} ${config.color} ${config.border} border`}>
@@ -440,7 +434,6 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
                   </div>
                 </div>
 
-                {/* Sub-item Cards List Grid */}
                 <div className="grid grid-cols-1 gap-3">
                   {group.items.map((item) => {
                     const isSuccess = item.status === 'SUCCESS';

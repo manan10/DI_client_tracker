@@ -28,7 +28,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
     return (selection.stagedData?.transactions || []).filter(t => t.narration !== "EMPTY_FILE_MARKER");
   }, [selection.stagedData]);
 
-  // Using Math.abs ensures totals stay positive even if the backend parser reads a negative bank withdrawal
   const totals = useMemo(() => {
     return transactions.reduce((acc, curr) => {
       if (curr.type === 'RECEIPT') acc.receipts += Math.abs(curr.amount);
@@ -48,7 +47,7 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
       const res = await request(`/audit/transactions/${txId}`, 'PATCH', payload);
       if (res.success) {
         setSelection(prev => {
-          const updatedTransactions = prev.stagedData.transactions.map(t => 
+          const updatedTransactions = (prev.stagedData?.transactions || []).map(t => 
             t._id === txId ? { ...t, ...payload } : t
           );
           let newVerified = [...(prev.verifiedIds || [])];
@@ -70,6 +69,7 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
     }
   };
 
+  // FIX: Properly map `isChecked` across the transaction objects locally
   const handleSelectAll = async () => {
     if (!displayTransactions.length) return;
 
@@ -85,7 +85,16 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
       } else {
         newVerified = newVerified.filter(id => !allDisplayedIds.includes(id));
       }
-      return { ...prev, verifiedIds: newVerified };
+      
+      const updatedTxs = (prev.stagedData?.transactions || []).map(t => 
+        allDisplayedIds.includes(t._id) ? { ...t, isChecked: targetState } : t
+      );
+
+      return { 
+        ...prev, 
+        verifiedIds: newVerified,
+        stagedData: { ...prev.stagedData, transactions: updatedTxs }
+      };
     });
 
     try {
@@ -124,10 +133,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
       `}} />
 
       <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-[#08090A] lg:bg-white overflow-hidden relative">
-        
-        {/* =========================================================================
-            RESPONSIVE HEADER
-            ========================================================================= */}
         <header className="px-4 lg:px-8 py-4 bg-white dark:bg-[#0B0C10] border-b border-slate-200 dark:border-white/5 flex flex-col lg:flex-row lg:items-center justify-between shrink-0 gap-4 lg:gap-0 z-20">
           
           <div className="flex items-center justify-between w-full lg:w-auto lg:gap-8">
@@ -188,18 +193,10 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
           </div>
         </header>
 
-        {/* =========================================================================
-            MAIN CONTENT AREA
-            ========================================================================= */}
         <main className="flex-1 overflow-hidden flex flex-col lg:p-4">
-          
           <div className="flex-1 lg:bg-white lg:dark:bg-[#0B0C10] lg:rounded-3xl lg:border border-slate-200 dark:border-white/5 flex flex-col overflow-hidden relative">
             
-            {/* ---------------------------------------------------------------------
-                MOBILE VIEW: CARD LIST
-                --------------------------------------------------------------------- */}
             <div className="lg:hidden flex-1 overflow-y-auto no-scrollbar p-3 space-y-3">
-               
                {displayTransactions.length > 0 && (
                  <div className="flex items-center justify-between px-2 pb-1">
                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Select All</span>
@@ -217,7 +214,7 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                   const isEditing = editingId === tx._id;
                   const conf = Math.round((tx.confidence || 0) * 100);
                   const confColor = conf > 80 ? 'text-emerald-500' : 'text-amber-500';
-                  const amountColor = activeTab === 'RECEIPT' ? 'text-emerald-500' : 'text-slate-200 dark:text-white';
+                  const amountColor = activeTab === 'RECEIPT' ? 'text-emerald-500' : 'text-slate-900 dark:text-white';
 
                   return (
                     <div 
@@ -248,7 +245,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                            </div>
                          </div>
                          <div className={`text-sm font-[1000] tabular-nums italic shrink-0 ${amountColor}`}>
-                            {/* REMOVED REPLACE LOGIC, USING MATH.ABS */}
                             {formatINR(Math.abs(tx.amount))}
                          </div>
                       </div>
@@ -326,9 +322,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                })}
             </div>
 
-            {/* ---------------------------------------------------------------------
-                DESKTOP VIEW: STANDARD TABLE
-                --------------------------------------------------------------------- */}
             <div className="hidden lg:block flex-1 overflow-y-auto no-scrollbar relative">
               <table className="w-full border-collapse text-left table-fixed">
                 <thead className="sticky top-0 bg-slate-50 dark:bg-[#111218] border-b border-slate-200 dark:border-white/10 z-20">
@@ -436,7 +429,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                         </td>
 
                         <td className={`px-4 py-3 text-right text-[15px] font-[1000] tabular-nums italic ${activeTab === 'RECEIPT' ? 'text-emerald-500' : 'text-slate-900 dark:text-white'}`}>
-                          {/* REMOVED REPLACE LOGIC, USING MATH.ABS */}
                           {formatINR(Math.abs(tx.amount))}
                         </td>
 
@@ -472,9 +464,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
           </div>
         </main>
 
-        {/* =========================================================================
-            MODAL: NARRATION (RESPONSIVE)
-            ========================================================================= */}
         {narrationModal.open && (
           <div className="fixed inset-0 z-200 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
             <div className="bg-white dark:bg-[#0B0C0E] w-full max-w-lg rounded-2xl p-6 lg:p-8 shadow-2xl border border-white/5 space-y-4 lg:space-y-6 animate-in zoom-in duration-200">

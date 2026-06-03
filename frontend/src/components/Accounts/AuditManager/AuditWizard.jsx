@@ -161,7 +161,6 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
     finally { setIsProcessing(false); }
   };
 
-  // FIX: This now maps the GST values back into the DB save payload.
   const handleSalesValidationComplete = useCallback(async () => {
     setIsProcessing(true);
     try {
@@ -170,13 +169,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
         .map(t => ({ 
            _id: t._id, 
            isSalesApproved: t.isSalesApproved || false, 
-           invoiceBillingDate: t.invoiceBillingDate || null,
-           baseAmount: t.baseAmount || t.amount,
-           cgst: t.cgst || 0,
-           sgst: t.sgst || 0,
-           igst: t.igst || 0,
-           grossVoucherTotal: t.grossVoucherTotal || t.amount,
-           isLocalAmc: t.isLocalAmc || false
+           invoiceBillingDate: t.invoiceBillingDate || null
         }));
 
       const res = await request(`/audit/${selection.audit._id}/sales-checkpoint`, 'PUT', { transactions: payloadTxs });
@@ -270,13 +263,19 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
                 {step === 2 && <SyncStep selection={selection} onUpload={handleFileUpload} isProcessing={isProcessing} />}
                 {step === 3 && <AuditStep selection={selection} setSelection={setSelection} masterLedgers={masterLedgers} />}
                 {step === 4 && <SalesStep selection={selection} setSelection={setSelection} masterLedgers={masterLedgers} arns={arns} onUpdateTransaction={handleUpdateTransactionData} />}
-                {step === 5 && <SummaryStep selection={selection} />}
+                
+                {/* APPLIED FIX: Passing 'arns' to SummaryStep */}
+                {step === 5 && <SummaryStep selection={selection} arns={arns} />}
+                
+                {/* APPLIED FIX: Passing 'arns' and 'arnId' to ResultStep */}
                 {step === 6 && (
                    <ResultStep 
                      transactions={(selection.stagedData?.transactions || [])} 
                      companyName={selection.tallyCompany}
                      bankLedgerName={selection.account?.name || selection.tallyLedger}
                      salesIncomeLedger={selection.salesIncomeLedger}
+                     arns={arns}
+                     arnId={selection.arnId}
                      onComplete={() => setIsSyncComplete(true)} 
                    />
                 )}
