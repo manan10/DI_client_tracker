@@ -101,7 +101,12 @@ const handleGlobalSync = async () => {
         
         const ledgerRes = await request("/tally/proxy", "POST", { xml: tallyTemplates.getLedgers(firm) });
         const ledgerMatches = [...ledgerRes.matchAll(/<LEDGER NAME="([^"]*)"[^>]*>[\s\S]*?<PARENT[^>]*>(.*?)<\/PARENT>/g)];
-        const mapped = ledgerMatches.map(m => ({ name: m[1], parent: m[2] }));
+        
+        // FIX IS HERE: Decode the XML entities before saving them to the database
+        const mapped = ledgerMatches.map(m => ({ 
+            name: tallyTemplates.unescapeXml(m[1]), 
+            parent: tallyTemplates.unescapeXml(m[2]) 
+        }));
 
         await request("/ledgers/bulk-sync", "POST", { 
             ledgers: mapped, 

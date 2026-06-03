@@ -221,7 +221,7 @@ const TallyLedgerImport = () => {
         </div>
 
         {/* LEDGER DATA GRID */}
-        <div className="flex-1 overflow-y-auto no-scrollbar border border-slate-100 dark:border-white/5 rounded-[2rem] bg-white dark:bg-[#050607] shadow-inner">
+        <div className="flex-1 overflow-y-auto no-scrollbar border border-slate-100 dark:border-white/5 rounded-4xl bg-white dark:bg-[#050607] shadow-inner">
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md z-10 border-b border-slate-100 dark:border-white/5">
               <tr>
@@ -232,7 +232,7 @@ const TallyLedgerImport = () => {
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-white/5">
               {filteredLedgers.map((ledger) => (
-                <tr key={ledger._id} className="group hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
+                <tr key={ledger._id} className="group hover:bg-slate-50/50 dark:hover:bg-white/2 transition-colors">
                   <td className="px-10 py-5">
                     <div className="flex items-center gap-4">
                       <div className="w-8 h-8 rounded-lg bg-emerald-500/5 flex items-center justify-center text-emerald-500 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
@@ -250,7 +250,7 @@ const TallyLedgerImport = () => {
                   </td>
                   <td className="px-10 py-5">
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-slate-400 uppercase italic leading-none truncate max-w-[180px]">
+                      <span className="text-[10px] font-black text-slate-400 uppercase italic leading-none truncate max-w-45">
                         {ledger.tallyCompanyName}
                       </span>
                       <span className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter mt-1">

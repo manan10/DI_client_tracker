@@ -1,6 +1,33 @@
-// src/utils/tallyTemplates.js
+// Helper to make strings safe for Tally's strict XML parser
+const escapeXml = (unsafe) => {
+    if (unsafe === null || unsafe === undefined) return "";
+    return unsafe.toString().replace(/[<>&'"]/g, function (c) {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+            default: return c;
+        }
+    });
+};
+
+// Helper to decode Tally's XML entities back to normal readable text for your DB/UI
+const unescapeXml = (safe) => {
+    if (safe === null || safe === undefined) return "";
+    return safe.toString()
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&apos;/g, "'");
+};
 
 export const tallyTemplates = {
+    escapeXml,
+    unescapeXml,
+
     getCompanies: () => `
 <ENVELOPE>
     <HEADER>
@@ -38,7 +65,7 @@ export const tallyTemplates = {
             </TDL>
             <STATICVARIABLES>
                 <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
-                <SVCURRENTCOMPANY>${companyName}</SVCURRENTCOMPANY>
+                <SVCURRENTCOMPANY>${escapeXml(companyName)}</SVCURRENTCOMPANY>
             </STATICVARIABLES>
         </DESC>
     </BODY>
@@ -66,24 +93,24 @@ export const tallyTemplates = {
     <BODY>
         <DESC>
             <STATICVARIABLES>
-                <SVCURRENTCOMPANY>${company}</SVCURRENTCOMPANY>
+                <SVCURRENTCOMPANY>${escapeXml(company)}</SVCURRENTCOMPANY>
             </STATICVARIABLES>
         </DESC>
         <DATA>
             <TALLYMESSAGE xmlns:UDF="TallyUDF">
-                <VOUCHER VCHTYPE="${type}" ACTION="Create" OBJSTATUSTYPE="Created">
+                <VOUCHER VCHTYPE="${escapeXml(type)}" ACTION="Create" OBJSTATUSTYPE="Created">
                     <DATE>${tallyDate}</DATE>
-                    <VOUCHERTYPENAME>${type}</VOUCHERTYPENAME>
-                    <PARTYLEDGERNAME>${type === 'Receipt' ? ledgerName : bankAccount}</PARTYLEDGERNAME>
+                    <VOUCHERTYPENAME>${escapeXml(type)}</VOUCHERTYPENAME>
+                    <PARTYLEDGERNAME>${escapeXml(type === 'Receipt' ? ledgerName : bankAccount)}</PARTYLEDGERNAME>
                     <PERSISTEDVIEW>Accounting Voucher View</PERSISTEDVIEW>
-                    <NARRATION>${narration}</NARRATION>
+                    <NARRATION>${escapeXml(narration)}</NARRATION>
                     <ALLLEDGERENTRIES.LIST>
-                        <LEDGERNAME>${ledgerName}</LEDGERNAME>
+                        <LEDGERNAME>${escapeXml(ledgerName)}</LEDGERNAME>
                         <ISDEEMEDPOSITIVE>${type === 'Payment' ? 'Yes' : 'No'}</ISDEEMEDPOSITIVE>
                         <AMOUNT>${ledgerAmount}</AMOUNT>
                     </ALLLEDGERENTRIES.LIST>
                     <ALLLEDGERENTRIES.LIST>
-                        <LEDGERNAME>${bankAccount}</LEDGERNAME>
+                        <LEDGERNAME>${escapeXml(bankAccount)}</LEDGERNAME>
                         <ISDEEMEDPOSITIVE>${type === 'Receipt' ? 'Yes' : 'No'}</ISDEEMEDPOSITIVE>
                         <AMOUNT>${bankAmount}</AMOUNT>
                     </ALLLEDGERENTRIES.LIST>
@@ -119,13 +146,13 @@ export const tallyTemplates = {
         if (gstType === 'LOCAL') {
             taxNodes = `
                     <LEDGERENTRIES.LIST>
-                        <LEDGERNAME>${cgstLedger}</LEDGERNAME>
+                        <LEDGERNAME>${escapeXml(cgstLedger)}</LEDGERNAME>
                         <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
                         <ISPARTYLEDGER>No</ISPARTYLEDGER>
                         <AMOUNT>${cAmt.toFixed(2)}</AMOUNT>
                     </LEDGERENTRIES.LIST>
                     <LEDGERENTRIES.LIST>
-                        <LEDGERNAME>${sgstLedger}</LEDGERNAME>
+                        <LEDGERNAME>${escapeXml(sgstLedger)}</LEDGERNAME>
                         <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
                         <ISPARTYLEDGER>No</ISPARTYLEDGER>
                         <AMOUNT>${sAmt.toFixed(2)}</AMOUNT>
@@ -133,7 +160,7 @@ export const tallyTemplates = {
         } else if (gstType === 'INTERSTATE') {
             taxNodes = `
                     <LEDGERENTRIES.LIST>
-                        <LEDGERNAME>${igstLedger}</LEDGERNAME>
+                        <LEDGERNAME>${escapeXml(igstLedger)}</LEDGERNAME>
                         <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
                         <ISPARTYLEDGER>No</ISPARTYLEDGER>
                         <AMOUNT>${iAmt.toFixed(2)}</AMOUNT>
@@ -150,7 +177,7 @@ export const tallyTemplates = {
     <BODY>
         <DESC>
             <STATICVARIABLES>
-                <SVCURRENTCOMPANY>${company}</SVCURRENTCOMPANY>
+                <SVCURRENTCOMPANY>${escapeXml(company)}</SVCURRENTCOMPANY>
             </STATICVARIABLES>
         </DESC>
         <DATA>
@@ -158,28 +185,28 @@ export const tallyTemplates = {
                 <VOUCHER VCHTYPE="Sales" ACTION="Create" OBJSTATUSTYPE="Created" OBJVIEW="Invoice Voucher View">
                     <DATE>${tallyDate}</DATE>
                     <VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>
-                    <REFERENCE>${invoiceNumber}</REFERENCE>
+                    <REFERENCE>${escapeXml(invoiceNumber)}</REFERENCE>
                     <ISINVOICE>Yes</ISINVOICE>
-                    <PARTYLEDGERNAME>${ledgerName}</PARTYLEDGERNAME>
-                    <PARTYNAME>${ledgerName}</PARTYNAME>
-                    <BASICBUYERNAME>${ledgerName}</BASICBUYERNAME>
+                    <PARTYLEDGERNAME>${escapeXml(ledgerName)}</PARTYLEDGERNAME>
+                    <PARTYNAME>${escapeXml(ledgerName)}</PARTYNAME>
+                    <BASICBUYERNAME>${escapeXml(ledgerName)}</BASICBUYERNAME>
                     <PERSISTEDVIEW>Invoice Voucher View</PERSISTEDVIEW>
-                    <NARRATION>${narration}</NARRATION>
+                    <NARRATION>${escapeXml(narration)}</NARRATION>
                     
                     <LEDGERENTRIES.LIST>
-                        <LEDGERNAME>${ledgerName}</LEDGERNAME>
+                        <LEDGERNAME>${escapeXml(ledgerName)}</LEDGERNAME>
                         <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
                         <ISPARTYLEDGER>Yes</ISPARTYLEDGER>
                         <AMOUNT>-${totalAmt}</AMOUNT>
                         <BILLALLOCATIONS.LIST>
-                            <NAME>${invoiceNumber}</NAME>
+                            <NAME>${escapeXml(invoiceNumber)}</NAME>
                             <BILLTYPE>New Ref</BILLTYPE>
                             <AMOUNT>-${totalAmt}</AMOUNT>
                         </BILLALLOCATIONS.LIST>
                     </LEDGERENTRIES.LIST>
                     
                     <LEDGERENTRIES.LIST>
-                        <LEDGERNAME>${incomeLedger}</LEDGERNAME>
+                        <LEDGERNAME>${escapeXml(incomeLedger)}</LEDGERNAME>
                         <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
                         <ISPARTYLEDGER>No</ISPARTYLEDGER>
                         <AMOUNT>${baseAmt.toFixed(2)}</AMOUNT>
