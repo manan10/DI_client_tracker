@@ -102,18 +102,35 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
       let xmlPayload = "";
       let finalAmountForLog = Math.abs(task.vType === 'SALES' ? (tx.grossVoucherTotal || tx.amount) : tx.amount);
       let finalLedgerForLog = tx.suggestedLedger || tx.ledgerName || 'UNKNOWN LEDGER';
-      let finalNarrationForLog = tx.customNarration || "";
+      let finalNarrationForLog = tx.customNarration || tx.narration || "Auto-generated via Accrual Bridge";
       let finalVoucherNoForLog = null;
 
-      // Deep Mapping Logic extracted safely straight from TallyTest
+      // Ensure proper YYYY-MM-DD Date Conversion avoiding UTC offset jumps
+      let safeDate = "";
+      try {
+          const dStr = task.vType === 'SALES' ? (tx.invoiceBillingDate || tx.date) : tx.date;
+          const d = new Date(dStr || new Date());
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          safeDate = `${yyyy}-${mm}-${dd}`;
+      } catch {
+          safeDate = new Date().toISOString().split('T')[0];
+      }
+
+      const normalizedLedger = finalLedgerForLog.toUpperCase();
+      const isLocalAmc = tx.isLocalAmc !== undefined ? tx.isLocalAmc : (normalizedLedger.includes("NJ") || normalizedLedger.includes("LOCAL") || normalizedLedger.includes("STATE"));
+      const resolvedIncomeLedger = isLocalAmc ? "MF COMMISSION (LOC)" : (salesIncomeLedger || "MF COMMISION INCOME");
+
+      // Deep Mapping Logic
       if (task.vType === 'SALES') {
         const salesData = {
           company: companyName,
-          date: tx.invoiceBillingDate || tx.date || new Date().toISOString().split('T')[0],
+          date: safeDate,
           invoiceNumber: tx.invoiceNumber || `INV-${tx._id.slice(-5).toUpperCase()}`,
           ledgerName: finalLedgerForLog,
-          incomeLedger: (tx.cgst > 0 || tx.sgst > 0) ? "MF COMMISSION (LOC)" : salesIncomeLedger || "MF COMMISION INCOME",
-          amount: Math.abs(tx.baseAmount || tx.amount),
+          incomeLedger: resolvedIncomeLedger,
+          amount: Math.abs(tx.baseAmount !== undefined ? tx.baseAmount : tx.amount),
           gstType: (tx.cgst > 0 || tx.sgst > 0) ? "LOCAL" : (tx.igst > 0 ? "INTERSTATE" : "NONE"),
           cgstLedger: "CGST",
           sgstLedger: "SGST",
@@ -129,7 +146,7 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
         const bankData = {
           company: companyName,
           type: task.vType === 'RECEIPT' ? 'Receipt' : 'Payment',
-          date: tx.date || new Date().toISOString().split('T')[0],
+          date: safeDate,
           ledgerName: finalLedgerForLog,
           bankAccount: bankLedgerName,
           amount: Math.abs(tx.amount),
@@ -161,7 +178,7 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
         vType: task.vType,
         ledger: finalLedgerForLog,
         amount: finalAmountForLog,
-        date: task.vType === 'SALES' ? (tx.invoiceBillingDate || tx.date) : tx.date,
+        date: safeDate,
         narration: finalNarrationForLog,
         voucherNumber: finalVoucherNoForLog,
         status: isSuccess ? 'SUCCESS' : 'FAILED',
@@ -286,7 +303,7 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
             </div>
           </div>
 
-          <div className="w-full flex flex-col gap-3 min-h-65">
+          <div className="w-full flex flex-col gap-3 min-h-[260px]">
             <div className="flex items-start gap-4 bg-white dark:bg-[#111214] border-2 border-emerald-500/30 dark:border-emerald-500/40 p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(16,185,129,0.05)] relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500" />
               <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
@@ -436,7 +453,7 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
                           
                           <div className="flex flex-col min-w-0 flex-1">
                             <div className="flex items-center gap-2.5 flex-wrap mb-1">
-                              <span className="text-xs sm:text-[13px] font-[1000] uppercase tracking-tight text-slate-900 dark:text-white leading-tight wrap-break-word">
+                              <span className="text-xs sm:text-[13px] font-[1000] uppercase tracking-tight text-slate-900 dark:text-white leading-tight break-words">
                                 {item.ledger}
                               </span>
                               {isSuccess && item.voucherNumber && (

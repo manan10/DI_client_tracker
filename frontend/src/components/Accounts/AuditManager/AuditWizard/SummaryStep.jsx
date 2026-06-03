@@ -54,29 +54,18 @@ const SummaryStep = ({ selection, arns = [] }) => {
     const salesInvoices = transactions.filter(t => t?.isCommission && t?.type === 'RECEIPT' && t?.isSalesApproved && !t?.isMarkedForManualEntry);
     const manualEntries = transactions.filter(t => t?.isMarkedForManualEntry || !t?.suggestedLedger);
 
+    // FIX: Read explicitly saved tax values from SalesStep instead of recalculating
     const normalizedSalesRows = salesInvoices.map(tx => {
-      const net = tx.amount || 0;
-      const ledgerName = tx.suggestedLedger || "SUSPENSE SALES LEDGER";
-      const normalizedLedger = ledgerName.toUpperCase();
-      const isLocal = normalizedLedger.includes("NJ") || normalizedLedger.includes("LOCAL") || normalizedLedger.includes("STATE");
+      const ledgerName = tx.suggestedLedger || tx.ledgerName || "SUSPENSE SALES LEDGER";
       
-      let cgst = 0, sgst = 0, igst = 0;
-      if (isGstCompliant) {
-        if (isLocal) {
-          cgst = net * 0.09;
-          sgst = net * 0.09;
-        } else {
-          igst = net * 0.18;
-        }
-      }
       return {
         ...tx,
         ledgerName,
-        baseAmount: net,
-        cgst,
-        sgst,
-        igst,
-        grossTotal: net + cgst + sgst + igst
+        baseAmount: tx.baseAmount !== undefined ? tx.baseAmount : (tx.amount || 0),
+        cgst: tx.cgst || 0,
+        sgst: tx.sgst || 0,
+        igst: tx.igst || 0,
+        grossTotal: tx.grossVoucherTotal || tx.amount || 0
       };
     });
 

@@ -45,12 +45,14 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
   const fetchMasterData = useCallback(async () => {
     try {
       const [arnRes, accRes] = await Promise.all([request('/arns'), request('/accounts')]);
-      setArns(arnRes?.data || []);
-      setAccounts(accRes?.data || []);
+      const fetchedArns = arnRes?.data || [];
+      const fetchedAccounts = accRes?.data || [];
+      setArns(fetchedArns);
+      setAccounts(fetchedAccounts);
 
       if (selection?.audit) {
         const targetAccountId = selection.audit.accountId?._id || selection.audit.accountId;
-        const targetAccountObj = (accRes?.data || []).find(a => a._id === targetAccountId);
+        const targetAccountObj = fetchedAccounts.find(a => a._id === targetAccountId);
         setSelection(prev => ({ ...prev, account: targetAccountObj || prev.account }));
       }
     } catch { 
@@ -132,9 +134,8 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
 
   const handleFileUpload = async (files) => {
     if (!files || files.length === 0) return;
-    if (!selection.tallyCompany || !selection.account?.name || !selection.arnId) {
-       return toast.error("Bridge Error: This Tally Company isn't linked to a Client ARN.");
-    }
+    const isSetupComplete = selection.tallyCompany && selection.account?.name && selection.arnId;
+    if (!isSetupComplete) return toast.error("Bridge Error: This Tally Company isn't linked to a Client ARN.");
 
     setIsProcessing(true);
     const formData = new FormData();
@@ -160,12 +161,23 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
     finally { setIsProcessing(false); }
   };
 
+  // FIX: This now maps the GST values back into the DB save payload.
   const handleSalesValidationComplete = useCallback(async () => {
     setIsProcessing(true);
     try {
       const payloadTxs = (selection.stagedData?.transactions || [])
         .filter(t => t.isCommission && t.type === 'RECEIPT')
-        .map(t => ({ _id: t._id, isSalesApproved: t.isSalesApproved || false, invoiceBillingDate: t.invoiceBillingDate || null }));
+        .map(t => ({ 
+           _id: t._id, 
+           isSalesApproved: t.isSalesApproved || false, 
+           invoiceBillingDate: t.invoiceBillingDate || null,
+           baseAmount: t.baseAmount || t.amount,
+           cgst: t.cgst || 0,
+           sgst: t.sgst || 0,
+           igst: t.igst || 0,
+           grossVoucherTotal: t.grossVoucherTotal || t.amount,
+           isLocalAmc: t.isLocalAmc || false
+        }));
 
       const res = await request(`/audit/${selection.audit._id}/sales-checkpoint`, 'PUT', { transactions: payloadTxs });
       if (res?.success) setStep(5); 
@@ -198,13 +210,8 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
   const isStep4Valid = useMemo(() => {
     const txs = selection.stagedData?.transactions || [];
     const salesTxs = txs.filter(t => t.isCommission && t.type === 'RECEIPT');
-    
-    // Auto-pass if absolutely zero sales records exist
     if (salesTxs.length === 0) return true;
-    
-    // If sales records DO exist, forcefully require a ledger to be mapped to prevent broken XML
     if (!selection.salesIncomeLedger) return false;
-    
     return salesTxs.some(t => t.isSalesApproved && t.invoiceBillingDate);
   }, [selection.stagedData, selection.salesIncomeLedger]);
 

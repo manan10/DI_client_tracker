@@ -74,11 +74,10 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [], onU
 
   const isGstCompliant = !!activeArnObject?.gstCompliant;
 
-  // Derive the active ledgers for the dropdown
   const companyLedgers = useMemo(() => {
     return masterLedgers
       .filter(l => l.tallyCompanyName === selection.tallyCompany)
-      .filter(l => l.name.toLowerCase().includes("mf com"))  
+      .filter(l => l.name.toLowerCase().includes("mf com"))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [masterLedgers, selection.tallyCompany]);
 
@@ -109,7 +108,6 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [], onU
         }
       }
 
-      // Safe Local Timezone parsing (Prevents -1 Day UTC Shift)
       let defaultDate = "";
       try {
         if (tx.date) {
@@ -152,13 +150,22 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [], onU
 
   const isAllApproved = filteredAndSortedRows.length > 0 && approvedCount === filteredAndSortedRows.length;
 
+  // FIX: Push calculated GST fields to the central state
   const handleSelectAll = () => {
     if (!filteredAndSortedRows.length) return;
     const targetState = !isAllApproved;
     
     filteredAndSortedRows.forEach(row => {
       if (row.isSalesApproved !== targetState) {
-        const payload = { isSalesApproved: targetState };
+        const payload = { 
+            isSalesApproved: targetState,
+            baseAmount: row.baseAmount,
+            cgst: row.cgst,
+            sgst: row.sgst,
+            igst: row.igst,
+            grossVoucherTotal: row.grossVoucherTotal,
+            isLocalAmc: row.isLocalAmc
+        };
         if (targetState && !row.originalInvoiceBillingDate) {
            payload.invoiceBillingDate = row.invoiceBillingDate;
         }
@@ -167,8 +174,17 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [], onU
     });
   };
 
+  // FIX: Push calculated GST fields to the central state
   const handleToggleRow = (row) => {
-    const payload = { isSalesApproved: !row.isSalesApproved };
+    const payload = { 
+        isSalesApproved: !row.isSalesApproved,
+        baseAmount: row.baseAmount,
+        cgst: row.cgst,
+        sgst: row.sgst,
+        igst: row.igst,
+        grossVoucherTotal: row.grossVoucherTotal,
+        isLocalAmc: row.isLocalAmc
+    };
     if (!row.isSalesApproved && !row.originalInvoiceBillingDate) {
       payload.invoiceBillingDate = row.invoiceBillingDate;
     }
@@ -224,7 +240,6 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [], onU
         </div>
         
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-          {/* INCOME LEDGER SELECTOR */}
           {rawSalesRows.length > 0 && (
             <div className="relative w-full sm:w-64">
               <select

@@ -167,6 +167,7 @@ export const tallyTemplates = {
                     </LEDGERENTRIES.LIST>`;
         }
 
+        // Updated exactly matching the Tally Export
         return `<ENVELOPE>
     <HEADER>
         <VERSION>1</VERSION>
@@ -182,9 +183,10 @@ export const tallyTemplates = {
         </DESC>
         <DATA>
             <TALLYMESSAGE xmlns:UDF="TallyUDF">
-                <VOUCHER VCHTYPE="Sales" ACTION="Create" OBJSTATUSTYPE="Created" OBJVIEW="Invoice Voucher View">
+                <VOUCHER VCHTYPE="Sales" ACTION="Create" OBJVIEW="Invoice Voucher View">
                     <DATE>${tallyDate}</DATE>
                     <VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>
+                    <VOUCHERNUMBER>${escapeXml(invoiceNumber)}</VOUCHERNUMBER>
                     <REFERENCE>${escapeXml(invoiceNumber)}</REFERENCE>
                     <ISINVOICE>Yes</ISINVOICE>
                     <PARTYLEDGERNAME>${escapeXml(ledgerName)}</PARTYLEDGERNAME>
@@ -198,11 +200,6 @@ export const tallyTemplates = {
                         <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
                         <ISPARTYLEDGER>Yes</ISPARTYLEDGER>
                         <AMOUNT>-${totalAmt}</AMOUNT>
-                        <BILLALLOCATIONS.LIST>
-                            <NAME>${escapeXml(invoiceNumber)}</NAME>
-                            <BILLTYPE>New Ref</BILLTYPE>
-                            <AMOUNT>-${totalAmt}</AMOUNT>
-                        </BILLALLOCATIONS.LIST>
                     </LEDGERENTRIES.LIST>
                     
                     <LEDGERENTRIES.LIST>
