@@ -45,14 +45,12 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
   const fetchMasterData = useCallback(async () => {
     try {
       const [arnRes, accRes] = await Promise.all([request('/arns'), request('/accounts')]);
-      const fetchedArns = arnRes?.data || [];
-      const fetchedAccounts = accRes?.data || [];
-      setArns(fetchedArns);
-      setAccounts(fetchedAccounts);
+      setArns(arnRes?.data || []);
+      setAccounts(accRes?.data || []);
 
       if (selection?.audit) {
         const targetAccountId = selection.audit.accountId?._id || selection.audit.accountId;
-        const targetAccountObj = fetchedAccounts.find(a => a._id === targetAccountId);
+        const targetAccountObj = (accRes?.data || []).find(a => a._id === targetAccountId);
         setSelection(prev => ({ ...prev, account: targetAccountObj || prev.account }));
       }
     } catch { 
@@ -134,8 +132,9 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
 
   const handleFileUpload = async (files) => {
     if (!files || files.length === 0) return;
-    const isSetupComplete = selection.tallyCompany && selection.account?.name && selection.arnId;
-    if (!isSetupComplete) return toast.error("Bridge Error: This Tally Company isn't linked to a Client ARN.");
+    if (!selection.tallyCompany || !selection.account?.name || !selection.arnId) {
+       return toast.error("Bridge Error: This Tally Company isn't linked to a Client ARN.");
+    }
 
     setIsProcessing(true);
     const formData = new FormData();
@@ -195,7 +194,19 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
   ];
 
   const isStep3Valid = useMemo(() => (selection.stagedData?.transactions || []).some(t => t.isChecked), [selection.stagedData]);
-  const isStep4Valid = useMemo(() => (selection.stagedData?.transactions || []).some(t => t.isCommission && t.type === 'RECEIPT' && t.isSalesApproved && t.invoiceBillingDate), [selection.stagedData]);
+  
+  const isStep4Valid = useMemo(() => {
+    const txs = selection.stagedData?.transactions || [];
+    const salesTxs = txs.filter(t => t.isCommission && t.type === 'RECEIPT');
+    
+    // Auto-pass if absolutely zero sales records exist
+    if (salesTxs.length === 0) return true;
+    
+    // If sales records DO exist, forcefully require a ledger to be mapped to prevent broken XML
+    if (!selection.salesIncomeLedger) return false;
+    
+    return salesTxs.some(t => t.isSalesApproved && t.invoiceBillingDate);
+  }, [selection.stagedData, selection.salesIncomeLedger]);
 
   const footerConfig = useMemo(() => {
     switch (step) {
@@ -251,13 +262,14 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
                 {step === 1 && <IdentityStep arns={arns} accounts={allAccounts} selection={selection} setSelection={setSelection} />}
                 {step === 2 && <SyncStep selection={selection} onUpload={handleFileUpload} isProcessing={isProcessing} />}
                 {step === 3 && <AuditStep selection={selection} setSelection={setSelection} masterLedgers={masterLedgers} />}
-                {step === 4 && <SalesStep selection={selection} arns={arns} onUpdateTransaction={handleUpdateTransactionData} />}
+                {step === 4 && <SalesStep selection={selection} setSelection={setSelection} masterLedgers={masterLedgers} arns={arns} onUpdateTransaction={handleUpdateTransactionData} />}
                 {step === 5 && <SummaryStep selection={selection} />}
                 {step === 6 && (
                    <ResultStep 
-                     transactions={(selection.stagedData?.transactions || []).filter(t => t.isChecked || t.isSalesApproved)} 
+                     transactions={(selection.stagedData?.transactions || [])} 
                      companyName={selection.tallyCompany}
                      bankLedgerName={selection.account?.name || selection.tallyLedger}
+                     salesIncomeLedger={selection.salesIncomeLedger}
                      onComplete={() => setIsSyncComplete(true)} 
                    />
                 )}

@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, Info, Check, Calendar as CalendarIcon, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { Search, Info, Check, Calendar as CalendarIcon, ChevronLeft, ChevronRight, AlertCircle, ChevronDown } from 'lucide-react';
 
-const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
+const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [], onUpdateTransaction }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activePickerId, setActivePickerId] = useState(null);
 
@@ -19,7 +19,6 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
   
   const weekDays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-  // Click outside to close the picker
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (pickerRef.current && !pickerRef.current.contains(e.target)) {
@@ -30,22 +29,18 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
-  // Responsive Portal Positioning Logic
   useEffect(() => {
     if (activePickerId && activeTriggerRef.current) {
       const updatePosition = () => {
-        // Mobile: Let Flexbox handle centering, skip inline coordinate math entirely
         if (window.innerWidth < 1024) {
           setPickerCoords({ top: null, left: null });
           return;
         }
 
-        // Desktop: Calculate absolute coordinates relative to the page
         const rect = activeTriggerRef.current.getBoundingClientRect();
         let targetLeft = rect.right + window.scrollX + 12;
         let targetTop = rect.top + window.scrollY - 100;
 
-        // Safety bounds
         if (targetLeft + 288 > window.innerWidth) {
           targetLeft = rect.left + window.scrollX - 300;
         }
@@ -79,6 +74,14 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
 
   const isGstCompliant = !!activeArnObject?.gstCompliant;
 
+  // Derive the active ledgers for the dropdown
+  const companyLedgers = useMemo(() => {
+    return masterLedgers
+      .filter(l => l.tallyCompanyName === selection.tallyCompany)
+      .filter(l => l.name.toLowerCase().includes("mf com"))  
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [masterLedgers, selection.tallyCompany]);
+
   const rawSalesRows = useMemo(() => {
     const txList = (selection.stagedData?.transactions || []).filter(t => t && t.isCommission && t.type === 'RECEIPT');
     
@@ -106,10 +109,16 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
         }
       }
 
-      // Automatically default to the bank transaction date if missing
+      // Safe Local Timezone parsing (Prevents -1 Day UTC Shift)
       let defaultDate = "";
       try {
-        if (tx.date) defaultDate = new Date(tx.date).toISOString().split('T')[0];
+        if (tx.date) {
+          const d = new Date(tx.date);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          defaultDate = `${yyyy}-${mm}-${dd}`;
+        }
       } catch {
         defaultDate = "";
       }
@@ -150,7 +159,6 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
     filteredAndSortedRows.forEach(row => {
       if (row.isSalesApproved !== targetState) {
         const payload = { isSalesApproved: targetState };
-        // If it's being approved and relies on the default date, save it explicitly
         if (targetState && !row.originalInvoiceBillingDate) {
            payload.invoiceBillingDate = row.invoiceBillingDate;
         }
@@ -161,7 +169,6 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
 
   const handleToggleRow = (row) => {
     const payload = { isSalesApproved: !row.isSalesApproved };
-    // If it's being approved and relies on the default date, save it explicitly
     if (!row.isSalesApproved && !row.originalInvoiceBillingDate) {
       payload.invoiceBillingDate = row.invoiceBillingDate;
     }
@@ -216,15 +223,32 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
           </p>
         </div>
         
-        <div className="relative w-full sm:w-80">
-          <Search size={14} className="absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search mutual fund broker accounts..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-50 lg:bg-white dark:bg-[#121318] border border-slate-200 dark:border-white/10 rounded-xl lg:rounded-2xl pl-9 lg:pl-11 pr-4 py-2.5 lg:py-3 text-[10px] lg:text-[11px] font-black uppercase tracking-wider outline-none focus:border-emerald-500 shadow-sm transition-all"
-          />
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          {/* INCOME LEDGER SELECTOR */}
+          {rawSalesRows.length > 0 && (
+            <div className="relative w-full sm:w-64">
+              <select
+                value={selection.salesIncomeLedger || ""}
+                onChange={(e) => setSelection(prev => ({ ...prev, salesIncomeLedger: e.target.value }))}
+                className={`w-full border rounded-xl lg:rounded-2xl px-4 py-2.5 lg:py-3 text-[10px] lg:text-[11px] font-black uppercase tracking-wider outline-none shadow-sm transition-all appearance-none cursor-pointer ${selection.salesIncomeLedger ? 'bg-indigo-50 lg:bg-indigo-50/50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/20 text-indigo-700 dark:text-indigo-400 focus:border-indigo-500' : 'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 focus:border-rose-500'}`}
+              >
+                <option value="">-- Choose Income Ledger --</option>
+                {companyLedgers.map(l => <option key={l._id} value={l.name}>{l.name}</option>)}
+              </select>
+              <ChevronDown size={14} className={`absolute right-3 lg:right-4 top-1/2 -translate-y-1/2 pointer-events-none ${selection.salesIncomeLedger ? 'text-indigo-400' : 'text-rose-400'}`} />
+            </div>
+          )}
+
+          <div className="relative w-full sm:w-72">
+            <Search size={14} className="absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search mutual fund broker accounts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-50 lg:bg-white dark:bg-[#121318] border border-slate-200 dark:border-white/10 rounded-xl lg:rounded-2xl pl-9 lg:pl-11 pr-4 py-2.5 lg:py-3 text-[10px] lg:text-[11px] font-black uppercase tracking-wider outline-none focus:border-emerald-500 shadow-sm transition-all"
+            />
+          </div>
         </div>
       </div>
 
@@ -247,7 +271,7 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
         {filteredAndSortedRows.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center opacity-20 gap-2">
             <Info size={28} strokeWidth={1.5} />
-            <p className="text-[9px] lg:text-[11px] font-black uppercase tracking-widest">No matching records found.</p>
+            <p className="text-[9px] lg:text-[11px] font-black uppercase tracking-widest">No matching sales records found.</p>
           </div>
         ) : (
           <>
@@ -256,7 +280,6 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
                 --------------------------------------------------------------------- */}
             <div className="lg:hidden h-full overflow-y-auto no-scrollbar p-3 space-y-3 pb-24">
               
-              {/* Mobile Select All Action Strip */}
               <div className="flex items-center justify-between px-2 pb-1">
                 <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Select All</span>
                 <button 
@@ -270,7 +293,6 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
               {filteredAndSortedRows.map((row) => (
                 <div key={row._id} className="bg-white dark:bg-[#111214] border border-slate-200 dark:border-white/10 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
                   
-                  {/* Top Row: Info & Check */}
                   <div className="flex gap-3 items-start justify-between">
                      <button 
                        disabled={!row.invoiceBillingDate}
@@ -295,7 +317,6 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
                      </div>
                   </div>
 
-                  {/* Middle Row: GST Breakdown Matrix */}
                   <div className="grid grid-cols-4 gap-1.5 bg-slate-50 dark:bg-white/5 p-2.5 rounded-xl text-center border border-slate-100 dark:border-white/5">
                      <div className="flex flex-col gap-0.5">
                        <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Base</span>
@@ -315,7 +336,6 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
                      </div>
                   </div>
 
-                  {/* Bottom Row: Date Picker & Gross */}
                   <div className="flex justify-between items-center gap-3 pt-1">
                     <button
                        onClick={(e) => handleOpenPickerContext(e, row)}
@@ -342,15 +362,13 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
             </div>
 
             {/* ---------------------------------------------------------------------
-                DESKTOP VIEW: SPREADSHEET TABLE GRID (Fixed Sticky Headers)
+                DESKTOP VIEW: SPREADSHEET TABLE GRID
                 --------------------------------------------------------------------- */}
             <div className="hidden lg:block h-full overflow-y-auto px-12 pt-0 pb-12 no-scrollbar relative">
               <table className="w-full border-separate border-spacing-0 table-fixed text-[12px]">
                 
-                {/* 1. SOLID BG ON THEAD ensures rows don't show through the header */}
                 <thead className="sticky top-0 z-30 bg-white dark:bg-[#08090A] shadow-[0_4px_10px_-10px_rgba(0,0,0,0.1)]">
                   <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest select-none">
-                    {/* 2. PY-5 instead of PB-4 vertically centers text and covers scrolling data */}
                     <th className="py-5 w-16 text-center border-b border-slate-200 dark:border-white/10">
                       <div className="flex flex-col items-center justify-center gap-1">
                         <button 
@@ -376,7 +394,6 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
                   {filteredAndSortedRows.map((row) => (
                     <tr key={row._id} className="bg-transparent hover:bg-slate-50/40 dark:hover:bg-white/1 transition-colors group">
                       
-                      {/* Added border-b to TDs for clean separation without border-collapse */}
                       <td className="py-5 text-center border-b border-slate-100 dark:border-white/5">
                         <button 
                           disabled={!row.invoiceBillingDate}
@@ -447,12 +464,11 @@ const SalesStep = ({ selection, arns = [], onUpdateTransaction }) => {
       </div>
 
       {/* =========================================================================
-          PORTAL: DATE PICKER (Responsive Auto-Centering Modal)
+          PORTAL: DATE PICKER
           ========================================================================= */}
       {activePickerId && createPortal(
         <div className="fixed inset-0 z-999998 lg:absolute lg:inset-auto lg:z-auto pointer-events-none flex items-center justify-center">
           
-          {/* Mobile Blurred Backdrop (Closes picker on tap) */}
           <div 
             className="lg:hidden absolute inset-0 bg-black/50 backdrop-blur-sm pointer-events-auto" 
             onClick={() => setActivePickerId(null)} 
