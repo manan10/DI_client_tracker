@@ -143,8 +143,9 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
 
       const resolvedIncomeLedger = isLocalAmc ? "MF COMMISSION (LOC)" : (salesIncomeLedger || "MF COMMISION INCOME");
 
-      // Extract Ledger Details for Billing
-      const ledgerObj = masterLedgers.find(l => l.name === finalLedgerForLog);
+      // FIX: Extract Ledger Details for Billing (Bulletproof case-insensitive match)
+      const normalizedTargetLedger = (finalLedgerForLog || "").toUpperCase().trim();
+      const ledgerObj = masterLedgers.find(l => (l.name || "").toUpperCase().trim() === normalizedTargetLedger);
 
       // Deep Mapping Logic
       if (task.vType === 'SALES') {

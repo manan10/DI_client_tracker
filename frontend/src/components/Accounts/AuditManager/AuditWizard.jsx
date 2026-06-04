@@ -274,6 +274,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
                      salesIncomeLedger={selection.salesIncomeLedger}
                      arns={arns}
                      arnId={selection.arnId}
+                     masterLedgers={masterLedgers}
                      onComplete={() => setIsSyncComplete(true)} 
                    />
                 )}
