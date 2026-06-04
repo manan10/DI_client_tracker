@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, Info, Check, Calendar as CalendarIcon, ChevronLeft, ChevronRight, AlertCircle, ChevronDown } from 'lucide-react';
 
-const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [], onUpdateTransaction }) => {
+const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activePickerId, setActivePickerId] = useState(null);
 
@@ -150,45 +150,57 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [], onU
 
   const isAllApproved = filteredAndSortedRows.length > 0 && approvedCount === filteredAndSortedRows.length;
 
-  // FIX: Push calculated GST fields to the central state
+  // FIX: Bulk atomic update utilizing setSelection natively to prevent React State looping issues
   const handleSelectAll = () => {
     if (!filteredAndSortedRows.length) return;
     const targetState = !isAllApproved;
-    
-    filteredAndSortedRows.forEach(row => {
-      if (row.isSalesApproved !== targetState) {
-        const payload = { 
+    const idsInView = new Set(filteredAndSortedRows.map(r => r._id));
+
+    setSelection(prev => {
+      const currentTxs = prev.stagedData?.transactions || [];
+      const updatedTxs = currentTxs.map(tx => {
+        if (idsInView.has(tx._id)) {
+          const rowData = filteredAndSortedRows.find(r => r._id === tx._id);
+          return {
+            ...tx,
             isSalesApproved: targetState,
+            baseAmount: rowData.baseAmount,
+            cgst: rowData.cgst,
+            sgst: rowData.sgst,
+            igst: rowData.igst,
+            grossVoucherTotal: rowData.grossVoucherTotal,
+            isLocalAmc: rowData.isLocalAmc,
+            invoiceBillingDate: (targetState && !tx.originalInvoiceBillingDate) ? rowData.invoiceBillingDate : tx.invoiceBillingDate
+          };
+        }
+        return tx;
+      });
+      return { ...prev, stagedData: { ...prev.stagedData, transactions: updatedTxs } };
+    });
+  };
+
+  // FIX: Direct atomic update for individual toggles mapping the GST numbers explicitly
+  const handleToggleRow = (row) => {
+    setSelection(prev => {
+      const currentTxs = prev.stagedData?.transactions || [];
+      const updatedTxs = currentTxs.map(tx => {
+        if (tx._id === row._id) {
+          return {
+            ...tx,
+            isSalesApproved: !row.isSalesApproved,
             baseAmount: row.baseAmount,
             cgst: row.cgst,
             sgst: row.sgst,
             igst: row.igst,
             grossVoucherTotal: row.grossVoucherTotal,
-            isLocalAmc: row.isLocalAmc
-        };
-        if (targetState && !row.originalInvoiceBillingDate) {
-           payload.invoiceBillingDate = row.invoiceBillingDate;
+            isLocalAmc: row.isLocalAmc,
+            invoiceBillingDate: (!row.isSalesApproved && !row.originalInvoiceBillingDate) ? row.invoiceBillingDate : tx.invoiceBillingDate
+          };
         }
-        onUpdateTransaction(row._id, payload);
-      }
+        return tx;
+      });
+      return { ...prev, stagedData: { ...prev.stagedData, transactions: updatedTxs } };
     });
-  };
-
-  // FIX: Push calculated GST fields to the central state
-  const handleToggleRow = (row) => {
-    const payload = { 
-        isSalesApproved: !row.isSalesApproved,
-        baseAmount: row.baseAmount,
-        cgst: row.cgst,
-        sgst: row.sgst,
-        igst: row.igst,
-        grossVoucherTotal: row.grossVoucherTotal,
-        isLocalAmc: row.isLocalAmc
-    };
-    if (!row.isSalesApproved && !row.originalInvoiceBillingDate) {
-      payload.invoiceBillingDate = row.invoiceBillingDate;
-    }
-    onUpdateTransaction(row._id, payload);
   };
 
   const handleOpenPickerContext = (e, row) => {
@@ -523,7 +535,18 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [], onU
                       const paddedMonth = String(pickerNav.month).padStart(2, '0');
                       const paddedDay = String(dayNum).padStart(2, '0');
                       const computedFullString = `${pickerNav.year}-${paddedMonth}-${paddedDay}`;
-                      onUpdateTransaction(activePickerId, { invoiceBillingDate: computedFullString });
+                      
+                      // Natively push date directly to central state
+                      setSelection(prev => {
+                        const currentTxs = prev.stagedData?.transactions || [];
+                        const newTxs = currentTxs.map(tx => 
+                          tx._id === activePickerId 
+                            ? { ...tx, invoiceBillingDate: computedFullString, originalInvoiceBillingDate: computedFullString } 
+                            : tx
+                        );
+                        return { ...prev, stagedData: { ...prev.stagedData, transactions: newTxs } };
+                      });
+
                       setActivePickerId(null);
                     }}
                     className="p-2 text-[10px] font-mono font-[1000] rounded-lg border border-transparent hover:border-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 text-center transition-all bg-slate-50/40 dark:bg-white/2 text-slate-700 dark:text-slate-300 active:scale-90"

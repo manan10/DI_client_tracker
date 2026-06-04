@@ -33,10 +33,6 @@ const SummaryStep = ({ selection, arns = [] }) => {
     setExpandedSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
   };
 
-  const isGstCompliant = useMemo(() => {
-    return arns.find(a => a._id === selection?.arnId || a.arnCode === selection?.arnId)?.gstCompliant || false;
-  }, [arns, selection?.arnId]);
-
   const balanceMetrics = useMemo(() => {
     return {
       opening: selection?.audit?.summary?.openingBalance || 0,
@@ -44,14 +40,38 @@ const SummaryStep = ({ selection, arns = [] }) => {
     };
   }, [selection?.audit?.summary]);
 
-  const voucherData = useMemo(() => {
-    // FIX: Explicitly require isChecked so the Summary perfectly mirrors the final Result list
-    const receipts = transactions.filter(t => t?.type === 'RECEIPT' && t?.isChecked && !t?.isCommission && !t?.isMarkedForManualEntry);
-    const payments = transactions.filter(t => t?.type === 'PAYMENT' && t?.isChecked && !t?.isMarkedForManualEntry);
-    const salesInvoices = transactions.filter(t => t?.isCommission && t?.type === 'RECEIPT' && t?.isSalesApproved && !t?.isMarkedForManualEntry);
-    const manualEntries = transactions.filter(t => t?.isMarkedForManualEntry || (t?.isChecked && !t?.suggestedLedger));
+  const isGstCompliant = useMemo(() => {
+    return arns.find(a => a._id === selection?.arnId || a.arnCode === selection?.arnId)?.gstCompliant || false;
+  }, [arns, selection?.arnId]);
 
-    // Natively calculate GST values here so UI doesn't rely on fragile saved state
+  const voucherData = useMemo(() => {
+    // FIX 1: Ensure Commission Receipts are pulled into the Bank Receipt list to balance the books
+    const receipts = transactions.filter(t => 
+      t?.type === 'RECEIPT' && 
+      !t?.isMarkedForManualEntry && 
+      ( (t?.isCommission && t?.isSalesApproved) || (!t?.isCommission && t?.isChecked) ) &&
+      !!(t?.suggestedLedger || t?.ledgerName)
+    );
+
+    const payments = transactions.filter(t => 
+      t?.type === 'PAYMENT' && 
+      t?.isChecked && 
+      !t?.isMarkedForManualEntry && 
+      !!(t?.suggestedLedger || t?.ledgerName)
+    );
+
+    const salesInvoices = transactions.filter(t => 
+      t?.isCommission && 
+      t?.type === 'RECEIPT' && 
+      t?.isSalesApproved && 
+      !t?.isMarkedForManualEntry
+    );
+
+    const manualEntries = transactions.filter(t => 
+      t?.isMarkedForManualEntry || (t?.isChecked && !(t?.suggestedLedger || t?.ledgerName))
+    );
+
+    // FIX 2: Natively recalculate GST values using the ARN compliance rules
     const normalizedSalesRows = salesInvoices.map(tx => {
       const net = Math.abs(tx.amount || 0);
       const ledgerName = tx.suggestedLedger || tx.ledgerName || "SUSPENSE SALES LEDGER";
@@ -71,6 +91,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
           grossTotal = net + igst;
         }
       }
+
       return {
         ...tx,
         ledgerName,
@@ -87,7 +108,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
       receiptTotal: receipts.reduce((sum, t) => sum + Math.abs(t?.amount || 0), 0),
       paymentList: payments,
       paymentTotal: payments.reduce((sum, t) => sum + Math.abs(t?.amount || 0), 0),
-      salesList: normalizedSalesRows,
+      salesList: normalizedSalesRows, // Inject the mathematically perfect sales list
       salesTotal: normalizedSalesRows.reduce((sum, t) => sum + t.grossTotal, 0),
       manualList: manualEntries,
       manualTotal: manualEntries.reduce((sum, t) => sum + Math.abs(t?.amount || 0), 0),
@@ -214,7 +235,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                       {voucherData.salesList.map(row => (
                         <div key={row._id} className="bg-white dark:bg-[#111214] border border-slate-200 dark:border-white/10 rounded-lg p-3 shadow-sm flex flex-col gap-2.5">
                           <div className="flex justify-between items-start">
-                             <span className="text-[10px] font-[1000] uppercase text-slate-900 dark:text-white truncate flex-1 pr-2 leading-tight">{row.ledgerName}</span>
+                             <span className="text-[10px] font-[1000] uppercase text-slate-900 dark:text-white truncate flex-1 pr-2 leading-tight">{row.suggestedLedger || row.ledgerName}</span>
                              <span className="text-[9px] font-mono text-blue-600 dark:text-blue-400 shrink-0">{row.invoiceBillingDate || '——'}</span>
                           </div>
                           <div className="flex justify-between items-center bg-slate-50 dark:bg-white/5 p-2 rounded-md">
@@ -246,7 +267,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                         <tbody className="divide-y divide-slate-100 dark:divide-white/5 font-bold uppercase">
                           {voucherData.salesList.map((row) => (
                             <tr key={row._id} className="hover:bg-slate-50/50 dark:hover:bg-white/1 transition-colors">
-                              <td className="py-3.5 text-slate-900 dark:text-white font-[1000] truncate text-[12.5px]">{row.ledgerName}</td>
+                              <td className="py-3.5 text-slate-900 dark:text-white font-[1000] truncate text-[12.5px]">{row.suggestedLedger || row.ledgerName}</td>
                               <td className="py-3.5 text-center text-blue-600 dark:text-blue-400 font-mono text-[11px]">{row.invoiceBillingDate ? new Date(row.invoiceBillingDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase() : '——'}</td>
                               <td className="py-3.5 text-right font-mono text-slate-600 dark:text-slate-400">{formatINR(row.baseAmount).replace('₹','')}</td>
                               <td className="py-3.5 text-right font-mono text-amber-600 dark:text-amber-500">{row.cgst > 0 ? formatINR(row.cgst).replace('₹','') : '——'}</td>
@@ -297,7 +318,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                       {voucherData.receiptList.map(row => (
                          <div key={row._id} className="bg-white dark:bg-[#111214] border border-slate-200 dark:border-white/10 rounded-lg p-3 shadow-sm flex flex-col gap-2">
                            <div className="flex justify-between items-start gap-3">
-                              <span className="text-[10px] font-[1000] uppercase text-slate-900 dark:text-white truncate flex-1 leading-tight">{row.suggestedLedger || "SUSPENSE ACCOUNT"}</span>
+                              <span className="text-[10px] font-[1000] uppercase text-slate-900 dark:text-white truncate flex-1 leading-tight">{row.suggestedLedger || row.ledgerName || "SUSPENSE ACCOUNT"}</span>
                               <span className="text-[11px] font-mono font-black text-emerald-600 dark:text-emerald-400 shrink-0 leading-none">{formatINR(row.amount)}</span>
                            </div>
                            <div className="flex justify-between items-end">
@@ -325,7 +346,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                               <td className="py-3.5 text-slate-400 font-mono text-[11px]">
                                 {row.date ? new Date(row.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase() : '——'}
                               </td>
-                              <td className="py-3.5 text-slate-900 dark:text-white font-[1000] truncate text-[12.5px]">{row.suggestedLedger || "SUSPENSE ACCOUNT"}</td>
+                              <td className="py-3.5 text-slate-900 dark:text-white font-[1000] truncate text-[12.5px]">{row.suggestedLedger || row.ledgerName || "SUSPENSE ACCOUNT"}</td>
                               <td className="py-3.5 text-slate-400 font-bold tracking-tight truncate text-[10.5px] pl-2 font-mono text-left">{row.narration}</td>
                               <td className="py-3.5 text-right font-sans font-[1000] text-emerald-600 dark:text-emerald-400 pr-1 text-[12.5px]">{formatINR(row.amount).replace('₹','')}</td>
                             </tr>
@@ -372,7 +393,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                       {voucherData.paymentList.map(row => (
                          <div key={row._id} className="bg-white dark:bg-[#111214] border border-slate-200 dark:border-white/10 rounded-lg p-3 shadow-sm flex flex-col gap-2">
                            <div className="flex justify-between items-start gap-3">
-                              <span className="text-[10px] font-[1000] uppercase text-slate-900 dark:text-white truncate flex-1 leading-tight">{row.suggestedLedger || "SUSPENSE ACCOUNT"}</span>
+                              <span className="text-[10px] font-[1000] uppercase text-slate-900 dark:text-white truncate flex-1 leading-tight">{row.suggestedLedger || row.ledgerName || "SUSPENSE ACCOUNT"}</span>
                               <span className="text-[11px] font-mono font-black text-rose-600 dark:text-rose-400 shrink-0 leading-none">{formatINR(row.amount)}</span>
                            </div>
                            <div className="flex justify-between items-end">
@@ -400,7 +421,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                               <td className="py-3.5 text-slate-400 font-mono text-[11px]">
                                 {row.date ? new Date(row.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase() : '——'}
                               </td>
-                              <td className="py-3.5 text-slate-900 dark:text-white font-[1000] truncate text-[12.5px]">{row.suggestedLedger || "SUSPENSE ACCOUNT"}</td>
+                              <td className="py-3.5 text-slate-900 dark:text-white font-[1000] truncate text-[12.5px]">{row.suggestedLedger || row.ledgerName || "SUSPENSE ACCOUNT"}</td>
                               <td className="py-3.5 text-slate-400 font-bold tracking-tight truncate text-[10.5px] pl-2 font-mono text-left">{row.narration}</td>
                               <td className="py-3.5 text-right font-sans font-[1000] text-rose-600 dark:text-rose-400 pr-1 text-[12.5px]">{formatINR(row.amount).replace('₹','')}</td>
                             </tr>
@@ -447,7 +468,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                       {voucherData.manualList.map(row => (
                          <div key={row._id} className="bg-white dark:bg-[#111214] border border-amber-200/50 dark:border-amber-500/20 rounded-lg p-3 shadow-sm flex flex-col gap-2">
                            <div className="flex justify-between items-start gap-3">
-                              <span className="text-[10px] font-[1000] uppercase text-amber-600 dark:text-amber-500 truncate flex-1 leading-tight">{row.suggestedLedger || "SUSPENSE OFF-RECON LEDGER"}</span>
+                              <span className="text-[10px] font-[1000] uppercase text-amber-600 dark:text-amber-500 truncate flex-1 leading-tight">{row.suggestedLedger || row.ledgerName || "SUSPENSE OFF-RECON LEDGER"}</span>
                               <span className="text-[11px] font-mono font-black text-amber-600 dark:text-amber-500 shrink-0 leading-none">{formatINR(row.amount)}</span>
                            </div>
                            <div className="flex justify-between items-end">
@@ -475,7 +496,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                               <td className="py-3.5 text-slate-400 font-mono text-[11px]">
                                 {row.date ? new Date(row.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase() : '——'}
                               </td>
-                              <td className="py-3.5 text-amber-600 dark:text-amber-500 font-[1000] truncate text-[12.5px]">{row.suggestedLedger || "SUSPENSE OFF-RECON LEDGER"}</td>
+                              <td className="py-3.5 text-amber-600 dark:text-amber-500 font-[1000] truncate text-[12.5px]">{row.suggestedLedger || row.ledgerName || "SUSPENSE OFF-RECON LEDGER"}</td>
                               <td className="py-3.5 text-slate-400 font-bold tracking-tight truncate text-[10.5px] pl-2 font-mono text-left">{row.narration}</td>
                               <td className="py-3.5 text-right font-sans font-[1000] text-amber-600 dark:text-amber-400 pr-1 text-[12.5px]">{formatINR(row.amount).replace('₹','')}</td>
                             </tr>
@@ -490,6 +511,29 @@ const SummaryStep = ({ selection, arns = [] }) => {
           </div>
 
         </div>
+
+        <footer className="px-4 lg:px-8 py-4 lg:py-5 border-t border-slate-200 dark:border-white/10 bg-white lg:bg-slate-50 dark:bg-[#0B0C10] flex flex-col lg:flex-row items-center justify-between shrink-0 shadow-2xl gap-3 lg:gap-0 z-10">
+          <div className="flex items-center justify-center lg:justify-start gap-2 lg:gap-4 text-center lg:text-left select-none w-full lg:w-auto">
+            <ShieldCheck size={14} className="text-emerald-500 lg:w-4 lg:h-4 shrink-0" />
+            <p className="text-[8px] lg:text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed lg:leading-none">
+              Pre-flight generation locks verified <span className="hidden lg:inline mx-2 text-slate-200 dark:text-white/5">|</span><br className="lg:hidden"/> Ready to stream batch XML to Tally proxy
+            </p>
+          </div>
+          
+          <div className="flex flex-wrap lg:flex-nowrap justify-center lg:justify-end items-center gap-3 lg:gap-6 text-[9px] lg:text-[10.5px] font-black uppercase text-slate-400 tracking-wider select-none w-full lg:w-auto">
+            <div className="bg-slate-50 dark:bg-white/5 lg:bg-transparent px-2 py-1 lg:p-0 rounded-md">
+              Rx: <span className="text-emerald-600 dark:text-emerald-400 font-[1000] ml-0.5 lg:ml-1">{voucherData.receiptList.length}</span>
+            </div>
+            <div className="hidden lg:block h-4 w-px bg-slate-200 dark:bg-white/10" />
+            <div className="bg-slate-50 dark:bg-white/5 lg:bg-transparent px-2 py-1 lg:p-0 rounded-md">
+              Inv: <span className="text-blue-500 dark:text-blue-400 font-[1000] ml-0.5 lg:ml-1">{voucherData.salesList.length}</span>
+            </div>
+            <div className="hidden lg:block h-4 w-px bg-slate-200 dark:bg-white/10" />
+            <div className="bg-slate-50 dark:bg-white/5 lg:bg-transparent px-2 py-1 lg:p-0 rounded-md">
+              Px: <span className="text-rose-500 dark:text-rose-400 font-[1000] ml-0.5 lg:ml-1">{voucherData.paymentList.length}</span>
+            </div>
+          </div>
+        </footer>
 
         <CommissionMapperModal 
           isOpen={isMapperOpen} 

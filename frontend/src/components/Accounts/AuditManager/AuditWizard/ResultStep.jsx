@@ -7,7 +7,12 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
   const { request } = useApi();
   const safeTransactions = transactions || [];
 
-  const [phase, setPhase] = useState('READY'); // 'READY' | 'PROCESSING' | 'DONE'
+  // =========================================================================
+  // STATE DEFINITIONS
+  // =========================================================================
+  // Notice we initialize to 'READY', not 'PROCESSING'. 
+  // It will wait for the user to click the button.
+  const [phase, setPhase] = useState('READY'); 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isCurrentlyCreating, setIsCurrentlyCreating] = useState(false);
   const [completedLogs, setCompletedLogs] = useState([]); 
@@ -18,20 +23,22 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
-  // FIX: Properly segregate tasks ensuring commissions are not double-booked as bank receipts
+  // =========================================================================
+  // TASK FLATTENER ENGINE
+  // =========================================================================
   const voucherTasks = useMemo(() => {
     const tasks = [];
     safeTransactions.forEach((tx) => {
-      // Standard Bank Ledgers (Exclude commissions and manuals)
-      if (tx.isChecked && !tx.isCommission && !tx.isMarkedForManualEntry) {
+      if (tx.isMarkedForManualEntry) return;
+
+      if (tx.isChecked && (tx.suggestedLedger || tx.ledgerName)) {
         tasks.push({
           id: `bank-${tx._id}`,
-          vType: tx.type, // 'RECEIPT' or 'PAYMENT'
+          vType: tx.type, 
           rawTx: tx
         });
       }
-      // Sales Invoices (Exclude manuals)
-      if (tx.isCommission && tx.isSalesApproved && !tx.isMarkedForManualEntry) {
+      if (tx.isCommission && tx.type === 'RECEIPT' && tx.isSalesApproved) {
         tasks.push({
           id: `sales-${tx._id}`,
           vType: 'SALES',
@@ -66,6 +73,9 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     }, { RECEIPT: 0, PAYMENT: 0, SALES: 0 });
   }, [voucherTasks]);
 
+  // =========================================================================
+  // CONTROLLED TRANSLATION PUSH BUTTON LOGIC (No auto-running useEffects)
+  // =========================================================================
   const handleStartSynchronization = async () => {
     if (voucherTasks.length === 0) {
       setPhase('DONE');
@@ -80,7 +90,7 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     setIsCurrentlyCreating(true);
 
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-    const activeArnObject = arns.find(a => a._id === arnId || a.arnCode === arnId);
+    const activeArnObject = (arns || []).find(a => a._id === arnId || a.arnCode === arnId);
     const isGstCompliant = !!activeArnObject?.gstCompliant;
 
     for (let i = 0; i < voucherTasks.length; i++) {
@@ -96,7 +106,7 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
       let finalVoucherNoForLog = null;
       let finalAmountForLog = 0;
 
-      // Ensure proper YYYY-MM-DD Date Conversion avoiding UTC offset jumps
+      // Safe Date parsing avoiding UTC offset jump
       let safeDate = "";
       try {
           const dStr = task.vType === 'SALES' ? (tx.invoiceBillingDate || tx.date) : tx.date;
@@ -104,28 +114,24 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
           const yyyy = d.getFullYear();
           const mm = String(d.getMonth() + 1).padStart(2, '0');
           const dd = String(d.getDate()).padStart(2, '0');
-          safeDate = `${yyyy}${mm}${dd}`; // Tally XML expects YYYYMMDD
+          safeDate = `${yyyy}-${mm}-${dd}`; 
       } catch {
-          const dt = new Date();
-          safeDate = `${dt.getFullYear()}${String(dt.getMonth()+1).padStart(2,'0')}${String(dt.getDate()).padStart(2,'0')}`;
+          safeDate = new Date().toISOString().split('T')[0];
       }
 
       // GST AND VALUE RECALCULATION
       let cgst = 0, sgst = 0, igst = 0;
       let baseAmount = Math.abs(tx.amount || 0);
-      let grossTotal = baseAmount;
 
-      const normalizedLedger = finalLedgerForLog.toUpperCase();
+      const normalizedLedger = (finalLedgerForLog || "").toUpperCase();
       const isLocalAmc = tx.isLocalAmc !== undefined ? tx.isLocalAmc : (normalizedLedger.includes("NJ") || normalizedLedger.includes("LOCAL") || normalizedLedger.includes("STATE"));
 
-      if (isGstCompliant) {
+      if (isGstCompliant && task.vType === 'SALES') {
           if (isLocalAmc) {
               cgst = baseAmount * 0.09;
               sgst = baseAmount * 0.09;
-              grossTotal = baseAmount + cgst + sgst;
           } else {
               igst = baseAmount * 0.18;
-              grossTotal = baseAmount + igst;
           }
       }
 
@@ -151,7 +157,7 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
         };
         xmlPayload = tallyTemplates.generateSalesVoucher(salesData);
         finalVoucherNoForLog = salesData.invoiceNumber;
-        finalAmountForLog = grossTotal;
+        finalAmountForLog = baseAmount + cgst + sgst + igst; // Capture mathematically balanced Gross
       } else {
         const bankData = {
           company: companyName,
@@ -189,7 +195,7 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
         vType: task.vType,
         ledger: finalLedgerForLog,
         amount: finalAmountForLog,
-        date: tx.invoiceBillingDate || tx.date || new Date().toISOString(),
+        date: safeDate,
         narration: finalNarrationForLog,
         voucherNumber: finalVoucherNoForLog,
         status: isSuccess ? 'SUCCESS' : 'FAILED',
@@ -210,6 +216,9 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     if (onCompleteRef.current) onCompleteRef.current();
   };
 
+  // =========================================================================
+  // VIEW GROUP BUILDER
+  // =========================================================================
   const groupedResults = useMemo(() => {
     return finalResults.reduce((acc, curr) => {
       const type = curr.vType || 'UNKNOWN';
@@ -232,6 +241,9 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     }
   };
 
+  // =========================================================================
+  // PHASE VIEW 1: MANUALLY TRIGGERED GATEWAY ZONE (Safe Landing)
+  // =========================================================================
   if (phase === 'READY') {
     return (
       <div className="h-full w-full bg-slate-50/50 dark:bg-[#08090A] lg:bg-white flex flex-col items-center justify-center p-6 lg:p-12">
@@ -278,9 +290,13 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     );
   }
 
+  // =========================================================================
+  // PHASE VIEW 2: REAL-TIME PROGRESSIVE WRITER FEED
+  // =========================================================================
   if (phase === 'PROCESSING') {
     const activeTask = voucherTasks[currentIndex];
     const progressPercent = (currentIndex / Math.max(1, voucherTasks.length)) * 100;
+    const activeVTypeLabel = activeTask ? getVoucherTypeLabel(activeTask.vType) : '';
 
     return (
       <div className="h-full w-full bg-slate-50/50 dark:bg-[#08090A] lg:bg-white flex flex-col items-center justify-center p-6 lg:p-12 overflow-y-auto">
@@ -304,7 +320,7 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
             </div>
           </div>
 
-          <div className="w-full flex flex-col gap-3 min-h-[260px]">
+          <div className="w-full flex flex-col gap-3 min-h-65">
             <div className="flex items-start gap-4 bg-white dark:bg-[#111214] border-2 border-emerald-500/30 dark:border-emerald-500/40 p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(16,185,129,0.05)] relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500" />
               <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
@@ -322,7 +338,7 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
                       {activeTask.rawTx.suggestedLedger || activeTask.rawTx.ledgerName || 'Suspense Accounting Master'}
                     </span>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{getVoucherTypeLabel(activeTask.vType)}</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{activeVTypeLabel}</span>
                       <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
                       <span className="text-[10px] font-bold text-slate-500 italic tabular-nums">{formatINR(activeTask.rawTx.grossVoucherTotal || activeTask.rawTx.amount)}</span>
                     </div>
@@ -363,6 +379,9 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     );
   }
 
+  // =========================================================================
+  // PHASE VIEW 3: CARD-BASED SUMMARY BREAKDOWN SCREEN
+  // =========================================================================
   return (
     <div className="h-full w-full bg-[#FAFAFA] dark:bg-[#08090A] lg:bg-slate-50/50 flex flex-col overflow-hidden text-left text-slate-800 dark:text-slate-200 font-sans relative animate-in fade-in zoom-in-95 duration-500">
       
@@ -438,7 +457,7 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
                   {group.items.map((item) => {
                     const isSuccess = item.status === 'SUCCESS';
                     return (
-                      <div key={item._id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border transition-all ${isSuccess ? 'bg-white dark:bg-[#111214] border-slate-200 dark:border-white/5' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-500/20'}`}>
+                      <div key={item._id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border transition-all hover:shadow-md ${isSuccess ? 'bg-white dark:bg-[#111214] border-slate-200 dark:border-white/5' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-500/20'}`}>
                         <div className="flex items-start sm:items-center gap-4 min-w-0 flex-1">
                           <div className={`shrink-0 mt-0.5 sm:mt-0 ${isSuccess ? 'text-emerald-500' : 'text-rose-500'}`}>
                             {isSuccess ? <CheckCircle2 size={20} strokeWidth={2.5} /> : <AlertCircle size={20} strokeWidth={2.5} />}
@@ -446,7 +465,7 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
                           
                           <div className="flex flex-col min-w-0 flex-1">
                             <div className="flex items-center gap-2.5 flex-wrap mb-1">
-                              <span className="text-xs sm:text-[13px] font-[1000] uppercase tracking-tight text-slate-900 dark:text-white leading-tight break-words">
+                              <span className="text-xs sm:text-[13px] font-[1000] uppercase tracking-tight text-slate-900 dark:text-white leading-tight wrap-break-word">
                                 {item.ledger}
                               </span>
                               {isSuccess && item.voucherNumber && (

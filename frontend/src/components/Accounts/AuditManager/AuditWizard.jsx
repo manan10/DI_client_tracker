@@ -90,21 +90,13 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
               verifiedIds: res.transactions.filter(t => t.isChecked).map(t => t._id)
             }));
           }
-        } catch {
+        } catch  {
           toast.error("Failed to recover transaction workspace registry");
         }
       };
       recoverDraftTransactions();
     }
   }, [step, selection.audit?._id, selection.stagedData, request]);
-
-  const handleUpdateTransactionData = useCallback((txId, updatedFields) => {
-    setSelection(prev => {
-      const currentTxs = prev.stagedData?.transactions || [];
-      const modifiedTxs = currentTxs.map(tx => tx._id === txId ? { ...tx, ...updatedFields } : tx);
-      return { ...prev, stagedData: { ...prev.stagedData, transactions: modifiedTxs } };
-    });
-  }, []);
 
   const validateAndProceed = useCallback(() => {
     const currentAccountId = selection.account?._id || (typeof selection.account === 'string' ? selection.account : null);
@@ -169,12 +161,18 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
         .map(t => ({ 
            _id: t._id, 
            isSalesApproved: t.isSalesApproved || false, 
-           invoiceBillingDate: t.invoiceBillingDate || null
+           invoiceBillingDate: t.invoiceBillingDate || null,
+           baseAmount: t.baseAmount || t.amount,
+           cgst: t.cgst || 0,
+           sgst: t.sgst || 0,
+           igst: t.igst || 0,
+           grossVoucherTotal: t.grossVoucherTotal || t.amount,
+           isLocalAmc: t.isLocalAmc || false
         }));
 
       const res = await request(`/audit/${selection.audit._id}/sales-checkpoint`, 'PUT', { transactions: payloadTxs });
       if (res?.success) setStep(5); 
-    } catch { toast.error("Failed to commit sales matrix checkpoint"); } 
+    } catch  { toast.error("Failed to commit sales matrix checkpoint"); } 
     finally { setIsProcessing(false); }
   }, [request, selection.audit?._id, selection.stagedData?.transactions]);
   
@@ -215,7 +213,11 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
       case 3: return { label: "Next: Sales Verification", disabled: !isStep3Valid, action: () => setStep(4) };
       case 4: return { label: isProcessing ? "Saving Checkpoint..." : "Verify & Lock Sales Ledger", disabled: isProcessing || !isStep4Valid, action: handleSalesValidationComplete };
       case 5: return { label: isTallyOnline ? "Commit Vouchers" : "Bridge Offline", disabled: !isTallyOnline, action: () => { setIsSyncComplete(false); setStep(6); } };
-      case 6: return { label: isProcessing ? "Finalizing Audit..." : isSyncComplete ? "Finalize & Close Audit" : "Syncing to Tally...", disabled: isProcessing || !isSyncComplete, action: handleFinalizeAudit };
+      case 6: return { 
+        label: isProcessing ? "Finalizing Audit..." : isSyncComplete ? "Finalize & Close Audit" : "Awaiting Manual Sync", 
+        disabled: isProcessing || !isSyncComplete, 
+        action: handleFinalizeAudit 
+      };
       default: return { label: "Proceed", action: () => setStep(s => s + 1) };
     }
   }, [step, selection, isProcessing, isTallyOnline, isStep3Valid, isStep4Valid, isSyncComplete, validateAndProceed, handleSalesValidationComplete, handleFinalizeAudit]);
@@ -262,12 +264,8 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
                 {step === 1 && <IdentityStep arns={arns} accounts={allAccounts} selection={selection} setSelection={setSelection} />}
                 {step === 2 && <SyncStep selection={selection} onUpload={handleFileUpload} isProcessing={isProcessing} />}
                 {step === 3 && <AuditStep selection={selection} setSelection={setSelection} masterLedgers={masterLedgers} />}
-                {step === 4 && <SalesStep selection={selection} setSelection={setSelection} masterLedgers={masterLedgers} arns={arns} onUpdateTransaction={handleUpdateTransactionData} />}
-                
-                {/* APPLIED FIX: Passing 'arns' to SummaryStep */}
+                {step === 4 && <SalesStep selection={selection} setSelection={setSelection} masterLedgers={masterLedgers} arns={arns} />}
                 {step === 5 && <SummaryStep selection={selection} arns={arns} />}
-                
-                {/* APPLIED FIX: Passing 'arns' and 'arnId' to ResultStep */}
                 {step === 6 && (
                    <ResultStep 
                      transactions={(selection.stagedData?.transactions || [])} 
@@ -300,7 +298,9 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
                 {step > 1 && step < 6 && (
                   <button onClick={() => setStep(step - 1)} className="px-2 md:px-8 py-2 md:py-4 text-[9px] md:text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-950 dark:hover:text-white transition-all underline underline-offset-4 md:underline-offset-8 decoration-slate-200">Back</button>
                 )}
-                <button disabled={footerConfig.disabled} onClick={footerConfig.action} className={`flex items-center justify-center gap-1.5 md:gap-8 hover:bg-opacity-90 text-white px-4 md:px-12 py-3 md:py-5 rounded-lg md:rounded-2xl font-black uppercase text-[9px] md:text-[11px] tracking-widest md:tracking-[0.2em] shadow-lg md:shadow-2xl active:scale-95 disabled:opacity-30 disabled:grayscale transition-all whitespace-nowrap ${step === 6 && isSyncComplete ? 'bg-slate-900 dark:bg-white dark:text-slate-900 shadow-slate-900/20 dark:shadow-white/20' : 'bg-emerald-600 shadow-emerald-600/20'}`}>
+                
+                {/* FIX: Removed disabled:grayscale and updated disabled:opacity to 50 so it visibly stays green but dim */}
+                <button disabled={footerConfig.disabled} onClick={footerConfig.action} className={`flex items-center justify-center gap-1.5 md:gap-8 hover:bg-opacity-90 text-white px-4 md:px-12 py-3 md:py-5 rounded-lg md:rounded-2xl font-black uppercase text-[9px] md:text-[11px] tracking-widest md:tracking-[0.2em] shadow-lg md:shadow-2xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap ${step === 6 && isSyncComplete ? 'bg-slate-900 dark:bg-white dark:text-slate-900 shadow-slate-900/20 dark:shadow-white/20' : 'bg-emerald-600 shadow-emerald-600/20'}`}>
                   {isProcessing || (step === 6 && !isSyncComplete) ? <Loader2 size={14} className="md:w-4.5 md:h-4.5 animate-spin" /> : <>{footerConfig.label} <ArrowRight size={12} md:size={16} strokeWidth={3} /></>}
                 </button>
             </div>

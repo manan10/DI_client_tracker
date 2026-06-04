@@ -139,7 +139,21 @@ export const tallyTemplates = {
             iAmt = parseFloat(igstAmount) || 0;
         }
 
-        const totalAmt = (baseAmt + cAmt + sAmt + iAmt).toFixed(2);
+        // =========================================================================
+        // STRICT MATH FIX: Summing the explicitly formatted strings to prevent
+        // invisible 0.01 floating point drifts from throwing a Tally exception.
+        // =========================================================================
+        const strBase = baseAmt.toFixed(2);
+        const strC = cAmt.toFixed(2);
+        const strS = sAmt.toFixed(2);
+        const strI = iAmt.toFixed(2);
+
+        const totalAmt = (
+            parseFloat(strBase) + 
+            parseFloat(strC) + 
+            parseFloat(strS) + 
+            parseFloat(strI)
+        ).toFixed(2);
 
         // Generate Tax Nodes securely packed in LEDGERENTRIES.LIST
         let taxNodes = '';
@@ -149,13 +163,13 @@ export const tallyTemplates = {
                         <LEDGERNAME>${escapeXml(cgstLedger)}</LEDGERNAME>
                         <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
                         <ISPARTYLEDGER>No</ISPARTYLEDGER>
-                        <AMOUNT>${cAmt.toFixed(2)}</AMOUNT>
+                        <AMOUNT>${strC}</AMOUNT>
                     </LEDGERENTRIES.LIST>
                     <LEDGERENTRIES.LIST>
                         <LEDGERNAME>${escapeXml(sgstLedger)}</LEDGERNAME>
                         <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
                         <ISPARTYLEDGER>No</ISPARTYLEDGER>
-                        <AMOUNT>${sAmt.toFixed(2)}</AMOUNT>
+                        <AMOUNT>${strS}</AMOUNT>
                     </LEDGERENTRIES.LIST>`;
         } else if (gstType === 'INTERSTATE') {
             taxNodes = `
@@ -163,7 +177,7 @@ export const tallyTemplates = {
                         <LEDGERNAME>${escapeXml(igstLedger)}</LEDGERNAME>
                         <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
                         <ISPARTYLEDGER>No</ISPARTYLEDGER>
-                        <AMOUNT>${iAmt.toFixed(2)}</AMOUNT>
+                        <AMOUNT>${strI}</AMOUNT>
                     </LEDGERENTRIES.LIST>`;
         }
 
@@ -200,13 +214,18 @@ export const tallyTemplates = {
                         <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
                         <ISPARTYLEDGER>Yes</ISPARTYLEDGER>
                         <AMOUNT>-${totalAmt}</AMOUNT>
+                        <BILLALLOCATIONS.LIST>
+                            <NAME>${escapeXml(invoiceNumber)}</NAME>
+                            <BILLTYPE>New Ref</BILLTYPE>
+                            <AMOUNT>-${totalAmt}</AMOUNT>
+                        </BILLALLOCATIONS.LIST>
                     </LEDGERENTRIES.LIST>
                     
                     <LEDGERENTRIES.LIST>
                         <LEDGERNAME>${escapeXml(incomeLedger)}</LEDGERNAME>
                         <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
                         <ISPARTYLEDGER>No</ISPARTYLEDGER>
-                        <AMOUNT>${baseAmt.toFixed(2)}</AMOUNT>
+                        <AMOUNT>${strBase}</AMOUNT>
                     </LEDGERENTRIES.LIST>
                     ${taxNodes}
                 </VOUCHER>
