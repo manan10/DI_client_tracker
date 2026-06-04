@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Plus, ArrowRight, CheckCircle2, Inbox, 
   ArrowUpRight, ArrowDownLeft, RefreshCw, WifiOff, 
-  Loader2, Check, Building2, Activity, ShieldCheck
+  Loader2, Check, Building2, Activity, ShieldCheck, Trash2, AlertTriangle
 } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
 import { tallyTemplates } from '../../utils/tallyTemplates'; 
 import AuditWizard from './AuditManager/AuditWizard';
+import { toast } from 'sonner';
 
 const AuditManager = () => {
   const { request } = useApi();
@@ -15,6 +16,9 @@ const AuditManager = () => {
   const [activeTab, setActiveTab] = useState('current'); 
   const [arns, setArns] = useState([]);
   
+  // Custom Delete Modal State
+  const [auditToDelete, setAuditToDelete] = useState(null);
+
   // Tally Sync States
   const [isTallyOnline, setIsTallyOnline] = useState(false);
   const [activeFirms, setActiveFirms] = useState([]);
@@ -73,7 +77,26 @@ const AuditManager = () => {
     return () => clearInterval(interval);
   }, [request, checkConnection]);
 
-const handleGlobalSync = async () => {
+  const confirmDeleteAudit = async () => {
+    if (!auditToDelete) return;
+    
+    try {
+      const res = await request(`/audit/${auditToDelete}`, 'DELETE');
+      if (res?.success) {
+        setAudits(prev => prev.filter(a => a._id !== auditToDelete));
+        toast.success("Audit session deleted successfully.");
+      } else {
+        toast.error("Failed to delete audit session.");
+      }
+    } catch (err) {
+      console.error("Delete Audit Error:", err);
+      toast.error(err.message || "An error occurred while deleting.");
+    } finally {
+      setAuditToDelete(null);
+    }
+  };
+
+  const handleGlobalSync = async () => {
     setSyncState({ isOpen: true, isComplete: false, logs: ["Initiating secure connection..."], currentFirm: '', progress: 5 });
     try {
       const companyRes = await request("/tally/proxy", "POST", { xml: tallyTemplates.getCompanies() });
@@ -102,7 +125,6 @@ const handleGlobalSync = async () => {
         const ledgerRes = await request("/tally/proxy", "POST", { xml: tallyTemplates.getLedgers(firm) });
         const ledgerMatches = [...ledgerRes.matchAll(/<LEDGER NAME="([^"]*)"[^>]*>[\s\S]*?<PARENT[^>]*>(.*?)<\/PARENT>/g)];
         
-        // FIX IS HERE: Decode the XML entities before saving them to the database
         const mapped = ledgerMatches.map(m => ({ 
             name: tallyTemplates.unescapeXml(m[1]), 
             parent: tallyTemplates.unescapeXml(m[2]) 
@@ -143,7 +165,6 @@ const handleGlobalSync = async () => {
 
   return (
     <>
-      {/* GLOBAL STYLE TO ENFORCE HIDDEN SCROLLBARS */}
       <style dangerouslySetInnerHTML={{__html: `
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -151,7 +172,6 @@ const handleGlobalSync = async () => {
 
       <div className="min-h-screen w-full bg-[#FBFBFC] dark:bg-[#050607] flex flex-col font-sans text-left overflow-x-hidden">
         
-        {/* HEADER */}
         <header className="w-full px-4 md:px-12 pt-6 md:pt-14 pb-4 md:pb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-6 bg-white dark:bg-black/20 border-b border-slate-100 dark:border-white/5 shrink-0">
           <div className="space-y-4 md:space-y-6 w-full md:w-auto">
             <div className="flex flex-wrap items-center gap-3 md:gap-6">
@@ -181,10 +201,8 @@ const handleGlobalSync = async () => {
           </button>
         </header>
 
-        {/* MAIN SPLIT CONTENT AREA */}
         <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
           
-          {/* MOBILE BRIDGE INTELLIGENCE - USING GRID TO PREVENT HORIZONTAL SCROLL */}
           <div className="lg:hidden w-full border-b border-slate-100 dark:border-white/5 bg-white/40 dark:bg-black/10 p-4 flex flex-col gap-3 shrink-0">
               <div className="flex items-center justify-between">
                  <h2 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Bridge Intelligence</h2>
@@ -211,7 +229,6 @@ const handleGlobalSync = async () => {
               </div>
           </div>
 
-          {/* DESKTOP BRIDGE STATUS SIDEBAR */}
           <aside className="w-80 border-r border-slate-100 dark:border-white/5 bg-white/30 dark:bg-black/10 p-8 overflow-y-auto no-scrollbar hidden lg:flex flex-col gap-8 shrink-0">
             <div className="space-y-1">
               <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Bridge Intelligence</h2>
@@ -246,9 +263,7 @@ const handleGlobalSync = async () => {
             </div>
           </aside>
 
-          {/* MAIN PIPELINE AREA */}
           <section className="flex-1 flex flex-col overflow-hidden w-full max-w-full">
-            {/* SUB-NAV */}
             <div className="px-4 md:px-12 py-3 md:py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 bg-white/50 backdrop-blur-md shrink-0">
               <div className="flex w-full sm:w-auto p-1 bg-slate-100 dark:bg-white/5 rounded-lg md:rounded-2xl">
                 <button onClick={() => setActiveTab('current')} className={`flex-1 sm:flex-none text-center px-4 md:px-12 py-2 md:py-3 rounded-md md:rounded-xl text-[9px] md:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'current' ? 'bg-white dark:bg-slate-800 text-emerald-600 shadow-sm md:shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>Incomplete</button>
@@ -260,14 +275,19 @@ const handleGlobalSync = async () => {
               </div>
             </div>
 
-            {/* STRIPS LIST */}
             <main className="flex-1 px-4 md:px-12 py-4 md:py-10 overflow-y-auto no-scrollbar space-y-3 md:space-y-4">
               {displayAudits.length > 0 ? displayAudits.map(audit => (
-                <AuditStrip key={audit._id} audit={audit} isOnline={isTallyOnline} onAction={() => {
-                  if (audit.status === 'EXPORTED') return;
-                  setSelection({ audit, account: audit.accountId, arn: audit.arnId, month: audit.month, year: audit.year, stagedData: null, verifiedIds: [], isFreshStart: false });
-                  setIsWizardOpen(true);
-                }} />
+                <AuditStrip 
+                  key={audit._id} 
+                  audit={audit} 
+                  isOnline={isTallyOnline} 
+                  onAction={() => {
+                    if (audit.status === 'EXPORTED') return;
+                    setSelection({ audit, account: audit.accountId, arn: audit.arnId, month: audit.month, year: audit.year, stagedData: null, verifiedIds: [], isFreshStart: false });
+                    setIsWizardOpen(true);
+                  }}
+                  onDelete={() => setAuditToDelete(audit._id)} 
+                />
               )) : (
                 <div className="h-48 md:h-64 flex flex-col items-center justify-center opacity-20 border-2 border-dashed border-slate-200 dark:border-white/5 rounded-2xl md:rounded-[4rem] mt-6 md:mt-10 mx-auto max-w-lg">
                   <Inbox size={40} md:size={60} strokeWidth={1} />
@@ -278,7 +298,6 @@ const handleGlobalSync = async () => {
           </section>
         </div>
 
-        {/* SYNC OVERLAY */}
         {syncState.isOpen && (
           <div className="fixed inset-0 z-200 flex items-center justify-center p-4 bg-white/90 dark:bg-[#050607]/95 backdrop-blur-xl animate-in fade-in duration-300">
              <div className="w-full max-w-2xl text-center space-y-6 md:space-y-12 p-6 md:p-16">
@@ -318,6 +337,35 @@ const handleGlobalSync = async () => {
           </div>
         )}
 
+        {/* CUSTOM DELETE MODAL OVERLAY */}
+        {auditToDelete && (
+          <div className="fixed inset-0 z-300 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-[#111214] border border-slate-200 dark:border-white/10 rounded-2xl p-6 lg:p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95">
+              <div className="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center mb-4 border border-rose-100 dark:border-rose-500/20 text-rose-500">
+                <AlertTriangle size={20} strokeWidth={2.5} />
+              </div>
+              <h3 className="text-lg font-[1000] text-slate-900 dark:text-white uppercase tracking-tight mb-2">Delete Audit Session</h3>
+              <p className="text-xs font-bold text-slate-500 leading-relaxed mb-6">
+                Are you sure you want to permanently delete this audit session? This action cannot be undone and will erase all staged matching data.
+              </p>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setAuditToDelete(null)}
+                  className="flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={confirmDeleteAudit}
+                  className="flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-white bg-rose-500 hover:bg-rose-600 shadow-md shadow-rose-500/20 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {isWizardOpen && (
           <AuditWizard onClose={() => { setIsWizardOpen(false); }} initialSelection={selection} existingAudits={audits} isTallyOnline={isTallyOnline} />
         )}
@@ -326,7 +374,7 @@ const handleGlobalSync = async () => {
   );
 };
 
-const AuditStrip = ({ audit, onAction, isOnline }) => {
+const AuditStrip = ({ audit, onAction, onDelete, isOnline }) => {
   const isDraft = audit?.status === 'DRAFT' || audit?.status === 'Draft';
 
   const processedSummary = useMemo(() => {
@@ -371,7 +419,6 @@ const AuditStrip = ({ audit, onAction, isOnline }) => {
           : 'opacity-75 hover:opacity-100'
       }`}
     >
-      {/* TOP SECTION: Indicator + Title */}
       <div className="flex items-stretch gap-3 w-full lg:w-auto lg:flex-1 min-w-0">
         <div className={`w-1.5 self-stretch rounded-full shrink-0 ${isDraft ? 'bg-amber-400' : 'bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]'}`} />
         
@@ -385,10 +432,8 @@ const AuditStrip = ({ audit, onAction, isOnline }) => {
         </div>
       </div>
 
-      {/* STATS BLOCK - GRID FOR MOBILE TO PREVENT HORIZONTAL SCROLL */}
       <div className="grid grid-cols-3 gap-2 w-full lg:w-auto lg:flex lg:flex-row items-center justify-between lg:justify-end lg:gap-10 shrink-0 select-none bg-slate-50 dark:bg-white/5 lg:bg-transparent rounded-xl p-2.5 lg:p-0 my-1 lg:my-0 border border-slate-100 dark:border-transparent lg:border-none">
         
-        {/* ENTRIES */}
         <div className="text-center lg:text-right min-w-0 flex flex-col items-center lg:items-end">
           <p className="text-[7px] md:text-[9px] font-black text-slate-400 uppercase mb-0.5 md:mb-1 italic tracking-widest">Entries</p>
           <p className="text-xs md:text-lg font-[1000] text-slate-900 dark:text-white italic tabular-nums leading-none">
@@ -396,7 +441,6 @@ const AuditStrip = ({ audit, onAction, isOnline }) => {
           </p>
         </div>
 
-        {/* INFLOW */}
         <div className="text-center lg:text-right min-w-0 flex flex-col items-center lg:items-end border-l border-slate-200 dark:border-white/10 lg:border-none lg:pl-10 lg:border-l lg:border-slate-100 lg:dark:border-white/5">
           <div className="flex items-center justify-center lg:justify-end gap-1 mb-0.5 md:mb-1">
             <ArrowDownLeft size={10} md:size={14} className="text-emerald-500 shrink-0" />
@@ -407,7 +451,6 @@ const AuditStrip = ({ audit, onAction, isOnline }) => {
           </p>
         </div>
 
-        {/* OUTFLOW */}
         <div className="text-center lg:text-right min-w-0 flex flex-col items-center lg:items-end border-l border-slate-200 dark:border-white/10 lg:border-none lg:pl-10">
           <div className="flex items-center justify-center lg:justify-end gap-1 mb-0.5 md:mb-1">
             <ArrowUpRight size={10} md:size={14} className="text-rose-500 shrink-0" />
@@ -419,21 +462,34 @@ const AuditStrip = ({ audit, onAction, isOnline }) => {
         </div>
       </div>
 
-      {/* MOBILE-OPTIMIZED BUTTON */}
-      <div className={`w-full lg:w-auto justify-center lg:justify-start px-4 md:px-8 py-3 rounded-lg md:rounded-2xl flex items-center gap-2 md:gap-3 font-black text-[9px] md:text-xs uppercase tracking-widest transition-all shadow-sm md:shadow-md active:scale-95 shrink-0 ${
-        isDraft 
-          ? (isOnline ? 'bg-slate-950 text-white hover:bg-emerald-600' : 'bg-slate-100 text-slate-300 cursor-not-allowed') 
-          : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-      }`}>
-        {isDraft ? (
-          isOnline ? (
-            <>Open <ArrowRight size={12} md:size={16} strokeWidth={3} /></>
+      <div className="flex items-center gap-2 w-full lg:w-auto shrink-0">
+        
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          title="Delete Audit"
+          className="p-3 lg:px-4 lg:py-3.5 rounded-lg md:rounded-2xl border border-rose-200 dark:border-rose-500/30 text-rose-500 bg-rose-50/50 dark:bg-rose-500/10 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-sm active:scale-95 shrink-0"
+        >
+          <Trash2 size={14} className="md:w-4 md:h-4" />
+        </button>
+
+        <div className={`flex-1 lg:flex-none justify-center lg:justify-start px-4 md:px-8 py-3 lg:py-3.5 rounded-lg md:rounded-2xl flex items-center gap-2 md:gap-3 font-black text-[9px] md:text-xs uppercase tracking-widest transition-all shadow-sm md:shadow-md active:scale-95 shrink-0 ${
+          isDraft 
+            ? (isOnline ? 'bg-slate-950 text-white hover:bg-emerald-600' : 'bg-slate-100 text-slate-300 cursor-not-allowed') 
+            : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+        }`}>
+          {isDraft ? (
+            isOnline ? (
+              <>Open <ArrowRight size={12} md:size={16} strokeWidth={3} /></>
+            ) : (
+              <>Tally Offline</>
+            )
           ) : (
-            <>Tally Offline</>
-          )
-        ) : (
-          <><CheckCircle2 size={12} md:size={16} strokeWidth={3} /> Finalized</>
-        )}
+            <><CheckCircle2 size={12} md:size={16} strokeWidth={3} /> Finalized</>
+          )}
+        </div>
       </div>
 
     </div>

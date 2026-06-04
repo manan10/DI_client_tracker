@@ -10,10 +10,10 @@ import { toast } from "sonner";
 
 const Accounts = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("balances");
+  const [activeTab, setActiveTab] = useState("audit");
 
   const tabs = [
-    { id: "audit", name: "Audit Manager", icon: FileText, isLocked: false },
+    { id: "audit", name: "Tally Sync", icon: FileText, isLocked: false },
     { id: "balances", name: "Account Balances", icon: Wallet, isLocked: false },
     { id: "commissions", name: "Commissions", icon: PieChart, isLocked: false },
   ];
