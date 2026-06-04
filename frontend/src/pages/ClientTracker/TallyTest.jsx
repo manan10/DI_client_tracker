@@ -27,7 +27,7 @@ const TallyTest = () => {
     const [copiedSection, setCopiedSection] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
 
-    // Entry Data
+    // Entry Data (Updated to include new billing fields)
     const [voucherType, setVoucherType] = useState("Sales");
     const [voucherData, setVoucherData] = useState({
         date: new Date().toISOString().split('T')[0],
@@ -43,7 +43,13 @@ const TallyTest = () => {
         cgstAmount: "",
         sgstAmount: "",
         igstAmount: "",
-        narration: "Commission Entry via Bridge"
+        narration: "Commission Entry via Bridge",
+        // New Tax & Address Fields
+        partyState: "",
+        partyCountry: "India",
+        partyGstRegType: "",
+        partyGstin: "",
+        partyAddress: []
     });
 
     const generatedXml = useMemo(() => {
@@ -97,14 +103,36 @@ const TallyTest = () => {
         }
     };
 
+    // Upgraded fetchLedgers to grab the advanced GST details for testing
     const fetchLedgers = async () => {
         const xml = tallyTemplates.getLedgers(selectedCompany);
         logActivity(`Pulling masters for ${selectedCompany}...`, "process");
         try {
             const responseData = await request("/tally/proxy", "POST", { xml });
-            const ledgerRegex = /<LEDGER NAME="([^"]*)"[^>]*>[\s\S]*?<PARENT[^>]*>(.*?)<\/PARENT>/g;
-            const matches = [...responseData.matchAll(ledgerRegex)];
-            const mapped = matches.map(m => ({ name: m[1], parent: m[2] }));
+            
+            const ledgerMatches = [...responseData.matchAll(/<LEDGER NAME="([^"]*)"[^>]*>([\s\S]*?)<\/LEDGER>/g)];
+            
+            const mapped = ledgerMatches.map(m => {
+                const name = tallyTemplates.unescapeXml(m[1]);
+                const block = m[2];
+                
+                const parentMatch = block.match(/<PARENT[^>]*>(.*?)<\/PARENT>/i);
+                const stateMatch = block.match(/<(?:LED)?STATENAME[^>]*>(.*?)<\/(?:LED)?STATENAME>/i);
+                const gstinMatch = block.match(/<PARTYGSTIN[^>]*>(.*?)<\/PARTYGSTIN>/i);
+                const countryMatch = block.match(/<COUNTRY(?:NAME|OFRESIDENCE)[^>]*>(.*?)<\/COUNTRY(?:NAME|OFRESIDENCE)>/i);
+                const addressMatches = [...block.matchAll(/<ADDRESS[^>]*>(.*?)<\/ADDRESS>/gi)];
+                const addressList = addressMatches.map(a => tallyTemplates.unescapeXml(a[1]));
+
+                return { 
+                    name: name, 
+                    parent: parentMatch ? tallyTemplates.unescapeXml(parentMatch[1]) : '',
+                    stateName: stateMatch ? tallyTemplates.unescapeXml(stateMatch[1]) : '',
+                    country: countryMatch ? tallyTemplates.unescapeXml(countryMatch[1]) : 'India',
+                    gstin: gstinMatch ? tallyTemplates.unescapeXml(gstinMatch[1]) : '',
+                    address: addressList
+                };
+            });
+
             setLedgers(mapped);
             logActivity(`Sync Complete: ${mapped.length} accounts mapped.`, "success");
         } catch (err) {
@@ -133,6 +161,19 @@ const TallyTest = () => {
     const handleFormChange = (updates) => {
         setVoucherData(prev => ({ ...prev, ...updates }));
         setIsUserEditing(false); 
+    };
+
+    // Auto-map Ledger Details when a Ledger is selected
+    const handleLedgerSelect = (selectedName) => {
+        const ledgerObj = ledgers.find(l => l.name === selectedName);
+        handleFormChange({ 
+            ledgerName: selectedName,
+            partyState: ledgerObj?.stateName || "",
+            partyCountry: ledgerObj?.country || "India",
+            partyGstin: ledgerObj?.gstin || "",
+            partyGstRegType: ledgerObj?.gstin ? "Regular" : "Unregistered",
+            partyAddress: ledgerObj?.address || []
+        });
     };
 
     const handleAmountChange = (val, currentGstType = voucherData.gstType) => {
@@ -203,7 +244,7 @@ const TallyTest = () => {
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
                                 </div>
-                                <select className="w-full bg-white border border-slate-200 p-3 rounded-xl text-xs font-bold outline-none" value={voucherData.ledgerName} onChange={e => handleFormChange({ ledgerName: e.target.value })}>
+                                <select className="w-full bg-white border border-slate-200 p-3 rounded-xl text-xs font-bold outline-none" value={voucherData.ledgerName} onChange={e => handleLedgerSelect(e.target.value)}>
                                     <option value="">{voucherType === 'Sales' ? '-- Choose Party (Debtor) --' : '-- Choose Account --'}</option>
                                     {Object.entries(filteredGroupedLedgers).map(([group, names]) => (
                                         <optgroup key={group} label={group.toUpperCase()}>

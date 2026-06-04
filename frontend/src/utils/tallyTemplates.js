@@ -13,7 +13,6 @@ const escapeXml = (unsafe) => {
     });
 };
 
-// Helper to decode Tally's XML entities back to normal readable text for your DB/UI
 const unescapeXml = (safe) => {
     if (safe === null || safe === undefined) return "";
     return safe.toString()
@@ -59,7 +58,7 @@ export const tallyTemplates = {
                 <TDLMESSAGE>
                     <COLLECTION NAME="Ledger" ISMODIFY="No">
                         <TYPE>Ledger</TYPE>
-                        <FETCH>Name, Parent</FETCH>
+                        <FETCH>Name, Parent, LedStateName, StateName, CountryName, CountryOfResidence, PartyGSTIN, Address</FETCH>
                     </COLLECTION>
                 </TDLMESSAGE>
             </TDL>
@@ -79,7 +78,6 @@ export const tallyTemplates = {
         const { company, type, date, ledgerName, bankAccount, amount, narration } = data;
         const tallyDate = date.replace(/-/g, '');
         
-        // Receipts and Payments use standard Voucher View
         const ledgerAmount = type === 'Receipt' ? amount : `-${amount}`;
         const bankAmount = type === 'Payment' ? amount : `-${amount}`;
 
@@ -123,14 +121,13 @@ export const tallyTemplates = {
 
     generateSalesVoucher: ({ 
         company, date, invoiceNumber, ledgerName, incomeLedger, amount, 
-        gstType, cgstLedger, sgstLedger, igstLedger, cgstAmount, sgstAmount, igstAmount, narration 
+        gstType, cgstLedger, sgstLedger, igstLedger, cgstAmount, sgstAmount, igstAmount, narration,
+        partyState, partyCountry, partyGstRegType, partyGstin, partyAddress
     }) => {
         const tallyDate = date.replace(/-/g, '');
         const baseAmt = parseFloat(amount) || 0;
         
-        let cAmt = 0;
-        let sAmt = 0;
-        let iAmt = 0;
+        let cAmt = 0, sAmt = 0, iAmt = 0;
 
         if (gstType === 'LOCAL') {
             cAmt = parseFloat(cgstAmount) || 0;
@@ -139,23 +136,12 @@ export const tallyTemplates = {
             iAmt = parseFloat(igstAmount) || 0;
         }
 
-        // =========================================================================
-        // STRICT MATH FIX: Summing the explicitly formatted strings to prevent
-        // invisible 0.01 floating point drifts from throwing a Tally exception.
-        // =========================================================================
         const strBase = baseAmt.toFixed(2);
         const strC = cAmt.toFixed(2);
         const strS = sAmt.toFixed(2);
         const strI = iAmt.toFixed(2);
+        const totalAmt = (parseFloat(strBase) + parseFloat(strC) + parseFloat(strS) + parseFloat(strI)).toFixed(2);
 
-        const totalAmt = (
-            parseFloat(strBase) + 
-            parseFloat(strC) + 
-            parseFloat(strS) + 
-            parseFloat(strI)
-        ).toFixed(2);
-
-        // Generate Tax Nodes securely packed in LEDGERENTRIES.LIST
         let taxNodes = '';
         if (gstType === 'LOCAL') {
             taxNodes = `
@@ -181,7 +167,32 @@ export const tallyTemplates = {
                     </LEDGERENTRIES.LIST>`;
         }
 
-        // Updated exactly matching the Tally Export
+        let addressTags = '';
+        if (partyAddress && Array.isArray(partyAddress) && partyAddress.length > 0) {
+            const addrs = partyAddress.map(a => `<ADDRESS>${escapeXml(a)}</ADDRESS>`).join('\n                    ');
+            addressTags = `
+                    <ADDRESS.LIST TYPE="String">
+                        ${addrs}
+                    </ADDRESS.LIST>
+                    <BASICBUYERADDRESS.LIST TYPE="String">
+                        ${addrs}
+                    </BASICBUYERADDRESS.LIST>`;
+        }
+
+        // Removed Consignee tags so Tally keeps the view clean and single-column
+        const stateTag = partyState ? `
+                    <STATENAME>${escapeXml(partyState)}</STATENAME>
+                    <PLACEOFSUPPLY>${escapeXml(partyState)}</PLACEOFSUPPLY>` : '';
+        
+        const countryTag = partyCountry ? `
+                    <COUNTRYOFRESIDENCE>${escapeXml(partyCountry)}</COUNTRYOFRESIDENCE>` : '';
+                    
+        const gstinTag = partyGstin ? `
+                    <PARTYGSTIN>${escapeXml(partyGstin)}</PARTYGSTIN>` : '';
+                    
+        const regTypeTag = partyGstRegType ? `
+                    <GSTREGISTRATIONTYPE>${escapeXml(partyGstRegType)}</GSTREGISTRATIONTYPE>` : '';
+
         return `<ENVELOPE>
     <HEADER>
         <VERSION>1</VERSION>
@@ -203,9 +214,16 @@ export const tallyTemplates = {
                     <VOUCHERNUMBER>${escapeXml(invoiceNumber)}</VOUCHERNUMBER>
                     <REFERENCE>${escapeXml(invoiceNumber)}</REFERENCE>
                     <ISINVOICE>Yes</ISINVOICE>
+                    
                     <PARTYLEDGERNAME>${escapeXml(ledgerName)}</PARTYLEDGERNAME>
                     <PARTYNAME>${escapeXml(ledgerName)}</PARTYNAME>
                     <BASICBUYERNAME>${escapeXml(ledgerName)}</BASICBUYERNAME>
+                    ${stateTag}
+                    ${countryTag}
+                    ${regTypeTag}
+                    ${gstinTag}
+                    ${addressTags}
+                    
                     <PERSISTEDVIEW>Invoice Voucher View</PERSISTEDVIEW>
                     <NARRATION>${escapeXml(narration)}</NARRATION>
                     

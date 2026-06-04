@@ -123,13 +123,41 @@ const AuditManager = () => {
         setSyncState(prev => ({ ...prev, currentFirm: firm, logs: [...prev.logs, `Synchronizing: ${firm}`] }));
         
         const ledgerRes = await request("/tally/proxy", "POST", { xml: tallyTemplates.getLedgers(firm) });
-        const ledgerMatches = [...ledgerRes.matchAll(/<LEDGER NAME="([^"]*)"[^>]*>[\s\S]*?<PARENT[^>]*>(.*?)<\/PARENT>/g)];
         
-        const mapped = ledgerMatches.map(m => ({ 
-            name: tallyTemplates.unescapeXml(m[1]), 
-            parent: tallyTemplates.unescapeXml(m[2]) 
-        }));
+ // =========================================================================
+        // DEEP PARSING REGEX: Extracting Billing & Tax details from the Master XML
+        // =========================================================================
+        const ledgerMatches = [...ledgerRes.matchAll(/<LEDGER NAME="([^"]*)"[^>]*>([\s\S]*?)<\/LEDGER>/g)];
+        
+        const mapped = ledgerMatches.map(m => {
+            const name = tallyTemplates.unescapeXml(m[1]);
+            const block = m[2]; // The entire XML chunk for this specific ledger
+            
+            // Extract standard parent group
+            const parentMatch = block.match(/<PARENT[^>]*>(.*?)<\/PARENT>/i);
+            
+            // Extract Tax Details (Tally uses LEDSTATENAME for ledgers, but we check both)
+            const stateMatch = block.match(/<(?:LED)?STATENAME[^>]*>(.*?)<\/(?:LED)?STATENAME>/i);
+            const gstinMatch = block.match(/<PARTYGSTIN[^>]*>(.*?)<\/PARTYGSTIN>/i);
+            
+            // Extract Country (Tally uses COUNTRYOFRESIDENCE or COUNTRYNAME)
+            const countryMatch = block.match(/<COUNTRY(?:NAME|OFRESIDENCE)[^>]*>(.*?)<\/COUNTRY(?:NAME|OFRESIDENCE)>/i);
+            
+            // Extract Address (Tally allows multiple <ADDRESS> tags per ledger)
+            const addressMatches = [...block.matchAll(/<ADDRESS[^>]*>(.*?)<\/ADDRESS>/gi)];
+            const addressList = addressMatches.map(a => tallyTemplates.unescapeXml(a[1]));
 
+            return { 
+                name: name, 
+                parent: parentMatch ? tallyTemplates.unescapeXml(parentMatch[1]) : '',
+                stateName: stateMatch ? tallyTemplates.unescapeXml(stateMatch[1]) : '',
+                country: countryMatch ? tallyTemplates.unescapeXml(countryMatch[1]) : '',
+                gstin: gstinMatch ? tallyTemplates.unescapeXml(gstinMatch[1]) : '',
+                address: addressList
+            };
+        });
+
+        // Send enriched payload to the backend
         await request("/ledgers/bulk-sync", "POST", { 
             ledgers: mapped, 
             company: firm,
@@ -298,6 +326,7 @@ const AuditManager = () => {
           </section>
         </div>
 
+        {/* SYNC OVERLAY */}
         {syncState.isOpen && (
           <div className="fixed inset-0 z-200 flex items-center justify-center p-4 bg-white/90 dark:bg-[#050607]/95 backdrop-blur-xl animate-in fade-in duration-300">
              <div className="w-full max-w-2xl text-center space-y-6 md:space-y-12 p-6 md:p-16">

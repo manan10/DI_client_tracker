@@ -14,12 +14,41 @@ const ledgerSchema = new mongoose.Schema({
     required: true,
     index: true 
   },
-  // THIS IS THE MISSING FIELD CAUSING THE 500 ERROR
   arnId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Arn', 
     required: true 
   },
+  
+  // ========================================================
+  // NEW FIELDS: BILLING & TAX COMPLIANCE INJECTIONS
+  // ========================================================
+  address: { 
+    type: [String], // Array to handle Tally's multi-line address logic
+    default: [] 
+  },
+  stateName: { 
+    type: String, 
+    default: "" 
+  },
+  country: { 
+    type: String, 
+    default: "India" // Safe default, overrides if Tally sends something else
+  },
+  gstRegistrationType: { 
+    type: String, 
+    default: "" 
+  },
+  gstin: { 
+    type: String, 
+    default: "" 
+  },
+  placeOfSupply: { 
+    type: String, 
+    default: "" 
+  },
+  // ========================================================
+
   lastSynced: { 
     type: Date, 
     default: Date.now 

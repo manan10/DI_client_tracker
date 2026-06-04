@@ -1,14 +1,14 @@
 const Ledger = require('../models/Ledger');
 
 /**
- * @desc    Process bulk ledger data from Tally Bridge scan
+ * @desc    Process bulk ledger data from Tally Bridge scan with Statutory / GST mapping
  * @route   POST /api/ledgers/bulk-sync
  */
 exports.bulkSyncTallyLedgers = async (req, res) => {
     try {
         const { ledgers, company, arnId } = req.body;
 
-        // Validation: Added arnId check
+        // Validation: Ensure all context fields are present
         if (!ledgers || !Array.isArray(ledgers) || !company || !arnId) {
             return res.status(400).json({ 
                 success: false, 
@@ -17,23 +17,37 @@ exports.bulkSyncTallyLedgers = async (req, res) => {
         }
 
         // Prepare bulk operations: Upsert ledgers scoped to specific Company AND ARN
-        const operations = ledgers.map(l => ({
-            updateOne: {
-                filter: { 
-                    name: l.name.toUpperCase(), 
-                    tallyCompanyName: company // Using the field name from our earlier discussion
-                },
-                update: { 
-                    $set: { 
-                        groupName: l.parent, // Maps to 'parent' from Tally XML
-                        arnId: arnId,       // Link to the Client/ARN
-                        lastSynced: new Date(),
-                        isActive: true
-                    } 
-                },
-                upsert: true
-            }
-        }));
+        const operations = ledgers.map(l => {
+            const normalizedName = l.name.trim().toUpperCase();
+            const stateName = l.stateName || "";
+            
+            return {
+                updateOne: {
+                    filter: { 
+                        name: normalizedName, 
+                        tallyCompanyName: company 
+                    },
+                    update: { 
+                        $set: { 
+                            groupName: l.parent, 
+                            arnId: arnId,
+                            
+                            // Statutory / GSTR Data Points Injection
+                            address: Array.isArray(l.address) ? l.address : [],
+                            stateName: stateName,
+                            country: l.country || (stateName ? "India" : ""),
+                            gstRegistrationType: l.gstRegistrationType || (l.gstin ? "Regular" : ""),
+                            gstin: l.gstin ? l.gstin.trim().toUpperCase() : "",
+                            placeOfSupply: l.placeOfSupply || stateName, // Falls back to state if unspecified
+                            
+                            lastSynced: new Date(),
+                            isActive: true
+                        } 
+                    },
+                    upsert: true
+                }
+            };
+        });
 
         const result = await Ledger.bulkWrite(operations);
 
@@ -64,7 +78,7 @@ exports.bulkSyncTallyLedgers = async (req, res) => {
 exports.getAllLedgers = async (req, res) => {
     try {
         const { company } = req.query;
-        let query = {}; // Remove isActive: true temporarily to see if data exists
+        let query = {}; 
         
         if (company && company !== 'null') {
             query.tallyCompanyName = company;
@@ -75,10 +89,10 @@ exports.getAllLedgers = async (req, res) => {
         const ledgers = await Ledger.find(query)
             .populate({
                 path: 'arnId',
-                select: 'nickname arnCode' // Only pull what we need
+                select: 'nickname arnCode' 
             })
             .sort({ name: 1 })
-            .lean(); // Lean for better performance and to avoid Mongoose wrapping issues
+            .lean(); 
 
         res.json({ 
             success: true, 
