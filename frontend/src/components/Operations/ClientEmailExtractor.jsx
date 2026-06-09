@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Search, Download, CheckSquare, Square, Loader2, AlertCircle } from "lucide-react";
+import { Search, Download, CheckSquare, Square, Loader2, AlertCircle, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useApi } from "../../hooks/useApi"; 
 
@@ -76,6 +76,12 @@ const ClientEmailExtractor = () => {
     const newSelection = new Set(selectedClientIds);
     filteredClients.forEach(c => newSelection.delete(c._id));
     setSelectedClientIds(newSelection);
+  };
+
+  const handleCopyEmail = (email, e) => {
+    e.stopPropagation(); // Prevents the row from toggling selection when copying
+    navigator.clipboard.writeText(email);
+    toast.success("Copied to Clipboard", { description: `${email} has been copied.` });
   };
 
   const handleExportEmails = () => {
@@ -242,7 +248,7 @@ const ClientEmailExtractor = () => {
                       <tr 
                         key={client._id} 
                         onClick={() => toggleClientSelection(client._id)}
-                        className={`hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer transition-colors ${isSelected ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''}`}
+                        className={`hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer transition-colors group ${isSelected ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''}`}
                       >
                         <td className="p-4 text-center">
                           {isSelected 
@@ -270,7 +276,16 @@ const ClientEmailExtractor = () => {
                                <span className="text-xs font-bold uppercase tracking-wider line-through opacity-70">{email}</span>
                             </div>
                           ) : (
-                            email
+                            <div className="flex items-center gap-3">
+                              <span>{email}</span>
+                              <button 
+                                onClick={(e) => handleCopyEmail(email, e)}
+                                className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 rounded-md opacity-0 group-hover:opacity-100 transition-all focus:opacity-100"
+                                title="Copy to clipboard"
+                              >
+                                <Copy size={14} />
+                              </button>
+                            </div>
                           )}
                         </td>
                         <td className="p-4 text-slate-500 font-mono text-xs">
@@ -293,7 +308,7 @@ const ClientEmailExtractor = () => {
               <div className="flex gap-2">
                 <button
                   disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  onClick={(e) => { e.stopPropagation(); setCurrentPage(p => Math.max(1, p - 1)); }}
                   className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-slate-700 dark:text-slate-300"
                 >
                   Prev
@@ -303,7 +318,7 @@ const ClientEmailExtractor = () => {
                 </div>
                 <button
                   disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  onClick={(e) => { e.stopPropagation(); setCurrentPage(p => Math.min(totalPages, p + 1)); }}
                   className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-slate-700 dark:text-slate-300"
                 >
                   Next
