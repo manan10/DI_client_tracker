@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import Navbar from "../../components/Navbar";
 import OperationsDashboard from "../../components/Operations/TaskBoard";
 import Submissions from "../../components/Operations/Submissions";
-import ClientEmailExtractor from "../../components/Operations/ClientEmailExtractor";
+// import ClientEmailExtractor from "../../components/Operations/ClientEmailExtractor";
 
 const Operations = () => {
   const [activeTab, setActiveTab] = useState("submissions");
@@ -13,7 +13,7 @@ const Operations = () => {
   const tabs = [
     { id: "submissions", name: "Submissions", icon: Send, isLocked: false },
     { id: "dashboard", name: "Task Board", icon: Kanban, isLocked: false },
-    { id: "mailer", name: "Client Email Extractor", icon: Mail, isLocked: false },
+    // { id: "mailer", name: "Client Email Extractor", icon: Mail, isLocked: false },
   ];
 
   const handleTabClick = (tab) => {
@@ -90,7 +90,7 @@ const Operations = () => {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
           {activeTab === "submissions" && <Submissions />}
           {activeTab === "dashboard" && <OperationsDashboard />}
-          {activeTab === "mailer" && <ClientEmailExtractor />}
+          {/* {activeTab === "mailer" && <ClientEmailExtractor />} */}
         </div>
       </main>
     </div>

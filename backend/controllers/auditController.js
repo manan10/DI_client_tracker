@@ -90,14 +90,12 @@ const parseExcel = async (buffer, password = null) => {
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     
-    // Convert sheet to a raw 2D array to hunt for headers manually
     const rows = xlsx.utils.sheet_to_json(sheet, { header: 1, defval: "" });
     
     let headerIndex = -1;
     for (let i = 0; i < rows.length; i++) {
         const rowStr = rows[i].map(c => String(c).toLowerCase()).join(' ');
         
-        // BUG FIX: Added 'details' to the search condition to match SBI's header format
         if (
             (rowStr.includes('date') || rowStr.includes('txn date')) && 
             (rowStr.includes('description') || rowStr.includes('narration') || rowStr.includes('particulars') || rowStr.includes('details'))
@@ -113,7 +111,6 @@ const parseExcel = async (buffer, password = null) => {
     const columnMap = mapHeadersToStandard(rawHeaders);
     const results = [];
     
-    // Process the data rows
     for (let i = headerIndex + 1; i < rows.length; i++) {
         const row = rows[i];
         const rowObj = {};
@@ -125,7 +122,6 @@ const parseExcel = async (buffer, password = null) => {
         let rawDate = rowObj[columnMap.date];
         if (!columnMap || !rawDate || String(rawDate).trim() === '') continue; 
         
-        // Handle Excel Date Objects vs Strings safely before feeding to standardizeDate
         let finalDateStr = "";
         if (rawDate instanceof Date) {
             const d = String(rawDate.getDate()).padStart(2, '0');
@@ -160,8 +156,17 @@ const parseExcel = async (buffer, password = null) => {
 
 exports.getActiveAudit = async (req, res) => {
     try {
-        const { accountId, month, year } = req.query;
-        const audit = await Audit.findOne({ accountId, month, year, status: 'DRAFT' });
+        const { accountId, tallyCompanyName, month, year } = req.query;
+        let query = { month, year, status: 'DRAFT' };
+        
+        // Flexible fetching: UI can ask by company or by specific bank account
+        if (tallyCompanyName) {
+            query.tallyCompanyName = tallyCompanyName;
+        } else if (accountId) {
+            query.accountIds = accountId; 
+        }
+
+        const audit = await Audit.findOne(query);
         if (!audit) return res.json({ success: true, data: null });
         
         const transactions = await Transaction.find({ auditId: audit._id }).sort({ date: 1 });
@@ -172,14 +177,11 @@ exports.getActiveAudit = async (req, res) => {
 exports.getAuditSummaryList = async (req, res) => {
     try {
         const audits = await Audit.find()
-            .populate('accountId', 'name') 
+            .populate('accountIds', 'name') 
             .populate('arnId', 'nickname') 
             .sort({ updatedAt: -1 });
 
-        res.json({ 
-            success: true, 
-            data: audits 
-        });
+        res.json({ success: true, data: audits });
     } catch (err) {
         console.error("Fetch Summary Error:", err);
         res.status(500).json({ success: false, message: err.message });
@@ -188,10 +190,19 @@ exports.getAuditSummaryList = async (req, res) => {
 
 exports.initializeAudit = async (req, res) => {
     try {
-        const { accountId, arnId, month, year, sourceFiles } = req.body;
-        let audit = await Audit.findOne({ accountId, month, year, status: 'DRAFT' });
+        const { accountId, tallyCompanyName, arnId, month, year, sourceFiles } = req.body;
+        let audit = await Audit.findOne({ tallyCompanyName, month, year, status: 'DRAFT' });
         if (!audit) {
-            audit = await Audit.create({ accountId, arnId, month, year, sourceFiles, status: 'DRAFT' });
+            audit = await Audit.create({ 
+                tallyCompanyName, 
+                arnId, 
+                month, 
+                year, 
+                sourceFiles, 
+                status: 'DRAFT',
+                accountIds: accountId ? [accountId] : [],
+                tallyLedgerNames: []
+            });
         }
         res.status(201).json({ success: true, data: audit });
     } catch (err) { res.status(500).json({ success: false, message: err.message }); }
@@ -200,16 +211,12 @@ exports.initializeAudit = async (req, res) => {
 exports.processBulkStatements = async (req, res) => {
     try {
         console.log("--- TALLY-HYBRID UPLOAD START ---");
-        // Added excelPassword capability just in case it is sent from frontend
         const { tallyCompany, tallyLedger, month, year, excelPassword } = req.body;
 
         // 1. RESOLVE ARN CONTEXT 
         const arnDoc = await Arn.findOne({ linkedTallyFirms: tallyCompany }).lean();
         if (!arnDoc) {
-            return res.status(404).json({ 
-                success: false, 
-                message: `The company "${tallyCompany}" is not linked to any Client ARN. Please map it in settings first.` 
-            });
+            return res.status(404).json({ success: false, message: `The company "${tallyCompany}" is not linked to any Client ARN.` });
         }
 
         // 2. RESOLVE LOCAL ACCOUNT 
@@ -221,26 +228,34 @@ exports.processBulkStatements = async (req, res) => {
         // 3. FETCH LEDGER MASTER 
         const ledgerMaster = await Ledger.find({ tallyCompanyName: tallyCompany }).lean();
 
-        // 4. MANAGE AUDIT SESSION
+        // 4. FIND OR CREATE MASTER DOSSIER (By Company + Period)
         let audit = await Audit.findOne({ 
             tallyCompanyName: tallyCompany, 
-            tallyLedgerName: tallyLedger, 
             month: parseInt(month), 
             year: parseInt(year), 
             status: 'DRAFT' 
         });
         
         if (!audit) {
-            audit = await Audit.create({
+            audit = new Audit({
                 tallyCompanyName: tallyCompany,
-                tallyLedgerName: tallyLedger,
-                accountId: account ? account._id : null,
                 arnId: arnDoc._id,
                 month: parseInt(month),
                 year: parseInt(year),
-                sourceFiles: req.files.map(f => f.originalname),
+                sourceFiles: [],
+                tallyLedgerNames: [],
+                accountIds: [],
+                bankSummaries: [],
                 status: 'DRAFT'
             });
+        }
+
+        // Push ledgers/accounts into the array if they are new to this session
+        if (!audit.tallyLedgerNames.includes(tallyLedger)) {
+            audit.tallyLedgerNames.push(tallyLedger);
+        }
+        if (account && !audit.accountIds.includes(account._id)) {
+            audit.accountIds.push(account._id);
         }
 
         // 5. PARSE & ENRICH
@@ -251,24 +266,82 @@ exports.processBulkStatements = async (req, res) => {
             
             try {
                 if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
-                    // Pass the optional password down
                     parsedRows = await parseExcel(file.buffer, excelPassword);
                 } else {
                     parsedRows = await parseRobust(file.buffer); 
                 }
             } catch (parseError) {
-                // Graceful handling of encrypted files
                 if (parseError.message === "LOCKED_FILE") {
-                    return res.status(422).json({
-                        success: false,
-                        message: `The file "${file.originalname}" is password protected. Please open it in Excel, click 'Save As', and save a copy without a password before uploading.`
-                    });
+                    return res.status(422).json({ success: false, message: `The file "${file.originalname}" is password protected.` });
                 }
-                throw parseError; // Rethrow other actual parsing errors
+                throw parseError; 
             }
             
+            // =========================================================================
+            // 🕒 CRITICAL: SORT ROWS BEFORE TAGGING
+            // We must process chronologically so the AMC Tracker knows what came first
+            // =========================================================================
+            parsedRows.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            // 🧠 AMC TRACKER STATE (Reset per file to track Base vs GST split)
+            const amcTracker = {};
+
             const enriched = parsedRows.map(t => {
-                const match = performLedgerMatch(t.narration, ledgerMaster);
+                const match = performLedgerMatch(t, ledgerMaster);
+                
+                // =========================================================================
+                // 🔍 IMPROVED AUTO-TAGGING ENGINE (COMMISSION & SALES WITH MEMORY)
+                // =========================================================================
+                const cleanNarration = (t.narration || "").toLowerCase();
+                const matchedLedgerName = (match.name || "").toLowerCase();
+                
+                const commKeywords = ['comm', 'broker', 'trail', 'incentive', 'upfront'];
+                
+                let isComm = false;
+                let isSale = false;
+                
+                if (t.type === 'RECEIPT') {
+                    // Rule A: Does the bank narration contain a keyword? (e.g., "TRAIL COMM")
+                    const narrationHit = commKeywords.some(k => cleanNarration.includes(k));
+                    
+                    // Rule B: Did the Ledger Matcher guess a commission or Mutual Fund ledger?
+                    const ledgerHit = matchedLedgerName.includes('commission') || 
+                                      matchedLedgerName.includes('brokerage') ||
+                                      matchedLedgerName.includes('mutual fund');
+                    
+                    isComm = narrationHit || ledgerHit;
+
+                    // Rule C: Auto-Cascade logic with Split-GST Detection
+                    if (isComm) {
+                        const txDate = new Date(t.date);
+    
+                        if (!amcTracker[matchedLedgerName]) {
+                            // First time seeing a commission for this AMC (Base Commission)
+                            amcTracker[matchedLedgerName] = txDate;
+                            isSale = true; 
+                        } else {
+                            const lastDate = amcTracker[matchedLedgerName];
+                            
+                            // Calculate difference in days
+                            const diffTime = Math.abs(txDate - lastDate);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            
+                            if (diffDays <= 30) {
+                                // Secondary drop within 30 days -> This is the GST portion
+                                isSale = false;
+                            } else {
+                                // Over 30 days -> This is a new month's Base Commission
+                                amcTracker[matchedLedgerName] = txDate;
+                                isSale = true;
+                            }
+                        }
+                    } else if (matchedLedgerName.includes('lic') || matchedLedgerName.includes('insurance')) {
+                        // Catching Insurance/LIC as a Sale (but not a commission).
+                        isSale = true; 
+                    }
+                }
+                // =========================================================================
+                
                 return { 
                     ...t, 
                     auditId: audit._id,
@@ -279,7 +352,8 @@ exports.processBulkStatements = async (req, res) => {
                     sourceFile: file.originalname, 
                     bank: account ? account.name : tallyLedger, 
                     isChecked: false,
-                    isCommission: ['commission', 'brokerage', 'trail'].some(k => t.narration?.toLowerCase().includes(k)),
+                    isCommission: isComm,     // <-- Updated calculation
+                    isSales: isSale,          // <-- Updated memory-backed calculation
                     isMarkedForManualEntry: false
                 };
             });
@@ -290,26 +364,26 @@ exports.processBulkStatements = async (req, res) => {
             return res.status(400).json({ success: false, message: "No valid transactions found." });
         }
 
-        // 6. SORT & CALCULATE ACCOUNT BALANCES ACCURATELY
+        // 6. SORT & CALCULATE METRICS FOR *THIS SPECIFIC BANK*
+        // We do a final sort here to ensure the balances flow correctly just in case 
+        // multiple files were uploaded out of order.
         const sortedTransactions = [...allTransactions].sort((a, b) => new Date(a.date) - new Date(b.date));
-
         const firstTx = sortedTransactions[0];
         const lastTx = sortedTransactions[sortedTransactions.length - 1];
 
         const firstRunningBalance = firstTx.balance || 0;
         const firstTxAmount = firstTx.amount || 0;
-
         const openingBalance = firstTx.type === 'PAYMENT' 
             ? firstRunningBalance + firstTxAmount 
             : firstRunningBalance - firstTxAmount;
-
         const closingBalance = lastTx.balance || 0;
 
-        // 7. COMPUTE SUMMARY STATS
         const receipts = sortedTransactions.filter(t => t.type === 'RECEIPT');
         const payments = sortedTransactions.filter(t => t.type === 'PAYMENT');
 
-        const summaryData = {
+        const currentBankSummary = {
+            tallyLedgerName: tallyLedger,
+            accountId: account ? account._id : null,
             openingBalance,
             closingBalance,
             totalReceipts: receipts.reduce((sum, t) => sum + (t.amount || 0), 0),
@@ -318,28 +392,31 @@ exports.processBulkStatements = async (req, res) => {
             paymentCount: payments.length
         };
 
-        // Update Audit draft with compiled math parameters
-        audit = await Audit.findByIdAndUpdate(
-            audit._id,
-            { 
-                $set: { summary: summaryData },
-                $addToSet: { sourceFiles: { $each: req.files.map(f => f.originalname) } } 
-            },
-            { returnDocument: 'after' } 
-        );
+        // Update isolated Bank Summaries
+        const existingIndex = audit.bankSummaries.findIndex(b => b.tallyLedgerName === tallyLedger);
+        if (existingIndex >= 0) {
+            audit.bankSummaries[existingIndex] = currentBankSummary;
+        } else {
+            audit.bankSummaries.push(currentBankSummary);
+        }
 
-        // 8. PERSIST TRANSACTIONS TO DATABASE
+        // Recalculate Grand Total Summary across all banks
+        audit.summary = {
+            totalReceipts: audit.bankSummaries.reduce((sum, b) => sum + b.totalReceipts, 0),
+            totalPayments: audit.bankSummaries.reduce((sum, b) => sum + b.totalPayments, 0),
+            receiptCount: audit.bankSummaries.reduce((sum, b) => sum + b.receiptCount, 0),
+            paymentCount: audit.bankSummaries.reduce((sum, b) => sum + b.paymentCount, 0)
+        };
+
+        req.files.forEach(f => audit.sourceFiles.push(f.originalname));
+
+        // 7. PERSIST TO DATABASE
+        await audit.save();
         const saved = await Transaction.insertMany(sortedTransactions);
 
-        console.log(`--- SUCCESS: ${saved.length} ROWS SAVED FOR ${tallyCompany} ---`);
-        console.log(`Balances: Opening [${openingBalance}] | Closing [${closingBalance}]`);
+        console.log(`--- SUCCESS: ${saved.length} ROWS SAVED FOR ${tallyCompany} -> ${tallyLedger} ---`);
 
-        res.json({ 
-            success: true, 
-            audit,
-            count: saved.length, 
-            transactions: saved 
-        });
+        res.json({ success: true, audit, count: saved.length, transactions: saved });
 
     } catch (error) { 
         console.error("AUDIT UPLOAD ERROR:", error);
@@ -383,50 +460,161 @@ exports.saveSalesCheckpoint = async (req, res) => {
     const { transactions } = req.body; 
 
     if (!transactions || !Array.isArray(transactions)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Invalid data payload payload array required." 
-      });
+      return res.status(400).json({ success: false, message: "Invalid data payload array required." });
     }
 
     const bulkOperations = transactions.map(tx => ({
       updateOne: {
-        filter: { 
-          _id: tx._id, 
-          auditId: auditId 
-        },
+        filter: { _id: tx._id, auditId: auditId },
         update: {
           $set: {
-            isSalesApproved: Object.prototype.hasOwnProperty.call(tx, 'isSalesApproved') 
-              ? tx.isSalesApproved 
-              : false,
+            isSalesApproved: Object.prototype.hasOwnProperty.call(tx, 'isSalesApproved') ? tx.isSalesApproved : false,
             invoiceBillingDate: tx.invoiceBillingDate || null
           }
         }
       }
     }));
 
-    if (bulkOperations.length === 0) {
-      return res.json({ 
-        success: true, 
-        message: "No staging row updates required commit execution skipped" 
-      });
-    }
-
+    if (bulkOperations.length === 0) return res.json({ success: true, message: "No staging row updates required" });
+    
     const result = await Transaction.bulkWrite(bulkOperations);
-
-    return res.json({
-      success: true,
-      message: "Sales validation workbench state committed down to server",
-      matchedCount: result.matchedCount,
-      modifiedCount: result.modifiedCount
-    });
+    return res.json({ success: true, message: "Sales validation workbench state committed", matchedCount: result.matchedCount });
 
   } catch (err) {
-    console.error("Critical Exception caught inside SaveSalesCheckpoint pipeline:", err);
-    return res.status(500).json({ 
-      success: false, 
-      message: "Internal transactional exception handled at controller layer" 
-    });
+    console.error("Critical Exception:", err);
+    return res.status(500).json({ success: false, message: "Internal transactional exception handled" });
   }
+};
+
+// Add this alongside your processBulkStatements method
+exports.testLedgerMatching = async (req, res) => {
+    try {
+        console.log("--- STARTING MATCHER TEST BENCH ---");
+        const { tallyCompany, excelPassword } = req.body;
+        
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: "No file uploaded." });
+        }
+
+        if (!tallyCompany) {
+            return res.status(400).json({ success: false, message: "Tally Company Name is required to fetch the correct Ledger Master." });
+        }
+
+        // 1. Fetch Ledger Master
+        const ledgerMaster = await Ledger.find({ tallyCompanyName: tallyCompany }).lean();
+        
+        if (!ledgerMaster || ledgerMaster.length === 0) {
+             return res.status(404).json({ success: false, message: `No ledgers found for company: ${tallyCompany}` });
+        }
+
+        // 2. Parse the File
+        const fileName = req.file.originalname.toLowerCase();
+        let parsedRows = [];
+        
+        try {
+            if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+                // Ensure parseExcel and parseRobust are imported at the top of your controller
+                parsedRows = await parseExcel(req.file.buffer, excelPassword);
+            } else {
+                parsedRows = await parseRobust(req.file.buffer); 
+            }
+        } catch (parseError) {
+            if (parseError.message === "LOCKED_FILE") {
+                return res.status(422).json({ success: false, message: `The file is password protected.` });
+            }
+            throw parseError; 
+        }
+
+        // 3. SORT DATA CHRONOLOGICALLY
+        // Critical for the GST split logic. We must process the 6th of June before the 26th of June.
+        parsedRows.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        // =========================================================================
+        // 🧠 AMC TRACKER STATE
+        // Memory bank to track the last date a base commission was logged for an AMC
+        // =========================================================================
+        const amcTracker = {};
+
+        // 4. Run the Matcher & Auto-Tagger
+        // Ensure performLedgerMatch is imported at the top of your controller
+        const results = parsedRows.map((t, index) => {
+            const match = performLedgerMatch(t, ledgerMaster);
+
+            // =========================================================================
+            // 🔍 IMPROVED AUTO-TAGGING ENGINE (COMMISSION & SALES)
+            // =========================================================================
+            const cleanNarration = (t.narration || "").toLowerCase();
+            const matchedLedgerName = (match.name || "").toLowerCase();
+            
+            const commKeywords = ['comm', 'broker', 'trail', 'incentive', 'upfront'];
+            
+            let isComm = false;
+            let isSale = false;
+            
+            if (t.type === 'RECEIPT') {
+                // Rule A: Does the bank narration contain a keyword? (e.g., "TRAIL COMM")
+                const narrationHit = commKeywords.some(k => cleanNarration.includes(k));
+                
+                // Rule B: Did the Ledger Matcher guess a commission or Mutual Fund ledger?
+                const ledgerHit = matchedLedgerName.includes('commission') || 
+                                  matchedLedgerName.includes('brokerage') ||
+                                  matchedLedgerName.includes('mutual fund'); 
+                
+                isComm = narrationHit || ledgerHit;
+
+                // Rule C: Auto-Cascade logic with Split-GST Detection
+                if (isComm) {
+                    const txDate = new Date(t.date);
+
+                    if (!amcTracker[matchedLedgerName]) {
+                        // First time seeing a commission for this AMC (Base Commission)
+                        amcTracker[matchedLedgerName] = txDate;
+                        isSale = true; 
+                    } else {
+                        const lastDate = amcTracker[matchedLedgerName];
+                        
+                        // Calculate difference in days
+                        const diffTime = Math.abs(txDate - lastDate);
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        if (diffDays <= 30) {
+                            // Secondary drop within 30 days -> This is the GST portion
+                            isSale = false;
+                        } else {
+                            // Over 30 days -> This is a new month's Base Commission
+                            amcTracker[matchedLedgerName] = txDate;
+                            isSale = true;
+                        }
+                    }
+                } else if (matchedLedgerName.includes('lic') || matchedLedgerName.includes('insurance')) {
+                    // Catching Insurance/LIC as a Sale (but not a commission) based on your logs.
+                    isSale = true; 
+                }
+            }
+            // =========================================================================
+
+            return { 
+                id: index, // Temporary UI ID
+                date: t.date,
+                type: t.type,
+                amount: t.amount,
+                narration: t.narration, 
+                suggestedLedger: match.name, 
+                confidence: match.confidence,
+                status: 'PENDING', // 'PENDING', 'CORRECT', 'INCORRECT'
+                correctedLedger: "",
+                isCommission: isComm, 
+                isSales: isSale       
+            };
+        });
+
+        // We return the ledger names as well so the UI dropdown can use them
+        const ledgerNames = ledgerMaster.map(l => l.name).sort();
+
+        res.json({ success: true, count: results.length, data: results, ledgers: ledgerNames });
+
+    } catch (error) { 
+        console.error("MATCHER TEST ERROR:", error);
+        res.status(500).json({ success: false, message: error.message }); 
+    }
 };

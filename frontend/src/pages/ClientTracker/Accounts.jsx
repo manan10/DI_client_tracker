@@ -3,6 +3,7 @@ import Navbar from "../../components/Navbar";
 import AccountBalances from "../../components/Accounts/AccountBalances";
 import Commissions from "../../components/Accounts/Commissions";
 import AuditManager from "../../components/Accounts/AuditManager";
+// import MatcherTestBench from "../../components/Accounts/MatcherTestBench";
 import AccessDenied from "../../components/AccessDenied";
 import { useAuth } from "../../hooks/useAuth";
 import { Wallet, PieChart, FileText, Lock } from "lucide-react";
@@ -10,12 +11,13 @@ import { toast } from "sonner";
 
 const Accounts = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("audit");
+  const [activeTab, setActiveTab] = useState("balances");
 
   const tabs = [
-    { id: "audit", name: "Tally Sync", icon: FileText, isLocked: false },
+    { id: "audit", name: "Tally Sync", icon: FileText, isLocked: true },
     { id: "balances", name: "Account Balances", icon: Wallet, isLocked: false },
     { id: "commissions", name: "Commissions", icon: PieChart, isLocked: false },
+    // { id: "matcher", name: "Matcher Test Bench", icon: FileText, isLocked: false },
   ];
 
   const handleTabClick = (tab) => {
@@ -106,6 +108,7 @@ const Accounts = () => {
           {activeTab === "balances" && <AccountBalances />}
           {activeTab === "commissions" && <Commissions />}
           {activeTab === "audit" && <AuditManager />}
+          {/* {activeTab === "matcher" && <MatcherTestBench />} */}
         </div>
       </main>
     </div>

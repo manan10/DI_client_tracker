@@ -1,32 +1,42 @@
 const mongoose = require('mongoose');
 
+const BankSummarySchema = new mongoose.Schema({
+  tallyLedgerName: { type: String, required: true },
+  accountId: { type: mongoose.Schema.Types.ObjectId, ref: 'Account', required: false },
+  openingBalance: { type: Number, default: 0 },
+  closingBalance: { type: Number, default: 0 },
+  totalReceipts: { type: Number, default: 0 },
+  totalPayments: { type: Number, default: 0 },
+  receiptCount: { type: Number, default: 0 },
+  paymentCount: { type: Number, default: 0 }
+});
+
 const AuditSchema = new mongoose.Schema({
-  // LOCAL CONTEXT (Optional for new Tally-only sessions)
-  accountId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Account', 
-    required: false // Changed to false to support Tally-first initialization
-  },
   arnId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Arn',
-    required: true // Still required to keep the Client/ARN context
+    required: true
   },
 
-  // TALLY BRIDGE CONTEXT (The new Source of Truth)
+  // TALLY BRIDGE CONTEXT (The Audit is now tied strictly to the Company)
   tallyCompanyName: { 
     type: String, 
     required: true,
     trim: true 
   },
-  tallyLedgerName: { 
+  
+  // ARRAYS to hold multiple banks within this single Company Audit
+  tallyLedgerNames: [{ 
     type: String, 
-    required: true,
     trim: true 
-  },
+  }],
+  accountIds: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Account' 
+  }],
 
   // PERIOD & STATUS
-  month: { type: Number, required: true }, // 1-12
+  month: { type: Number, required: true },
   year: { type: Number, required: true },
   status: { 
     type: String, 
@@ -36,31 +46,26 @@ const AuditSchema = new mongoose.Schema({
 
   // DATA TRACKING & BALANCING METRICS
   sourceFiles: [String], 
+  
+  // Isolated math per bank ledger
+  bankSummaries: [BankSummarySchema],
+
+  // Grand Totals across all banks for this company month
   summary: {
-    openingBalance: { 
-      type: Number, 
-      default: 0 // Reverse-engineered from first transaction row: e.g., 37424.00
-    },
-    closingBalance: { 
-      type: Number, 
-      default: 0 // Extracted straight from final row running balance: e.g., 43333.65
-    },
     totalReceipts: { type: Number, default: 0 },
     totalPayments: { type: Number, default: 0 },
     receiptCount: { type: Number, default: 0 },
     paymentCount: { type: Number, default: 0 }
   },
+  
   lastModified: { 
     type: Date, 
     default: Date.now 
   }
 }, { timestamps: true });
 
-// UPDATED INDEXES
-// Unique index to prevent duplicate sessions for the same Tally Ledger in a specific period
-AuditSchema.index({ tallyCompanyName: 1, tallyLedgerName: 1, month: 1, year: 1, status: 1 }, { unique: true });
-
-// Index for local lookups
-AuditSchema.index({ accountId: 1, month: 1, year: 1 });
+// UPDATED INDEX
+// Unique index guarantees only ONE draft session per Company per Period
+AuditSchema.index({ tallyCompanyName: 1, month: 1, year: 1, status: 1 }, { unique: true });
 
 module.exports = mongoose.model('Audit', AuditSchema);

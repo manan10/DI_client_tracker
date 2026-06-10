@@ -13,6 +13,7 @@ router.post('/:auditId/finalize', auditController.finalizeAudit);
 router.put('/:auditId/sales-checkpoint', auditController.saveSalesCheckpoint);
 
 // --- Bulk Upload & Parsing ---
+router.post('/test-matcher', upload.single('file'), auditController.testLedgerMatching);
 router.post('/upload-bulk', upload.array('files', 10), auditController.processBulkStatements);
 
 // --- Transaction Management ---
@@ -22,4 +23,4 @@ router.patch('/transactions/:id', auditController.updateTransaction);
 // --- Cleanup ---
 router.delete('/:auditId', auditController.deleteAuditSession);
 
-module.exports = router;    
+module.exports = router;

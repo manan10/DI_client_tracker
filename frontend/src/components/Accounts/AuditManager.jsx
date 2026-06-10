@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Plus, ArrowRight, CheckCircle2, Inbox, 
   ArrowUpRight, ArrowDownLeft, RefreshCw, WifiOff, 
-  Loader2, Check, Building2, Activity, ShieldCheck, Trash2, AlertTriangle
+  Loader2, Check, Building2, Activity, ShieldCheck, Trash2, AlertTriangle, Layers
 } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
 import { tallyTemplates } from '../../utils/tallyTemplates'; 
@@ -35,8 +35,9 @@ const AuditManager = () => {
   const currentMonth = now.getMonth() === 0 ? 12 : now.getMonth();
   const currentYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
 
+  // UPDATED: Shifted from single 'account' focus to 'tallyCompanyName' focus
   const [selection, setSelection] = useState({
-    arn: null, account: null, month: currentMonth, year: currentYear,
+    arn: null, tallyCompanyName: null, month: currentMonth, year: currentYear,
     files: [], stagedData: null, audit: null, verifiedIds: [], isFreshStart: false
   });
 
@@ -84,9 +85,9 @@ const AuditManager = () => {
       const res = await request(`/audit/${auditToDelete}`, 'DELETE');
       if (res?.success) {
         setAudits(prev => prev.filter(a => a._id !== auditToDelete));
-        toast.success("Audit session deleted successfully.");
+        toast.success("Company dossier deleted successfully.");
       } else {
-        toast.error("Failed to delete audit session.");
+        toast.error("Failed to delete dossier.");
       }
     } catch (err) {
       console.error("Delete Audit Error:", err);
@@ -124,26 +125,17 @@ const AuditManager = () => {
         
         const ledgerRes = await request("/tally/proxy", "POST", { xml: tallyTemplates.getLedgers(firm) });
         
- // =========================================================================
-        // DEEP PARSING REGEX: Extracting Billing & Tax details from the Master XML
-        // =========================================================================
         const ledgerMatches = [...ledgerRes.matchAll(/<LEDGER NAME="([^"]*)"[^>]*>([\s\S]*?)<\/LEDGER>/g)];
         
         const mapped = ledgerMatches.map(m => {
             const name = tallyTemplates.unescapeXml(m[1]);
-            const block = m[2]; // The entire XML chunk for this specific ledger
+            const block = m[2]; 
             
-            // Extract standard parent group
             const parentMatch = block.match(/<PARENT[^>]*>(.*?)<\/PARENT>/i);
-            
-            // Extract Tax Details (Tally uses LEDSTATENAME for ledgers, but we check both)
             const stateMatch = block.match(/<(?:LED)?STATENAME[^>]*>(.*?)<\/(?:LED)?STATENAME>/i);
             const gstinMatch = block.match(/<PARTYGSTIN[^>]*>(.*?)<\/PARTYGSTIN>/i);
-            
-            // Extract Country (Tally uses COUNTRYOFRESIDENCE or COUNTRYNAME)
             const countryMatch = block.match(/<COUNTRY(?:NAME|OFRESIDENCE)[^>]*>(.*?)<\/COUNTRY(?:NAME|OFRESIDENCE)>/i);
             
-            // Extract Address (Tally allows multiple <ADDRESS> tags per ledger)
             const addressMatches = [...block.matchAll(/<ADDRESS[^>]*>(.*?)<\/ADDRESS>/gi)];
             const addressList = addressMatches.map(a => tallyTemplates.unescapeXml(a[1]));
 
@@ -157,7 +149,6 @@ const AuditManager = () => {
             };
         });
 
-        // Send enriched payload to the backend
         await request("/ledgers/bulk-sync", "POST", { 
             ledgers: mapped, 
             company: firm,
@@ -222,7 +213,8 @@ const AuditManager = () => {
           </div>
 
           <button 
-            onClick={() => { setSelection({ ...selection, isFreshStart: true, account: null }); setIsWizardOpen(true); }} 
+            // UPDATED: Starting fresh implies clearing out the company context so the user selects anew
+            onClick={() => { setSelection({ ...selection, isFreshStart: true, tallyCompanyName: null, audit: null }); setIsWizardOpen(true); }} 
             className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white px-5 md:px-12 py-3 md:py-6 rounded-xl md:rounded-4xl font-black uppercase text-[10px] md:text-xs tracking-[0.2em] md:hover:scale-105 active:scale-95 transition-all shadow-lg md:shadow-2xl flex justify-center items-center shrink-0"
           >
             <Plus size={16} md:size={20} strokeWidth={4} className="inline mr-2 md:mr-3" /> Start Audit
@@ -311,7 +303,17 @@ const AuditManager = () => {
                   isOnline={isTallyOnline} 
                   onAction={() => {
                     if (audit.status === 'EXPORTED') return;
-                    setSelection({ audit, account: audit.accountId, arn: audit.arnId, month: audit.month, year: audit.year, stagedData: null, verifiedIds: [], isFreshStart: false });
+                    // UPDATED: Pass tallyCompanyName and the core audit data downstream
+                    setSelection({ 
+                      audit, 
+                      tallyCompanyName: audit.tallyCompanyName, 
+                      arn: audit.arnId, 
+                      month: audit.month, 
+                      year: audit.year, 
+                      stagedData: null, 
+                      verifiedIds: [], 
+                      isFreshStart: false 
+                    });
                     setIsWizardOpen(true);
                   }}
                   onDelete={() => setAuditToDelete(audit._id)} 
@@ -373,9 +375,9 @@ const AuditManager = () => {
               <div className="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center mb-4 border border-rose-100 dark:border-rose-500/20 text-rose-500">
                 <AlertTriangle size={20} strokeWidth={2.5} />
               </div>
-              <h3 className="text-lg font-[1000] text-slate-900 dark:text-white uppercase tracking-tight mb-2">Delete Audit Session</h3>
+              <h3 className="text-lg font-[1000] text-slate-900 dark:text-white uppercase tracking-tight mb-2">Delete Dossier</h3>
               <p className="text-xs font-bold text-slate-500 leading-relaxed mb-6">
-                Are you sure you want to permanently delete this audit session? This action cannot be undone and will erase all staged matching data.
+                Are you sure you want to permanently delete this company dossier? This action cannot be undone and will erase all synced bank ledgers for this month.
               </p>
               <div className="flex items-center gap-3">
                 <button 
@@ -406,6 +408,7 @@ const AuditManager = () => {
 const AuditStrip = ({ audit, onAction, onDelete, isOnline }) => {
   const isDraft = audit?.status === 'DRAFT' || audit?.status === 'Draft';
 
+  // Summaries are now properly calculated at the grand-total company level natively by the backend
   const processedSummary = useMemo(() => {
     if (audit?.summary && Object.keys(audit.summary).length > 0) {
       return {
@@ -414,20 +417,6 @@ const AuditStrip = ({ audit, onAction, onDelete, isOnline }) => {
         outflow: audit.summary.totalPayments || 0
       };
     }
-
-    const txList = (audit?.stagedData?.transactions || []).filter(t => t && t.narration !== "EMPTY_FILE_MARKER");
-    
-    if (txList.length > 0) {
-      const receipts = txList.filter(t => t.type === 'RECEIPT');
-      const payments = txList.filter(t => t.type === 'PAYMENT');
-      
-      return {
-        count: txList.length,
-        inflow: receipts.reduce((sum, t) => sum + (t.amount || 0), 0),
-        outflow: payments.reduce((sum, t) => sum + (t.amount || 0), 0),
-      };
-    }
-
     return { count: 0, inflow: 0, outflow: 0 };
   }, [audit]);
 
@@ -452,19 +441,33 @@ const AuditStrip = ({ audit, onAction, onDelete, isOnline }) => {
         <div className={`w-1.5 self-stretch rounded-full shrink-0 ${isDraft ? 'bg-amber-400' : 'bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]'}`} />
         
         <div className="flex-1 min-w-0 text-left py-0.5">
-          <h3 className="text-sm md:text-xl font-[1000] uppercase text-slate-900 dark:text-white tracking-tight italic wrap-break-word leading-tight md:mb-1.5">
+          <h3 className="text-sm md:text-xl font-[1000] uppercase text-slate-900 dark:text-white tracking-tight italic wrap-break-word leading-tight md:mb-1.5 flex items-center gap-2">
             {audit?.tallyCompanyName || audit?.clientName || "Client Accounts A/C"}
+            <span className="text-[9px] font-black px-2 py-0.5 bg-slate-100 dark:bg-white/10 text-slate-500 rounded-md tracking-widest not-italic">
+              {audit?.month || 1}/{audit?.year || 2026}
+            </span>
           </h3>
-          <p className="text-[9px] md:text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate mt-0.5 md:mt-0">
-            {audit?.arnId?.nickname || "Direct Brokerage A/C"} <span className="mx-1 text-slate-200 dark:text-slate-800">•</span> {audit?.month || 1}/{audit?.year || 2026}
-          </p>
+          
+          {/* UPDATED: Added a visual array of all Bank Ledgers currently inside this Company Dossier */}
+          <div className="flex flex-wrap items-center gap-2 mt-2 md:mt-3">
+            <Layers size={12} className="text-slate-400" />
+            {audit?.tallyLedgerNames && audit.tallyLedgerNames.length > 0 ? (
+              audit.tallyLedgerNames.map((bank, i) => (
+                <div key={i} className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[8px] font-black uppercase tracking-widest">
+                  {bank}
+                </div>
+              ))
+            ) : (
+              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest italic">No Ledgers Synced Yet</span>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2 w-full lg:w-auto lg:flex lg:flex-row items-center justify-between lg:justify-end lg:gap-10 shrink-0 select-none bg-slate-50 dark:bg-white/5 lg:bg-transparent rounded-xl p-2.5 lg:p-0 my-1 lg:my-0 border border-slate-100 dark:border-transparent lg:border-none">
         
         <div className="text-center lg:text-right min-w-0 flex flex-col items-center lg:items-end">
-          <p className="text-[7px] md:text-[9px] font-black text-slate-400 uppercase mb-0.5 md:mb-1 italic tracking-widest">Entries</p>
+          <p className="text-[7px] md:text-[9px] font-black text-slate-400 uppercase mb-0.5 md:mb-1 italic tracking-widest">Global Entries</p>
           <p className="text-xs md:text-lg font-[1000] text-slate-900 dark:text-white italic tabular-nums leading-none">
             {processedSummary.count}
           </p>
@@ -473,7 +476,7 @@ const AuditStrip = ({ audit, onAction, onDelete, isOnline }) => {
         <div className="text-center lg:text-right min-w-0 flex flex-col items-center lg:items-end border-l border-slate-200 dark:border-white/10 lg:border-none lg:pl-10 lg:border-l lg:border-slate-100 lg:dark:border-white/5">
           <div className="flex items-center justify-center lg:justify-end gap-1 mb-0.5 md:mb-1">
             <ArrowDownLeft size={10} md:size={14} className="text-emerald-500 shrink-0" />
-            <span className="text-[7px] md:text-[9px] font-black text-slate-400 uppercase tracking-wider truncate">Inflow</span>
+            <span className="text-[7px] md:text-[9px] font-black text-slate-400 uppercase tracking-wider truncate">Total Inflow</span>
           </div>
           <p className="text-xs md:text-lg font-[1000] italic leading-none tabular-nums text-emerald-600 truncate">
             ₹{formatINRValue(processedSummary.inflow)}
@@ -483,7 +486,7 @@ const AuditStrip = ({ audit, onAction, onDelete, isOnline }) => {
         <div className="text-center lg:text-right min-w-0 flex flex-col items-center lg:items-end border-l border-slate-200 dark:border-white/10 lg:border-none lg:pl-10">
           <div className="flex items-center justify-center lg:justify-end gap-1 mb-0.5 md:mb-1">
             <ArrowUpRight size={10} md:size={14} className="text-rose-500 shrink-0" />
-            <span className="text-[7px] md:text-[9px] font-black text-slate-400 uppercase tracking-wider truncate">Outflow</span>
+            <span className="text-[7px] md:text-[9px] font-black text-slate-400 uppercase tracking-wider truncate">Total Outflow</span>
           </div>
           <p className="text-xs md:text-lg font-[1000] italic leading-none tabular-nums text-rose-600 truncate">
             ₹{formatINRValue(processedSummary.outflow)}
@@ -491,7 +494,7 @@ const AuditStrip = ({ audit, onAction, onDelete, isOnline }) => {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 w-full lg:w-auto shrink-0">
+      <div className="flex items-center gap-2 w-full lg:w-auto shrink-0 mt-2 lg:mt-0">
         
         <button
           onClick={(e) => {
@@ -511,7 +514,7 @@ const AuditStrip = ({ audit, onAction, onDelete, isOnline }) => {
         }`}>
           {isDraft ? (
             isOnline ? (
-              <>Open <ArrowRight size={12} md:size={16} strokeWidth={3} /></>
+              <>Open Dossier <ArrowRight size={12} md:size={16} strokeWidth={3} /></>
             ) : (
               <>Tally Offline</>
             )

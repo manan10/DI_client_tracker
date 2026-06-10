@@ -46,6 +46,10 @@ const TransactionSchema = new mongoose.Schema({
     type: Boolean, 
     default: false 
   },
+  isSales: {                  
+    type: Boolean, 
+    default: false 
+  },
   isMarkedForManualEntry: { 
     type: Boolean, 
     default: false 

@@ -21,7 +21,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
   const [masterLedgers, setMasterLedgers] = useState([]);
 
   const [step, setStep] = useState(() => {
-    if (initialSelection?.audit || (initialSelection?.account && initialSelection?.stagedData)) return 3;
+    if (initialSelection?.audit || (initialSelection?.tallyCompanyName && initialSelection?.stagedData)) return 3;
     return 1;
   });
 
@@ -36,10 +36,11 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
         arnId: initialSelection.arnId || auditObj.arnId?._id || auditObj.arnId,
         tallyCompany: initialSelection.tallyCompany || auditObj.tallyCompanyName,
         tallyLedger: initialSelection.tallyLedger || auditObj.tallyLedgerName,
+        stagedFiles: {}, 
         isFreshStart: false
       };
     }
-    return { ...initialSelection };
+    return { ...initialSelection, stagedFiles: {} };
   });
 
   const fetchMasterData = useCallback(async () => {
@@ -50,8 +51,8 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
       setArns(fetchedArns);
       setAccounts(fetchedAccounts);
 
-      if (selection?.audit) {
-        const targetAccountId = selection.audit.accountId?._id || selection.audit.accountId;
+      if (selection?.audit && selection.audit.accountIds?.length > 0) {
+        const targetAccountId = selection.audit.accountIds[0]?._id || selection.audit.accountIds[0];
         const targetAccountObj = fetchedAccounts.find(a => a._id === targetAccountId);
         setSelection(prev => ({ ...prev, account: targetAccountObj || prev.account }));
       }
@@ -79,7 +80,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
 
   useEffect(() => {
     const activeAuditId = selection.audit?._id;
-    if (step === 3 && activeAuditId && !selection.stagedData?.transactions) {
+    if (step >= 3 && activeAuditId && !selection.stagedData?.transactions) {
       const recoverDraftTransactions = async () => {
         try {
           const res = await request(`/audit/${activeAuditId}/transactions`);
@@ -99,59 +100,90 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
   }, [step, selection.audit?._id, selection.stagedData, request]);
 
   const validateAndProceed = useCallback(() => {
-    const currentAccountId = selection.account?._id || (typeof selection.account === 'string' ? selection.account : null);
     const duplicate = audits?.find(a => {
-      const auditAccId = a.accountId?._id || a.accountId;
-      return auditAccId === currentAccountId && 
+      return a.tallyCompanyName === selection.tallyCompany && 
              a.month === parseInt(selection.month) && 
-             a.year === parseInt(selection.year) &&
-             a.companyName === selection.tallyCompany &&          
-             a.bankLedgerName === selection.tallyLedger;          
+             a.year === parseInt(selection.year);
     });
 
     if (duplicate) {
-      if (duplicate.status === 'EXPORTED') return toast.error("This period is already finalized.");
-      const fullAccount = allAccounts.find(a => a._id === currentAccountId) || duplicate.accountId;
+      if (duplicate.status === 'EXPORTED') return toast.error("This period is already finalized for this company.");
+      
       const resolvedArnId = duplicate.arnId?._id || duplicate.arnId || selection.arnId;
       setSelection(prev => ({ 
-        ...prev, audit: duplicate, account: fullAccount, arnId: resolvedArnId,
-        tallyCompany: prev.tallyCompany || duplicate.tallyCompanyName,
-        tallyLedger: prev.tallyLedger || duplicate.tallyLedgerName, isFreshStart: false 
+        ...prev, 
+        audit: duplicate, 
+        arnId: resolvedArnId,
+        tallyCompany: duplicate.tallyCompanyName, 
+        isFreshStart: false 
       }));
-      setStep(3);
-      return toast.info("Resuming draft session.");
+
+      if (duplicate.sourceFiles && duplicate.sourceFiles.length > 0) {
+        setStep(3);
+        return toast.info("Resuming active company dossier.");
+      } else {
+        setStep(2);
+        return toast.info("Company dossier initialized. Please upload bank statements.");
+      }
     }
     setStep(2);
-  }, [audits, selection, allAccounts]);
+  }, [audits, selection]);
 
-  const handleFileUpload = async (files) => {
-    if (!files || files.length === 0) return;
-    const isSetupComplete = selection.tallyCompany && selection.account?.name && selection.arnId;
-    if (!isSetupComplete) return toast.error("Bridge Error: This Tally Company isn't linked to a Client ARN.");
+  const handleBatchFileUpload = useCallback(async () => {
+    const stagedFileMap = selection.stagedFiles || {};
+    const bankLedgersToProcess = Object.keys(stagedFileMap);
+    
+    if (bankLedgersToProcess.length === 0) return;
+    if (!selection.tallyCompany || !selection.arnId) {
+       return toast.error("Bridge Error: Missing Company or ARN context.");
+    }
 
     setIsProcessing(true);
-    const formData = new FormData();
-    files.forEach(f => formData.append('files', f));
-    formData.append('tallyCompany', selection.tallyCompany);
-    formData.append('tallyLedger', selection.account.name);
-    formData.append('arnId', selection.arnId); 
-    formData.append('month', selection.month);
-    formData.append('year', selection.year);
-    if (selection.account?._id) formData.append('accountId', selection.account._id);
+    let cumulativeTransactions = [];
+    let updatedAuditObj = selection.audit;
 
     try {
-      const res = await request('/audit/upload-bulk', 'POST', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      if (res?.success) {
-        setSelection(prev => ({ 
-          ...prev, audit: res.audit, stagedData: { transactions: res.transactions },
-          verifiedIds: res.transactions.filter(t => t.isChecked).map(t => t._id)
-        }));
-        setStep(3); 
-        toast.success("Statement Processed");
+      for (const bankName of bankLedgersToProcess) {
+        const files = stagedFileMap[bankName];
+        if (!files || files.length === 0) continue;
+
+        const matchedAccount = allAccounts.find(a => a.tallyMapping?.companyName === selection.tallyCompany && a.tallyMapping?.ledgerName === bankName) 
+                            || allAccounts.find(a => a.name === bankName);
+
+        const formData = new FormData();
+        files.forEach(f => formData.append('files', f));
+        formData.append('tallyCompany', selection.tallyCompany);
+        formData.append('tallyLedger', bankName);
+        formData.append('arnId', selection.arnId); 
+        formData.append('month', selection.month);
+        formData.append('year', selection.year);
+        if (matchedAccount?._id) formData.append('accountId', matchedAccount._id);
+
+        const res = await request('/audit/upload-bulk', 'POST', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+        
+        if (res?.success) {
+          cumulativeTransactions = [...cumulativeTransactions, ...res.transactions];
+          updatedAuditObj = res.audit;
+        }
       }
-    } catch (err) { toast.error(err.message || "Upload failed"); } 
-    finally { setIsProcessing(false); }
-  };
+
+      setSelection(prev => ({ 
+        ...prev, 
+        audit: updatedAuditObj, 
+        stagedData: { transactions: cumulativeTransactions }, 
+        verifiedIds: cumulativeTransactions.filter(t => t.isChecked).map(t => t._id),
+        stagedFiles: {} 
+      }));
+      
+      setStep(3); 
+      toast.success(`Dossier populated with ${bankLedgersToProcess.length} bank(s).`);
+
+    } catch (err) { 
+      toast.error(err.message || "Batch upload encountered an error."); 
+    } finally { 
+      setIsProcessing(false); 
+    }
+  }, [selection, allAccounts, request, setStep]);
 
   const handleSalesValidationComplete = useCallback(async () => {
     setIsProcessing(true);
@@ -180,7 +212,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
     setIsProcessing(true);
     try {
       await request(`/audit/${selection.audit._id}/finalize`, 'POST');
-      toast.success("Audit finalized securely!");
+      toast.success("Dossier finalized securely!");
       if (refreshData) refreshData();
       onClose();
     } catch { toast.error("Finalization failed mid-way."); } 
@@ -188,15 +220,19 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
   }, [selection.audit, request, refreshData, onClose]);
 
   const steps = [
-    { id: 1, label: 'Entity Context', desc: 'Company Selection', icon: <Zap size={14} className="md:w-3.5 md:h-3.5" />, enabled: true },
-    { id: 2, label: 'Data Ingestion', desc: 'Bank Statement Upload', icon: <HardDriveUpload size={14} className="md:w-3.5 md:h-3.5" />, enabled: !!(selection.tallyCompany && selection.account) },
-    { id: 3, label: 'Verification', desc: 'Ledger Matching', icon: <ClipboardCheck size={14} className="md:w-3.5 md:h-3.5" />, enabled: !!selection.stagedData },
-    { id: 4, label: 'Sales Matrix', desc: 'Verify Commissions', icon: <ClipboardCheck size={14} className="md:w-3.5 md:h-3.5" />, enabled: !!selection.stagedData },
-    { id: 5, label: 'Summary', desc: 'Pre-Flight Check', icon: <Send size={14} className="md:w-3.5 md:h-3.5" />, enabled: !!selection.stagedData },
-    { id: 6, label: 'Audit Result', desc: 'Sync Status', icon: <CheckCircle2 size={14} className="md:w-3.5 md:h-3.5" />, enabled: step === 6 },
+    { id: 1, label: 'Entity Context' },
+    { id: 2, label: 'Data Ingestion' },
+    { id: 3, label: 'Verification' },
+    { id: 4, label: 'Sales Matrix' },
+    { id: 5, label: 'Summary' },
+    { id: 6, label: 'Audit Result' },
   ];
 
-  const isStep3Valid = useMemo(() => (selection.stagedData?.transactions || []).some(t => t.isChecked), [selection.stagedData]);
+  const isStep3Valid = useMemo(() => {
+    const txs = (selection.stagedData?.transactions || []).filter(t => t.narration !== "EMPTY_FILE_MARKER");
+    if (txs.length === 0) return false;
+    return txs.every(t => (selection.verifiedIds || []).includes(t._id));
+  }, [selection.stagedData, selection.verifiedIds]);
   
   const isStep4Valid = useMemo(() => {
     const txs = selection.stagedData?.transactions || [];
@@ -208,61 +244,93 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
 
   const footerConfig = useMemo(() => {
     switch (step) {
-      case 1: return { label: selection.stagedData ? "Resume Workspace" : "Next: Upload Statement", disabled: !selection.tallyCompany || !selection.account, action: validateAndProceed };
-      case 2: return { label: "Awaiting Source", disabled: true, action: () => {} };
-      case 3: return { label: "Next: Sales Verification", disabled: !isStep3Valid, action: () => setStep(4) };
-      case 4: return { label: isProcessing ? "Saving Checkpoint..." : "Verify & Lock Sales Ledger", disabled: isProcessing || !isStep4Valid, action: handleSalesValidationComplete };
-      case 5: return { label: isTallyOnline ? "Commit Vouchers" : "Bridge Offline", disabled: !isTallyOnline, action: () => { setIsSyncComplete(false); setStep(6); } };
-      case 6: return { 
-        label: isProcessing ? "Finalizing Audit..." : isSyncComplete ? "Finalize & Close Audit" : "Awaiting Manual Sync", 
-        disabled: isProcessing || !isSyncComplete, 
-        action: handleFinalizeAudit 
-      };
-      default: return { label: "Proceed", action: () => setStep(s => s + 1) };
+      case 1: 
+        return { label: selection.stagedData ? "Resume Dossier" : "Next: Data Ingestion", disabled: !selection.tallyCompany, action: validateAndProceed };
+      case 2: {
+        const banksStagedCount = Object.keys(selection.stagedFiles || {}).length;
+        return {
+          label: isProcessing ? "Pushing to Tally..." : (banksStagedCount > 0 ? `Process Statements (${banksStagedCount} Banks)` : "Awaiting Uploads"),
+          disabled: banksStagedCount === 0 || isProcessing,
+          action: handleBatchFileUpload
+        };
+      }
+      case 3: 
+        return { label: "Next: Sales Verification", disabled: !isStep3Valid, action: () => setStep(4) };
+      case 4: 
+        return { label: isProcessing ? "Saving Checkpoint..." : "Verify & Lock Sales Ledger", disabled: isProcessing || !isStep4Valid, action: handleSalesValidationComplete };
+      case 5: 
+        return { label: isTallyOnline ? "Commit Vouchers" : "Bridge Offline", disabled: !isTallyOnline, action: () => { setIsSyncComplete(false); setStep(6); } };
+      case 6: 
+        return { label: isProcessing ? "Finalizing Audit..." : isSyncComplete ? "Finalize & Close Dossier" : "Awaiting Manual Sync", disabled: isProcessing || !isSyncComplete, action: handleFinalizeAudit };
+      default: 
+        return { label: "Proceed", action: () => setStep(s => s + 1) };
     }
-  }, [step, selection, isProcessing, isTallyOnline, isStep3Valid, isStep4Valid, isSyncComplete, validateAndProceed, handleSalesValidationComplete, handleFinalizeAudit]);
+  }, [step, selection, isProcessing, isTallyOnline, isStep3Valid, isStep4Valid, isSyncComplete, validateAndProceed, handleBatchFileUpload, handleSalesValidationComplete, handleFinalizeAudit]);
 
   return (
     <>
       <style dangerouslySetInnerHTML={{__html: `.no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }`}} />
-      <div className="fixed inset-0 z-100 flex items-center justify-center p-0 md:p-4 backdrop-blur-2xl bg-slate-950/80 animate-in fade-in duration-300">
-        <div className="relative w-full h-full md:max-w-[95vw] lg:max-w-350 md:h-180 bg-white dark:bg-[#08090A] border-0 md:border border-slate-200 dark:border-white/10 md:rounded-2xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden text-left">
+      
+      <div className="fixed inset-0 z-100 flex animate-in fade-in duration-300 bg-slate-900/60 backdrop-blur-sm">
+        <div className="w-full h-full flex flex-col overflow-hidden text-left bg-white dark:bg-[#050607]">
           
-          <div className="px-4 md:px-12 py-4 md:py-8 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-white dark:bg-black/20 shrink-0 overflow-x-auto no-scrollbar">
-            <div className="flex-1 md:flex-none flex items-center justify-between md:justify-start w-full md:w-auto md:gap-10 pr-4 md:pr-0">
+          {/* =====================================================================
+              FANCIER PREMIUM BREADCRUMB HEADER
+              ===================================================================== */}
+          <div className="px-6 md:px-10 py-5 lg:py-6 border-b-2 border-slate-100 dark:border-white/5 flex justify-between items-center bg-white dark:bg-[#08090A] shrink-0 z-30 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)]">
+            <div className="flex-1 flex items-center gap-2 max-w-5xl">
               {steps.map((s, idx) => {
                 const isActive = step === s.id;
                 const isDone = step > s.id;
                 if (s.id === 6 && step < 6 && window.innerWidth < 768) return null;
+                
                 return (
-                  <div key={s.id} className={`flex items-center md:gap-5 ${idx !== steps.length - 1 ? 'flex-1 md:flex-none' : ''}`}>
-                    <div className={`flex items-center md:gap-4 group transition-all shrink-0 ${isActive ? 'text-emerald-600' : isDone ? 'text-slate-900 dark:text-white' : 'text-slate-300'}`}>
-                      <div className={`w-8 h-8 md:w-9 md:h-9 rounded-lg md:rounded-xl flex items-center justify-center border-2 transition-all ${isActive ? 'border-emerald-500 bg-emerald-500/10 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : isDone ? 'border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white dark:text-black' : 'border-slate-100 dark:border-white/5'}`}>
-                        {isDone ? <Check size={14} className="md:w-4.5 md:h-4.5" strokeWidth={4} /> : s.icon}
-                      </div>
-                      <div className="hidden xl:flex flex-col -space-y-0.5">
-                        <span className={`text-[11px] font-[1000] uppercase tracking-wider transition-all ${isActive ? 'opacity-100' : 'opacity-60'}`}>{s.label}</span>
-                        <span className="text-[9px] font-black opacity-30 uppercase tracking-tighter">{s.desc}</span>
-                      </div>
+                  <React.Fragment key={s.id}>
+                    <div className="flex flex-col relative group shrink-0">
+                       <div className={`flex items-center gap-3 transition-all duration-300 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : isDone ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+                         <div className={`w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center text-[11px] font-[1000] border-2 transition-all duration-500 ${
+                           isActive 
+                             ? 'border-emerald-500 bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] ring-4 ring-emerald-500/20 scale-110' 
+                             : isDone 
+                               ? 'border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white dark:text-black' 
+                               : 'border-dashed border-slate-300 dark:border-white/20 bg-transparent'
+                         }`}>
+                           {isDone ? <Check size={14} strokeWidth={4} /> : s.id}
+                         </div>
+                         <span className={`hidden lg:block text-[11px] font-[1000] uppercase tracking-widest transition-all duration-500 ${isActive ? 'opacity-100 text-emerald-600 dark:text-emerald-400 translate-x-1' : isDone ? 'opacity-100' : 'opacity-40'}`}>
+                           {s.label}
+                         </span>
+                       </div>
                     </div>
-                    {idx !== steps.length - 1 && <div className="flex-1 md:flex-none md:w-10 h-px bg-slate-200 dark:bg-white/10 mx-2 md:mx-0 transition-all" />}
-                  </div>
+                    {idx !== steps.length - 1 && (
+                      <div className={`flex-1 h-0.75 rounded-full mx-2 lg:mx-4 transition-all duration-700 ${isDone ? 'bg-slate-900 dark:bg-white' : 'bg-slate-100 dark:bg-white/10'}`} />
+                    )}
+                  </React.Fragment>
                 );
               })}
             </div>
-            <button onClick={onClose} className="shrink-0 p-2 md:p-2.5 bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg md:rounded-xl transition-all active:scale-95 sticky right-0"><X size={18} className="md:w-5 md:h-5" /></button>
+            
+            <button 
+              onClick={onClose} 
+              className="ml-8 shrink-0 p-3 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all active:scale-95 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 cursor-pointer shadow-sm"
+            >
+              <X size={18} strokeWidth={2.5} />
+            </button>
           </div>
 
-          <div className="flex-1 overflow-hidden relative">
+          {/* =====================================================================
+              MAIN CONTENT AREA
+              ===================================================================== */}
+          <div className="flex-1 overflow-hidden relative bg-slate-50/50 dark:bg-[#0B0C10]">
             {loading ? (
-              <div className="h-full flex flex-col items-center justify-center gap-3 md:gap-5 opacity-40">
-                <Loader2 className="animate-spin text-emerald-500" size={32} md:size={44} strokeWidth={1.5} />
-                <span className="text-[9px] md:text-[11px] font-black uppercase tracking-[0.5em] text-center px-4">Establishing Secure Bridge...</span>
+              <div className="h-full flex flex-col items-center justify-center gap-4 opacity-40">
+                <Loader2 className="animate-spin text-emerald-500" size={48} strokeWidth={1.5} />
+                <span className="text-[11px] font-black uppercase tracking-[0.5em] text-center px-4">Establishing Secure Bridge...</span>
               </div>
             ) : (
-              <div className="h-full animate-in fade-in slide-in-from-bottom-2 duration-500 overflow-y-auto no-scrollbar">
-                {step === 1 && <IdentityStep arns={arns} accounts={allAccounts} selection={selection} setSelection={setSelection} />}
-                {step === 2 && <SyncStep selection={selection} onUpload={handleFileUpload} isProcessing={isProcessing} />}
+              <div className="h-full w-full flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-500 overflow-y-auto lg:overflow-hidden no-scrollbar">
+                {step === 1 && <IdentityStep arns={arns} selection={selection} setSelection={setSelection} />}
+                {step === 2 && <SyncStep selection={selection} isProcessing={isProcessing} setSelection={setSelection} />}
                 {step === 3 && <AuditStep selection={selection} setSelection={setSelection} masterLedgers={masterLedgers} />}
                 {step === 4 && <SalesStep selection={selection} setSelection={setSelection} masterLedgers={masterLedgers} arns={arns} />}
                 {step === 5 && <SummaryStep selection={selection} arns={arns} />}
@@ -282,29 +350,61 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
             )}
           </div>
 
-          <div className="px-4 md:px-12 py-4 md:py-8 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 flex flex-row justify-between items-center gap-2 md:gap-0 shrink-0">
-            <div className="flex items-center gap-2 md:gap-5 w-auto">
-              <div className={`w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-2xl flex items-center justify-center transition-all shrink-0 ${isTallyOnline ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-slate-100 dark:bg-white/5 text-slate-400'}`}>
-                  {isTallyOnline ? <Zap size={14} className="md:w-5.5 md:h-5.5" fill="currentColor" /> : <CloudFog size={14} className="md:w-5.5 md:h-5.5" />}
+          {/* =====================================================================
+              PROFESSIONAL FOOTER 
+              ===================================================================== */}
+          <div className="px-6 md:px-10 py-5 lg:py-6 border-t-2 border-slate-100 dark:border-white/5 bg-white dark:bg-[#08090A] flex flex-row justify-between items-center shrink-0 z-30 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.08)] dark:shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.5)]">
+            
+            <div className="flex items-center gap-5">
+              <div className={`flex items-center gap-2.5 px-4 py-2 rounded-xl border-2 ${isTallyOnline ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400 shadow-sm' : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500'}`}>
+                <div className={`w-2.5 h-2.5 rounded-full ${isTallyOnline ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                <span className="text-[10px] font-black uppercase tracking-widest">{isTallyOnline ? 'Tally Connected' : 'Tally Offline'}</span>
               </div>
-              <div className="space-y-0.5 min-w-0">
-                  <p className="hidden md:block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none truncate">Tally Connection: <span className={isTallyOnline ? "text-emerald-500" : "text-rose-500"}>{isTallyOnline ? "Online" : "Offline"}</span></p>
-                  <p className="text-[9px] md:text-[12px] font-[1000] text-slate-900 dark:text-white uppercase italic leading-none truncate max-w-30 md:max-w-xs">
-                      {selection.account ? `${selection.account.name || 'Account Configured'} • ${selection.month}/${selection.year}` : "Ready for selection"}
-                  </p>
+              
+              <div className="hidden md:flex flex-col border-l-2 border-slate-100 dark:border-white/5 pl-5">
+                 <span className="text-[11px] font-[1000] text-slate-900 dark:text-white uppercase tracking-wider leading-none">
+                    {selection.tallyCompany ? selection.tallyCompany : "No Company Selected"}
+                 </span>
+                 {selection.month && (
+                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">
+                     Active Period: {selection.month}/{selection.year}
+                   </span>
+                 )}
               </div>
             </div>
 
-            <div className="flex items-center gap-2 md:gap-6 w-auto">
-                {step > 1 && step < 6 && (
-                  <button onClick={() => setStep(step - 1)} className="px-2 md:px-8 py-2 md:py-4 text-[9px] md:text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-950 dark:hover:text-white transition-all underline underline-offset-4 md:underline-offset-8 decoration-slate-200">Back</button>
+            <div className="flex items-center gap-4">
+                {/* NAV GUARD: Only allow backtracking on permitted steps.
+                    Prevents backing out of Verification (3) to Sync (2)
+                    Prevents backing out of Result (6) to Summary (5) */}
+                {[2, 4, 5].includes(step) && (
+                  <button 
+                    onClick={() => setStep(step - 1)} 
+                    className="px-8 py-4 rounded-xl text-[11px] font-[1000] uppercase tracking-widest text-slate-500 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-all cursor-pointer border border-transparent hover:border-slate-300 dark:hover:border-white/20 active:scale-95"
+                  >
+                    Back
+                  </button>
                 )}
                 
-                {/* FIX: Removed disabled:grayscale and updated disabled:opacity to 50 so it visibly stays green but dim */}
-                <button disabled={footerConfig.disabled} onClick={footerConfig.action} className={`flex items-center justify-center gap-1.5 md:gap-8 hover:bg-opacity-90 text-white px-4 md:px-12 py-3 md:py-5 rounded-lg md:rounded-2xl font-black uppercase text-[9px] md:text-[11px] tracking-widest md:tracking-[0.2em] shadow-lg md:shadow-2xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap ${step === 6 && isSyncComplete ? 'bg-slate-900 dark:bg-white dark:text-slate-900 shadow-slate-900/20 dark:shadow-white/20' : 'bg-emerald-600 shadow-emerald-600/20'}`}>
-                  {isProcessing || (step === 6 && !isSyncComplete) ? <Loader2 size={14} className="md:w-4.5 md:h-4.5 animate-spin" /> : <>{footerConfig.label} <ArrowRight size={12} md:size={16} strokeWidth={3} /></>}
+                <button 
+                  disabled={footerConfig.disabled} 
+                  onClick={footerConfig.action} 
+                  className={`flex items-center justify-center gap-3 px-10 py-4 rounded-xl font-[1000] uppercase text-[11px] lg:text-xs tracking-[0.15em] transition-all duration-300 cursor-pointer select-none
+                    ${footerConfig.disabled 
+                      ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-500 border border-slate-200 dark:border-white/10' 
+                      : step === 6 && isSyncComplete 
+                        ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xl hover:-translate-y-0.5 active:scale-95' 
+                        : 'bg-emerald-500 text-white hover:bg-emerald-400 shadow-[0_8px_20px_-6px_rgba(16,185,129,0.5)] hover:shadow-[0_12px_25px_-8px_rgba(16,185,129,0.6)] active:scale-95 hover:-translate-y-0.5'
+                    }`}
+                >
+                  {isProcessing || (step === 6 && !isSyncComplete) ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <>{footerConfig.label} <ArrowRight size={18} strokeWidth={3} /></>
+                  )}
                 </button>
             </div>
+
           </div>
         </div>
       </div>
