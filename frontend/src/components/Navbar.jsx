@@ -42,7 +42,7 @@ const Navbar = () => {
     { name: 'Docs', path: '/documents', icon: Files, isLocked: true },
     ...(user?.isAdmin ? [{ name: 'Accounts', path: '/accounts', icon: BarChart3 }] : []),
     { name: 'Settings', path: '/settings', icon: SettingsIcon },
-    { name: 'Test', path: '/tally-test', icon: TestTubeIcon, isLocked: false },
+    // { name: 'Test', path: '/tally-test', icon: TestTubeIcon, isLocked: false },
   ];
 
   const mainMobileItems = navItems.slice(0, 5);
