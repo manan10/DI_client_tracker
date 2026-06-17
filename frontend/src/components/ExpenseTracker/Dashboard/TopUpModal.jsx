@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { 
-  X, Check, Wallet, ArrowRight, ArrowLeft, AlertCircle, Landmark 
+  X, Check, Wallet, ArrowRight, ArrowLeft, AlertCircle, Landmark, DownloadCloud, Box
 } from "lucide-react";
 
 // Helper for Indian Currency Formatting during typing
 const formatDisplayAmount = (val) => {
   if (!val) return "";
-  const number = val.replace(/[^0-9]/g, ""); 
+  const number = String(val).replace(/[^0-9]/g, ""); 
   return new Intl.NumberFormat('en-IN').format(number);
 };
 
@@ -19,7 +19,8 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
       const timer = setTimeout(() => {
         setStep(1);
         setLocalError("");
-        setTopUpData({ amount: "", description: "", targetWallet: "" });
+        // Added isExternal to state initialization
+        setTopUpData({ amount: "", description: "", targetWallet: "", isExternal: false });
       }, 300);
       return () => clearTimeout(timer);
     }
@@ -64,7 +65,7 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
       
       <div className="relative w-full max-w-2xl bg-white dark:bg-[#020617] rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col h-[85vh] sm:h-auto sm:max-h-[85vh] overflow-hidden border-t sm:border border-white/10 transition-transform">
         
-        {/* PROGRESS NAVIGATION: Mobile-optimized padding */}
+        {/* PROGRESS NAVIGATION */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-[#0B1120] shrink-0">
           <div className="flex items-center gap-2 sm:gap-4">
             {[1, 2, 3].map((s) => (
@@ -103,6 +104,7 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
             </div>
           )}
 
+          {/* STEP 1: SELECT WALLET */}
           {step === 1 && (
             <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-right-4">
               <div className="text-left">
@@ -132,7 +134,7 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
                       </div>
                     </div>
                     <span className={`text-[10px] sm:text-[11px] font-bold shrink-0 ${w.isGeneralPool ? 'text-white/60 dark:text-slate-400' : 'text-slate-400'}`}>
-                      ₹{w.balance.toLocaleString('en-IN')}
+                      ₹{w.balance?.toLocaleString('en-IN') || 0}
                     </span>
                   </button>
                 ))}
@@ -140,6 +142,7 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
             </div>
           )}
 
+          {/* STEP 2: AMOUNT AND SOURCE */}
           {step === 2 && (
             <div className="space-y-4 sm:space-y-8 animate-in fade-in slide-in-from-right-4">
               <div className="flex items-center justify-between">
@@ -148,10 +151,28 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
                  </button>
                  <span className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest">Target: {currentWallet?.walletName}</span>
               </div>
+              
               <div className="text-left">
-                <h2 className="text-xl sm:text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">Funding Amount</h2>
+                <h2 className="text-xl sm:text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">Funding Details</h2>
               </div>
-              <div className="relative border-b-2 border-slate-100 dark:border-slate-800 focus-within:border-emerald-500 transition-colors">
+
+              {/* NEW: Funding Source Toggle */}
+              <div className="bg-slate-50 dark:bg-[#0B1120] p-1.5 rounded-[1.25rem] flex gap-1 border border-slate-100 dark:border-slate-800/60 shadow-inner">
+                <button 
+                  onClick={() => setTopUpData({...topUpData, isExternal: false})}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${!topUpData.isExternal ? 'bg-white dark:bg-slate-800 text-emerald-500 shadow-sm border border-slate-200/50 dark:border-white/5' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                >
+                  <Box size={14} strokeWidth={3}/> Drawer
+                </button>
+                <button 
+                  onClick={() => setTopUpData({...topUpData, isExternal: true})}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${topUpData.isExternal ? 'bg-white dark:bg-slate-800 text-indigo-500 shadow-sm border border-slate-200/50 dark:border-white/5' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                >
+                  <DownloadCloud size={14} strokeWidth={3}/> External
+                </button>
+              </div>
+
+              <div className="relative border-b-2 border-slate-100 dark:border-slate-800 focus-within:border-emerald-500 transition-colors pt-2">
                 <span className="absolute left-0 bottom-4 sm:bottom-6 text-3xl sm:text-4xl font-[1000] text-slate-300 dark:text-slate-700 italic">₹</span>
                 <input
                     type="text"
@@ -163,6 +184,7 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
                     onChange={handleAmountChange}
                 />
               </div>
+
               <button 
                 disabled={!topUpData.amount || Number(topUpData.amount) <= 0}
                 onClick={nextStep}
@@ -173,6 +195,7 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
             </div>
           )}
 
+          {/* STEP 3: REVIEW */}
           {step === 3 && (
             <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-right-4">
                <button onClick={prevStep} disabled={loading} className="text-[9px] sm:text-[10px] font-black text-emerald-500 uppercase flex items-center gap-1 active:opacity-70 transition-opacity">
@@ -182,33 +205,41 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
                <div className="text-left">
                 <h2 className="text-xl sm:text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic">Review Top-Up</h2>
                </div>
-                
+               
                <div className="p-4 sm:p-6 bg-slate-900 dark:bg-white rounded-3xl space-y-4 shadow-2xl border border-white/5 dark:border-slate-100 overflow-hidden relative">
-                  <div className="flex justify-between items-end border-b border-white/10 dark:border-slate-100 pb-4">
+                  
+                  {/* Dynamic Source Indicator */}
+                  <div className={`absolute top-0 right-0 px-4 py-1.5 rounded-bl-xl text-[8px] sm:text-[9px] font-black uppercase tracking-widest ${topUpData.isExternal ? 'bg-indigo-500 text-white' : 'bg-emerald-500 text-white'}`}>
+                    {topUpData.isExternal ? 'External Source' : 'From Drawer'}
+                  </div>
+
+                  <div className="flex justify-between items-end border-b border-white/10 dark:border-slate-100 pb-4 pt-4 sm:pt-2">
                     <div className="space-y-1 text-left truncate pr-2">
-                      <p className="text-[7px] sm:text-[8px] font-black text-emerald-500 uppercase tracking-widest">Injection Goal</p>
+                      <p className={`text-[7px] sm:text-[8px] font-black uppercase tracking-widest ${topUpData.isExternal ? 'text-indigo-400 dark:text-indigo-600' : 'text-emerald-500'}`}>Injection Goal</p>
                       <p className="text-[10px] sm:text-xs font-black text-white dark:text-slate-900 uppercase tracking-widest truncate">{currentWallet?.walletName}</p>
                     </div>
-                    <p className="text-3xl font-[1000] text-white dark:text-slate-900 italic tracking-tighter shrink-0">+₹{Number(topUpData.amount).toLocaleString('en-IN')}</p>
+                    <p className={`text-3xl font-[1000] italic tracking-tighter shrink-0 ${topUpData.isExternal ? 'text-indigo-400 dark:text-indigo-600' : 'text-emerald-500 dark:text-emerald-600'}`}>
+                      +₹{Number(topUpData.amount).toLocaleString('en-IN')}
+                    </p>
                   </div>
                   <div className="flex justify-between items-center text-[7px] sm:text-[8px] font-black text-white/40 dark:text-slate-400 uppercase tracking-widest leading-none pt-1">
-                    <span>New Balance: ₹{(currentWallet?.balance + Number(topUpData.amount)).toLocaleString('en-IN')}</span>
+                    <span>New Balance: ₹{((currentWallet?.balance || 0) + Number(topUpData.amount)).toLocaleString('en-IN')}</span>
                   </div>
                </div>
 
                <div className="space-y-2 text-left">
                  <label className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Memo (Optional)</label>
                  <textarea 
-                    rows="2" placeholder="Note down source..."
-                    className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl text-[11px] font-bold text-slate-900 dark:text-white outline-none border border-slate-100 dark:border-slate-800 focus:border-emerald-500/20 transition-all no-scrollbar"
-                    value={topUpData.description} onChange={(e) => setTopUpData({...topUpData, description: e.target.value})} 
+                   rows="2" placeholder={topUpData.isExternal ? "Note down who sent this..." : "Note down reason..."}
+                   className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl text-[11px] font-bold text-slate-900 dark:text-white outline-none border border-slate-100 dark:border-slate-800 focus:border-emerald-500/20 transition-all no-scrollbar"
+                   value={topUpData.description} onChange={(e) => setTopUpData({...topUpData, description: e.target.value})} 
                  />
                </div>
 
                <button 
                   onClick={handleFinalSubmit} 
                   disabled={loading}
-                  className="w-full bg-emerald-500 text-white h-16 rounded-2xl font-[1000] uppercase text-[10px] sm:text-xs tracking-[0.4em] shadow-xl active:scale-[0.98] flex items-center justify-center gap-3 transition-all disabled:opacity-50"
+                  className={`w-full text-white h-16 rounded-2xl font-[1000] uppercase text-[10px] sm:text-xs tracking-[0.4em] shadow-xl active:scale-[0.98] flex items-center justify-center gap-3 transition-all disabled:opacity-50 ${topUpData.isExternal ? 'bg-indigo-500 hover:bg-indigo-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}
                >
                  {loading ? (
                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white" />

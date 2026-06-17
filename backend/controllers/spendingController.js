@@ -29,8 +29,7 @@ exports.addSpending = async (req, res) => {
             }
 
         } else if (type === 'TOP_UP' || type === 'MONTHLY_RESET') {
-            // Logic: Is this an inflow from the Master Pool or an External Source?
-            // If it's a member wallet and NOT marked virtual, money comes from Drawer.
+            // Standard fallback logic (Top-Ups are primarily handled in walletController now)
             if (!wallet.isGeneralPool && !wallet.isVirtual) {
                 const drawer = await Wallet.findOne({ isGeneralPool: true }).session(session);
                 if (!drawer) throw new Error("Master Pool not found for top-up");
@@ -40,7 +39,6 @@ exports.addSpending = async (req, res) => {
                 wallet.balance += spendAmount;
                 await drawer.save({ session });
             } else {
-                // If it's the Drawer, a Virtual Wallet, or an external top-up
                 wallet.balance += spendAmount;
             }
         }
@@ -80,7 +78,6 @@ exports.processMonthlyAllowance = async (req, res) => {
 
         if (!drawer) throw new Error("General Pool (Drawer) not found");
 
-        const Category = mongoose.model('Category'); 
         let systemCategory = await Category.findOne({ label: 'System' }).session(session);
         
         if (!systemCategory) {
@@ -151,6 +148,16 @@ exports.deleteSpending = async (req, res) => {
         const spending = await Spending.findById(req.params.id).session(session);
         if (!spending) throw new Error("Transaction record not found");
 
+        // SAFETY LOCK: Prevent orphaned multi-leg transactions
+        const isSystemLinked = spending.description?.includes('Internal transfer') || 
+                               spending.description?.includes('Funds swept') || 
+                               spending.description?.includes('Cleanup:');
+                               
+        if (isSystemLinked) {
+            throw new Error("System-linked transfers cannot be manually deleted. Please create a reverse transfer to correct this.");
+        }
+
+        const isExternalTopUp = spending.description?.includes('External source');
         const wallet = await Wallet.findById(spending.sourceWallet).session(session);
         
         if (spending.type === 'DEBIT') {
@@ -161,18 +168,23 @@ exports.deleteSpending = async (req, res) => {
             }
         } 
         else if (spending.type === 'TOP_UP' || spending.type === 'MONTHLY_RESET') {
-            // Only reverse physical transfers from Drawer
+            
             if (wallet && !wallet.isGeneralPool && !wallet.isVirtual) {
-                const drawer = await Wallet.findOne({ isGeneralPool: true }).session(session);
-                
+                // Remove funds from the target physical wallet
                 wallet.balance -= spending.amount;
-                if (drawer) {
-                    drawer.balance += spending.amount;
-                    await drawer.save({ session });
+                
+                // ONLY refund the Drawer if it was NOT an external top-up
+                if (!isExternalTopUp) {
+                    const drawer = await Wallet.findOne({ isGeneralPool: true }).session(session);
+                    if (drawer) {
+                        drawer.balance += spending.amount;
+                        await drawer.save({ session });
+                    }
                 }
                 await wallet.save({ session });
+                
             } else if (wallet) {
-                // Reversing direct inflow (Drawer or Virtual)
+                // Reversing direct inflow (Drawer, Virtual, or External)
                 wallet.balance -= spending.amount;
                 await wallet.save({ session });
             }
@@ -199,7 +211,18 @@ exports.editSpending = async (req, res) => {
         const spending = await Spending.findById(req.params.id).session(session);
         if (!spending) throw new Error("Transaction not found");
 
+        // SAFETY LOCK: Prevent orphaned multi-leg transactions
+        const isSystemLinked = spending.description?.includes('Internal transfer') || 
+                               spending.description?.includes('Funds swept') || 
+                               spending.description?.includes('Cleanup:');
+
+        if (isSystemLinked) {
+            throw new Error("System-linked transfers cannot be manually edited. Please reverse and recreate the transfer.");
+        }
+
+        const isExternalTopUp = spending.description?.includes('External source');
         const wallet = await Wallet.findById(spending.sourceWallet).session(session);
+        
         const oldAmount = spending.amount;
         const newAmount = Number(amount);
         const difference = oldAmount - newAmount;
@@ -212,17 +235,22 @@ exports.editSpending = async (req, res) => {
                 await wallet.save({ session });
             }
         } else if (spending.type === 'TOP_UP') {
-            // Adjust Physical Transfer
             if (wallet && !wallet.isGeneralPool && !wallet.isVirtual) {
-                const drawer = await Wallet.findOne({ isGeneralPool: true }).session(session);
+                // Adjust Physical Wallet
                 wallet.balance -= difference;
-                if (drawer) {
-                    drawer.balance += difference;
-                    await drawer.save({ session });
+                
+                // Adjust the Drawer ONLY if it wasn't an external top-up
+                if (!isExternalTopUp) {
+                    const drawer = await Wallet.findOne({ isGeneralPool: true }).session(session);
+                    if (drawer) {
+                        drawer.balance += difference;
+                        await drawer.save({ session });
+                    }
                 }
                 await wallet.save({ session });
+                
             } else if (wallet) {
-                // Adjust direct inflow
+                // Adjust direct inflow (Virtual, Drawer, External)
                 wallet.balance -= difference;
                 await wallet.save({ session });
             }
@@ -254,17 +282,24 @@ exports.getFinanceSummary = async (req, res) => {
         startOfMonth.setDate(1);
         startOfMonth.setHours(0,0,0,0);
 
-        // Aggregation to split spending by Wallet Type (Virtual/Bank vs Physical/Cash)
+        // Fetch the System Category to dynamically exclude transfers from analytics
+        const systemCategory = await Category.findOne({ label: 'System' });
+
+        // Build the safe match stage
+        const matchStage = {
+            type: 'DEBIT', 
+            date: { $gte: startOfMonth }
+        };
+        if (systemCategory) {
+            matchStage.category = { $ne: systemCategory._id };
+        }
+
+        // Aggregation to split true spending by Wallet Type
         const spendingStats = await Spending.aggregate([
-            { 
-                $match: { 
-                    type: 'DEBIT', 
-                    date: { $gte: startOfMonth } 
-                } 
-            },
+            { $match: matchStage },
             {
                 $lookup: {
-                    from: "wallets", // Ensure this matches your MongoDB collection name
+                    from: "wallets", 
                     localField: "sourceWallet",
                     foreignField: "_id",
                     as: "walletInfo"
@@ -273,13 +308,12 @@ exports.getFinanceSummary = async (req, res) => {
             { $unwind: "$walletInfo" },
             {
                 $group: {
-                    _id: "$walletInfo.isVirtual", // Group by the boolean flag
+                    _id: "$walletInfo.isVirtual", 
                     totalAmount: { $sum: "$amount" }
                 }
             }
         ]);
 
-        // Format the results for easy frontend consumption
         const report = {
             total: 0,
             cash: 0,
@@ -341,7 +375,6 @@ exports.getWalletHistory = async (req, res) => {
         const { walletId } = req.params;
         let query = {};
 
-        // If the frontend sends 'all' as a string, we fetch everything
         if (walletId && walletId !== 'all') {
             query.sourceWallet = walletId;
         }
@@ -350,7 +383,7 @@ exports.getWalletHistory = async (req, res) => {
             .populate('category')
             .populate('sourceWallet', 'walletName isVirtual isGeneralPool') 
             .sort({ date: -1 })
-            .limit(50); // Increased limit for better visibility in history views
+            .limit(50); 
 
         res.status(200).json({
             success: true,
@@ -365,31 +398,39 @@ exports.getWalletHistory = async (req, res) => {
 };
 
 
-
 exports.getDetailedAnalytics = async (req, res) => {
     try {
-        // 1. Get month/year from query params (e.g., ?month=5&year=2026)
         const { month, year } = req.query;
         
         const targetMonth = month ? parseInt(month) : new Date().getMonth() + 1;
         const targetYear = year ? parseInt(year) : new Date().getFullYear();
 
-        // 2. Define Time Boundaries
         const startDate = new Date(targetYear, targetMonth - 1, 1);
         const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59);
         const startOfYear = new Date(targetYear, 0, 1);
 
-        // 3. Get Wallets (Current Balances)
         const wallets = await Wallet.find({}).populate('user', 'name');
 
-        // 4. Aggregate Spending for the Selected Period (Wallet Wise)
+        // Fetch System Category to protect accurate data
+        const systemCategory = await Category.findOne({ label: 'System' });
+
+        // Match Stages protecting the analytics from internal Transfers
+        const yearMatchStage = {
+            date: { $gte: startOfYear, $lte: endDate },
+            type: 'DEBIT'
+        };
+        const monthMatchStage = {
+            date: { $gte: startDate, $lte: endDate },
+            type: 'DEBIT'
+        };
+
+        if (systemCategory) {
+            yearMatchStage.category = { $ne: systemCategory._id };
+            monthMatchStage.category = { $ne: systemCategory._id };
+        }
+
         const spendStats = await Spending.aggregate([
-            { 
-                $match: { 
-                    date: { $gte: startOfYear, $lte: endDate },
-                    type: 'DEBIT' 
-                } 
-            },
+            { $match: yearMatchStage },
             {
                 $group: {
                     _id: "$sourceWallet",
@@ -407,23 +448,17 @@ exports.getDetailedAnalytics = async (req, res) => {
             }
         ]);
 
-        // 5. Aggregate Spending by Category (For the specific month viewed)
         const categoryStats = await Spending.aggregate([
-            { 
-                $match: { 
-                    date: { $gte: startDate, $lte: endDate },
-                    type: 'DEBIT' 
-                } 
-            },
+            { $match: monthMatchStage },
             {
                 $group: {
-                    _id: "$category", // Group by the category ObjectId stored in the Spending document
+                    _id: "$category", 
                     amount: { $sum: "$amount" }
                 }
             },
             {
                 $lookup: {
-                    from: "categories", // MongoDB collection name for your Category model
+                    from: "categories", 
                     localField: "_id",
                     foreignField: "_id",
                     as: "categoryDoc"
@@ -442,10 +477,9 @@ exports.getDetailedAnalytics = async (req, res) => {
                     amount: 1
                 }
             },
-            { $sort: { amount: -1 } } // Sort highest spend first
+            { $sort: { amount: -1 } } 
         ]);
 
-        // 6. Build Wallet-wise Data
         const walletData = wallets.map(wallet => {
             const stats = spendStats.find(s => s._id && s._id.toString() === wallet._id.toString()) || { yearSpend: 0, monthSpend: 0 };
             return {
@@ -466,7 +500,7 @@ exports.getDetailedAnalytics = async (req, res) => {
                 yearNetSpend: walletData.reduce((acc, w) => acc + w.yearSpend, 0)
             },
             walletWise: walletData.sort((a, b) => a.name.localeCompare(b.name)),
-            categoryWise: categoryStats // Added the calculated category statistics here!
+            categoryWise: categoryStats 
         });
 
     } catch (error) {

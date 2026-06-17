@@ -1,11 +1,11 @@
 import React from "react";
-import { ShieldCheck, Globe, Coins, Zap, Smartphone, Activity } from "lucide-react";
+import { ShieldCheck, Globe, Coins, Zap, Smartphone, Activity, Wallet, Landmark, RefreshCw } from "lucide-react";
 
 const formatINR = (amount) => {
   return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(amount || 0);
 };
 
-const WalletGrid = ({ wallets }) => {
+const WalletGrid = ({ wallets, onReconcile }) => {
   const cashWallets = wallets.filter(w => !w.isVirtual);
   const virtualWallets = wallets.filter(w => w.isVirtual);
   const totalLiquidity = cashWallets.reduce((acc, curr) => acc + curr.balance, 0);
@@ -37,9 +37,32 @@ const WalletGrid = ({ wallets }) => {
           {/* PHYSICAL NODES GRID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 lg:mt-0">
             {cashWallets.map((w) => (
-              <div key={w._id} className="flex items-center justify-between p-2.5 lg:p-3 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-800 transition-all hover:border-emerald-500/30">
-                <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase truncate pr-2">{w.walletName}</span>
-                <span className="text-xs lg:text-sm font-[1000] text-slate-900 dark:text-white italic tracking-tighter">₹{formatINR(w.balance)}</span>
+              <div key={w._id} className="flex items-center justify-between p-2 lg:p-2.5 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-800 transition-all hover:border-slate-200 dark:hover:border-slate-700">
+                
+                {/* Left: Standard Wallet Identity */}
+                <div className="flex items-center gap-3 overflow-hidden pl-1">
+                   <div className={`p-1.5 rounded-lg shrink-0 ${w.isGeneralPool ? 'bg-indigo-500/10 text-indigo-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+                      {w.isGeneralPool ? <Landmark size={14} /> : <Wallet size={14} />}
+                   </div>
+                  <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase truncate">
+                    {w.walletName}
+                  </span>
+                </div>
+
+                {/* Right: Interactive Balance (The Sync Trigger) */}
+                <button
+                  onClick={() => onReconcile && onReconcile(w)}
+                  title="Adjust or Sync Balance"
+                  className="group flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-sm transition-all active:scale-95"
+                >
+                  <span className="text-xs lg:text-sm font-[1000] text-slate-900 dark:text-white italic tracking-tighter">
+                    ₹{formatINR(w.balance)}
+                  </span>
+                  <div className="bg-slate-200/50 dark:bg-slate-900 text-slate-400 group-hover:text-amber-500 group-hover:bg-amber-50 dark:group-hover:bg-amber-500/10 p-1 rounded-md transition-colors">
+                    <RefreshCw size={12} strokeWidth={3} />
+                  </div>
+                </button>
+
               </div>
             ))}
           </div>

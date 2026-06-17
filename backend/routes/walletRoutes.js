@@ -22,10 +22,15 @@ router.put('/:id', walletController.updateWallet);
 router.delete('/:id', walletController.deleteWallet);
 
 // --- FINANCIAL OPERATIONS ---
+// Transfer funds between two wallets (P2P / Internal)
+router.post('/transfer', walletController.transferFunds);
+
 // Transfer funds from Master Pool to Member (or external deposit to Master)
 router.post('/:id/topup', walletController.topUpWallet);
 
 // Sweep member funds back to Master Pool (or zero out Master Pool)
 router.post('/:id/clear', walletController.clearWallet);
+
+router.post('/:id/reconcile', walletController.reconcileWallet);
 
 module.exports = router;
