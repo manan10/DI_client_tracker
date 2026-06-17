@@ -1,10 +1,11 @@
+// models/Transaction.js
 const mongoose = require('mongoose');
 
 const TransactionSchema = new mongoose.Schema({
   auditId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Audit',
-    required: true // Links this row to the specific Audit Session
+    required: true
   },
   accountId: { 
     type: mongoose.Schema.Types.ObjectId, 
@@ -37,10 +38,11 @@ const TransactionSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  
   // --- AUDIT STATE FIELDS ---
   isChecked: { 
     type: Boolean, 
-    default: false // This persists the green checkbox from step 3
+    default: false 
   },
   isCommission: { 
     type: Boolean, 
@@ -54,15 +56,35 @@ const TransactionSchema = new mongoose.Schema({
     type: Boolean, 
     default: false 
   },
+
   // --- STAGE 4: SALES MATRIX PERSISTENCE FIELDS ---
   isSalesApproved: {
     type: Boolean,
-    default: false // Stores whether the sales voucher row was checked
+    default: false 
   },
   invoiceBillingDate: {
     type: String,
-    default: null // Stores the manual "YYYY-MM-DD" string from the picker
+    default: null 
   },
+  // NEW: Store the individual ledger override if the user explicitly changes it
+  individualSalesLedger: {
+    type: String,
+    default: ""
+  },
+  // NEW: Store explicit GST overrides
+  applyCGST: {
+    type: Boolean,
+    default: null // null implies "use the global default calculation"
+  },
+  applySGST: {
+    type: Boolean,
+    default: null 
+  },
+  applyIGST: {
+    type: Boolean,
+    default: null 
+  },
+
   // --------------------------
   category: { 
     type: String, 

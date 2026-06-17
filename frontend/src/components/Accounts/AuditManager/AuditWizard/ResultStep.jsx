@@ -1,23 +1,17 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { CheckCircle2, XCircle, FileText, AlertCircle, TrendingUp, TrendingDown, Layers, Loader2, Zap, Check, Play, ArrowLeft } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { 
+  CheckCircle2, XCircle, FileText, AlertCircle, 
+  TrendingUp, TrendingDown, Layers, Loader2, 
+  Play, ShieldCheck, Landmark, Banknote, Zap, Send
+} from 'lucide-react';
 import { useApi } from '../../../../hooks/useApi';
 import { tallyTemplates } from '../../../../utils/tallyTemplates';
+import { toast } from 'sonner';
 
 const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedger, arns = [], arnId, masterLedgers = [], onComplete }) => {
   const { request } = useApi();
-  const safeTransactions = transactions || [];
-
-  // =========================================================================
-  // STATE DEFINITIONS
-  // =========================================================================
-  const [phase, setPhase] = useState('READY'); 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isCurrentlyCreating, setIsCurrentlyCreating] = useState(false);
-  const [completedLogs, setCompletedLogs] = useState([]); 
-  const [finalResults, setFinalResults] = useState([]); 
   
-  // Track the specific batch being processed
-  const [activeQueue, setActiveQueue] = useState([]);
+  const safeTransactions = useMemo(() => transactions || [], [transactions]);
 
   const onCompleteRef = useRef(onComplete);
   useEffect(() => {
@@ -25,147 +19,177 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
   }, [onComplete]);
 
   // =========================================================================
-  // TASK FLATTENER ENGINE
+  // STATE DEFINITIONS
   // =========================================================================
-  const voucherTasks = useMemo(() => {
-    const tasks = [];
-    safeTransactions.forEach((tx) => {
-      if (tx.isMarkedForManualEntry) return;
+  const [vouchers, setVouchers] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [globalProgress, setGlobalProgress] = useState(0);
 
-      // 1. Bank Receipt/Payment
-      if (tx.isChecked && (tx.suggestedLedger || tx.ledgerName)) {
-        tasks.push({
+  // HELPER: Strict Boolean Parser
+  const isTrue = (val) => val === true || String(val).toLowerCase() === 'true';
+
+  const activeArnObject = useMemo(() => (arns || []).find(a => a._id === arnId || a.arnCode === arnId), [arns, arnId]);
+  const isGstCompliant = !!activeArnObject?.gstCompliant;
+
+  // =========================================================================
+  // INITIALIZATION: TASK FLATTENER ENGINE 
+  // =========================================================================
+  useEffect(() => {
+    const initialVouchers = [];
+    
+    safeTransactions.forEach((tx) => {
+      if (isTrue(tx.isMarkedForManualEntry)) return;
+
+      const bankName = tx.bank || tx.bankAccount || tx.bankLedger || 'Default Bank';
+
+      // 1. Bank Receipt/Payment Voucher
+      if (isTrue(tx.isChecked) && !!(tx.suggestedLedger || tx.ledgerName)) {
+        initialVouchers.push({
           id: `bank-${tx._id}`,
-          vType: tx.type, // 'RECEIPT' or 'PAYMENT'
-          rawTx: tx
+          refId: tx._id,
+          vType: tx.type, 
+          bank: bankName,
+          rawTx: tx,
+          status: 'PENDING',
+          voucherNo: null,
+          errorMsg: null
         });
       }
 
-      // 2. Commission Sales Invoice (Only if explicitly approved)
-      if (tx.isCommission && tx.type === 'RECEIPT' && tx.isSalesApproved) {
-        tasks.push({
+      // 2. Commission Sales Invoice
+      if (isTrue(tx.isSales) && tx.type === 'RECEIPT' && isTrue(tx.isSalesApproved)) {
+        initialVouchers.push({
           id: `sales-${tx._id}`,
+          refId: tx._id,
           vType: 'SALES',
-          rawTx: tx
+          bank: bankName,
+          rawTx: tx,
+          status: 'PENDING',
+          voucherNo: null,
+          errorMsg: null
         });
       }
     });
-    return tasks;
-  }, [safeTransactions]);
 
+    setVouchers(initialVouchers);
+  }, [safeTransactions]); 
+
+  // =========================================================================
+  // HELPERS
+  // =========================================================================
   const formatINR = (amount) => {
     return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 2
+      style: 'currency', currency: 'INR', maximumFractionDigits: 2
     }).format(Math.abs(amount || 0)).replace('₹', '₹ ');
   };
 
-  const getVoucherTypeLabel = (type) => {
-    switch (type) {
-      case 'RECEIPT': return 'Bank Receipt';
-      case 'PAYMENT': return 'Bank Payment';
-      case 'SALES': return 'Sales Invoice';
-      default: return 'Voucher';
-    }
+  const monthName = useMemo(() => {
+    if(!safeTransactions.length) return "Current Month";
+    const d = new Date(safeTransactions[0].date);
+    return isNaN(d) ? "Current Month" : d.toLocaleString('default', { month: 'long', year: 'numeric' });
+  }, [safeTransactions]);
+
+  const stats = useMemo(() => {
+    return vouchers.reduce((acc, v) => {
+      acc.total++;
+      if (v.status === 'PENDING') acc.pending++;
+      if (v.status === 'SUCCESS') acc.success++;
+      if (v.status === 'FAILED') acc.failed++;
+      if (v.vType === 'SALES') acc.sales++;
+      if (v.vType === 'RECEIPT') acc.receipts++;
+      if (v.vType === 'PAYMENT') acc.payments++;
+      return acc;
+    }, { total: 0, pending: 0, success: 0, failed: 0, sales: 0, receipts: 0, payments: 0 });
+  }, [vouchers]);
+
+  const globalCounts = useMemo(() => {
+    return {
+      sales: safeTransactions.filter(tx => isTrue(tx.isSales) && tx.type === 'RECEIPT' && isTrue(tx.isSalesApproved) && !isTrue(tx.isMarkedForManualEntry)).length,
+      receipts: safeTransactions.filter(tx => tx.type === 'RECEIPT' && isTrue(tx.isChecked) && !!(tx.suggestedLedger || tx.ledgerName) && !isTrue(tx.isMarkedForManualEntry)).length,
+      payments: safeTransactions.filter(tx => tx.type === 'PAYMENT' && isTrue(tx.isChecked) && !!(tx.suggestedLedger || tx.ledgerName) && !isTrue(tx.isMarkedForManualEntry)).length,
+      manual: safeTransactions.filter(tx => isTrue(tx.isMarkedForManualEntry) || !(tx.suggestedLedger || tx.ledgerName)).length
+    };
+  }, [safeTransactions]);
+
+  const groupedVouchers = useMemo(() => {
+    const groups = {};
+    vouchers.forEach(v => {
+      if (!groups[v.bank]) groups[v.bank] = [];
+      groups[v.bank].push(v);
+    });
+    return groups;
+  }, [vouchers]);
+
+  const getThemeConfig = (type) => {
+    if (type === 'RECEIPT') return { text: 'text-emerald-600', border: 'border-emerald-500', icon: <TrendingUp size={16} />, label: 'Receipt' };
+    if (type === 'PAYMENT') return { text: 'text-rose-600', border: 'border-rose-500', icon: <TrendingDown size={16} />, label: 'Payment' };
+    if (type === 'SALES') return { text: 'text-blue-600', border: 'border-blue-500', icon: <Layers size={16} />, label: 'Sales Invoice' };
+    return { text: 'text-slate-600', border: 'border-slate-500', icon: <FileText size={16} />, label: 'Voucher' };
   };
 
-  const readyMetrics = useMemo(() => {
-    return voucherTasks.reduce((acc, task) => {
-      acc[task.vType] = (acc[task.vType] || 0) + 1;
-      return acc;
-    }, { RECEIPT: 0, PAYMENT: 0, SALES: 0 });
-  }, [voucherTasks]);
-
   // =========================================================================
-  // TARGETED SYNCHRONIZATION LOGIC
+  // EXECUTION ENGINE (TALLY SYNC)
   // =========================================================================
-  const handleStartSynchronization = async (targetType = 'ALL') => {
-    // Filter queue based on user selection
-    const queue = targetType === 'ALL' 
-      ? voucherTasks 
-      : voucherTasks.filter(t => t.vType === targetType);
-
-    if (queue.length === 0) return;
-
-    setActiveQueue(queue);
-    setPhase('PROCESSING');
-    setCompletedLogs([]);
-    setFinalResults([]);
-    setCurrentIndex(0);
-    setIsCurrentlyCreating(true);
+  const processBatch = async (idsToProcess) => {
+    if (idsToProcess.length === 0 || isProcessing) return;
+    setIsProcessing(true);
+    setGlobalProgress(0);
 
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-    const activeArnObject = (arns || []).find(a => a._id === arnId || a.arnCode === arnId);
-    const isGstCompliant = !!activeArnObject?.gstCompliant;
 
-    for (let i = 0; i < queue.length; i++) {
-      const task = queue[i];
-      const tx = task.rawTx;
+    for (let i = 0; i < idsToProcess.length; i++) {
+      const vId = idsToProcess[i];
       
-      setCurrentIndex(i);
-      setIsCurrentlyCreating(true);
+      setVouchers(prev => prev.map(v => v.id === vId ? { ...v, status: 'PROCESSING', errorMsg: null } : v));
 
+      const targetVoucher = vouchers.find(v => v.id === vId);
+      const tx = targetVoucher.rawTx;
       let xmlPayload = "";
-      let finalLedgerForLog = tx.suggestedLedger || tx.ledgerName || 'UNKNOWN LEDGER';
-      let finalNarrationForLog = tx.customNarration || tx.narration || "Auto-generated via Accrual Bridge";
-      let finalVoucherNoForLog = null;
-      let finalAmountForLog = 0;
+      let finalVoucherNo = null;
+      let isSuccess = false;
+      let errorMsg = null;
 
-      // Safe Date parsing avoiding UTC offset jump
       let safeDate = "";
       try {
-          const dStr = task.vType === 'SALES' ? (tx.invoiceBillingDate || tx.date) : tx.date;
-          const d = new Date(dStr || new Date());
-          const yyyy = d.getFullYear();
-          const mm = String(d.getMonth() + 1).padStart(2, '0');
-          const dd = String(d.getDate()).padStart(2, '0');
-          safeDate = `${yyyy}-${mm}-${dd}`;
+        const dStr = targetVoucher.vType === 'SALES' ? (tx.invoiceBillingDate || tx.date) : tx.date;
+        const d = new Date(dStr || new Date());
+        safeDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       } catch {
-          safeDate = new Date().toISOString().split('T')[0];
+        safeDate = new Date().toISOString().split('T')[0];
       }
 
-      // GST AND VALUE RECALCULATION
-      let cgst = 0, sgst = 0, igst = 0;
-      let baseAmount = Math.abs(tx.amount || 0);
+      const finalLedger = tx.suggestedLedger || tx.ledgerName || 'UNKNOWN LEDGER';
+      const finalNarration = tx.customNarration || tx.narration || "Auto-generated via Accrual Bridge";
 
-      const normalizedLedger = (finalLedgerForLog || "").toUpperCase();
-      const isLocalAmc = tx.isLocalAmc !== undefined ? tx.isLocalAmc : (normalizedLedger.includes("NJ") || normalizedLedger.includes("LOCAL") || normalizedLedger.includes("STATE"));
+      if (targetVoucher.vType === 'SALES') {
+        let baseAmount = (tx.baseAmount !== undefined && tx.baseAmount !== null && tx.baseAmount !== "") ? Number(tx.baseAmount) : Math.abs(tx.amount || 0);
+        let cgst = 0, sgst = 0, igst = 0;
 
-      if (isGstCompliant && task.vType === 'SALES') {
-          if (isLocalAmc) {
-              cgst = baseAmount * 0.09;
-              sgst = baseAmount * 0.09;
-          } else {
-              igst = baseAmount * 0.18;
-          }
-      }
+        if (isGstCompliant) {
+          const applyCG = isTrue(tx.applyCGST);
+          const applySG = isTrue(tx.applySGST);
+          const applyIG = isTrue(tx.applyIGST);
 
-      const resolvedIncomeLedger = isLocalAmc ? "MF COMMISSION (LOC)" : (salesIncomeLedger || "MF COMMISION INCOME");
+          cgst = (tx.cgst !== undefined && tx.cgst !== null && tx.cgst !== "") ? Number(tx.cgst) : (applyCG ? baseAmount * 0.09 : 0);
+          sgst = (tx.sgst !== undefined && tx.sgst !== null && tx.sgst !== "") ? Number(tx.sgst) : (applySG ? baseAmount * 0.09 : 0);
+          igst = (tx.igst !== undefined && tx.igst !== null && tx.igst !== "") ? Number(tx.igst) : (applyIG ? baseAmount * 0.18 : 0);
+        }
 
-      // FIX: Extract Ledger Details for Billing (Bulletproof case-insensitive match)
-      const normalizedTargetLedger = (finalLedgerForLog || "").toUpperCase().trim();
-      const ledgerObj = masterLedgers.find(l => (l.name || "").toUpperCase().trim() === normalizedTargetLedger);
+        const activeSalesLedger = tx.individualSalesLedger || salesIncomeLedger || "SUSPENSE SALES LEDGER";
+        const normalizedTargetLedger = finalLedger.toUpperCase().trim();
+        const ledgerObj = masterLedgers.find(l => (l.name || "").toUpperCase().trim() === normalizedTargetLedger);
 
-      // Deep Mapping Logic
-      if (task.vType === 'SALES') {
         const salesData = {
           company: companyName,
           date: safeDate,
           invoiceNumber: tx.invoiceNumber || `INV-${tx._id.slice(-5).toUpperCase()}`,
-          ledgerName: finalLedgerForLog,
-          incomeLedger: resolvedIncomeLedger,
+          ledgerName: finalLedger,
+          incomeLedger: activeSalesLedger,
           amount: baseAmount,
           gstType: (cgst > 0 || sgst > 0) ? "LOCAL" : (igst > 0 ? "INTERSTATE" : "NONE"),
-          cgstLedger: "CGST",
-          sgstLedger: "SGST",
-          igstLedger: "IGST",
-          cgstAmount: cgst,
-          sgstAmount: sgst,
-          igstAmount: igst,
-          narration: finalNarrationForLog,
-          
-          // BILLING OVERRIDES
+          cgstLedger: "CGST", sgstLedger: "SGST", igstLedger: "IGST",
+          cgstAmount: cgst, sgstAmount: sgst, igstAmount: igst,
+          narration: finalNarration,
           partyState: ledgerObj?.stateName || "",     
           partyCountry: ledgerObj?.country || "India",
           partyGstRegType: ledgerObj?.gstRegistrationType || (ledgerObj?.gstin ? "Regular" : "Unregistered"),
@@ -173,24 +197,19 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
           partyAddress: ledgerObj?.address || []  
         };
         xmlPayload = tallyTemplates.generateSalesVoucher(salesData);
-        finalVoucherNoForLog = salesData.invoiceNumber;
-        finalAmountForLog = baseAmount + cgst + sgst + igst; 
+        finalVoucherNo = salesData.invoiceNumber;
       } else {
         const bankData = {
           company: companyName,
-          type: task.vType === 'RECEIPT' ? 'Receipt' : 'Payment',
+          type: targetVoucher.vType === 'RECEIPT' ? 'Receipt' : 'Payment',
           date: safeDate,
-          ledgerName: finalLedgerForLog,
-          bankAccount: bankLedgerName,
-          amount: baseAmount,
-          narration: finalNarrationForLog
+          ledgerName: finalLedger,
+          bankAccount: bankLedgerName || targetVoucher.bank,
+          amount: Math.abs(tx.amount || 0),
+          narration: finalNarration
         };
         xmlPayload = tallyTemplates.generateVoucher(bankData);
-        finalAmountForLog = baseAmount;
       }
-
-      let isSuccess = false;
-      let errorMsg = null;
 
       try {
         const response = await request("/tally/proxy", "POST", { xml: xmlPayload });
@@ -199,367 +218,380 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
         if (responseStr.includes("<CREATED>1</CREATED>") || responseStr.includes("CREATED: 1")) {
           isSuccess = true;
         } else {
-          errorMsg = responseStr.includes("Line Error") ? "Tally missing specific ledger account masters or state configurations." : "Tally engine rejected voucher serialization layout.";
+          errorMsg = responseStr.includes("Line Error") ? "Missing Master Ledger configuration in Tally." : "Rejected by Tally Engine.";
         }
       } catch (err) {
-        errorMsg = err.message || "Loss of active data pipeline tunnel between app and local PC.";
+        errorMsg = err.message || "Connection to local Tally tunnel lost.";
       }
 
-      setIsCurrentlyCreating(false);
+      setVouchers(prev => prev.map(v => 
+        v.id === vId ? { 
+          ...v, 
+          status: isSuccess ? 'SUCCESS' : 'FAILED', 
+          voucherNo: isSuccess ? finalVoucherNo : null, 
+          errorMsg 
+        } : v
+      ));
 
-      const processedItem = {
-        _id: `${task.id}-${i}`,
-        vType: task.vType,
-        ledger: finalLedgerForLog,
-        amount: finalAmountForLog,
-        date: safeDate,
-        narration: finalNarrationForLog,
-        voucherNumber: finalVoucherNoForLog,
-        status: isSuccess ? 'SUCCESS' : 'FAILED',
-        error: errorMsg
-      };
-
-      setFinalResults(prev => [...prev, processedItem]);
-      setCompletedLogs(prev => {
-        const newLog = { id: `${processedItem._id}-${Date.now()}`, item: processedItem, isSuccess };
-        return [...prev, newLog].slice(-3);
-      });
-
-      await sleep(350); 
+      setGlobalProgress(Math.round(((i + 1) / idsToProcess.length) * 100));
+      await sleep(250); 
     }
 
-    await sleep(600);
-    setPhase('DONE');
-    if (onCompleteRef.current) onCompleteRef.current();
+    setIsProcessing(false);
+    
+    setVouchers(current => {
+      const remainingPending = current.filter(v => v.status === 'PENDING').length;
+      if (remainingPending === 0) {
+        toast.success("Batch Operations Completed!");
+      }
+      return current;
+    });
   };
 
-  // =========================================================================
-  // VIEW GROUP BUILDER
-  // =========================================================================
-  const groupedResults = useMemo(() => {
-    return finalResults.reduce((acc, curr) => {
-      const type = curr.vType || 'UNKNOWN';
-      if (!acc[type]) acc[type] = { items: [], total: 0 };
-      acc[type].items.push(curr);
-      acc[type].total += (curr.amount || 0);
-      return acc;
-    }, {});
-  }, [finalResults]);
-
-  const totalSuccess = finalResults.filter(r => r.status === 'SUCCESS').length;
-  const totalFailed = finalResults.filter(r => r.status === 'FAILED').length;
-
-  const getTypeConfig = (type) => {
-    switch(type) {
-      case 'RECEIPT': return { icon: <TrendingUp size={16}/>, title: 'Bank Receipts', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10', border: 'border-emerald-200 dark:border-emerald-500/20' };
-      case 'PAYMENT': return { icon: <TrendingDown size={16}/>, title: 'Bank Payments', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-500/10', border: 'border-rose-200 dark:border-rose-500/20' };
-      case 'SALES': return { icon: <Layers size={16}/>, title: 'Commission Sales Invoices', color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-500/10', border: 'border-indigo-200 dark:border-indigo-500/20' };
-      default: return { icon: <FileText size={16}/>, title: 'Other Vouchers', color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-50 dark:bg-slate-500/10', border: 'border-slate-200 dark:border-slate-500/20' };
-    }
-  };
+  const handleSyncAll = () => processBatch(vouchers.filter(v => v.status === 'PENDING').map(v => v.id));
+  const handleSyncType = (type) => processBatch(vouchers.filter(v => v.status === 'PENDING' && v.vType === type).map(v => v.id));
+  const handleSyncBank = (bank) => processBatch(vouchers.filter(v => v.status === 'PENDING' && v.bank === bank).map(v => v.id));
+  const handleSyncSingle = (id) => processBatch([id]);
 
   // =========================================================================
-  // PHASE VIEW 1: MANUALLY TRIGGERED GATEWAY ZONE (Safe Landing)
+  // RENDER UI
   // =========================================================================
-  if (phase === 'READY') {
-    return (
-      <div className="h-full w-full bg-slate-50/50 dark:bg-[#08090A] lg:bg-white flex flex-col items-center justify-center p-6 lg:p-12">
-        <div className="w-full max-w-md bg-white dark:bg-[#111214] border border-slate-200 dark:border-white/10 rounded-3xl p-6 lg:p-8 shadow-xl text-center space-y-6 animate-in zoom-in-95 duration-400">
-          <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto border border-indigo-100 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-400 shadow-sm">
-            <Layers size={24} />
-          </div>
-          
-          <div className="space-y-1.5">
-            <h2 className="text-xl font-[1000] uppercase tracking-tight text-slate-900 dark:text-white italic">
-              Verification Staging Ready
-            </h2>
-            <p className="text-xs font-bold text-slate-400">
-              The compilation engine flattened your selections into absolute book tasks.
-            </p>
-          </div>
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{__html: `
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+      `}} />
 
-          <div className="grid grid-cols-3 gap-2.5 pt-2">
-            <div className="bg-slate-50 dark:bg-white/2 border border-slate-100 dark:border-white/5 p-3 rounded-xl flex flex-col items-center text-center">
-              <TrendingUp size={14} className="text-emerald-500 mb-1" />
-              <span className="text-[14px] font-[1000] text-slate-800 dark:text-slate-200">{readyMetrics.RECEIPT}</span>
-              <span className="text-[7.5px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Receipts</span>
+      <div className="h-full w-full bg-white overflow-y-auto custom-scroll text-slate-900 font-sans pb-32">
+        
+        {/* ===================== HERO HEADER ===================== */}
+        <div className="bg-[#0f172a] w-full px-6 lg:px-12 pt-8 pb-14 text-white relative">
+          <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6 w-full relative z-10">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shrink-0">
+                <FileText size={24} strokeWidth={2} />
+              </div>
+              <div className="flex flex-col">
+                <h2 className="text-[24px] font-black leading-none tracking-tight text-white mb-2">
+                  {companyName || "Final Synchronization"}
+                </h2>
+                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  <span>Execution Manifest</span>
+                  <span className="w-1 h-1 rounded-full bg-slate-600" /> 
+                  <span className="text-slate-300">{monthName}</span>
+                  <span className="w-1 h-1 rounded-full bg-slate-600" /> 
+                  <span className="flex items-center gap-1 text-emerald-400"><ShieldCheck size={14} /> Bridge Active</span>
+                </div>
+              </div>
             </div>
-            <div className="bg-slate-50 dark:bg-white/2 border border-slate-100 dark:border-white/5 p-3 rounded-xl flex flex-col items-center text-center">
-              <TrendingDown size={14} className="text-rose-500 mb-1" />
-              <span className="text-[14px] font-[1000] text-slate-800 dark:text-slate-200">{readyMetrics.PAYMENT}</span>
-              <span className="text-[7.5px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Payments</span>
-            </div>
-            <div className="bg-slate-50 dark:bg-white/2 border border-slate-100 dark:border-white/5 p-3 rounded-xl flex flex-col items-center text-center">
-              <Layers size={14} className="text-indigo-500 mb-1" />
-              <span className="text-[14px] font-[1000] text-slate-800 dark:text-slate-200">{readyMetrics.SALES}</span>
-              <span className="text-[7.5px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Invoices</span>
-            </div>
-          </div>
-
-          <div className="w-full space-y-3 mt-4">
-            <button
-              onClick={() => handleStartSynchronization('ALL')}
-              className="w-full bg-slate-900 dark:bg-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 text-white py-4 rounded-xl font-black uppercase text-[11px] tracking-[0.15em] flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-lg"
-            >
-              <Play size={14} fill="currentColor" /> Sync All Approved Vouchers
-            </button>
             
-            <div className="flex gap-2.5">
-              <button
-                disabled={readyMetrics.RECEIPT === 0}
-                onClick={() => handleStartSynchronization('RECEIPT')}
-                className="flex-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 py-3.5 rounded-xl font-black uppercase text-[9px] tracking-widest disabled:opacity-40 transition-all hover:bg-emerald-100 dark:hover:bg-emerald-500/20 active:scale-95"
-              >
-                Receipts Only
-              </button>
-              <button
-                disabled={readyMetrics.PAYMENT === 0}
-                onClick={() => handleStartSynchronization('PAYMENT')}
-                className="flex-1 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 py-3.5 rounded-xl font-black uppercase text-[9px] tracking-widest disabled:opacity-40 transition-all hover:bg-rose-100 dark:hover:bg-rose-500/20 active:scale-95"
-              >
-                Payments Only
-              </button>
-              <button
-                disabled={readyMetrics.SALES === 0}
-                onClick={() => handleStartSynchronization('SALES')}
-                className="flex-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 py-3.5 rounded-xl font-black uppercase text-[9px] tracking-widest disabled:opacity-40 transition-all hover:bg-indigo-100 dark:hover:bg-indigo-500/20 active:scale-95"
-              >
-                Sales Only
-              </button>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-4 bg-white/5 border border-white/10 px-5 py-2.5 rounded-xl backdrop-blur-md">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-r border-white/10 pr-4">Global Queue</div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-slate-200">{stats.total} Total</span>
+                  <span className="text-xs font-bold text-emerald-400">{stats.success} Synced</span>
+                  <span className="text-xs font-bold text-slate-400">{stats.pending} Pending</span>
+                </div>
+              </div>
             </div>
           </div>
-
         </div>
-      </div>
-    );
-  }
 
-  // =========================================================================
-  // PHASE VIEW 2: REAL-TIME PROGRESSIVE WRITER FEED
-  // =========================================================================
-  if (phase === 'PROCESSING') {
-    const activeTask = activeQueue[currentIndex];
-    const progressPercent = (currentIndex / Math.max(1, activeQueue.length)) * 100;
-    const activeVTypeLabel = activeTask ? getVoucherTypeLabel(activeTask.vType) : '';
-
-    return (
-      <div className="h-full w-full bg-slate-50/50 dark:bg-[#08090A] lg:bg-white flex flex-col items-center justify-center p-6 lg:p-12 overflow-y-auto">
-        <div className="w-full max-w-lg flex flex-col items-center gap-10 animate-in zoom-in-95 duration-500 py-4">
-          
-          <div className="text-center w-full max-w-sm mx-auto">
-            <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-100 dark:border-emerald-500/20">
-               <Zap className="text-emerald-500" size={20} fill="currentColor" />
-            </div>
-            <h2 className="text-xl lg:text-2xl font-[1000] uppercase tracking-tight text-slate-900 dark:text-white italic mb-1">
-              Writing to Tally
-            </h2>
-            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
-              Processing {currentIndex + 1} of {activeQueue.length} Entries
-            </p>
+        {/* ===================== GLOBAL EXECUTION TOOLBAR ===================== */}
+        <div className="w-full px-6 lg:px-12 -mt-6 relative z-10 mb-8">
+          <div className="bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-200/80 px-6 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             
-            <div className="w-full bg-slate-100 dark:bg-white/5 h-2 rounded-full overflow-hidden mt-6 shadow-inner">
-              <div className="h-full bg-emerald-500 transition-all duration-500 ease-out relative" style={{ width: `${progressPercent}%` }}>
-                <div className="absolute inset-0 bg-white/20 animate-pulse" />
+            <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pb-1 lg:pb-0">
+              <div className="flex flex-col shrink-0">
+                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-0.5">Sales Ready</span>
+                <span className="font-mono text-base font-bold text-blue-600">{globalCounts.sales}</span>
               </div>
+              <div className="w-px h-8 bg-slate-200 shrink-0" />
+              <div className="flex flex-col shrink-0">
+                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-0.5">Receipts Ready</span>
+                <span className="font-mono text-base font-bold text-emerald-600">{globalCounts.receipts}</span>
+              </div>
+              <div className="w-px h-8 bg-slate-200 shrink-0" />
+              <div className="flex flex-col shrink-0">
+                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-0.5">Payments Ready</span>
+                <span className="font-mono text-base font-bold text-rose-600">{globalCounts.payments}</span>
+              </div>
+            </div>
+            
+            {/* ENHANCED OUTLINED ACTION BUTTONS */}
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                disabled={isProcessing || stats.pending === 0 || stats.sales === 0}
+                onClick={() => handleSyncType('SALES')}
+                className="flex items-center gap-2 px-4 py-2 bg-transparent border-2 border-blue-500 hover:bg-blue-50 text-blue-600 hover:text-blue-700 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <Layers size={14} strokeWidth={2.5}/> Sync Sales
+              </button>
+              
+              <button
+                disabled={isProcessing || stats.pending === 0 || (stats.receipts === 0 && stats.payments === 0)}
+                onClick={() => {
+                  handleSyncType('RECEIPT');
+                  setTimeout(() => handleSyncType('PAYMENT'), 500); 
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-transparent border-2 border-slate-300 hover:border-slate-500 hover:bg-slate-50 text-slate-600 hover:text-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <Banknote size={14} strokeWidth={2.5}/> Sync Banking
+              </button>
+
+              <div className="hidden lg:block w-px h-6 bg-slate-200 mx-1" />
+
+              <button
+                disabled={isProcessing || stats.pending === 0}
+                onClick={handleSyncAll}
+                className="group flex items-center gap-2 px-6 py-2 bg-transparent border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-sm hover:shadow-md"
+              >
+                {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} className="group-hover:fill-current" strokeWidth={2.5} />}
+                Sync All Pending
+              </button>
             </div>
           </div>
-
-          <div className="w-full flex flex-col gap-3 min-h-[260px]">
-            <div className="flex items-start gap-4 bg-white dark:bg-[#111214] border-2 border-emerald-500/30 dark:border-emerald-500/40 p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(16,185,129,0.05)] relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500" />
-              <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-                {isCurrentlyCreating ? <Loader2 size={18} className="animate-spin" strokeWidth={3} /> : <CheckCircle2 size={18} strokeWidth={3} />}
+          
+          {/* Main Progress Bar */}
+          {isProcessing && (
+            <div className="w-full mt-4 animate-in fade-in zoom-in duration-300">
+              <div className="flex justify-between items-end mb-1.5">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Master Engine Progress</span>
+                <span className="text-[10px] font-black text-blue-600">{globalProgress}%</span>
               </div>
-              
-              <div className="flex flex-col flex-1 min-w-0">
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-1">
-                  {isCurrentlyCreating ? 'Currently Generating' : 'Finalizing...'}
-                </span>
-                
-                {isCurrentlyCreating && activeTask ? (
-                  <div className="flex flex-col">
-                    <span className="text-sm font-[1000] text-slate-900 dark:text-white truncate">
-                      {activeTask.rawTx.suggestedLedger || activeTask.rawTx.ledgerName || 'Suspense Accounting Master'}
-                    </span>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{activeVTypeLabel}</span>
-                      <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                      <span className="text-[10px] font-bold text-slate-500 italic tabular-nums">{formatINR(activeTask.rawTx.grossVoucherTotal || activeTask.rawTx.amount)}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <span className="text-sm font-[1000] text-slate-900 dark:text-white animate-pulse">Please wait...</span>
-                )}
+              <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden shadow-inner">
+                <div className="bg-blue-600 h-full transition-all duration-300 ease-out shadow-[0_0_10px_rgba(37,99,235,0.8)]" style={{ width: `${globalProgress}%` }} />
               </div>
             </div>
+          )}
+        </div>
 
-            <div className="flex flex-col gap-2.5 px-2 mt-2">
-              {completedLogs.map((log, idx) => {
-                const opacityClass = idx === completedLogs.length - 1 ? 'opacity-100' : idx === completedLogs.length - 2 ? 'opacity-60' : 'opacity-30';
+        {/* ===================== FLAT PIPELINE LEDGER ===================== */}
+        <div className="w-full px-6 lg:px-12 mt-6">
+          {vouchers.length === 0 ? (
+            <div className="py-24 flex flex-col items-center justify-center text-slate-400 border-t border-b border-slate-200">
+              <CheckCircle2 size={36} className="mb-4 text-emerald-400" />
+              <span className="text-sm font-bold uppercase tracking-widest">No Vouchers Generated</span>
+              <span className="text-sm mt-1">Check your selections in the previous steps.</span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-14">
+              {Object.entries(groupedVouchers).map(([bank, bankVouchers]) => {
+                
+                const pendingCount = bankVouchers.filter(v => v.status === 'PENDING').length;
+
                 return (
-                  <div key={log.id} className={`flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 transition-opacity ${opacityClass}`}>
-                    <div className={`shrink-0 mt-0.5 ${log.isSuccess ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {log.isSuccess ? <CheckCircle2 size={16} strokeWidth={3} /> : <XCircle size={16} strokeWidth={3} />}
-                    </div>
+                  <div key={bank} className="w-full">
                     
-                    <div className="flex-1 min-w-0 text-[11.5px] text-slate-600 dark:text-slate-300 truncate">
-                      {log.isSuccess ? (
-                        <>Saved <span className="font-[1000] text-slate-900 dark:text-white">{getVoucherTypeLabel(log.item.vType)}</span> for <span className="font-[1000] text-slate-900 dark:text-white">{log.item.ledger}</span></>
-                      ) : (
-                        <span className="text-rose-600 dark:text-rose-400 font-bold">Failed to save {getVoucherTypeLabel(log.item.vType)} for {log.item.ledger}</span>
-                      )}
+                    {/* --- BANK GROUP HEADER (Outlined Action) --- */}
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-3 border-b-2 border-slate-800">
+                      <div className="flex items-end gap-3">
+                        <Landmark size={24} className="text-slate-800 mb-0.5" />
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-0.5">
+                            Bank Origin
+                          </span>
+                          <span className="text-[22px] font-black text-slate-900 leading-none tracking-tight">
+                            {bank}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-5 shrink-0">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                          {bankVouchers.length} Items ({pendingCount} Pending)
+                        </span>
+                        
+                        <button
+                          disabled={isProcessing || pendingCount === 0}
+                          onClick={() => handleSyncBank(bank)}
+                          className="group flex items-center gap-2 px-4 py-2 bg-transparent border-2 border-slate-400 text-slate-600 hover:border-slate-900 hover:text-slate-900 hover:bg-slate-50 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-sm active:scale-95"
+                        >
+                          <Play size={12} strokeWidth={3} className="group-hover:fill-current transition-all" /> 
+                          Sync Bank Group
+                        </button>
+
+                      </div>
                     </div>
-                    
-                    <div className={`shrink-0 text-[10px] font-[1000] tabular-nums px-2 py-0.5 rounded-md border ${log.isSuccess ? 'bg-slate-50 border-slate-200 text-slate-500 dark:bg-white/5 dark:border-white/10 dark:text-slate-400' : 'bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-500/10 dark:border-rose-500/20'}`}>
-                       {formatINR(log.item.amount)}
+
+                    {/* --- VOUCHER SUB-GROUPS --- */}
+                    <div className="flex flex-col w-full mt-4">
+                      {['SALES', 'RECEIPT', 'PAYMENT'].map(vType => {
+                        const typeVouchers = bankVouchers.filter(v => v.vType === vType);
+                        if (typeVouchers.length === 0) return null;
+
+                        const theme = getThemeConfig(vType);
+
+                        return (
+                          <div key={vType} className="mb-8 last:mb-0">
+                            
+                            <div className={`flex items-center gap-2 mb-3 mt-2 ${theme.text}`}>
+                              {theme.icon}
+                              <span className="text-[12px] font-black uppercase tracking-widest">
+                                {theme.label}s ({typeVouchers.length})
+                              </span>
+                            </div>
+
+                            <div className="flex flex-col border-t border-slate-200">
+                              {typeVouchers.map((v) => {
+                                const isSuccess = v.status === 'SUCCESS';
+                                const isFailed = v.status === 'FAILED';
+                                const isRunning = v.status === 'PROCESSING';
+
+                                // UI MATH FOR SALES ROW
+                                let displayGross = Math.abs(v.rawTx.amount || 0);
+                                let displayBase = displayGross;
+                                let dCgst = 0, dSgst = 0, dIgst = 0;
+                                let resolvedLedger = v.rawTx.suggestedLedger || v.rawTx.ledgerName;
+
+                                if (v.vType === 'SALES') {
+                                  resolvedLedger = v.rawTx.individualSalesLedger || salesIncomeLedger || "SUSPENSE SALES LEDGER";
+                                  displayBase = (v.rawTx.baseAmount !== undefined && v.rawTx.baseAmount !== null && v.rawTx.baseAmount !== "") 
+                                    ? Number(v.rawTx.baseAmount) 
+                                    : Math.abs(v.rawTx.amount || 0);
+                                  
+                                  if (isGstCompliant) {
+                                    const applyCG = isTrue(v.rawTx.applyCGST);
+                                    const applySG = isTrue(v.rawTx.applySGST);
+                                    const applyIG = isTrue(v.rawTx.applyIGST);
+
+                                    dCgst = (v.rawTx.cgst !== undefined && v.rawTx.cgst !== null && v.rawTx.cgst !== "") ? Number(v.rawTx.cgst) : (applyCG ? displayBase * 0.09 : 0);
+                                    dSgst = (v.rawTx.sgst !== undefined && v.rawTx.sgst !== null && v.rawTx.sgst !== "") ? Number(v.rawTx.sgst) : (applySG ? displayBase * 0.09 : 0);
+                                    dIgst = (v.rawTx.igst !== undefined && v.rawTx.igst !== null && v.rawTx.igst !== "") ? Number(v.rawTx.igst) : (applyIG ? displayBase * 0.18 : 0);
+                                  }
+                                  displayGross = displayBase + dCgst + dSgst + dIgst;
+                                }
+
+                                return (
+                                  <div key={v.id} className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 pl-6 pr-4 border-b border-slate-200 last:border-b-0 hover:bg-slate-50 transition-colors bg-white">
+                                    
+                                    {/* Minimalist Left Accent Border */}
+                                    <div className={`absolute left-0 top-3 bottom-3 w-1 rounded-full ${theme.border} bg-slate-300 opacity-50 group-hover:opacity-100 transition-opacity`} 
+                                         style={{ backgroundColor: v.vType === 'SALES' ? '#3b82f6' : v.vType === 'RECEIPT' ? '#10b981' : '#f43f5e' }}/>
+                                    
+                                    {/* Left Info: Type & Ledger */}
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className={`text-[10px] font-black uppercase tracking-widest ${theme.text}`}>
+                                          {theme.label}
+                                        </span>
+                                        <span className="text-[10px] font-bold text-slate-400">
+                                          • {v.rawTx.date ? new Date(v.rawTx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : 'No Date'}
+                                        </span>
+                                      </div>
+                                      <span className="text-[15px] font-bold text-slate-900 leading-snug truncate pr-4">
+                                        {resolvedLedger}
+                                      </span>
+
+                                      {/* Inline Clean GST Math */}
+                                      {v.vType === 'SALES' && (
+                                        <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500 tracking-wide mt-1">
+                                          <span>Base: <span className="text-slate-800">{formatINR(displayBase).replace('₹', '')}</span></span>
+                                          {dCgst > 0 && <span className="text-slate-300">•</span>}
+                                          {dCgst > 0 && <span>CG: <span className="text-slate-800">{formatINR(dCgst).replace('₹', '')}</span></span>}
+                                          {dSgst > 0 && <span className="text-slate-300">•</span>}
+                                          {dSgst > 0 && <span>SG: <span className="text-slate-800">{formatINR(dSgst).replace('₹', '')}</span></span>}
+                                          {dIgst > 0 && <span className="text-slate-300">•</span>}
+                                          {dIgst > 0 && <span className="text-blue-600">IGST: <span className="font-bold">{formatINR(dIgst).replace('₹', '')}</span></span>}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Middle Info: Amount */}
+                                    <div className="flex items-center sm:justify-end w-32 shrink-0">
+                                      <span className={`font-mono text-[16px] font-black ${theme.text}`}>
+                                        {formatINR(v.vType === 'SALES' ? displayGross : v.rawTx.amount)}
+                                      </span>
+                                    </div>
+
+                                    {/* Right Info: Status & Intuitive Push Action */}
+                                    <div className="flex items-center justify-end gap-4 w-48 shrink-0">
+                                      
+                                      <div className="flex items-center">
+                                        {isRunning && (
+                                          <span className="flex items-center gap-1.5 text-blue-600 text-[10px] font-black uppercase tracking-widest">
+                                            <Loader2 size={14} className="animate-spin" /> Pushing
+                                          </span>
+                                        )}
+                                        {isSuccess && (
+                                          <div className="flex flex-col items-end">
+                                            <span className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-black uppercase tracking-widest">
+                                              <CheckCircle2 size={16} strokeWidth={2.5}/> Synced
+                                            </span>
+                                            {v.voucherNo && <span className="text-[9px] text-slate-400 font-mono mt-0.5 font-bold tracking-widest">{v.voucherNo}</span>}
+                                          </div>
+                                        )}
+                                        {isFailed && (
+                                          <div className="flex flex-col items-end group/err relative cursor-help">
+                                            <span className="flex items-center gap-1.5 text-rose-600 text-[10px] font-black uppercase tracking-widest">
+                                              <AlertCircle size={16} strokeWidth={2.5}/> Failed
+                                            </span>
+                                            <div className="absolute right-0 bottom-full mb-2 w-56 bg-slate-900 text-white text-[11px] p-3 rounded shadow-xl opacity-0 group-hover/err:opacity-100 transition-opacity pointer-events-none z-50">
+                                              {v.errorMsg}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {v.status === 'PENDING' && (
+                                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-300 pb-0.5">
+                                            [ READY ]
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {/* OUTLINED Individual Sync Button */}
+                                      {(v.status === 'PENDING' || v.status === 'FAILED') && !isProcessing && (
+                                        <button
+                                          onClick={() => handleSyncSingle(v.id)}
+                                          className="group/btn flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent border-2 border-blue-400 hover:border-blue-600 hover:bg-blue-50 text-blue-600 transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                          title="Push to Tally"
+                                        >
+                                          <span className="text-[9px] font-black uppercase tracking-widest mt-0.5">Push</span>
+                                          <Send size={12} strokeWidth={2.5} className="group-hover/btn:-translate-y-0.5 group-hover/btn:translate-x-0.5 transition-transform" />
+                                        </button>
+                                      )}
+                                      
+                                      {/* Visual spacing lock */}
+                                      {(isSuccess || isRunning || isProcessing) && v.status !== 'PROCESSING' && v.status !== 'PENDING' && v.status !== 'FAILED' && (
+                                        <div className="w-[66px]" />
+                                      )}
+                                    </div>
+
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
               })}
             </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+          )}
 
-  // =========================================================================
-  // PHASE VIEW 3: CARD-BASED SUMMARY BREAKDOWN SCREEN
-  // =========================================================================
-  return (
-    <div className="h-full w-full bg-[#FAFAFA] dark:bg-[#08090A] lg:bg-slate-50/50 flex flex-col overflow-hidden text-left text-slate-800 dark:text-slate-200 font-sans relative animate-in fade-in zoom-in-95 duration-500">
-      
-      <div className="px-5 lg:px-12 py-5 bg-white dark:bg-[#0B0C10] border-b border-slate-200 dark:border-white/5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 shrink-0 z-10 shadow-sm">
-        <div className="space-y-1 flex-1">
-          <h2 className="text-lg lg:text-xl font-[1000] uppercase tracking-tight text-slate-900 dark:text-white italic">
-            Batch Synchronization Complete
-          </h2>
-          <p className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5">
-            <CheckCircle2 size={12} className="text-emerald-500" />
-            The selected batch was compiled and synchronized with Tally.
-          </p>
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Back to Sync Menu Button */}
-          <button 
-            onClick={() => {
-              setPhase('READY');
-              setFinalResults([]);
-            }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
-          >
-            <ArrowLeft size={14} /> Sync Next Batch
-          </button>
-
-          <div className="flex items-center gap-2.5 px-4 py-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl border border-emerald-200 dark:border-emerald-500/20">
-            <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center">
-               <Check size={14} className="text-emerald-600 dark:text-emerald-400" strokeWidth={4} />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest leading-none mb-0.5">Committed</span>
-              <span className="text-sm font-[1000] text-emerald-700 dark:text-emerald-300 tabular-nums leading-none">{totalSuccess}</span>
-            </div>
-          </div>
-
-          {totalFailed > 0 && (
-            <div className="flex items-center gap-2.5 px-4 py-2 bg-rose-50 dark:bg-rose-500/10 rounded-xl border border-rose-200 dark:border-rose-500/20">
-              <div className="w-6 h-6 rounded-full bg-rose-100 dark:bg-rose-500/20 flex items-center justify-center">
-                 <XCircle size={14} className="text-rose-600 dark:text-rose-400" strokeWidth={3} />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[8px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest leading-none mb-0.5">Failed</span>
-                <span className="text-sm font-[1000] text-rose-700 dark:text-rose-300 tabular-nums leading-none">{totalFailed}</span>
-              </div>
+          {/* FINAL OUTLINED CLOSE BUTTON */}
+          {vouchers.length > 0 && stats.pending === 0 && !isProcessing && (
+            <div className="mt-12 flex justify-center pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <button
+                onClick={() => {
+                  if (onCompleteRef.current) onCompleteRef.current();
+                }}
+                className="px-14 py-4 cursor-pointer bg-transparent border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white rounded-xl text-xs font-black uppercase tracking-[0.2em] transition-all shadow-sm hover:shadow-lg active:scale-95 flex items-center gap-3"
+              >
+                <CheckCircle2 size={18} /> Finalize & Close Wizard
+              </button>
             </div>
           )}
+
         </div>
       </div>
-
-      <div className="flex-1 overflow-y-auto no-scrollbar p-5 lg:p-12 space-y-8 lg:space-y-10 pb-24">
-        {Object.keys(groupedResults).length === 0 ? (
-           <div className="h-full flex flex-col items-center justify-center opacity-20 gap-3">
-             <CheckCircle2 size={36} strokeWidth={1.5} />
-             <p className="text-xs font-black uppercase tracking-widest">No entries successfully compiled.</p>
-           </div>
-        ) : (
-          Object.entries(groupedResults).map(([type, group]) => {
-            const config = getTypeConfig(type);
-            return (
-              <div key={type} className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                
-                <div className="flex items-end justify-between border-b-2 border-slate-200 dark:border-white/10 pb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className={`p-2 rounded-lg ${config.bg} ${config.color} ${config.border} border`}>
-                      {config.icon}
-                    </div>
-                    <div className="flex flex-col">
-                      <h3 className="text-sm font-[1000] uppercase tracking-wider text-slate-800 dark:text-slate-200 leading-tight">
-                        {config.title}
-                      </h3>
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                        {group.items.length} Records
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Total Group Value</span>
-                    <span className="text-sm font-[1000] text-slate-900 dark:text-white tabular-nums italic">{formatINR(group.total)}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3">
-                  {group.items.map((item) => {
-                    const isSuccess = item.status === 'SUCCESS';
-                    return (
-                      <div key={item._id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border transition-all hover:shadow-md ${isSuccess ? 'bg-white dark:bg-[#111214] border-slate-200 dark:border-white/5' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-500/20'}`}>
-                        <div className="flex items-start sm:items-center gap-4 min-w-0 flex-1">
-                          <div className={`shrink-0 mt-0.5 sm:mt-0 ${isSuccess ? 'text-emerald-500' : 'text-rose-500'}`}>
-                            {isSuccess ? <CheckCircle2 size={20} strokeWidth={2.5} /> : <AlertCircle size={20} strokeWidth={2.5} />}
-                          </div>
-                          
-                          <div className="flex flex-col min-w-0 flex-1">
-                            <div className="flex items-center gap-2.5 flex-wrap mb-1">
-                              <span className="text-xs sm:text-[13px] font-[1000] uppercase tracking-tight text-slate-900 dark:text-white leading-tight break-words">
-                                {item.ledger}
-                              </span>
-                              {isSuccess && item.voucherNumber && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black bg-emerald-50 border border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400 shrink-0">
-                                  <FileText size={10} /> {item.voucherNumber}
-                                </span>
-                              )}
-                            </div>
-                            
-                            {!isSuccess && item.error ? (
-                              <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400 leading-snug">
-                                {item.error}
-                              </span>
-                            ) : (
-                              <span className="text-[11px] text-slate-500 font-medium leading-snug truncate">
-                                {new Date(item.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} 
-                                <span className="mx-1.5 opacity-40">•</span> 
-                                {item.narration}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="shrink-0 sm:pl-6 text-left sm:text-right mt-3 sm:mt-0 ml-9 sm:ml-0">
-                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block sm:hidden mb-0.5">Amount</span>
-                          <p className={`text-sm font-[1000] tabular-nums ${isSuccess ? 'text-slate-800 dark:text-slate-200' : 'text-rose-600 dark:text-rose-400'}`}>
-                             {formatINR(item.amount)}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-    </div>
+    </>
   );
 };
 

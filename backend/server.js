@@ -63,6 +63,7 @@ const submissionRoutes = require("./routes/submissionRoutes");
 const workflowRoutes = require("./routes/workflowRoutes");
 const auditRoutes = require("./routes/auditRoutes");
 const tallyRoutes = require("./routes/tallyRoutes");
+const clientDataRoutes = require("./routes/clientDataRoutes");
 
 // 3. Global Middleware (CRITICAL ORDER)
 
@@ -173,6 +174,7 @@ app.use("/api/submissions", submissionRoutes);
 app.use("/api/workflows", workflowRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/tally", tallyRoutes);
+app.use("/api/utilities", clientDataRoutes);
 // This sends 0 bytes of body data, only the headers.
 app.get("/health", (req, res) => res.sendStatus(200));
 

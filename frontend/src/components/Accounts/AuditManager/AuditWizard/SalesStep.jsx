@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Search, Check, Landmark, FileText, ChevronLeft, 
@@ -6,16 +6,21 @@ import {
   Calendar as CalendarIcon, ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useApi } from '../../../../hooks/useApi';
 
 const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) => {
+  const { request } = useApi(); 
+
   // Base Interaction States
   const [selectedBank, setSelectedBank] = useState("");
   const [selectedTxId, setSelectedTxId] = useState(null);
   
   // Editor & Dropdown States
-  const [searchQuery, setSearchQuery] = useState("");
+  const [txSearchQuery, setTxSearchQuery] = useState(""); 
+  const [searchQuery, setSearchQuery] = useState("");     
   const [isMobileEditorOpen, setIsMobileEditorOpen] = useState(false);
   const [ledgerModalMode, setLedgerModalMode] = useState(null);
+  const [showAllLedgers, setShowAllLedgers] = useState(false);
 
   // Date Picker States
   const [activePickerId, setActivePickerId] = useState(null);
@@ -26,6 +31,9 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
     "July", "August", "September", "October", "November", "December"
   ];
   const weekDays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+  // Helper for boolean evaluations from DB
+  const isTrue = (val) => val === true || String(val).toLowerCase() === 'true';
 
   const formatINR = (amount) => {
     return new Intl.NumberFormat('en-IN', {
@@ -39,29 +47,47 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
 
   const isGstCompliant = !!activeArnObject?.gstCompliant;
 
-  const companyLedgers = useMemo(() => {
+  // ALL ledgers for this company (Unfiltered)
+  const allCompanyLedgers = useMemo(() => {
     return masterLedgers
       .filter(l => l.tallyCompanyName === selection.tallyCompany)
-      .filter(l => l.name.toLowerCase().includes("mf com"))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [masterLedgers, selection.tallyCompany]);
+
+  // Recommended ledgers (Filtered)
+  const companyLedgers = useMemo(() => {
+    return allCompanyLedgers.filter(l => l.name.toLowerCase().includes("mf com"));
+  }, [allCompanyLedgers]);
+
+  // Auto-select IGST Global Ledger if GST Compliant
+  useEffect(() => {
+    if (isGstCompliant && !selection.salesIncomeLedger && companyLedgers.length > 0) {
+      const igstLedger = companyLedgers.find(l => l.name.toLowerCase().includes("igst"));
+      if (igstLedger && selection.audit?._id) {
+        setSelection(prev => ({ ...prev, salesIncomeLedger: igstLedger.name }));
+        
+        request(`/audit/${selection.audit._id}`, 'PUT', { salesIncomeLedger: igstLedger.name })
+          .catch(err => console.error("Failed to auto-set IGST ledger", err));
+      }
+    }
+  }, [isGstCompliant, selection.salesIncomeLedger, companyLedgers, request, selection.audit?._id, setSelection]);
 
   // Core Data Parsing
   const salesTransactions = useMemo(() => {
     return (selection.stagedData?.transactions || [])
-      .filter(t => t && t.isSales && t.type === 'RECEIPT')
+      .filter(t => t && isTrue(t.isSales) && t.type === 'RECEIPT')
       .map(tx => {
         const netAmount = tx.amount || 0; 
         const activeSalesLedger = tx.individualSalesLedger || selection.salesIncomeLedger || tx.suggestedLedger || "SUSPENSE SALES LEDGER";
         
         const isLocalAmc = activeSalesLedger.toUpperCase().includes("NJ") || activeSalesLedger.toUpperCase().includes("LOCAL") || activeSalesLedger.toUpperCase().includes("STATE");
 
-        let baseAmount = netAmount;
+        let baseAmount = (tx.baseAmount !== undefined && tx.baseAmount !== null) ? Number(tx.baseAmount) : netAmount;
         let cgst = 0, sgst = 0, igst = 0, grossVoucherTotal = netAmount;
 
-        const applyCGST = tx.applyCGST !== undefined ? tx.applyCGST : (isGstCompliant && isLocalAmc);
-        const applySGST = tx.applySGST !== undefined ? tx.applySGST : (isGstCompliant && isLocalAmc);
-        const applyIGST = tx.applyIGST !== undefined ? tx.applyIGST : (isGstCompliant && !isLocalAmc);
+        const applyCGST = tx.applyCGST !== undefined && tx.applyCGST !== null ? isTrue(tx.applyCGST) : (isGstCompliant && isLocalAmc);
+        const applySGST = tx.applySGST !== undefined && tx.applySGST !== null ? isTrue(tx.applySGST) : (isGstCompliant && isLocalAmc);
+        const applyIGST = tx.applyIGST !== undefined && tx.applyIGST !== null ? isTrue(tx.applyIGST) : (isGstCompliant && !isLocalAmc);
 
         if (applyCGST) cgst = baseAmount * 0.09;
         if (applySGST) sgst = baseAmount * 0.09;
@@ -101,10 +127,19 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
   }, [selectedBank, availableBanks]);
 
   const displayTransactions = useMemo(() => {
-    return salesTransactions
-      .filter(t => t.bank === currentBank || !t.bank)
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
-  }, [salesTransactions, currentBank]);
+    let filtered = salesTransactions.filter(t => t.bank === currentBank || !t.bank);
+
+    if (txSearchQuery.trim() !== "") {
+      const q = txSearchQuery.toLowerCase();
+      filtered = filtered.filter(t => 
+        (t.narration || "").toLowerCase().includes(q) || 
+        (t.suggestedLedger || "").toLowerCase().includes(q) ||
+        (t.activeSalesLedger || "").toLowerCase().includes(q)
+      );
+    }
+
+    return filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+  }, [salesTransactions, currentBank, txSearchQuery]);
 
   const currentTxId = useMemo(() => {
     if (selectedTxId && displayTransactions.some(t => t._id === selectedTxId)) return selectedTxId;
@@ -128,40 +163,70 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
     const counts = {};
     availableBanks.forEach(b => counts[b] = 0);
     salesTransactions.forEach(tx => {
-      if (!tx.isSalesApproved) {
+      if (!isTrue(tx.isSalesApproved)) {
         if (tx.bank) counts[tx.bank] = (counts[tx.bank] || 0) + 1;
       }
     });
     return counts;
   }, [salesTransactions, availableBanks]);
 
-  // Update Handlers
-  const handleUpdate = (txId, payload) => {
+  // -------------------------------------------------------------
+  // UPDATE HANDLERS: WITH BACKGROUND PERSISTENCE & LOCK-IN FIX
+  // -------------------------------------------------------------
+  const handleUpdate = async (txId, payload) => {
     setSelection(prev => {
       const updatedTxs = (prev.stagedData?.transactions || []).map(t => {
         if (t._id === txId) {
-          const isConfigChange = payload.individualSalesLedger !== undefined || payload.applyCGST !== undefined || payload.applySGST !== undefined || payload.applyIGST !== undefined;
-          return {
-            ...t,
-            ...payload,
-            isSalesApproved: isConfigChange ? false : (payload.isSalesApproved !== undefined ? payload.isSalesApproved : t.isSalesApproved)
-          };
+          // If the user modifies config, reset approval UNLESS they explicitly pass isSalesApproved (like Verify actions do)
+          const isConfigChange = ('individualSalesLedger' in payload) || ('applyCGST' in payload) || ('applySGST' in payload) || ('applyIGST' in payload);
+          
+          let finalApprovalState = t.isSalesApproved;
+          if ('isSalesApproved' in payload) {
+            finalApprovalState = payload.isSalesApproved;
+          } else if (isConfigChange) {
+            finalApprovalState = false;
+            payload.isSalesApproved = false; // ensure DB also gets false
+          }
+
+          return { ...t, ...payload, isSalesApproved: finalApprovalState };
         }
         return t;
       });
       return { ...prev, stagedData: { ...prev.stagedData, transactions: updatedTxs } };
     });
+
+    try {
+      await request(`/audit/transactions/${txId}`, 'PUT', payload);
+    } catch (err) {
+      console.error("Auto-save failed for Transaction", err);
+    }
   };
+
+  // HELPER: Generates a payload to firmly lock all calculated GST info into the DB
+  const getLockedTaxPayload = (tx) => ({
+    applyCGST: tx.applyCGST,
+    applySGST: tx.applySGST,
+    applyIGST: tx.applyIGST,
+    baseAmount: tx.baseAmount,
+    cgst: tx.cgst,
+    sgst: tx.sgst,
+    igst: tx.igst
+  });
 
   const handleVerifyAndNext = () => {
     if (!activeTx) return;
-    handleUpdate(activeTx._id, { isSalesApproved: true });
+    
+    // Explicitly lock the GST payload when verifying
+    handleUpdate(activeTx._id, { 
+      isSalesApproved: true,
+      ...getLockedTaxPayload(activeTx)
+    });
     
     const currentIndex = displayTransactions.findIndex(t => t._id === currentTxId);
     let nextUnverifiedId = null;
     
     for (let i = currentIndex + 1; i < displayTransactions.length; i++) {
-      if (!displayTransactions[i].isSalesApproved) {
+      if (!isTrue(displayTransactions[i].isSalesApproved)) {
         nextUnverifiedId = displayTransactions[i]._id;
         break;
       }
@@ -175,40 +240,74 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
     }
   };
 
-  const handleSelectAll = () => {
+  const handleSelectAll = async () => {
     if (!displayTransactions.length) return;
-    const isAllSelected = displayTransactions.every(tx => tx.isSalesApproved);
+    const isAllSelected = displayTransactions.every(tx => isTrue(tx.isSalesApproved));
     const targetState = !isAllSelected;
 
     setSelection(prev => {
       const currentTxs = prev.stagedData?.transactions || [];
-      const updatedTxs = currentTxs.map(t => 
-        displayTransactions.some(d => d._id === t._id) ? { ...t, isSalesApproved: targetState } : t
-      );
+      const updatedTxs = currentTxs.map(t => {
+        const dTx = displayTransactions.find(d => d._id === t._id);
+        if (dTx) {
+          // If verifying, we inject the locked payload into local state as well
+          return targetState ? { ...t, isSalesApproved: true, ...getLockedTaxPayload(dTx) } : { ...t, isSalesApproved: false };
+        }
+        return t;
+      });
       return { ...prev, stagedData: { ...prev.stagedData, transactions: updatedTxs } };
     });
+
     toast.success(targetState ? `Approved all sales in view` : `Unapproved all sales in view`);
+
+    try {
+      if (targetState) {
+        // Individual PUTs to ensure GST data binds cleanly to each record
+        await Promise.all(displayTransactions.map(tx => 
+          request(`/audit/transactions/${tx._id}`, 'PUT', {
+            isSalesApproved: true,
+            ...getLockedTaxPayload(tx)
+          })
+        ));
+      } else {
+        const targetIds = displayTransactions.map(t => t._id);
+        await request('/audit/transactions/bulk-update', 'PUT', {
+          transactionIds: targetIds,
+          updateData: { isSalesApproved: false }
+        });
+      }
+    } catch (err) {
+      console.error("Bulk auto-save failed", err);
+    }
   };
 
-  const handleLedgerSelect = (ledgerName) => {
+  const handleLedgerSelect = async (ledgerName) => {
     if (ledgerModalMode === 'GLOBAL') {
       setSelection(prev => ({ ...prev, salesIncomeLedger: ledgerName }));
       toast.success("Global sales ledger updated");
+      try {
+        await request(`/audit/${selection.audit._id}`, 'PUT', { salesIncomeLedger: ledgerName });
+      } catch {
+        //
+      }
     } else if (ledgerModalMode === 'INDIVIDUAL' && activeTx) {
       handleUpdate(activeTx._id, { individualSalesLedger: ledgerName });
     }
+    
     setLedgerModalMode(null);
     setSearchQuery("");
+    setShowAllLedgers(false);
   };
 
-  const isAllDisplayedChecked = displayTransactions.length > 0 && displayTransactions.every(tx => tx.isSalesApproved);
+  const isAllDisplayedChecked = displayTransactions.length > 0 && displayTransactions.every(tx => isTrue(tx.isSalesApproved));
 
   const filteredLedgers = useMemo(() => {
-    return companyLedgers.filter(l => 
+    const baseSource = showAllLedgers ? allCompanyLedgers : companyLedgers;
+    return baseSource.filter(l => 
       l.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (l.groupName && l.groupName.toLowerCase().includes(searchQuery.toLowerCase()))
     ).slice(0, 100); 
-  }, [companyLedgers, searchQuery]);
+  }, [allCompanyLedgers, companyLedgers, searchQuery, showAllLedgers]);
 
   // Date Picker Helpers
   const handleOpenPickerContext = () => {
@@ -248,10 +347,17 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
           <div className="px-4 lg:px-6 py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             
             <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-8 w-full lg:w-auto min-w-0">
-              <div className="space-y-0.5 shrink-0 hidden xl:block">
-                <h2 className="text-xl font-[1000] uppercase italic tracking-tighter text-slate-900 dark:text-white leading-none">
-                  Sales <span className="text-indigo-500">Validation</span>
-                </h2>
+              <div className="space-y-1 shrink-0 hidden xl:block">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-[1000] uppercase italic tracking-tighter text-slate-900 dark:text-white leading-none">
+                    Sales <span className="text-indigo-500">Validation</span>
+                  </h2>
+                  {isGstCompliant ? (
+                    <span className="px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30">GST Compliant</span>
+                  ) : (
+                    <span className="px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">Non-GST</span>
+                  )}
+                </div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{selection.tallyCompany}</p>
               </div>
 
@@ -288,7 +394,7 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
               {salesTransactions.length > 0 && (
                 <button
                   onClick={() => setLedgerModalMode('GLOBAL')}
-                  className={`flex flex-col text-left border-2 rounded-xl px-4 py-1.5 transition-all outline-none min-w-[200px] shadow-sm ${selection.salesIncomeLedger ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/20 hover:border-indigo-400' : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 border-dashed hover:border-indigo-400'}`}
+                  className={`flex flex-col text-left border-2 rounded-xl px-4 py-1.5 transition-all outline-none min-w-50 shadow-sm ${selection.salesIncomeLedger ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/20 hover:border-indigo-400' : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 border-dashed hover:border-indigo-400'}`}
                 >
                   <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Global Ledger Fallback</span>
                   <span className={`text-[10px] font-[1000] uppercase tracking-wider truncate block w-full mt-0.5 ${selection.salesIncomeLedger ? 'text-indigo-700 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>
@@ -322,27 +428,48 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
               ----------------------------------------------------- */}
           <section className={`w-full lg:w-[32%] xl:w-[28%] flex flex-col border-r border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-[#08090A] ${isMobileEditorOpen ? 'hidden lg:flex' : 'flex'} z-10 shrink-0`}>
             
-            <div className="px-4 py-3 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-transparent flex items-center justify-between shrink-0">
-              <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">
-                {displayTransactions.length} Sales Items
-              </span>
-              <button 
-                onClick={handleSelectAll}
-                className={`cursor-pointer flex items-center gap-1.5 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest transition-all ${isAllDisplayedChecked ? 'text-emerald-600' : 'text-slate-500 hover:text-emerald-600'}`}
-              >
-                <Check size={12} strokeWidth={4} /> {isAllDisplayedChecked ? 'All Verified' : 'Verify All'}
-              </button>
+            <div className="px-4 py-3 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-transparent flex flex-col gap-3 shrink-0">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">
+                  {displayTransactions.length} Sales Items
+                </span>
+                <button 
+                  onClick={handleSelectAll}
+                  className={`cursor-pointer flex items-center gap-1.5 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest transition-all ${isAllDisplayedChecked ? 'text-emerald-600' : 'text-slate-500 hover:text-emerald-600'}`}
+                >
+                  <Check size={12} strokeWidth={4} /> {isAllDisplayedChecked ? 'All Verified' : 'Verify All'}
+                </button>
+              </div>
+
+              {/* TRANSACTIONS SEARCH */}
+              <div className="relative group">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                <input 
+                  type="text"
+                  placeholder="Search narration or ledger..."
+                  value={txSearchQuery}
+                  onChange={(e) => setTxSearchQuery(e.target.value)}
+                  className="w-full bg-slate-100 dark:bg-white/5 border border-transparent focus:border-indigo-500/50 rounded-lg pl-9 pr-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none placeholder:text-slate-400 transition-all"
+                />
+                {txSearchQuery && (
+                  <button onClick={() => setTxSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer">
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto no-scrollbar p-2 space-y-1">
               {displayTransactions.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center opacity-30 gap-3">
                   <FileText size={32} className="text-slate-400" />
-                  <p className="text-[10px] font-black uppercase tracking-widest text-center">No sales found.</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-center">
+                    {txSearchQuery ? "No matches found" : "No sales found."}
+                  </p>
                 </div>
               ) : (
                 displayTransactions.map((tx) => {
-                  const isChecked = tx.isSalesApproved;
+                  const isChecked = isTrue(tx.isSalesApproved);
                   const isActive = currentTxId === tx._id;
                   
                   return (
@@ -359,7 +486,14 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
                     >
                       <div className="flex justify-between items-start gap-3">
                         <button 
-                          onClick={(e) => { e.stopPropagation(); handleUpdate(tx._id, { isSalesApproved: !isChecked }); }}
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            handleUpdate(tx._id, { 
+                              isSalesApproved: !isChecked,
+                              // If approving via checkmark, lock in the calculated GST flags
+                              ...(!isChecked ? getLockedTaxPayload(tx) : {})
+                            }); 
+                          }}
                           className={`cursor-pointer w-5 h-5 shrink-0 rounded flex items-center justify-center border-2 transition-all mt-0.5 ${isChecked ? 'bg-emerald-500 border-emerald-500 text-white' : isActive ? 'border-slate-600 text-transparent hover:border-white' : 'border-slate-300 dark:border-white/20 text-transparent hover:border-emerald-500'}`}
                         >
                           <Check size={10} strokeWidth={4} />
@@ -369,7 +503,6 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
                           <p className={`text-[11px] lg:text-xs font-bold leading-snug line-clamp-2 uppercase ${isActive ? 'text-white' : isChecked ? 'text-slate-500' : 'text-slate-800 dark:text-slate-200'}`}>
                             {tx.narration}
                           </p>
-                          {/* NEW: Party Ledger Display in List */}
                           {tx.suggestedLedger && (
                             <p className={`text-[9px] font-black tracking-widest uppercase mt-1.5 truncate flex items-center gap-1 ${isActive ? 'text-indigo-300' : 'text-slate-400'}`}>
                               <Landmark size={10} /> {tx.suggestedLedger}
@@ -411,11 +544,20 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
               ----------------------------------------------------- */}
           <section className={`absolute inset-0 z-50 lg:relative lg:z-auto flex-1 flex flex-col bg-white dark:bg-[#050607] transition-transform duration-300 w-full h-full ${isMobileEditorOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
             
-            <div className="lg:hidden px-4 py-3 bg-white dark:bg-[#111218] border-b border-slate-200 dark:border-white/5 flex items-center gap-3 shrink-0">
-              <button onClick={() => setIsMobileEditorOpen(false)} className="cursor-pointer p-2 -ml-2 bg-slate-100 dark:bg-white/5 rounded-lg text-slate-500 border border-slate-200 dark:border-transparent">
-                <ChevronLeft size={16} />
-              </button>
-              <span className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white">Back to List</span>
+            <div className="lg:hidden px-4 py-3 bg-white dark:bg-[#111218] border-b border-slate-200 dark:border-white/5 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <button onClick={() => setIsMobileEditorOpen(false)} className="cursor-pointer p-2 -ml-2 bg-slate-100 dark:bg-white/5 rounded-lg text-slate-500 border border-slate-200 dark:border-transparent">
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white">Back to List</span>
+              </div>
+              
+              {/* Mobile GST Badge */}
+              {isGstCompliant ? (
+                <span className="px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30">GST Compliant</span>
+              ) : (
+                <span className="px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">Non-GST</span>
+              )}
             </div>
 
             {!activeTx ? (
@@ -442,7 +584,6 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
                       {activeTx.narration}
                     </h2>
                     
-                    {/* NEW: Party Ledger Display in HUD */}
                     {activeTx.suggestedLedger && (
                       <div className="flex items-center gap-1.5 mt-1">
                          <span className="bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 w-max">
@@ -515,20 +656,44 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
                         <FileSpreadsheet size={14} className="text-amber-500" /> GST Split Matrix
                       </label>
                       
-                      {/* TOGGLES DOCKED IN TITLE BAR - MASSIVE SPACE SAVER */}
+                      {/* Explicitly bind payload when toggling GST flags */}
                       <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-lg">
-                         <button onClick={() => handleUpdate(activeTx._id, { applyCGST: !activeTx.applyCGST })} className={`cursor-pointer px-2 py-1 text-[8px] font-black uppercase tracking-widest rounded transition-all ${activeTx.applyCGST ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}>CGST</button>
-                         <button onClick={() => handleUpdate(activeTx._id, { applySGST: !activeTx.applySGST })} className={`cursor-pointer px-2 py-1 text-[8px] font-black uppercase tracking-widest rounded transition-all ${activeTx.applySGST ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}>SGST</button>
-                         <button onClick={() => handleUpdate(activeTx._id, { applyIGST: !activeTx.applyIGST })} className={`cursor-pointer px-2 py-1 text-[8px] font-black uppercase tracking-widest rounded transition-all ${activeTx.applyIGST ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}>IGST</button>
+                         <button onClick={() => handleUpdate(activeTx._id, { 
+                           applyCGST: !activeTx.applyCGST,
+                           applySGST: activeTx.applySGST,
+                           applyIGST: activeTx.applyIGST,
+                           baseAmount: activeTx.baseAmount,
+                           cgst: !activeTx.applyCGST ? activeTx.baseAmount * 0.09 : 0,
+                           sgst: activeTx.sgst,
+                           igst: activeTx.igst
+                         })} className={`cursor-pointer px-2 py-1 text-[8px] font-black uppercase tracking-widest rounded transition-all ${activeTx.applyCGST ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}>CGST</button>
+                         
+                         <button onClick={() => handleUpdate(activeTx._id, { 
+                           applySGST: !activeTx.applySGST,
+                           applyCGST: activeTx.applyCGST,
+                           applyIGST: activeTx.applyIGST,
+                           baseAmount: activeTx.baseAmount,
+                           cgst: activeTx.cgst,
+                           sgst: !activeTx.applySGST ? activeTx.baseAmount * 0.09 : 0,
+                           igst: activeTx.igst
+                         })} className={`cursor-pointer px-2 py-1 text-[8px] font-black uppercase tracking-widest rounded transition-all ${activeTx.applySGST ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}>SGST</button>
+                         
+                         <button onClick={() => handleUpdate(activeTx._id, { 
+                           applyIGST: !activeTx.applyIGST,
+                           applyCGST: activeTx.applyCGST,
+                           applySGST: activeTx.applySGST,
+                           baseAmount: activeTx.baseAmount,
+                           cgst: activeTx.cgst,
+                           sgst: activeTx.sgst,
+                           igst: !activeTx.applyIGST ? activeTx.baseAmount * 0.18 : 0
+                         })} className={`cursor-pointer px-2 py-1 text-[8px] font-black uppercase tracking-widest rounded transition-all ${activeTx.applyIGST ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}>IGST</button>
                       </div>
                     </div>
 
-                    {/* Matrix Box - Stretches to fill space */}
+                    {/* Matrix Box */}
                     <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 lg:p-6 flex-1 flex flex-col justify-between shadow-inner">
                       
-                      {/* Side-by-side Layout: Base Amount <--> Breakdown List */}
                       <div className="flex justify-between items-start pt-2">
-                         
                          {/* Base Amount */}
                          <div className="flex flex-col min-w-0 pr-4">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Base Amount</span>
@@ -536,7 +701,7 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
                          </div>
                          
                          {/* Breakdown List */}
-                         <div className="flex flex-col gap-2.5 text-right border-l border-slate-200 dark:border-white/10 pl-5 shrink-0 min-w-[140px] lg:min-w-[160px]">
+                         <div className="flex flex-col gap-2.5 text-right border-l border-slate-200 dark:border-white/10 pl-5 shrink-0 min-w-35 lg:min-w-40">
                            <div className={`flex justify-between items-center text-xs font-mono font-bold transition-opacity ${activeTx.applyCGST ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 opacity-50'}`}>
                              <span className="mr-4">+ CGST</span><span>{activeTx.applyCGST ? formatINR(activeTx.cgst) : '—'}</span>
                            </div>
@@ -551,7 +716,6 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
 
                       <div className="h-px w-full bg-slate-200 dark:bg-white/10 my-4 shrink-0" />
 
-                      {/* Integrated Total at the bottom */}
                       <div className="flex justify-between items-end pb-1">
                         <span className="text-[11px] font-black text-indigo-500 uppercase tracking-widest">Calculated Gross</span>
                         <span className="text-3xl lg:text-4xl font-[1000] tabular-nums italic text-indigo-600 dark:text-indigo-400 leading-none">
@@ -564,7 +728,7 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
 
                 </div>
 
-                {/* 3. Footer Action - Strict shrink-0 at bottom */}
+                {/* 3. Footer Action */}
                 <div className="shrink-0 pt-1 lg:pt-2">
                   <button 
                     onClick={handleVerifyAndNext}
@@ -584,7 +748,7 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
             THE CENTERED LEDGER MAPPING MODAL 
             ========================================= */}
         {ledgerModalMode && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="fixed inset-0 z-200 flex items-center justify-center bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
             <div className="bg-white dark:bg-[#0B0C10] w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-200 dark:border-white/10 flex flex-col max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-200">
               
               <div className="p-5 lg:p-6 bg-slate-900 dark:bg-black flex flex-col gap-2 shrink-0 relative overflow-hidden">
@@ -600,7 +764,7 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
                       {ledgerModalMode === 'GLOBAL' ? 'Select a fallback ledger for unmapped sales items' : activeTx?.narration}
                     </p>
                   </div>
-                  <button onClick={() => { setLedgerModalMode(null); setSearchQuery(""); }} className="cursor-pointer p-2 shrink-0 text-slate-400 hover:text-white bg-white/10 hover:bg-rose-500 transition-colors rounded-lg border border-white/10">
+                  <button onClick={() => { setLedgerModalMode(null); setSearchQuery(""); setShowAllLedgers(false); }} className="cursor-pointer p-2 shrink-0 text-slate-400 hover:text-white bg-white/10 hover:bg-rose-500 transition-colors rounded-lg border border-white/10">
                     <X size={16} />
                   </button>
                 </div>
@@ -614,39 +778,49 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
               </div>
               
               <div className="p-4 lg:p-5 border-b border-slate-100 dark:border-white/5 shrink-0 bg-slate-50 dark:bg-white/2">
-                <div className="relative flex gap-2">
+                <div className="relative flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1">
                     <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input 
                       autoFocus 
                       placeholder="SEARCH TALLY LEDGERS..." 
-                      className="w-full bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-4 text-xs font-black uppercase outline-none focus:border-indigo-500 transition-all text-slate-900 dark:text-white" 
+                      className="w-full bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-xs font-black uppercase outline-none focus:border-indigo-500 transition-all text-slate-900 dark:text-white" 
                       value={searchQuery} 
                       onChange={(e) => setSearchQuery(e.target.value)} 
                     />
                   </div>
-                  {ledgerModalMode === 'INDIVIDUAL' && activeTx?.individualSalesLedger && (
-                    <button 
-                      onClick={() => {
-                        handleUpdate(activeTx._id, { individualSalesLedger: "" });
-                        setLedgerModalMode(null);
-                      }}
-                      className="cursor-pointer px-4 py-2 bg-rose-50 text-rose-600 rounded-xl border border-rose-200 text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition-colors shrink-0"
-                    >
-                      Clear override
-                    </button>
-                  )}
-                  {ledgerModalMode === 'GLOBAL' && selection.salesIncomeLedger && (
-                     <button 
-                       onClick={() => {
-                         setSelection(prev => ({ ...prev, salesIncomeLedger: "" }));
-                         setLedgerModalMode(null);
-                       }}
-                       className="cursor-pointer px-4 py-2 bg-rose-50 text-rose-600 rounded-xl border border-rose-200 text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition-colors shrink-0"
-                     >
-                       Clear Global
-                     </button>
-                  )}
+                  
+                  <div className="flex gap-2 shrink-0">
+                    {ledgerModalMode === 'INDIVIDUAL' && activeTx?.individualSalesLedger && (
+                      <button 
+                        onClick={() => {
+                          handleUpdate(activeTx._id, { individualSalesLedger: "" });
+                          setLedgerModalMode(null);
+                          setShowAllLedgers(false);
+                        }}
+                        className="cursor-pointer px-4 py-3.5 bg-rose-50 text-rose-600 rounded-xl border border-rose-200 dark:bg-rose-500/10 dark:border-rose-500/20 dark:text-rose-400 text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition-colors"
+                      >
+                        Clear override
+                      </button>
+                    )}
+                    {ledgerModalMode === 'GLOBAL' && selection.salesIncomeLedger && (
+                       <button 
+                         onClick={async () => {
+                           setSelection(prev => ({ ...prev, salesIncomeLedger: "" }));
+                           try {
+                             await request(`/audit/${selection.audit._id}`, 'PUT', { salesIncomeLedger: "" });
+                           } catch {
+                             // Handle error (optional)
+                           }
+                           setLedgerModalMode(null);
+                           setShowAllLedgers(false);
+                         }}
+                         className="cursor-pointer px-4 py-3.5 bg-rose-50 text-rose-600 rounded-xl border border-rose-200 dark:bg-rose-500/10 dark:border-rose-500/20 dark:text-rose-400 text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition-colors"
+                       >
+                         Clear Global
+                       </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -657,24 +831,35 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
                     <p className="text-[11px] font-black uppercase tracking-widest">No ledgers match "{searchQuery}"</p>
                   </div>
                 ) : (
-                  filteredLedgers.map(l => {
-                    const isSelected = ledgerModalMode === 'GLOBAL' 
-                      ? selection.salesIncomeLedger === l.name 
-                      : activeTx?.activeSalesLedger === l.name;
-                      
-                    return (
+                  <>
+                    {filteredLedgers.map(l => {
+                      const isSelected = ledgerModalMode === 'GLOBAL' 
+                        ? selection.salesIncomeLedger === l.name 
+                        : activeTx?.activeSalesLedger === l.name;
+                        
+                      return (
+                        <button 
+                          key={l._id} 
+                          onClick={() => handleLedgerSelect(l.name)} 
+                          className={`cursor-pointer w-full text-left px-5 py-4 rounded-xl text-xs font-[1000] uppercase transition-colors flex items-center justify-between group ${isSelected ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                        >
+                          <span className="truncate pr-4 leading-none">{l.name}</span>
+                          <span className={`text-[9px] font-black tracking-widest shrink-0 leading-none ${isSelected ? 'text-indigo-600/60' : 'text-slate-400 group-hover:text-slate-500'}`}>
+                            {l.groupName || 'PRIMARY'}
+                          </span>
+                        </button>
+                      )
+                    })}
+                    
+                    <div className="pt-3 pb-2 px-2">
                       <button 
-                        key={l._id} 
-                        onClick={() => handleLedgerSelect(l.name)} 
-                        className={`cursor-pointer w-full text-left px-5 py-4 rounded-xl text-xs font-[1000] uppercase transition-colors flex items-center justify-between group ${isSelected ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                        onClick={() => setShowAllLedgers(!showAllLedgers)}
+                        className="cursor-pointer w-full py-3.5 rounded-xl border border-dashed border-slate-300 dark:border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-white/5 dark:hover:text-white transition-all active:scale-[0.98]"
                       >
-                        <span className="truncate pr-4 leading-none">{l.name}</span>
-                        <span className={`text-[9px] font-black tracking-widest shrink-0 leading-none ${isSelected ? 'text-indigo-600/60' : 'text-slate-400 group-hover:text-slate-500'}`}>
-                          {l.groupName || 'PRIMARY'}
-                        </span>
+                        {showAllLedgers ? "Show Recommended Ledgers Only" : "Show All Company Ledgers"}
                       </button>
-                    )
-                  })
+                    </div>
+                  </>
                 )}
               </div>
 
@@ -686,7 +871,7 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
             PORTAL: DATE PICKER (FIXED CENTRALLY)
             ========================================================================= */}
         {activePickerId && createPortal(
-          <div className="fixed inset-0 z-[300] flex items-center justify-center pointer-events-auto">
+          <div className="fixed inset-0 z-300 flex items-center justify-center pointer-events-auto">
             <div 
               className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm cursor-default" 
               onClick={() => setActivePickerId(null)} 
@@ -715,15 +900,21 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
                 ))}
                 {Array.from({ length: calendarGridData.totalDays }).map((_, dIdx) => {
                   const dayNum = dIdx + 1;
+                  const computedFullString = `${pickerNav.year}-${String(pickerNav.month).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+                  const isActiveDate = activeTx?.invoiceBillingDate === computedFullString;
+                  
                   return (
                     <button
                       key={dayNum}
                       onClick={() => {
-                        const computedFullString = `${pickerNav.year}-${String(pickerNav.month).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
                         handleUpdate(activePickerId, { invoiceBillingDate: computedFullString });
                         setActivePickerId(null);
                       }}
-                      className="cursor-pointer p-2.5 text-xs font-mono font-[1000] rounded-xl border border-transparent hover:border-indigo-500 hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 text-center transition-all bg-slate-50/80 dark:bg-white/5 text-slate-700 dark:text-slate-300 active:scale-95"
+                      className={`cursor-pointer p-2.5 text-xs font-mono font-[1000] rounded-xl border text-center transition-all active:scale-95 ${
+                        isActiveDate
+                          ? 'border-indigo-500 bg-indigo-500 text-white shadow-md shadow-indigo-500/30'
+                          : 'border-transparent hover:border-indigo-500 hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-50/80 dark:bg-white/5 text-slate-700 dark:text-slate-300'
+                      }`}
                     >
                       {dayNum}
                     </button>

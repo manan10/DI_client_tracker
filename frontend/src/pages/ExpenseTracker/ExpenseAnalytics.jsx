@@ -44,7 +44,7 @@ const ExpenseAnalytics = () => {
   useEffect(() => {
     const fetchGlobalCategories = async () => {
       try {
-        const res = await request('/category/tree').catch(() => request('/categories/tree')); 
+        const res = await request('/categories/tree').catch(() => request('/categories/tree')); 
         const treeData = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : []);
         
         if (treeData && treeData.length > 0) {

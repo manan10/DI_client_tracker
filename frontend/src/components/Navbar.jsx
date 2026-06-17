@@ -42,6 +42,7 @@ const Navbar = () => {
     { name: 'Docs', path: '/documents', icon: Files, isLocked: true },
     ...(user?.isAdmin ? [{ name: 'Accounts', path: '/accounts', icon: BarChart3 }] : []),
     { name: 'Settings', path: '/settings', icon: SettingsIcon },
+    // { name: 'Merge Data', path: '/merge-investor-data', icon: Shield, isLocked: true },
     // { name: 'Test', path: '/tally-test', icon: TestTubeIcon, isLocked: false },
   ];
 

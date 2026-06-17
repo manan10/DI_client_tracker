@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import Navbar from "../../components/Navbar";
 import OperationsDashboard from "../../components/Operations/TaskBoard";
 import Submissions from "../../components/Operations/Submissions";
-// import ClientEmailExtractor from "../../components/Operations/ClientEmailExtractor";
 
 const Operations = () => {
   const [activeTab, setActiveTab] = useState("submissions");
@@ -13,7 +12,6 @@ const Operations = () => {
   const tabs = [
     { id: "submissions", name: "Submissions", icon: Send, isLocked: false },
     { id: "dashboard", name: "Task Board", icon: Kanban, isLocked: false },
-    // { id: "mailer", name: "Client Email Extractor", icon: Mail, isLocked: false },
   ];
 
   const handleTabClick = (tab) => {
@@ -31,7 +29,6 @@ const Operations = () => {
       <Navbar />
 
       <main className="max-w-400 mx-auto px-5 md:px-12 lg:px-20 pt-8 md:pt-16 pb-32 md:pb-20 w-full">
-        
         {/* Header Section */}
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-10 md:mb-16 gap-6 md:gap-8 w-full">
           <div className="space-y-1.5 md:space-y-2 w-full xl:w-auto">
@@ -50,14 +47,19 @@ const Operations = () => {
                 key={tab.id}
                 onClick={() => handleTabClick(tab)}
                 className={`flex items-center justify-center gap-3 px-10 py-4 rounded-md text-[12px] font-black uppercase tracking-widest transition-all duration-300 relative outline-none
-                  ${activeTab === tab.id
-                    ? "bg-white dark:bg-slate-800 text-emerald-600 shadow-lg scale-[1.02]"
-                    : tab.isLocked
-                      ? "text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-60"
-                      : "text-slate-400 hover:bg-transparent hover:text-slate-600 dark:hover:text-slate-200"
+                  ${
+                    activeTab === tab.id
+                      ? "bg-white dark:bg-slate-800 text-emerald-600 shadow-lg scale-[1.02]"
+                      : tab.isLocked
+                        ? "text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-60"
+                        : "text-slate-400 hover:bg-transparent hover:text-slate-600 dark:hover:text-slate-200"
                   }`}
               >
-                {tab.isLocked ? <Lock size={14} /> : <tab.icon size={16} strokeWidth={2.5} />}
+                {tab.isLocked ? (
+                  <Lock size={14} />
+                ) : (
+                  <tab.icon size={16} strokeWidth={2.5} />
+                )}
                 {tab.name}
               </button>
             ))}
@@ -74,11 +76,17 @@ const Operations = () => {
                     onClick={() => handleTabClick(tab)}
                     className={`flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl transition-all outline-none
                       ${isActive ? "bg-white dark:bg-slate-800 text-emerald-600 shadow-sm" : "text-slate-400"}
-                      ${tab.isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-200/50 dark:hover:bg-slate-800/50'}
+                      ${tab.isLocked ? "opacity-50 cursor-not-allowed" : "hover:bg-slate-200/50 dark:hover:bg-slate-800/50"}
                     `}
                   >
-                    {tab.isLocked ? <Lock size={18} /> : <tab.icon size={18} strokeWidth={isActive ? 2.5 : 2} />}
-                    <span className="text-[8px] font-black uppercase tracking-widest text-center px-1 leading-tight">{tab.name}</span>
+                    {tab.isLocked ? (
+                      <Lock size={18} />
+                    ) : (
+                      <tab.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                    )}
+                    <span className="text-[8px] font-black uppercase tracking-widest text-center px-1 leading-tight">
+                      {tab.name}
+                    </span>
                   </button>
                 );
               })}
@@ -90,7 +98,6 @@ const Operations = () => {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
           {activeTab === "submissions" && <Submissions />}
           {activeTab === "dashboard" && <OperationsDashboard />}
-          {/* {activeTab === "mailer" && <ClientEmailExtractor />} */}
         </div>
       </main>
     </div>

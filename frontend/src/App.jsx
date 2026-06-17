@@ -22,6 +22,7 @@ const Accounts = lazy(() => import("./pages/ClientTracker/Accounts"));
 const ClientDetail = lazy(() => import("./pages/ClientTracker/ClientDetail"));
 const Operations = lazy(() => import("./pages/ClientTracker/Operations"));
 const MaintenanceView = lazy(() => import("./pages/ClientTracker/MaintenanceView"));
+const ExcelDataMerger = lazy(() => import("./pages/ClientTracker/ExcelDataMerger"));
 
 // Home Expense Tracker App Components
 const ExpenseDashboard = lazy(() => import("./pages/ExpenseTracker/ExpenseDashboard"));
@@ -119,6 +120,15 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+              <Route
+                path="/merge-investor-data"
+                element={
+                  <ProtectedRoute>
+                    <ExcelDataMerger />
+                  </ProtectedRoute>
+                }
+              />  
               <Route
                 path="/settings"
                 element={

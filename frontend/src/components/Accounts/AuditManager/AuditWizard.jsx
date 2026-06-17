@@ -20,6 +20,9 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
   const [allAccounts, setAccounts] = useState([]);
   const [masterLedgers, setMasterLedgers] = useState([]);
 
+  // HELPER: Strict Boolean Parser to prevent "false" string truthy bugs
+  const isTrue = (val) => val === true || String(val).toLowerCase() === 'true';
+
   const [step, setStep] = useState(() => {
     if (initialSelection?.audit || (initialSelection?.tallyCompanyName && initialSelection?.stagedData)) return 3;
     return 1;
@@ -36,6 +39,8 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
         arnId: initialSelection.arnId || auditObj.arnId?._id || auditObj.arnId,
         tallyCompany: initialSelection.tallyCompany || auditObj.tallyCompanyName,
         tallyLedger: initialSelection.tallyLedger || auditObj.tallyLedgerName,
+        // NEW: Ensure Global Sales Ledger context is preserved on resume
+        salesIncomeLedger: initialSelection.salesIncomeLedger || auditObj.salesIncomeLedger,
         stagedFiles: {}, 
         isFreshStart: false
       };
@@ -45,7 +50,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
 
   const fetchMasterData = useCallback(async () => {
     try {
-      const [arnRes, accRes] = await Promise.all([request('/arns'), request('/accounts')]);
+      const [arnRes, accRes] = await Promise.all([request('/arns', 'GET'), request('/accounts', 'GET')]);
       const fetchedArns = arnRes?.data || [];
       const fetchedAccounts = accRes?.data || [];
       setArns(fetchedArns);
@@ -69,7 +74,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
     const fetchLedgers = async () => {
       if (!selection.tallyCompany) return;
       try {
-        const res = await request(`/ledgers?company=${encodeURIComponent(selection.tallyCompany)}`);
+        const res = await request(`/ledgers?company=${encodeURIComponent(selection.tallyCompany)}`, 'GET');
         if (res?.data) setMasterLedgers(res.data);
       } catch (err) {
         console.error("Ledger Fetch Error:", err);
@@ -78,18 +83,43 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
     fetchLedgers();
   }, [selection.tallyCompany, request]);
 
+  // AUTO-RESUME ENGINE: Fetches transactions and calculates exact step
   useEffect(() => {
     const activeAuditId = selection.audit?._id;
     if (step >= 3 && activeAuditId && !selection.stagedData?.transactions) {
       const recoverDraftTransactions = async () => {
         try {
-          const res = await request(`/audit/${activeAuditId}/transactions`);
+          const res = await request(`/audit/${activeAuditId}/transactions`, 'GET');
           if (res?.success && res.transactions) {
+            const fetchedTxs = res.transactions;
+            
             setSelection(prev => ({
               ...prev,
-              stagedData: { transactions: res.transactions },
-              verifiedIds: res.transactions.filter(t => t.isChecked).map(t => t._id)
+              stagedData: { transactions: fetchedTxs },
+              verifiedIds: fetchedTxs.filter(t => isTrue(t.isChecked)).map(t => t._id)
             }));
+
+            // --- INTELLIGENT AUTO-RESUME EVALUATION ---
+            const validTxs = fetchedTxs.filter(t => t.narration !== "EMPTY_FILE_MARKER");
+            const isAuditDone = validTxs.length > 0 && validTxs.every(t => isTrue(t.isChecked));
+            
+            const salesTxs = fetchedTxs.filter(t => isTrue(t.isSales) && t.type === 'RECEIPT');
+            const globalLedger = selection.salesIncomeLedger || selection.audit?.salesIncomeLedger;
+            
+            const isSalesDone = salesTxs.length === 0 || salesTxs.every(t => {
+              const hasValidLedger = !!(t.individualSalesLedger || globalLedger);
+              const hasValidDate = !!(t.invoiceBillingDate || t.date); 
+              return isTrue(t.isSalesApproved) && hasValidDate && hasValidLedger;
+            });
+
+            // Fast-Forward the UI
+            if (isAuditDone && isSalesDone) {
+              setStep(5);
+            } else if (isAuditDone) {
+              setStep(4);
+            }
+            // ------------------------------------------
+
           }
         } catch  {
           toast.error("Failed to recover transaction workspace registry");
@@ -97,7 +127,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
       };
       recoverDraftTransactions();
     }
-  }, [step, selection.audit?._id, selection.stagedData, request]);
+  }, [step, selection.audit?._id, selection.stagedData, request, selection.salesIncomeLedger, selection.audit?.salesIncomeLedger]);
 
   const validateAndProceed = useCallback(() => {
     const duplicate = audits?.find(a => {
@@ -119,8 +149,8 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
       }));
 
       if (duplicate.sourceFiles && duplicate.sourceFiles.length > 0) {
-        setStep(3);
-        return toast.info("Resuming active company dossier.");
+        setStep(3); // This will trigger the Auto-Resume engine above automatically
+        return toast.info("Analyzing progress history...");
       } else {
         setStep(2);
         return toast.info("Company dossier initialized. Please upload bank statements.");
@@ -148,7 +178,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
         if (!files || files.length === 0) continue;
 
         const matchedAccount = allAccounts.find(a => a.tallyMapping?.companyName === selection.tallyCompany && a.tallyMapping?.ledgerName === bankName) 
-                            || allAccounts.find(a => a.name === bankName);
+                              || allAccounts.find(a => a.name === bankName);
 
         const formData = new FormData();
         files.forEach(f => formData.append('files', f));
@@ -171,7 +201,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
         ...prev, 
         audit: updatedAuditObj, 
         stagedData: { transactions: cumulativeTransactions }, 
-        verifiedIds: cumulativeTransactions.filter(t => t.isChecked).map(t => t._id),
+        verifiedIds: cumulativeTransactions.filter(t => isTrue(t.isChecked)).map(t => t._id),
         stagedFiles: {} 
       }));
       
@@ -183,16 +213,16 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
     } finally { 
       setIsProcessing(false); 
     }
-  }, [selection, allAccounts, request, setStep]);
+  }, [selection, allAccounts, request]);
 
   const handleSalesValidationComplete = useCallback(async () => {
     setIsProcessing(true);
     try {
       const payloadTxs = (selection.stagedData?.transactions || [])
-        .filter(t => t.isCommission && t.type === 'RECEIPT')
+        .filter(t => isTrue(t.isSales) && t.type === 'RECEIPT')
         .map(t => ({ 
            _id: t._id, 
-           isSalesApproved: t.isSalesApproved || false, 
+           isSalesApproved: isTrue(t.isSalesApproved), 
            invoiceBillingDate: t.invoiceBillingDate || null,
            baseAmount: t.baseAmount || t.amount,
            cgst: t.cgst || 0,
@@ -236,10 +266,15 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
   
   const isStep4Valid = useMemo(() => {
     const txs = selection.stagedData?.transactions || [];
-    const salesTxs = txs.filter(t => t.isCommission && t.type === 'RECEIPT');
+    
+    const salesTxs = txs.filter(t => isTrue(t.isSales) && t.type === 'RECEIPT');
     if (salesTxs.length === 0) return true;
-    if (!selection.salesIncomeLedger) return false;
-    return salesTxs.some(t => t.isSalesApproved && t.invoiceBillingDate);
+    
+    return salesTxs.every(t => {
+      const hasValidLedger = !!(t.individualSalesLedger || selection.salesIncomeLedger);
+      const hasValidDate = !!(t.invoiceBillingDate || t.date); 
+      return isTrue(t.isSalesApproved) && hasValidDate && hasValidLedger;
+    });
   }, [selection.stagedData, selection.salesIncomeLedger]);
 
   const footerConfig = useMemo(() => {
@@ -259,7 +294,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
       case 4: 
         return { label: isProcessing ? "Saving Checkpoint..." : "Verify & Lock Sales Ledger", disabled: isProcessing || !isStep4Valid, action: handleSalesValidationComplete };
       case 5: 
-        return { label: isTallyOnline ? "Commit Vouchers" : "Bridge Offline", disabled: !isTallyOnline, action: () => { setIsSyncComplete(false); setStep(6); } };
+        return { label: isTallyOnline ? "To Voucher Creation" : "Bridge Offline", disabled: !isTallyOnline, action: () => { setIsSyncComplete(false); setStep(6); } };
       case 6: 
         return { label: isProcessing ? "Finalizing Audit..." : isSyncComplete ? "Finalize & Close Dossier" : "Awaiting Manual Sync", disabled: isProcessing || !isSyncComplete, action: handleFinalizeAudit };
       default: 
@@ -274,9 +309,6 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
       <div className="fixed inset-0 z-100 flex animate-in fade-in duration-300 bg-slate-900/60 backdrop-blur-sm">
         <div className="w-full h-full flex flex-col overflow-hidden text-left bg-white dark:bg-[#050607]">
           
-          {/* =====================================================================
-              FANCIER PREMIUM BREADCRUMB HEADER
-              ===================================================================== */}
           <div className="px-6 md:px-10 py-5 lg:py-6 border-b-2 border-slate-100 dark:border-white/5 flex justify-between items-center bg-white dark:bg-[#08090A] shrink-0 z-30 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)]">
             <div className="flex-1 flex items-center gap-2 max-w-5xl">
               {steps.map((s, idx) => {
@@ -318,9 +350,6 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
             </button>
           </div>
 
-          {/* =====================================================================
-              MAIN CONTENT AREA
-              ===================================================================== */}
           <div className="flex-1 overflow-hidden relative bg-slate-50/50 dark:bg-[#0B0C10]">
             {loading ? (
               <div className="h-full flex flex-col items-center justify-center gap-4 opacity-40">
@@ -350,9 +379,6 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
             )}
           </div>
 
-          {/* =====================================================================
-              PROFESSIONAL FOOTER 
-              ===================================================================== */}
           <div className="px-6 md:px-10 py-5 lg:py-6 border-t-2 border-slate-100 dark:border-white/5 bg-white dark:bg-[#08090A] flex flex-row justify-between items-center shrink-0 z-30 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.08)] dark:shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.5)]">
             
             <div className="flex items-center gap-5">
@@ -367,16 +393,13 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
                  </span>
                  {selection.month && (
                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">
-                     Active Period: {selection.month}/{selection.year}
+                      Active Period: {selection.month}/{selection.year}
                    </span>
                  )}
               </div>
             </div>
 
             <div className="flex items-center gap-4">
-                {/* NAV GUARD: Only allow backtracking on permitted steps.
-                    Prevents backing out of Verification (3) to Sync (2)
-                    Prevents backing out of Result (6) to Summary (5) */}
                 {[2, 4, 5].includes(step) && (
                   <button 
                     onClick={() => setStep(step - 1)} 
@@ -397,7 +420,8 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
                         : 'bg-emerald-500 text-white hover:bg-emerald-400 shadow-[0_8px_20px_-6px_rgba(16,185,129,0.5)] hover:shadow-[0_12px_25px_-8px_rgba(16,185,129,0.6)] active:scale-95 hover:-translate-y-0.5'
                     }`}
                 >
-                  {isProcessing || (step === 6 && !isSyncComplete) ? (
+                  {/* FIX: Only show loading spinner if it is actually processing */}
+                  {isProcessing ? (
                     <Loader2 size={18} className="animate-spin" />
                   ) : (
                     <>{footerConfig.label} <ArrowRight size={18} strokeWidth={3} /></>

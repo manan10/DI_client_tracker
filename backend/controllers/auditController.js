@@ -618,3 +618,75 @@ exports.testLedgerMatching = async (req, res) => {
         res.status(500).json({ success: false, message: error.message }); 
     }
 };
+
+// =========================================================================
+// TRANSACTION MANAGEMENT (SALES STEP & AUDIT STEP)
+// =========================================================================
+
+// 1. Single Transaction Update
+exports.updateTransaction = async (req, res) => {
+    try {
+        const updated = await Transaction.findByIdAndUpdate(
+            req.params.id, 
+            { $set: req.body }, 
+            { new: true }
+        );
+        
+        if (!updated) {
+            return res.status(404).json({ success: false, message: "Transaction not found" });
+        }
+
+        res.json({ success: true, data: updated });
+    } catch (err) { 
+        console.error("Update Transaction Error:", err);
+        res.status(500).json({ success: false, message: err.message }); 
+    }
+};
+
+// 2. Bulk Update Transactions (Used for "Verify All")
+exports.bulkUpdateTransactions = async (req, res) => {
+    try {
+        const { transactionIds, updateData } = req.body;
+
+        if (!transactionIds || !Array.isArray(transactionIds) || transactionIds.length === 0) {
+            return res.status(400).json({ success: false, message: "No transaction IDs provided" });
+        }
+
+        // Execute a multi-document atomic update
+        const result = await Transaction.updateMany(
+            { _id: { $in: transactionIds } },
+            { $set: updateData }
+        );
+
+        res.json({ 
+            success: true, 
+            message: "Bulk update successful",
+            matchedCount: result.matchedCount,
+            modifiedCount: result.modifiedCount
+        });
+    } catch (err) {
+        console.error("Bulk transaction update failed:", err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// 3. Update Audit Settings (Used for the Global Ledger Fallback)
+exports.updateAuditSettings = async (req, res) => {
+    try {
+        // Find the audit session and apply updates (e.g., salesIncomeLedger)
+        const updatedAudit = await Audit.findByIdAndUpdate(
+            req.params.auditId,
+            { $set: req.body },
+            { new: true }
+        );
+
+        if (!updatedAudit) {
+            return res.status(404).json({ success: false, message: "Audit session not found" });
+        }
+
+        res.json({ success: true, data: updatedAudit });
+    } catch (err) {
+        console.error("Failed to update Audit Settings:", err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
