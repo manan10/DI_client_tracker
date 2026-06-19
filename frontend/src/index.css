@@ -43,3 +43,13 @@ input::-webkit-inner-spin-button {
   border-radius: 10px; 
 }
 .dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useLocation } from "react-router-dom"; 
+
 import Navbar from "../../components/Navbar";
 import AccountBalances from "../../components/Accounts/AccountBalances";
 import Commissions from "../../components/Accounts/Commissions";
@@ -10,8 +12,8 @@ import { toast } from "sonner";
 
 const Accounts = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("balances");
-
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(location.state?.activeTab || "balances");
   const tabs = [
     { id: "audit", name: "Tally Sync", icon: FileText, isLocked: true },
     { id: "balances", name: "Account Balances", icon: Wallet, isLocked: false },
