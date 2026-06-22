@@ -175,6 +175,8 @@ app.use("/api/workflows", workflowRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/tally", tallyRoutes);
 app.use("/api/utilities", clientDataRoutes);
+app.use('/api/folios', require('./routes/folioReconRoutes'));
+
 // This sends 0 bytes of body data, only the headers.
 app.get("/health", (req, res) => res.sendStatus(200));
 
