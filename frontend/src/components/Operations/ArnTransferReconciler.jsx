@@ -61,12 +61,12 @@ const ArnTransferReconciler = () => {
         const formData = new FormData();
         formData.append('camsFile', camsFile);
         formData.append('amcSheetName', amcSheetName.trim());
-        formData.append('mode', 'transfer_check'); // OVERRIDE MODE FOR ARN TRANSFER
         
         weFiles.forEach(file => formData.append('wealthEliteFiles', file));
 
         try {
-            const response = await request('/folios/reconcile', 'POST', formData);
+            // Hitting the new dedicated Transfer Audit endpoint
+            const response = await request('/folios/transfer-audit', 'POST', formData);
             setMissingData(response.missingFolios);
             setMatchedData(response.matchedFolios);
             setStats(response.stats);
