@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { FileSpreadsheet, Upload, CheckCircle2, AlertTriangle, Loader2, Database, XCircle, Files, CheckSquare, XSquare, Activity, KeySquare, Search, ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react';
+import { FileSpreadsheet, Upload, CheckCircle2, AlertTriangle, Loader2, ArrowRightLeft, XCircle, Files, CheckSquare, XSquare, Activity, KeySquare, Search, ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { useApi } from '../../hooks/useApi';
 
-const FolioReconciler = () => {
+const ArnTransferReconciler = () => {
     const { request, loading } = useApi();
     
-    const [camsFile, setCamsFile] = useState(null);
-    const [weFiles, setWeFiles] = useState([]);
+    // Using standard naming for the backend, but conceptually mapping to Old/New ARN
+    const [camsFile, setCamsFile] = useState(null); // Transferor (Old ARN) Master File
+    const [weFiles, setWeFiles] = useState([]);     // Transferee (New ARN) Scheme Files
     const [amcSheetName, setAmcSheetName] = useState("");
     
     const [missingData, setMissingData] = useState(null);
@@ -25,7 +26,7 @@ const FolioReconciler = () => {
             setCamsFile(file);
             clearResults();
         } else {
-            toast.error("Please upload a valid Excel or CSV file for CAMS/KARVY.");
+            toast.error("Please upload a valid Excel or CSV file for the Old Master Report.");
         }
     };
 
@@ -53,13 +54,15 @@ const FolioReconciler = () => {
             return;
         }
         if (!amcSheetName.trim()) {
-            toast.error("Please specify the target CAMS/KARVY Sheet Name.");
+            toast.error("Please specify the target AMC Sheet Name.");
             return;
         }
 
         const formData = new FormData();
         formData.append('camsFile', camsFile);
         formData.append('amcSheetName', amcSheetName.trim());
+        formData.append('mode', 'transfer_check'); // OVERRIDE MODE FOR ARN TRANSFER
+        
         weFiles.forEach(file => formData.append('wealthEliteFiles', file));
 
         try {
@@ -69,10 +72,10 @@ const FolioReconciler = () => {
             setStats(response.stats);
             
             if (response.missingFolios.length === 0) {
-                toast.success(`Perfect Match! ${response.matchedFolios.length} unique folios verified.`);
+                toast.success(`100% Transfer Success! All ${response.matchedFolios.length} folios migrated successfully.`);
                 setActiveTab('matched');
             } else {
-                toast.warning(`Identified ${response.missingFolios.length} missing folios.`);
+                toast.warning(`Identified ${response.missingFolios.length} folios that failed to transfer.`);
                 setActiveTab('missing');
             }
         } catch (error) {
@@ -99,69 +102,32 @@ const FolioReconciler = () => {
     const renderSortIcon = (key) => {
         if (sortConfig.key !== key) return <ArrowUpDown className="w-3.5 h-3.5 ml-1 opacity-50" />;
         return sortConfig.direction === 'asc' 
-            ? <ArrowUp className="w-3.5 h-3.5 ml-1 text-emerald-500" /> 
-            : <ArrowDown className="w-3.5 h-3.5 ml-1 text-emerald-500" />;
+            ? <ArrowUp className="w-3.5 h-3.5 ml-1 text-blue-500" /> 
+            : <ArrowDown className="w-3.5 h-3.5 ml-1 text-blue-500" />;
     };
 
-    // ==========================================
-    // EXPORT ENGINE: SMART FORMATTING (NO HEADERS)
-    // ==========================================
-    const exportToCamsFormat = () => {
-        if (!missingData || missingData.length === 0) {
-            toast.error("No missing data to export.");
-            return;
-        }
+    const exportFailedTransfers = () => {
+        if (!missingData || missingData.length === 0) return;
 
-        const camsHeaders = stats?.cams?.camsHeaders;
-        const camsConstants = stats?.cams?.constants || {}; 
-        
-        if (!camsHeaders || camsHeaders.length === 0) {
-            toast.error("Could not retrieve original format headers. Export failed.");
-            return;
-        }
-
-        const norm = (str) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
-        // Enhanced fuzzy matching to accommodate both CAMS and KARVY template structures
-        const colIndexes = {
-            folio: camsHeaders.findIndex(h => norm(h).includes('folio') && !norm(h).includes('portfolio')),
-            name: camsHeaders.findIndex(h => norm(h).includes('invname') || norm(h).includes('investor')),
-            pan: camsHeaders.findIndex(h => norm(h).includes('pan')),
-            email: camsHeaders.findIndex(h => norm(h).includes('email')),
-            mobile: camsHeaders.findIndex(h => norm(h).includes('mobile')),
-            amcCode: camsHeaders.findIndex(h => norm(h).includes('amccode') || norm(h).includes('productcode')),
-            amcName: camsHeaders.findIndex(h => norm(h).includes('amcname') || norm(h) === 'fund'),
-            brokerCode: camsHeaders.findIndex(h => norm(h).includes('brokercode') || norm(h).includes('arn'))
-        };
-
-        // Start with an empty array. NO HEADERS ALLOWED.
-        const exportData = [];
+        const exportData = [
+            ["Folio No", "Client Name", "PAN", "Email", "Mobile", "AMC"]
+        ];
 
         missingData.forEach(row => {
-            const newRow = new Array(camsHeaders.length).fill(""); 
-            
-            // Map Dynamic Client Data
-            if (colIndexes.folio !== -1) newRow[colIndexes.folio] = row.folio !== '-' ? row.folio : "";
-            if (colIndexes.name !== -1) newRow[colIndexes.name] = row.name !== '-' ? row.name : "";
-            if (colIndexes.pan !== -1) newRow[colIndexes.pan] = row.pan !== '-' ? row.pan : "";
-            if (colIndexes.email !== -1) newRow[colIndexes.email] = row.email !== '-' ? row.email : "";
-            if (colIndexes.mobile !== -1) newRow[colIndexes.mobile] = row.mobile !== '-' ? row.mobile : "";
-            
-            // Map Static Template Constants
-            if (colIndexes.amcCode !== -1) newRow[colIndexes.amcCode] = camsConstants.amcCode || "";
-            if (colIndexes.amcName !== -1) newRow[colIndexes.amcName] = camsConstants.amcName || "";
-            if (colIndexes.brokerCode !== -1) newRow[colIndexes.brokerCode] = camsConstants.brokerCode || "";
-
-            exportData.push(newRow);
+            exportData.push([
+                row.folio,
+                row.name,
+                row.pan,
+                row.email,
+                row.mobile,
+                amcSheetName.toUpperCase()
+            ]);
         });
 
-        // Generate and download the header-less file
         const worksheet = XLSX.utils.aoa_to_sheet(exportData);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, amcSheetName || "Missing_Folios");
-        XLSX.writeFile(workbook, `Copy_Ready_Folios_${amcSheetName || 'Target'}.xlsx`);
-        
-        toast.success("Ready! You can copy the entire file and paste directly at the bottom of your original sheet.");
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Failed_Transfers");
+        XLSX.writeFile(workbook, `Failed_Transfers_Report_${amcSheetName}.xlsx`);
     };
 
     const processedTableData = useMemo(() => {
@@ -197,74 +163,78 @@ const FolioReconciler = () => {
             {/* Header Layout */}
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center space-x-3">
-                    <div className="p-3 bg-emerald-500/10 rounded-lg">
-                        <Database className="w-6 h-6 text-emerald-500" />
+                    <div className="p-3 bg-blue-500/10 rounded-lg">
+                        <ArrowRightLeft className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Master Folio Reconciler</h1>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">ARN Transfer Auditor</h1>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                            Identify missing folios by checking Combined WE exports against a targeted CAMS/KARVY sheet.
+                            Verify that 100% of your old master folios successfully migrated to the new Transferee ARN.
                         </p>
                     </div>
                 </div>
                 {(camsFile || weFiles.length > 0 || stats) && (
                     <button onClick={resetTool} className="flex items-center space-x-1 text-slate-500 hover:text-rose-500 transition-colors">
                         <XCircle className="w-5 h-5" />
-                        <span className="text-sm font-medium">Reset</span>
+                        <span className="text-sm font-medium">Reset Auditor</span>
                     </button>
                 )}
             </div>
 
             {/* Target AMC Input */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm border-l-4 border-l-blue-500">
                 <label className="block text-sm font-semibold text-slate-900 dark:text-white mb-2 flex items-center space-x-2">
-                    <KeySquare className="w-4 h-4 text-emerald-500" />
-                    <span>Target Target Sheet Name (AMC)</span>
+                    <KeySquare className="w-4 h-4 text-blue-500" />
+                    <span>Target AMC Sheet Name (For Transfer Check)</span>
                 </label>
                 <input 
                     type="text" value={amcSheetName} onChange={(e) => setAmcSheetName(e.target.value)}
-                    placeholder="e.g. ICICI, HDFC, TATA..."
-                    className="w-full md:w-1/2 p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none dark:text-white"
+                    placeholder="e.g. NIPPON, ICICI, HDFC..."
+                    className="w-full md:w-1/2 p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
                 />
             </div>
 
             {/* Upload Zone */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors ${weFiles.length > 0 ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10' : 'border-slate-300 dark:border-slate-700 hover:border-emerald-400'}`}>
-                    <input type="file" accept=".xlsx, .xls, .csv" multiple onChange={handleWeFilesChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                
+                {/* OLD ARN (Transferor) Upload */}
+                <div className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors ${camsFile ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/10' : 'border-slate-300 dark:border-slate-700 hover:border-blue-400'}`}>
+                    <input type="file" accept=".xlsx, .xls, .csv" onChange={handleCamsFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                     <div className="flex flex-col items-center space-y-3 pointer-events-none">
-                        {weFiles.length > 0 ? <Files className="w-10 h-10 text-emerald-500" /> : <Upload className="w-10 h-10 text-slate-400" />}
+                        {camsFile ? <CheckCircle2 className="w-10 h-10 text-blue-500" /> : <Upload className="w-10 h-10 text-slate-400" />}
                         <div>
-                            <h3 className="font-semibold text-slate-900 dark:text-white">Combined Wealth Elite Data</h3>
-                            <p className="text-sm text-slate-500 mt-1">{weFiles.length > 0 ? `${weFiles.length} file(s) selected` : "Upload WE exports"}</p>
+                            <h3 className="font-semibold text-slate-900 dark:text-white">Old ARN Master List (Transferor)</h3>
+                            <p className="text-sm text-slate-500 mt-1">{camsFile ? camsFile.name : "Upload Original CAMS/KARVY Master"}</p>
                         </div>
                     </div>
                 </div>
 
-                <div className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors ${camsFile ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10' : 'border-slate-300 dark:border-slate-700 hover:border-emerald-400'}`}>
-                    <input type="file" accept=".xlsx, .xls, .csv" onChange={handleCamsFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                {/* NEW ARN (Transferee) Upload */}
+                <div className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors ${weFiles.length > 0 ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/10' : 'border-slate-300 dark:border-slate-700 hover:border-purple-400'}`}>
+                    <input type="file" accept=".xlsx, .xls, .csv" multiple onChange={handleWeFilesChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                     <div className="flex flex-col items-center space-y-3 pointer-events-none">
-                        {camsFile ? <CheckCircle2 className="w-10 h-10 text-emerald-500" /> : <Upload className="w-10 h-10 text-slate-400" />}
+                        {weFiles.length > 0 ? <Files className="w-10 h-10 text-purple-500" /> : <Upload className="w-10 h-10 text-slate-400" />}
                         <div>
-                            <h3 className="font-semibold text-slate-900 dark:text-white">CAMS/KARVY Master Report</h3>
-                            <p className="text-sm text-slate-500 mt-1">{camsFile ? camsFile.name : "Upload Master Report"}</p>
+                            <h3 className="font-semibold text-slate-900 dark:text-white">New ARN Transferred Data (Transferee)</h3>
+                            <p className="text-sm text-slate-500 mt-1">{weFiles.length > 0 ? `${weFiles.length} file(s) selected` : "Upload Multiple WE Scheme Files"}</p>
                         </div>
                     </div>
                 </div>
+
             </div>
 
             {/* Run Button Layout */}
             <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="flex items-center space-x-2 text-sm text-slate-500">
-                    <Activity className="w-4 h-4 text-emerald-500" />
-                    <span>Automatically maps matched PANs to your Client CRM Database to enrich email & mobile records.</span>
+                    <Activity className="w-4 h-4 text-blue-500" />
+                    <span>Cross-references Transferred data against the Original Master list.</span>
                 </div>
                 <button
                     onClick={handleReconcile}
                     disabled={!camsFile || weFiles.length === 0 || !amcSheetName.trim() || loading}
                     className="flex items-center space-x-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-2.5 rounded-lg font-medium hover:bg-slate-800 dark:hover:bg-slate-100 disabled:opacity-50 transition-all justify-center w-full sm:w-auto"
                 >
-                    {loading ? <><Loader2 className="w-5 h-5 animate-spin" /><span>Processing DB Lookup...</span></> : <><FileSpreadsheet className="w-5 h-5" /><span>Run Reconciliation</span></>}
+                    {loading ? <><Loader2 className="w-5 h-5 animate-spin" /><span>Verifying Migration...</span></> : <><ArrowRightLeft className="w-5 h-5" /><span>Run Migration Audit</span></>}
                 </button>
             </div>
 
@@ -272,9 +242,22 @@ const FolioReconciler = () => {
             {stats && (
                 <div className="mt-8 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-                            <h3 className="text-xs font-bold uppercase text-slate-500 mb-4">Wealth Elite Configuration Pool</h3>
-                            <div className="space-y-3 max-h-32 overflow-y-auto pr-2">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 flex flex-col justify-between border-t-4 border-t-blue-500">
+                            <div>
+                                <h3 className="text-xs font-bold uppercase text-slate-500 mb-4">Old ARN Data (Source of Truth)</h3>
+                                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg text-sm flex justify-between items-center">
+                                    <div>
+                                        <p className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-xs">{stats.cams.fileName}</p>
+                                        <p className="text-xs text-blue-500 font-semibold mt-1">Sheet: {stats.cams.sheetTargeted}</p>
+                                    </div>
+                                    <span className="text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-500/10 px-2.5 py-1 rounded">→ {stats.cams.uniqueFolios} Master Folios</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 border-t-4 border-t-purple-500">
+                            <h3 className="text-xs font-bold uppercase text-slate-500 mb-4">New ARN Data (Migrated)</h3>
+                            <div className="space-y-3 max-h-24 overflow-y-auto pr-2">
                                 {stats.wealthElite.map((f, i) => (
                                     <div key={i} className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-lg text-sm">
                                         <span className="font-medium text-slate-700 dark:text-slate-300 truncate pr-4">{f.fileName}</span>
@@ -283,21 +266,8 @@ const FolioReconciler = () => {
                                 ))}
                             </div>
                             <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-between text-sm">
-                                <span className="font-bold text-slate-700 dark:text-slate-300">Unified WE Unique Count</span>
-                                <span className="font-bold text-emerald-600 dark:text-emerald-400">{stats.overall.totalWeUniqueCombined} Folios</span>
-                            </div>
-                        </div>
-
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 flex flex-col justify-between">
-                            <div>
-                                <h3 className="text-xs font-bold uppercase text-slate-500 mb-4">CAMS/KARVY Target Filter</h3>
-                                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg text-sm flex justify-between items-center">
-                                    <div>
-                                        <p className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-xs">{stats.cams.fileName}</p>
-                                        <p className="text-xs text-rose-500 font-semibold mt-1">Target Sheet: {stats.cams.sheetTargeted}</p>
-                                    </div>
-                                    <span className="text-xs font-bold text-rose-600 bg-rose-50 dark:bg-rose-500/10 px-2.5 py-1 rounded">→ {stats.cams.uniqueFolios} Unique</span>
-                                </div>
+                                <span className="font-bold text-slate-700 dark:text-slate-300">Total Migrated Folios Found</span>
+                                <span className="font-bold text-purple-600 dark:text-purple-400">{stats.overall.totalWeUniqueCombined} Folios</span>
                             </div>
                         </div>
                     </div>
@@ -309,10 +279,10 @@ const FolioReconciler = () => {
                         <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-2 gap-2">
                             <div className="flex bg-slate-200/60 dark:bg-slate-900 rounded-lg p-1 space-x-1">
                                 <button onClick={() => { setActiveTab('missing'); setSearchTerm(""); }} className={`flex items-center space-x-2 px-4 py-2 rounded-md font-medium text-xs transition-all ${activeTab === 'missing' ? 'bg-white dark:bg-slate-800 shadow text-rose-600 dark:text-rose-400' : 'text-slate-500 hover:text-slate-700'}`}>
-                                    <XSquare className="w-3.5 h-3.5" /><span>Missing from Target ({missingData.length})</span>
+                                    <XSquare className="w-3.5 h-3.5" /><span>Failed Transfers ({missingData.length})</span>
                                 </button>
                                 <button onClick={() => { setActiveTab('matched'); setSearchTerm(""); }} className={`flex items-center space-x-2 px-4 py-2 rounded-md font-medium text-xs transition-all ${activeTab === 'matched' ? 'bg-white dark:bg-slate-800 shadow text-emerald-600 dark:text-emerald-400' : 'text-slate-500 hover:text-slate-700'}`}>
-                                    <CheckSquare className="w-3.5 h-3.5" /><span>Matched ({matchedData.length})</span>
+                                    <CheckSquare className="w-3.5 h-3.5" /><span>Successful Transfers ({matchedData.length})</span>
                                 </button>
                             </div>
 
@@ -322,18 +292,18 @@ const FolioReconciler = () => {
                                     <input 
                                         type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                                         placeholder="Search..."
-                                        className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-white"
+                                        className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-white"
                                     />
                                 </div>
                                 
                                 {/* EXPORT BUTTON FOR MISSING TAB */}
                                 {activeTab === 'missing' && missingData.length > 0 && (
                                     <button
-                                        onClick={exportToCamsFormat}
-                                        className="flex items-center space-x-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all whitespace-nowrap"
+                                        onClick={exportFailedTransfers}
+                                        className="flex items-center space-x-2 px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 rounded-lg text-xs font-semibold shadow-sm transition-all whitespace-nowrap"
                                     >
                                         <Download className="w-3.5 h-3.5" />
-                                        <span className="hidden sm:inline">Copy-Ready Export</span>
+                                        <span className="hidden sm:inline">Export List</span>
                                         <span className="sm:hidden">Export</span>
                                     </button>
                                 )}
@@ -366,7 +336,7 @@ const FolioReconciler = () => {
                                     <tbody>
                                         {processedTableData.map((row, rowIndex) => (
                                             <tr key={rowIndex} className="bg-white dark:bg-slate-900 border-b dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                                                <td className="px-6 py-3.5 whitespace-nowrap font-medium text-slate-900 dark:text-white">{row.folio}</td>
+                                                <td className="px-6 py-3.5 whitespace-nowrap font-bold text-slate-900 dark:text-white">{row.folio}</td>
                                                 <td className="px-6 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">{row.name}</td>
                                                 <td className="px-6 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300 tracking-wider uppercase font-mono text-xs">{row.pan}</td>
                                                 <td className="px-6 py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-400 text-xs">{row.email}</td>
@@ -388,4 +358,4 @@ const FolioReconciler = () => {
     );
 };
 
-export default FolioReconciler;
+export default ArnTransferReconciler;

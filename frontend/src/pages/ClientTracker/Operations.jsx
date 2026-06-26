@@ -6,6 +6,7 @@ import Navbar from "../../components/Navbar";
 import OperationsDashboard from "../../components/Operations/TaskBoard";
 import Submissions from "../../components/Operations/Submissions";
 import FolioReconciler from "../../components/Operations/FolioReconciler";
+import ArnTransferReconciler from "../../components/Operations/ArnTransferReconciler";
 
 const Operations = () => {
   const [activeTab, setActiveTab] = useState("submissions");
@@ -14,6 +15,7 @@ const Operations = () => {
     { id: "submissions", name: "Submissions", icon: Send, isLocked: false },
     { id: "dashboard", name: "Task Board", icon: Kanban, isLocked: false },
     { id: "folio", name: "Folio Reconciler", icon: Send, isLocked: false },
+    { id: "arn", name: "ARN Reconciler", icon: Mail, isLocked: false },
   ];
 
   const handleTabClick = (tab) => {
@@ -101,6 +103,7 @@ const Operations = () => {
           {activeTab === "submissions" && <Submissions />}
           {activeTab === "dashboard" && <OperationsDashboard />}
           {activeTab === "folio" && <FolioReconciler />}
+          {activeTab === "arn" && <ArnTransferReconciler />}
         </div>
       </main>
     </div>
