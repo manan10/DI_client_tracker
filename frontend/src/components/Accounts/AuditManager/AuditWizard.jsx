@@ -104,16 +104,22 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
             const isAuditDone = validTxs.length > 0 && validTxs.every(t => isTrue(t.isChecked));
             
             const salesTxs = fetchedTxs.filter(t => isTrue(t.isSales) && t.type === 'RECEIPT');
-            const globalLedger = selection.salesIncomeLedger || selection.audit?.salesIncomeLedger;
             
-            const isSalesDone = salesTxs.length === 0 || salesTxs.every(t => {
-              const hasValidLedger = !!(t.individualSalesLedger || globalLedger);
-              const hasValidDate = !!(t.invoiceBillingDate || t.date); 
-              return isTrue(t.isSalesApproved) && hasValidDate && hasValidLedger;
-            });
+            // We now trust the database's `isSalesApproved` flag instead of re-verifying volatile UI state
+            const isSalesDone = salesTxs.length === 0 || salesTxs.every(t => isTrue(t.isSalesApproved));
+
+            // Check if items have already been synced to Tally
+            const hasSyncedItems = validTxs.some(t => t.isSynced || t.tallySyncStatus === 'COMPLETED' || t.tallySyncStatus === 'SUCCESS');
+            const allItemsSynced = validTxs.length > 0 && validTxs.every(t => t.isSynced || t.tallySyncStatus === 'COMPLETED' || t.tallySyncStatus === 'SUCCESS');
+
+            if (allItemsSynced) {
+              setIsSyncComplete(true); // Fallback: Unlock Finalize button automatically
+            }
 
             // Fast-Forward the UI
-            if (isAuditDone && isSalesDone) {
+            if (hasSyncedItems) {
+              setStep(6);
+            } else if (isAuditDone && isSalesDone) {
               setStep(5);
             } else if (isAuditDone) {
               setStep(4);
@@ -127,7 +133,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
       };
       recoverDraftTransactions();
     }
-  }, [step, selection.audit?._id, selection.stagedData, request, selection.salesIncomeLedger, selection.audit?.salesIncomeLedger]);
+  }, [step, selection.audit?._id, selection.stagedData, request]);
 
   const validateAndProceed = useCallback(() => {
     const duplicate = audits?.find(a => {
@@ -224,6 +230,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
            _id: t._id, 
            isSalesApproved: isTrue(t.isSalesApproved), 
            invoiceBillingDate: t.invoiceBillingDate || null,
+           individualSalesLedger: t.individualSalesLedger || null, // FIX: Ensure individual ledger is saved to DB
            baseAmount: t.baseAmount || t.amount,
            cgst: t.cgst || 0,
            sgst: t.sgst || 0,
@@ -420,7 +427,6 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
                         : 'bg-emerald-500 text-white hover:bg-emerald-400 shadow-[0_8px_20px_-6px_rgba(16,185,129,0.5)] hover:shadow-[0_12px_25px_-8px_rgba(16,185,129,0.6)] active:scale-95 hover:-translate-y-0.5'
                     }`}
                 >
-                  {/* FIX: Only show loading spinner if it is actually processing */}
                   {isProcessing ? (
                     <Loader2 size={18} className="animate-spin" />
                   ) : (
