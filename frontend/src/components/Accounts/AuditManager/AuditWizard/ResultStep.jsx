@@ -207,7 +207,7 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
       }
 
       const finalLedger = tx.suggestedLedger || tx.ledgerName || 'UNKNOWN LEDGER';
-      const finalNarration = tx.customNarration || tx.narration || "Auto-generated via Accrual Bridge";
+      const finalNarration = tx.customNarration || "";
 
       if (targetVoucher.vType === 'SALES') {
         const normalizedTargetLedger = finalLedger.toUpperCase().trim();
@@ -275,6 +275,9 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
   const handleSyncType = (type) => processBatch(vouchers.filter(v => v.status === 'PENDING' && v.vType === type).map(v => v.id));
   const handleSyncGroup = (groupId) => processBatch(vouchers.filter(v => v.status === 'PENDING' && v.groupId === groupId && v.vType !== 'MANUAL').map(v => v.id));
   const handleSyncAll = () => processBatch(vouchers.filter(v => v.status === 'PENDING' && v.vType !== 'MANUAL').map(v => v.id));
+  
+  // FIX: Added the missing Individual sync handler
+  const handleSyncSingle = (id) => processBatch([id]);
 
   // =========================================================================
   // RENDER UI
