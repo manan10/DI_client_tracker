@@ -1,11 +1,46 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Search, Check, Landmark, CheckCircle2, 
-  AlertCircle, FileText, ChevronLeft, FastForward, 
-  Edit3, X, FileSpreadsheet, Building2, Tag, ShieldAlert, MessageSquare
+  FileText, ChevronLeft, FastForward, 
+  Edit3, X, FileSpreadsheet, Tag, ShieldAlert, MessageSquare,
+  CornerDownRight, Loader2
 } from 'lucide-react';
 import { useApi } from '../../../../hooks/useApi';
 import { toast } from 'sonner';
+
+// =====================================================================
+// NARRATION HIGHLIGHTER 
+// =====================================================================
+const HighlightedNarration = ({ narration, ledgerName }) => {
+  if (!narration) return null;
+  if (!ledgerName) return <span>{narration}</span>;
+
+  const ignoreWords = ['LTD', 'PVT', 'LIMITED', 'PRIVATE', 'A/C', 'ACCOUNT', 'BANK', 'THE', 'AND', 'OF', 'CORP', 'CORPORATION', 'INC', 'LLP'];
+  const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  
+  const tokens = ledgerName.toUpperCase()
+    .split(/[^A-Z0-9]+/)
+    .filter(w => w.length > 2 && !ignoreWords.includes(w))
+    .map(escapeRegExp);
+
+  if (tokens.length === 0) return <span>{narration}</span>;
+
+  const regex = new RegExp(`(${tokens.join('|')})`, 'gi');
+  const parts = narration.split(regex);
+
+  return (
+    <span>
+      {parts.map((part, i) => {
+        const isMatch = tokens.some(t => new RegExp(`^${t}$`, 'i').test(part));
+        return isMatch ? (
+          <span key={i} className="text-emerald-600 dark:text-emerald-400 font-[1000]">{part}</span>
+        ) : (
+          <span key={i}>{part}</span>
+        );
+      })}
+    </span>
+  );
+};
 
 const AuditStep = ({ selection, setSelection, masterLedgers }) => {
   const { request } = useApi();
@@ -14,11 +49,15 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
   const [activeTab, setActiveTab] = useState('RECEIPT'); 
   const [selectedBank, setSelectedBank] = useState("");
   const [selectedTxId, setSelectedTxId] = useState(null);
+  const [isVerifying, setIsVerifying] = useState(false);
   
   // Editor & Dropdown States
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileEditorOpen, setIsMobileEditorOpen] = useState(false);
   const [ledgerModalOpen, setLedgerModalOpen] = useState(false);
+
+  // Scroll Reference for Auto-Scrolling
+  const activeItemRef = useRef(null);
 
   const formatINR = (amount) => {
     return new Intl.NumberFormat('en-IN', {
@@ -61,6 +100,15 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
     return displayTransactions.find(t => t._id === currentTxId);
   }, [displayTransactions, currentTxId]);
 
+  // AUTO-SCROLL EFFECT
+  useEffect(() => {
+    if (activeItemRef.current) {
+      setTimeout(() => {
+        activeItemRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+    }
+  }, [currentTxId, activeTab, currentBank]);
+
   const globalTotals = useMemo(() => {
     return transactions.reduce((acc, curr) => {
       if (curr.type === 'RECEIPT') acc.receipts += Math.abs(curr.amount);
@@ -102,11 +150,9 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
 
   // OPTIMISTIC UPDATE IMPLEMENTATION
   const handleUpdate = async (txId, payload, silent = false) => {
-    // 1. Capture the original state for rollback
     const originalTx = transactions.find(t => t._id === txId);
     const wasVerified = (selection.verifiedIds || []).includes(txId);
 
-    // 2. Immediately update local state (Zero UI Lag)
     setSelection(prev => {
       const updatedTransactions = (prev.stagedData?.transactions || []).map(t => 
         t._id === txId ? { ...t, ...payload } : t
@@ -124,12 +170,10 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
       };
     });
 
-    // 3. Perform network request in background
     try {
       const res = await request(`/audit/transactions/${txId}`, 'PATCH', payload);
       if (!res.success) throw new Error("API Update Failed");
     } catch {
-      // 4. Rollback to original state if network fails
       if (!silent) toast.error("Database sync failed. Reverting changes.");
       setSelection(prev => {
         const revertedTransactions = (prev.stagedData?.transactions || []).map(t => 
@@ -157,25 +201,43 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
     handleUpdate(activeTx._id, payload);
   };
 
-  const handleVerifyAndNext = () => {
-    if (!activeTx) return;
-    handleUpdate(activeTx._id, { isChecked: true }, true);
+  const handleVerifyAndNext = async () => {
+    if (!activeTx || isVerifying) return;
     
-    const currentIndex = displayTransactions.findIndex(t => t._id === currentTxId);
-    let nextUnverifiedId = null;
-    
-    for (let i = currentIndex + 1; i < displayTransactions.length; i++) {
-      if (!(selection.verifiedIds || []).includes(displayTransactions[i]._id)) {
-        nextUnverifiedId = displayTransactions[i]._id;
-        break;
+    setIsVerifying(true);
+    try {
+      // Await the update so the UI buffer prevents rapid double clicks
+      await handleUpdate(activeTx._id, { isChecked: true }, true);
+      
+      const currentIndex = displayTransactions.findIndex(t => t._id === currentTxId);
+      let nextUnverifiedId = null;
+      
+      // First, scan forward from the current position
+      for (let i = currentIndex + 1; i < displayTransactions.length; i++) {
+        if (!(selection.verifiedIds || []).includes(displayTransactions[i]._id)) {
+          nextUnverifiedId = displayTransactions[i]._id;
+          break;
+        }
       }
-    }
-    
-    if (nextUnverifiedId) {
-      setSelectedTxId(nextUnverifiedId);
-    } else {
-      toast.success(`All ${activeTab.toLowerCase()}s for this bank are verified!`);
-      setIsMobileEditorOpen(false);
+      
+      // If none found forward, wrap around and scan from the beginning
+      if (!nextUnverifiedId) {
+        for (let i = 0; i < currentIndex; i++) {
+          if (!(selection.verifiedIds || []).includes(displayTransactions[i]._id)) {
+            nextUnverifiedId = displayTransactions[i]._id;
+            break;
+          }
+        }
+      }
+      
+      if (nextUnverifiedId) {
+        setSelectedTxId(nextUnverifiedId);
+      } else {
+        toast.success(`All ${activeTab.toLowerCase()}s for this bank are verified!`);
+        setIsMobileEditorOpen(false);
+      }
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -186,7 +248,6 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
     const isAllSelected = allDisplayedIds.every(id => currentlyVerified.includes(id));
     const targetState = !isAllSelected;
 
-    // Optimistic Bulk Update
     setSelection(prev => {
       let newVerified = [...(prev.verifiedIds || [])];
       if (targetState) {
@@ -300,7 +361,7 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
         <main className="flex-1 flex overflow-hidden w-full relative">
           
           {/* -----------------------------------------------------
-              LEFT: THE MASTER LIST
+              LEFT: THE MASTER LIST (Refined & Auto-Scrolling)
               ----------------------------------------------------- */}
           <section className={`w-full lg:w-[32%] xl:w-[28%] flex flex-col border-r border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-[#08090A] ${isMobileEditorOpen ? 'hidden lg:flex' : 'flex'} z-10 shrink-0`}>
             
@@ -343,7 +404,7 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto no-scrollbar p-2 space-y-1">
+            <div className="flex-1 overflow-y-auto no-scrollbar p-2 relative">
               {displayTransactions.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center opacity-30 gap-3">
                   <FileText size={32} className="text-slate-400" />
@@ -357,55 +418,79 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
                   return (
                     <div 
                       key={tx._id} 
+                      ref={isActive ? activeItemRef : null}
                       onClick={() => { setSelectedTxId(tx._id); setIsMobileEditorOpen(true); }}
-                      className={`cursor-pointer flex flex-col gap-2 p-3.5 rounded-xl transition-all border ${
+                      className={`cursor-pointer group flex flex-col transition-all relative ${
                         isActive 
-                          ? 'bg-slate-900 border-slate-900 shadow-xl scale-[1.02] z-10 relative dark:bg-[#15171A] dark:border-white/10' 
+                          ? 'bg-slate-900 dark:bg-slate-800 rounded-xl p-3 shadow-xl ring-1 ring-slate-900/5 dark:ring-white/10 z-10 my-1' 
                           : isChecked 
-                            ? 'bg-emerald-50/40 dark:bg-transparent border-transparent opacity-60 hover:opacity-100'
-                            : 'bg-white dark:bg-[#111214] border-slate-200 dark:border-white/5 hover:border-slate-300'
+                            ? 'p-2.5 bg-transparent opacity-60 hover:opacity-100 grayscale hover:grayscale-0'
+                            : 'p-3 bg-white dark:bg-[#111214] rounded-xl border border-slate-200 dark:border-white/5 hover:border-emerald-300 dark:hover:border-emerald-500/50 shadow-sm mb-1'
                       }`}
                     >
-                      <div className="flex justify-between items-start gap-3">
+                      <div className="flex gap-3 items-start">
+                        
+                        {/* Checkbox */}
                         <button 
-                          onClick={(e) => { e.stopPropagation(); handleUpdate(tx._id, { isChecked: !isChecked }); }}
-                          className={`cursor-pointer w-5 h-5 shrink-0 rounded flex items-center justify-center border-2 transition-all mt-0.5 ${isChecked ? 'bg-emerald-500 border-emerald-500 text-white' : isActive ? 'border-slate-600 text-transparent hover:border-white' : 'border-slate-300 dark:border-white/20 text-transparent hover:border-emerald-500'}`}
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            if (!isChecked && isActive) {
+                              handleVerifyAndNext();
+                            } else {
+                              handleUpdate(tx._id, { isChecked: !isChecked }); 
+                            }
+                          }}
+                          disabled={isVerifying && isActive}
+                          className={`cursor-pointer mt-0.5 shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-all ${
+                            isChecked 
+                              ? 'bg-emerald-500 border-emerald-500 text-white' 
+                              : isActive 
+                                ? 'border-slate-600 text-transparent hover:border-white' 
+                                : 'border-slate-300 dark:border-white/20 text-transparent hover:border-emerald-500 group-hover:border-emerald-400'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
-                          <Check size={10} strokeWidth={4} />
+                          <Check size={12} strokeWidth={4} />
                         </button>
 
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-[11px] lg:text-xs font-bold leading-snug line-clamp-2 uppercase ${isActive ? 'text-white' : isChecked ? 'text-slate-500' : 'text-slate-800 dark:text-slate-200'}`}>
-                            {tx.narration}
-                          </p>
-                        </div>
-                        <span className={`text-xs font-[1000] tabular-nums italic shrink-0 ${isActive ? 'text-emerald-400' : activeTab === 'RECEIPT' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                          {formatINR(Math.abs(tx.amount))}
-                        </span>
-                      </div>
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 flex flex-col gap-1">
+                          <div className="flex justify-between items-start gap-2">
+                            <span className={`text-[11px] lg:text-xs font-bold leading-snug line-clamp-2 uppercase ${
+                              isActive ? 'text-white' : isChecked ? 'text-slate-500 line-through' : 'text-slate-900 dark:text-slate-200'
+                            }`}>
+                              {tx.narration}
+                            </span>
+                            <span className={`text-xs font-[1000] tabular-nums italic shrink-0 leading-none mt-0.5 ${
+                              isActive ? 'text-emerald-400' : activeTab === 'RECEIPT' ? 'text-emerald-600' : 'text-rose-600'
+                            }`}>
+                              {formatINR(Math.abs(tx.amount))}
+                            </span>
+                          </div>
 
-                      <div className="pl-8 flex flex-col gap-2">
-                        {tx.suggestedLedger ? (
-                          <div className={`text-[10px] font-black uppercase tracking-widest leading-relaxed wrap-break-word ${isActive ? 'text-white/80' : 'text-slate-500'}`}>
-                            {tx.suggestedLedger}
-                          </div>
-                        ) : (
-                          <div className="text-[10px] font-black uppercase tracking-widest text-rose-500">
-                            UNMAPPED
-                          </div>
-                        )}
+                          {/* Hide meta on checked items unless it's the active item to save vertical space */}
+                          {(!isChecked || isActive) && (
+                            <div className="flex items-center justify-between mt-1">
+                              <div className={`text-[9px] font-black uppercase tracking-widest truncate pr-2 flex items-center gap-1.5 ${
+                                isActive ? 'text-slate-400' : tx.suggestedLedger ? 'text-slate-500' : 'text-slate-400 opacity-60'
+                              }`}>
+                                <Landmark size={10} className={isActive ? "text-emerald-500" : tx.suggestedLedger ? "text-slate-400" : ""} />
+                                {tx.suggestedLedger || 'UNMAPPED'}
+                              </div>
+                              <span className={`text-[9px] font-black uppercase tracking-widest shrink-0 ${isActive ? 'text-slate-500' : 'text-slate-400'}`}>
+                                {new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                              </span>
+                            </div>
+                          )}
 
-                        <div className="flex items-center justify-between">
-                          <span className={`text-[9px] font-black uppercase tracking-widest ${isActive ? 'text-slate-500' : 'text-slate-400'}`}>
-                            {new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                          </span>
-                          
-                          <div className="flex flex-wrap gap-1">
-                            {tx.isSales && <span className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest ${isActive ? 'bg-indigo-500 text-white' : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/20'}`}>Sales</span>}
-                            {tx.isCommission && <span className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest ${isActive ? 'bg-blue-500 text-white' : 'bg-blue-50 text-blue-600 dark:bg-blue-500/20'}`}>Comm</span>}
-                            {tx.isMarkedForManualEntry && <span className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest ${isActive ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-600 dark:bg-amber-500/20'}`}>Man</span>}
-                            {tx.customNarration && <span className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest ${isActive ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-600 dark:bg-white/10'}`}>Note</span>}
-                          </div>
+                          {/* Flags (Only show if Active or if they exist and it's Unverified) */}
+                          {(!isChecked || isActive) && (tx.isSales || tx.isCommission || tx.isMarkedForManualEntry || tx.customNarration) && (
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {tx.isSales && <span className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest ${isActive ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/20'}`}>Sales</span>}
+                              {tx.isCommission && <span className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest ${isActive ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-50 text-blue-600 dark:bg-blue-500/20'}`}>Comm</span>}
+                              {tx.isMarkedForManualEntry && <span className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest ${isActive ? 'bg-amber-500/20 text-amber-300' : 'bg-amber-50 text-amber-600 dark:bg-amber-500/20'}`}>Man</span>}
+                              {tx.customNarration && <span className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest ${isActive ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-600 dark:bg-white/10'}`}>Note</span>}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -416,11 +501,12 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
           </section>
 
           {/* -----------------------------------------------------
-              RIGHT: HUD EDITOR (Horizontal Stacking, Zero Scroll)
+              RIGHT: HUD EDITOR (Zero-Scroll Grid on Desktop)
               ----------------------------------------------------- */}
           <section className={`absolute inset-0 z-50 lg:relative lg:z-auto flex-1 flex flex-col bg-white dark:bg-[#050607] transition-transform duration-300 w-full h-full ${isMobileEditorOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
             
-            <div className="lg:hidden px-4 py-3 bg-white dark:bg-[#111218] border-b border-slate-200 dark:border-white/5 flex items-center gap-3 shrink-0">
+            {/* Mobile Header Overlay */}
+            <div className="lg:hidden px-4 py-3 bg-white dark:bg-[#111218] border-b border-slate-200 dark:border-white/5 flex items-center gap-3 shrink-0 shadow-sm z-10">
               <button onClick={() => setIsMobileEditorOpen(false)} className="cursor-pointer p-2 -ml-2 bg-slate-100 dark:bg-white/5 rounded-lg text-slate-500 border border-slate-200 dark:border-transparent">
                 <ChevronLeft size={16} />
               </button>
@@ -428,123 +514,135 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
             </div>
 
             {!activeTx ? (
-              <div className="h-full flex flex-col items-center justify-center opacity-30 gap-4">
+              <div className="flex-1 flex flex-col items-center justify-center opacity-30 gap-4">
                 <Search size={48} className="text-slate-400" strokeWidth={1} />
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-center">Select a transaction<br/>to open the editor</p>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col w-full h-full max-w-4xl mx-auto p-4 lg:p-6 gap-4 overflow-hidden">
+              <div className="flex-1 overflow-y-auto lg:overflow-hidden w-full h-full relative">
                 
-                <div className="shrink-0 pb-4 border-b border-slate-200 dark:border-white/10 flex flex-col gap-1.5">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="px-2 py-0.5 bg-slate-100 dark:bg-white/10 rounded border border-slate-200 dark:border-transparent shadow-sm text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                      {new Date(activeTx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </span>
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'RECEIPT' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {activeTab}
-                    </span>
-                  </div>
-                  <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
-                    <h2 className="text-sm lg:text-base font-bold uppercase text-black-800 dark:text-slate-200 leading-snug wrap-break-word">
-                      {activeTx.narration}
-                    </h2>
-                    <h1 className={`text-3xl lg:text-4xl font-[1000] tabular-nums italic tracking-tighter shrink-0 ${activeTab === 'RECEIPT' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {formatINR(Math.abs(activeTx.amount))}
-                    </h1>
-                  </div>
-                </div>
-
-                <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0 overflow-y-auto lg:overflow-hidden">
+                <div className="flex flex-col h-full w-full max-w-5xl mx-auto p-4 lg:p-6 lg:gap-2">
                   
-                  {/* LEFT COLUMN: Ledger Mapping */}
-                  <div className="w-full lg:w-1/2 flex flex-col gap-2 shrink-0 lg:shrink">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 shrink-0">
-                      <Landmark size={14} className="text-emerald-500" /> Target Ledger Mapping
-                    </label>
+                  {/* COMPACT HEADER */}
+                  <div className="flex items-center justify-between pb-3 lg:pb-4 border-b border-slate-100 dark:border-white/5 shrink-0 mb-4 lg:mb-2">
+                    <div className="flex flex-col gap-1">
+                      <span className={`text-[10px] font-black uppercase tracking-widest w-max px-2 py-0.5 rounded ${activeTab === 'RECEIPT' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400'}`}>
+                        {activeTab}
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                        {new Date(activeTx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                    <span className={`text-4xl lg:text-5xl font-[1000] tabular-nums italic tracking-tighter leading-none ${activeTab === 'RECEIPT' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                      {formatINR(Math.abs(activeTx.amount))}
+                    </span>
+                  </div>
+
+                  {/* SPLIT PANE GRID */}
+                  <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 flex-1 min-h-0">
+                    
+                    {/* LEFT COLUMN: MAPPING FLOW */}
+                    <div className="flex flex-col flex-1 min-w-0">
+                      
+                      <div className="bg-slate-50 dark:bg-[#0B0C10] rounded-t-2xl rounded-br-2xl p-4 lg:p-5 border border-slate-200 dark:border-white/5 shadow-sm mb-0">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <FileText size={12}/> Original Bank Narration
+                        </label>
+                        <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-mono uppercase tracking-tight wrap-break-word">
+                          <HighlightedNarration narration={activeTx.narration} ledgerName={activeTx.suggestedLedger} />
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col">
+                         <div className="flex items-center gap-2 pl-4 py-1.5">
+                           <CornerDownRight size={18} className="text-emerald-500 opacity-60" strokeWidth={2.5}/>
+                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pt-1">Matched Target Ledger</span>
+                         </div>
+                         
+                         <div className="pl-6 pr-0 lg:pl-8">
+                           <button 
+                              onClick={() => setLedgerModalOpen(true)}
+                              className={`cursor-pointer w-full flex items-center justify-between p-3 lg:p-4 rounded-xl border-2 transition-all outline-none bg-white dark:bg-[#15171A] group shadow-sm ${activeTx.suggestedLedger ? 'border-emerald-500/30 hover:border-emerald-500' : 'border-slate-200 dark:border-white/10 border-dashed hover:border-emerald-400'}`}
+                            >
+                              <div className="flex flex-col text-left gap-1 min-w-0 pr-3">
+                                {activeTx.confidence > 0 && (
+                                  <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded w-max ${activeTx.confidence > 0.8 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30'}`}>
+                                    {Math.round(activeTx.confidence * 100)}% Auto-Match
+                                  </span>
+                                )}
+                                <span className={`text-base lg:text-lg font-[1000] uppercase tracking-tight truncate w-full ${activeTx.suggestedLedger ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-500'}`}>
+                                   {activeTx.suggestedLedger || "CHOOSE LEDGER..."}
+                                </span>
+                              </div>
+                              <div className="shrink-0 p-2 rounded-lg bg-slate-100 dark:bg-white/5 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                                <Edit3 size={14} />
+                              </div>
+                            </button>
+                         </div>
+                      </div>
+
+                    </div>
+
+                    {/* RIGHT COLUMN: FLAGS & NOTES */}
+                    <div className="flex flex-col flex-1 min-w-0 gap-5 lg:gap-4">
+                      
+                      <div className="shrink-0">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Transaction Flags</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          <button 
+                            onClick={() => handleUpdate(activeTx._id, { isSales: !activeTx.isSales })}
+                            className={`cursor-pointer flex flex-col items-center justify-center h-14 rounded-xl border-2 transition-all gap-1 ${activeTx.isSales ? 'bg-indigo-50 border-indigo-500 text-indigo-700 dark:bg-indigo-500/10 dark:border-indigo-500 dark:text-indigo-400' : 'bg-white dark:bg-transparent border-slate-200 dark:border-white/10 text-slate-500'}`}
+                          >
+                            {activeTx.isSales ? <CheckCircle2 size={14} /> : <Tag size={14} className="opacity-40" />}
+                            <span className="text-[8px] font-black uppercase tracking-widest">Sale</span>
+                          </button>
+                          
+                          <button 
+                            onClick={toggleComm}
+                            className={`cursor-pointer flex flex-col items-center justify-center h-14 rounded-xl border-2 transition-all gap-1 ${activeTx.isCommission ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-500/10 dark:border-blue-500 dark:text-blue-400' : 'bg-white dark:bg-transparent border-slate-200 dark:border-white/10 text-slate-500'}`}
+                          >
+                            {activeTx.isCommission ? <CheckCircle2 size={14} /> : <FileText size={14} className="opacity-40" />}
+                            <span className="text-[8px] font-black uppercase tracking-widest">Comm</span>
+                          </button>
+                          
+                          <button 
+                            onClick={() => handleUpdate(activeTx._id, { isMarkedForManualEntry: !activeTx.isMarkedForManualEntry })}
+                            className={`cursor-pointer flex flex-col items-center justify-center h-14 rounded-xl border-2 transition-all gap-1 ${activeTx.isMarkedForManualEntry ? 'bg-amber-50 border-amber-500 text-amber-700 dark:bg-amber-500/10 dark:border-amber-500 dark:text-amber-400' : 'bg-white dark:bg-transparent border-slate-200 dark:border-white/10 text-slate-500'}`}
+                          >
+                            {activeTx.isMarkedForManualEntry ? <CheckCircle2 size={14} /> : <ShieldAlert size={14} className="opacity-40" />}
+                            <span className="text-[8px] font-black uppercase tracking-widest">Manual</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 flex flex-col min-h-25 lg:min-h-0">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <MessageSquare size={12}/> Notes / Remarks
+                        </label>
+                        <textarea 
+                          value={activeTx.customNarration || ""}
+                          onChange={(e) => handleUpdate(activeTx._id, { customNarration: e.target.value }, true)}
+                          placeholder="Add a remark for your records..."
+                          className="w-full flex-1 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs font-bold uppercase focus:border-emerald-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 resize-none shadow-sm min-h-25"
+                        />
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* INLINE FOOTER: Verified only when reached naturally */}
+                  <div className="shrink-0 mt-6 lg:mt-4 pt-4 border-t border-slate-200 dark:border-white/5">
                     <button 
-                      onClick={() => setLedgerModalOpen(true)}
-                      className={`cursor-pointer flex-1 w-full rounded-2xl border-2 transition-all group outline-none flex items-center justify-between p-5 lg:p-6 text-left shadow-sm min-h-30 ${activeTx.suggestedLedger ? 'border-emerald-500/40 bg-emerald-50/50 dark:bg-emerald-500/5 hover:border-emerald-500' : 'border-slate-200 dark:border-white/10 border-dashed bg-white dark:bg-white/2 hover:border-emerald-400'}`}
+                      onClick={handleVerifyAndNext}
+                      disabled={isVerifying}
+                      className="cursor-pointer w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-black uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 bg-linear-to-t from-emerald-600 to-emerald-500 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                      <div className="flex flex-col min-w-0 pr-4">
-                        {activeTx.suggestedLedger ? (
-                          <>
-                            <span className="text-xl lg:text-2xl font-[1000] text-emerald-700 dark:text-emerald-400 uppercase tracking-tight wrap-break-word whitespace-normal leading-tight">
-                              {activeTx.suggestedLedger}
-                            </span>
-                            {activeTx.confidence > 0 && (
-                              <span className={`text-[10px] font-black uppercase tracking-widest mt-2.5 px-2.5 py-1 rounded-md w-max ${activeTx.confidence > 0.8 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30'}`}>
-                                {Math.round(activeTx.confidence * 100)}% Auto-Match
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-xl font-black text-rose-500 uppercase tracking-tight">
-                            Select Ledger...
-                          </span>
-                        )}
-                      </div>
-                      <div className="shrink-0 px-4 py-2 rounded-lg bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:bg-emerald-500 group-hover:text-white group-hover:border-emerald-500 transition-all shadow-sm flex items-center gap-1.5">
-                        <Edit3 size={12} /> <span className="hidden sm:inline">Change</span>
-                      </div>
+                      {isVerifying ? <Loader2 size={16} strokeWidth={3} className="animate-spin" /> : <FastForward size={16} strokeWidth={3} />}
+                      {isVerifying ? "Verifying..." : "Verify & Next"}
                     </button>
                   </div>
 
-                  {/* RIGHT COLUMN: Flags & Notes */}
-                  <div className="w-full lg:w-1/2 flex flex-col gap-4 min-h-0">
-                    
-                    <div className="flex flex-col gap-2 shrink-0">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Transaction Flags</label>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => handleUpdate(activeTx._id, { isSales: !activeTx.isSales })}
-                          className={`cursor-pointer flex-1 h-12 rounded-lg border-2 flex items-center justify-center gap-1.5 transition-all ${activeTx.isSales ? 'bg-indigo-50 border-indigo-500 text-indigo-700 dark:bg-indigo-500/20 dark:border-indigo-500 dark:text-indigo-400 shadow-sm' : 'bg-white dark:bg-transparent border-slate-200 dark:border-white/10 text-slate-500 hover:border-indigo-300'}`}
-                        >
-                          {activeTx.isSales ? <CheckCircle2 size={14} /> : <Tag size={14} className="opacity-40" />}
-                          <span className="text-[9px] font-black uppercase tracking-widest">Sales</span>
-                        </button>
-                        
-                        <button 
-                          onClick={toggleComm}
-                          className={`cursor-pointer flex-1 h-12 rounded-lg border-2 flex items-center justify-center gap-1.5 transition-all ${activeTx.isCommission ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-500/20 dark:border-blue-500 dark:text-blue-400 shadow-sm' : 'bg-white dark:bg-transparent border-slate-200 dark:border-white/10 text-slate-500 hover:border-blue-300'}`}
-                        >
-                          {activeTx.isCommission ? <CheckCircle2 size={14} /> : <FileText size={14} className="opacity-40" />}
-                          <span className="text-[9px] font-black uppercase tracking-widest">Comm</span>
-                        </button>
-                        
-                        <button 
-                          onClick={() => handleUpdate(activeTx._id, { isMarkedForManualEntry: !activeTx.isMarkedForManualEntry })}
-                          className={`cursor-pointer flex-1 h-12 rounded-lg border-2 flex items-center justify-center gap-1.5 transition-all ${activeTx.isMarkedForManualEntry ? 'bg-amber-50 border-amber-500 text-amber-700 dark:bg-amber-500/20 dark:border-amber-500 dark:text-amber-400 shadow-sm' : 'bg-white dark:bg-transparent border-slate-200 dark:border-white/10 text-slate-500 hover:border-amber-300'}`}
-                        >
-                          {activeTx.isMarkedForManualEntry ? <CheckCircle2 size={14} /> : <ShieldAlert size={14} className="opacity-40" />}
-                          <span className="text-[9px] font-black uppercase tracking-widest">Manual</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex-1 flex flex-col gap-1.5 min-h-20">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                        <MessageSquare size={12}/> Internal Auditor Note
-                      </label>
-                      <textarea 
-                        value={activeTx.customNarration || ""}
-                        onChange={(e) => handleUpdate(activeTx._id, { customNarration: e.target.value }, true)}
-                        placeholder="Add a remark for your records..."
-                        className="w-full h-full flex-1 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs font-bold uppercase focus:border-emerald-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 resize-none shadow-sm"
-                      />
-                    </div>
-                  </div>
                 </div>
-
-                <div className="shrink-0 pt-3 lg:pt-4 border-t border-slate-200 dark:border-white/5 mt-auto">
-                  <button 
-                    onClick={handleVerifyAndNext}
-                    className="cursor-pointer w-full py-4 lg:py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-sm font-black uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 bg-linear-to-t from-emerald-600 to-emerald-500"
-                  >
-                    <FastForward size={16} strokeWidth={3} />
-                    Verify & Next
-                  </button>
-                </div>
-
               </div>
             )}
           </section>

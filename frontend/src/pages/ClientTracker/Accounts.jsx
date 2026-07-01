@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useLocation } from "react-router-dom"; 
+import { useLocation } from "react-router-dom";
 
 import Navbar from "../../components/Navbar";
 import AccountBalances from "../../components/Accounts/AccountBalances";
@@ -13,9 +13,11 @@ import { toast } from "sonner";
 const Accounts = () => {
   const { user } = useAuth();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState(location.state?.activeTab || "balances");
+  const [activeTab, setActiveTab] = useState(
+    location.state?.activeTab || "audit",
+  );
   const tabs = [
-    { id: "audit", name: "Tally Sync", icon: FileText, isLocked: true },
+    { id: "audit", name: "Tally Sync", icon: FileText, isLocked: false },
     { id: "balances", name: "Account Balances", icon: Wallet, isLocked: false },
     { id: "commissions", name: "Commissions", icon: PieChart, isLocked: false },
   ];
@@ -23,7 +25,8 @@ const Accounts = () => {
   const handleTabClick = (tab) => {
     if (tab.isLocked) {
       toast.info("Tally Sync module is currently in final audit.", {
-        description: "This feature will be enabled following system verification.",
+        description:
+          "This feature will be enabled following system verification.",
       });
       return;
     }
@@ -44,12 +47,12 @@ const Accounts = () => {
       <Navbar />
 
       <main className="max-w-400 mx-auto px-5 md:px-12 lg:px-20 pt-8 md:pt-16 pb-32 md:pb-20 w-full">
-        
         {/* Header Section */}
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-10 md:mb-16 gap-6 md:gap-8 w-full">
           <div className="space-y-1.5 md:space-y-2 w-full xl:w-auto">
             <h1 className="text-3xl md:text-5xl font-[1000] text-slate-950 dark:text-white uppercase tracking-tighter">
-              Treasury <span className="text-emerald-500 italic">&</span> Performance
+              Treasury <span className="text-emerald-500 italic">&</span>{" "}
+              Performance
             </h1>
             <p className="text-[10px] md:text-[12px] font-black text-slate-400 uppercase tracking-[0.3em]">
               Liquidity Tracking & Digital Accounting
@@ -65,14 +68,22 @@ const Accounts = () => {
                 key={tab.id}
                 onClick={() => handleTabClick(tab)}
                 className={`flex items-center justify-center gap-3 px-10 py-4 rounded-md text-[12px] font-black uppercase tracking-widest transition-all duration-300 relative outline-none
-                  ${activeTab === tab.id
+                  ${
+                    activeTab === tab.id
                       ? "bg-white dark:bg-slate-800 text-emerald-600 shadow-lg scale-[1.02]"
                       : tab.isLocked
                         ? "text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-60"
                         : "text-slate-400 hover:bg-transparent hover:text-slate-600 dark:hover:text-slate-200"
                   }`}
               >
-                {tab.isLocked ? <Lock size={14} className="text-slate-300 dark:text-slate-700" /> : <tab.icon size={16} strokeWidth={2.5} />}
+                {tab.isLocked ? (
+                  <Lock
+                    size={14}
+                    className="text-slate-300 dark:text-slate-700"
+                  />
+                ) : (
+                  <tab.icon size={16} strokeWidth={2.5} />
+                )}
                 {tab.name}
               </button>
             ))}
@@ -91,11 +102,17 @@ const Accounts = () => {
                     onClick={() => handleTabClick(tab)}
                     className={`flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl transition-all outline-none
                       ${isActive ? "bg-white dark:bg-slate-800 text-emerald-600 shadow-sm" : "text-slate-400"}
-                      ${tab.isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-200/50 dark:hover:bg-slate-800/50'}
+                      ${tab.isLocked ? "opacity-50 cursor-not-allowed" : "hover:bg-slate-200/50 dark:hover:bg-slate-800/50"}
                     `}
                   >
-                    {tab.isLocked ? <Lock size={18} /> : <tab.icon size={18} strokeWidth={isActive ? 2.5 : 2} />}
-                    <span className="text-[8px] font-black uppercase tracking-widest text-center px-1 leading-tight">{tab.name}</span>
+                    {tab.isLocked ? (
+                      <Lock size={18} />
+                    ) : (
+                      <tab.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                    )}
+                    <span className="text-[8px] font-black uppercase tracking-widest text-center px-1 leading-tight">
+                      {tab.name}
+                    </span>
                   </button>
                 );
               })}

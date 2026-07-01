@@ -217,7 +217,7 @@ const FolioReconciler = () => {
 
             {/* Target AMC Input */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
-                <label className="block text-sm font-semibold text-slate-900 dark:text-white mb-2 flex items-center space-x-2">
+                <label className="block text-sm font-semibold text-slate-900 dark:text-white mb-2 items-center space-x-2">
                     <KeySquare className="w-4 h-4 text-emerald-500" />
                     <span>Target Target Sheet Name (AMC)</span>
                 </label>
@@ -342,7 +342,7 @@ const FolioReconciler = () => {
                         
                         {/* Interactive Dynamic Grid Matrix Body */}
                         {processedTableData.length > 0 ? (
-                            <div className="overflow-x-auto max-h-[450px]">
+                            <div className="overflow-x-auto max-h-112.5">
                                 <table className="w-full text-sm text-left">
                                     <thead className="text-xs text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 sticky top-0 shadow-sm z-10">
                                         <tr>
