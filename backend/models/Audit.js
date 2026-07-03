@@ -8,7 +8,11 @@ const BankSummarySchema = new mongoose.Schema({
   totalReceipts: { type: Number, default: 0 },
   totalPayments: { type: Number, default: 0 },
   receiptCount: { type: Number, default: 0 },
-  paymentCount: { type: Number, default: 0 }
+  paymentCount: { type: Number, default: 0 },
+  
+  // NEW FIELDS ADDED HERE
+  totalSales: { type: Number, default: 0 },
+  salesCount: { type: Number, default: 0 }
 });
 
 const AuditSchema = new mongoose.Schema({
@@ -18,14 +22,13 @@ const AuditSchema = new mongoose.Schema({
     required: true
   },
 
-  // TALLY BRIDGE CONTEXT (The Audit is now tied strictly to the Company)
+  // TALLY BRIDGE CONTEXT
   tallyCompanyName: { 
     type: String, 
     required: true,
     trim: true 
   },
   
-  // ARRAYS to hold multiple banks within this single Company Audit
   tallyLedgerNames: [{ 
     type: String, 
     trim: true 
@@ -46,16 +49,17 @@ const AuditSchema = new mongoose.Schema({
 
   // DATA TRACKING & BALANCING METRICS
   sourceFiles: [String], 
-  
-  // Isolated math per bank ledger
   bankSummaries: [BankSummarySchema],
 
-  // Grand Totals across all banks for this company month
   summary: {
     totalReceipts: { type: Number, default: 0 },
     totalPayments: { type: Number, default: 0 },
     receiptCount: { type: Number, default: 0 },
-    paymentCount: { type: Number, default: 0 }
+    paymentCount: { type: Number, default: 0 },
+    
+    // NEW FIELDS ADDED HERE
+    totalSales: { type: Number, default: 0 },
+    salesCount: { type: Number, default: 0 }
   },
   
   lastModified: { 
@@ -64,8 +68,7 @@ const AuditSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-// UPDATED INDEX
-// Unique index guarantees only ONE draft session per Company per Period
+// UNIQUE INDEX
 AuditSchema.index({ tallyCompanyName: 1, month: 1, year: 1, status: 1 }, { unique: true });
 
 module.exports = mongoose.model('Audit', AuditSchema);

@@ -7,6 +7,7 @@ import OperationsDashboard from "../../components/Operations/TaskBoard";
 import Submissions from "../../components/Operations/Submissions";
 import FolioReconciler from "../../components/Operations/FolioReconciler";
 import ArnTransferReconciler from "../../components/Operations/ArnTransferReconciler";
+import BrokerageAuditor from "../../components/Operations/BrokerageAuditor";
 
 const Operations = () => {
   const [activeTab, setActiveTab] = useState("submissions");
@@ -14,8 +15,9 @@ const Operations = () => {
   const tabs = [
     { id: "submissions", name: "Submissions", icon: Send, isLocked: false },
     { id: "dashboard", name: "Task Board", icon: Kanban, isLocked: false },
-    { id: "folio", name: "Folio Reconciler", icon: Send, isLocked: false },
-    { id: "arn", name: "ARN Reconciler", icon: Mail, isLocked: false },
+    // { id: "folio", name: "Folio Reconciler", icon: Send, isLocked: false },
+    // { id: "arn", name: "ARN Reconciler", icon: Mail, isLocked: false },
+    { id: "brokerage", name: "Brokerage Auditor", icon: Mail, isLocked: false },
   ];
 
   const handleTabClick = (tab) => {
@@ -102,8 +104,9 @@ const Operations = () => {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
           {activeTab === "submissions" && <Submissions />}
           {activeTab === "dashboard" && <OperationsDashboard />}
-          {activeTab === "folio" && <FolioReconciler />}
-          {activeTab === "arn" && <ArnTransferReconciler />}
+          {/* {activeTab === "folio" && <FolioReconciler />}
+          {activeTab === "arn" && <ArnTransferReconciler />} */}
+          {activeTab === "brokerage" && <BrokerageAuditor />}
         </div>
       </main>
     </div>

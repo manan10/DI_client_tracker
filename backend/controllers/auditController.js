@@ -152,6 +152,54 @@ const parseExcel = async (buffer, password = null) => {
     return results;
 };
 
+// =========================================================================
+// 🧠 HELPER: DYNAMIC AUDIT SUMMARY RECALCULATION
+// =========================================================================
+const recalculateAuditSummary = async (auditId) => {
+    const audit = await Audit.findById(auditId);
+    if (!audit) return null;
+
+    // Fetch all valid transactions for this audit
+    const allTx = await Transaction.find({ 
+        auditId: auditId, 
+        narration: { $ne: 'EMPTY_FILE_MARKER' } 
+    });
+
+    // Recalculate isolated bank summaries
+    audit.bankSummaries.forEach(bank => {
+        const bankTx = allTx.filter(t => t.ledgerName === bank.tallyLedgerName || t.bank === bank.tallyLedgerName);
+        
+        const receipts = bankTx.filter(t => t.type === 'RECEIPT');
+        const payments = bankTx.filter(t => t.type === 'PAYMENT');
+        
+        // Isolate the sales (Receipts flagged as sales)
+        const sales = bankTx.filter(t => t.type === 'RECEIPT' && (t.isSales === true || String(t.isSales).toLowerCase() === 'true'));
+
+        bank.totalReceipts = receipts.reduce((sum, t) => sum + (t.amount || 0), 0);
+        bank.receiptCount = receipts.length;
+        
+        bank.totalPayments = payments.reduce((sum, t) => sum + (t.amount || 0), 0);
+        bank.paymentCount = payments.length;
+
+        // Apply Sales Math
+        bank.totalSales = sales.reduce((sum, t) => sum + (t.amount || 0), 0);
+        bank.salesCount = sales.length;
+    });
+
+    // Recalculate Grand Total Summary across all banks
+    audit.summary = {
+        totalReceipts: audit.bankSummaries.reduce((sum, b) => sum + (b.totalReceipts || 0), 0),
+        totalPayments: audit.bankSummaries.reduce((sum, b) => sum + (b.totalPayments || 0), 0),
+        receiptCount: audit.bankSummaries.reduce((sum, b) => sum + (b.receiptCount || 0), 0),
+        paymentCount: audit.bankSummaries.reduce((sum, b) => sum + (b.paymentCount || 0), 0),
+        totalSales: audit.bankSummaries.reduce((sum, b) => sum + (b.totalSales || 0), 0),
+        salesCount: audit.bankSummaries.reduce((sum, b) => sum + (b.salesCount || 0), 0)
+    };
+
+    await audit.save();
+    return audit;
+};
+
 // --- CONTROLLER EXPORTS ---
 
 exports.getActiveAudit = async (req, res) => {
@@ -279,7 +327,6 @@ exports.processBulkStatements = async (req, res) => {
             
             // =========================================================================
             // 🕒 CRITICAL: SORT ROWS BEFORE TAGGING
-            // We must process chronologically so the AMC Tracker knows what came first
             // =========================================================================
             parsedRows.sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -352,8 +399,8 @@ exports.processBulkStatements = async (req, res) => {
                     sourceFile: file.originalname, 
                     bank: account ? account.name : tallyLedger, 
                     isChecked: false,
-                    isCommission: isComm,     // <-- Updated calculation
-                    isSales: isSale,          // <-- Updated memory-backed calculation
+                    isCommission: isComm,     
+                    isSales: isSale,          
                     isMarkedForManualEntry: false
                 };
             });
@@ -365,8 +412,6 @@ exports.processBulkStatements = async (req, res) => {
         }
 
         // 6. SORT & CALCULATE METRICS FOR *THIS SPECIFIC BANK*
-        // We do a final sort here to ensure the balances flow correctly just in case 
-        // multiple files were uploaded out of order.
         const sortedTransactions = [...allTransactions].sort((a, b) => new Date(a.date) - new Date(b.date));
         const firstTx = sortedTransactions[0];
         const lastTx = sortedTransactions[sortedTransactions.length - 1];
@@ -380,6 +425,7 @@ exports.processBulkStatements = async (req, res) => {
 
         const receipts = sortedTransactions.filter(t => t.type === 'RECEIPT');
         const payments = sortedTransactions.filter(t => t.type === 'PAYMENT');
+        const sales = sortedTransactions.filter(t => t.type === 'RECEIPT' && t.isSales);
 
         const currentBankSummary = {
             tallyLedgerName: tallyLedger,
@@ -389,7 +435,9 @@ exports.processBulkStatements = async (req, res) => {
             totalReceipts: receipts.reduce((sum, t) => sum + (t.amount || 0), 0),
             totalPayments: payments.reduce((sum, t) => sum + (t.amount || 0), 0),
             receiptCount: receipts.length,
-            paymentCount: payments.length
+            paymentCount: payments.length,
+            totalSales: sales.reduce((sum, t) => sum + (t.amount || 0), 0),
+            salesCount: sales.length
         };
 
         // Update isolated Bank Summaries
@@ -400,23 +448,18 @@ exports.processBulkStatements = async (req, res) => {
             audit.bankSummaries.push(currentBankSummary);
         }
 
-        // Recalculate Grand Total Summary across all banks
-        audit.summary = {
-            totalReceipts: audit.bankSummaries.reduce((sum, b) => sum + b.totalReceipts, 0),
-            totalPayments: audit.bankSummaries.reduce((sum, b) => sum + b.totalPayments, 0),
-            receiptCount: audit.bankSummaries.reduce((sum, b) => sum + b.receiptCount, 0),
-            paymentCount: audit.bankSummaries.reduce((sum, b) => sum + b.paymentCount, 0)
-        };
-
         req.files.forEach(f => audit.sourceFiles.push(f.originalname));
 
         // 7. PERSIST TO DATABASE
         await audit.save();
         const saved = await Transaction.insertMany(sortedTransactions);
+        
+        // Ensure grand totals are perfectly synced before returning to UI
+        const updatedAudit = await recalculateAuditSummary(audit._id);
 
         console.log(`--- SUCCESS: ${saved.length} ROWS SAVED FOR ${tallyCompany} -> ${tallyLedger} ---`);
 
-        res.json({ success: true, audit, count: saved.length, transactions: saved });
+        res.json({ success: true, audit: updatedAudit, count: saved.length, transactions: saved });
 
     } catch (error) { 
         console.error("AUDIT UPLOAD ERROR:", error);
@@ -433,9 +476,55 @@ exports.getAuditTransactions = async (req, res) => {
 
 exports.updateTransaction = async (req, res) => {
     try {
-        const updated = await Transaction.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
+        const updated = await Transaction.findByIdAndUpdate(
+            req.params.id, 
+            { $set: req.body }, 
+            { new: true }
+        );
+        
+        if (!updated) {
+            return res.status(404).json({ success: false, message: "Transaction not found" });
+        }
+
+        // Keep summary in sync if core toggles changed
+        await recalculateAuditSummary(updated.auditId);
+
         res.json({ success: true, data: updated });
-    } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+    } catch (err) { 
+        console.error("Update Transaction Error:", err);
+        res.status(500).json({ success: false, message: err.message }); 
+    }
+};
+
+exports.bulkUpdateTransactions = async (req, res) => {
+    try {
+        const { transactionIds, updateData } = req.body;
+
+        if (!transactionIds || !Array.isArray(transactionIds) || transactionIds.length === 0) {
+            return res.status(400).json({ success: false, message: "No transaction IDs provided" });
+        }
+
+        const result = await Transaction.updateMany(
+            { _id: { $in: transactionIds } },
+            { $set: updateData }
+        );
+
+        // Keep summary in sync
+        if (transactionIds.length > 0) {
+            const sampleTx = await Transaction.findById(transactionIds[0]);
+            if (sampleTx) await recalculateAuditSummary(sampleTx.auditId);
+        }
+
+        res.json({ 
+            success: true, 
+            message: "Bulk update successful",
+            matchedCount: result.matchedCount,
+            modifiedCount: result.modifiedCount
+        });
+    } catch (err) {
+        console.error("Bulk transaction update failed:", err);
+        res.status(500).json({ success: false, message: err.message });
+    }
 };
 
 exports.finalizeAudit = async (req, res) => {
@@ -478,6 +567,10 @@ exports.saveSalesCheckpoint = async (req, res) => {
     if (bulkOperations.length === 0) return res.json({ success: true, message: "No staging row updates required" });
     
     const result = await Transaction.bulkWrite(bulkOperations);
+    
+    // Refresh parent dossier now that sales matrix is committed
+    await recalculateAuditSummary(auditId);
+
     return res.json({ success: true, message: "Sales validation workbench state committed", matchedCount: result.matchedCount });
 
   } catch (err) {
@@ -486,7 +579,26 @@ exports.saveSalesCheckpoint = async (req, res) => {
   }
 };
 
-// Add this alongside your processBulkStatements method
+exports.updateAuditSettings = async (req, res) => {
+    try {
+        const updatedAudit = await Audit.findByIdAndUpdate(
+            req.params.auditId,
+            { $set: req.body },
+            { new: true }
+        );
+
+        if (!updatedAudit) {
+            return res.status(404).json({ success: false, message: "Audit session not found" });
+        }
+
+        res.json({ success: true, data: updatedAudit });
+    } catch (err) {
+        console.error("Failed to update Audit Settings:", err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// Test Ledger Matching Bench (Unchanged, included for completeness)
 exports.testLedgerMatching = async (req, res) => {
     try {
         console.log("--- STARTING MATCHER TEST BENCH ---");
@@ -513,7 +625,6 @@ exports.testLedgerMatching = async (req, res) => {
         
         try {
             if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
-                // Ensure parseExcel and parseRobust are imported at the top of your controller
                 parsedRows = await parseExcel(req.file.buffer, excelPassword);
             } else {
                 parsedRows = await parseRobust(req.file.buffer); 
@@ -526,23 +637,14 @@ exports.testLedgerMatching = async (req, res) => {
         }
 
         // 3. SORT DATA CHRONOLOGICALLY
-        // Critical for the GST split logic. We must process the 6th of June before the 26th of June.
         parsedRows.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        // =========================================================================
-        // 🧠 AMC TRACKER STATE
-        // Memory bank to track the last date a base commission was logged for an AMC
-        // =========================================================================
         const amcTracker = {};
 
         // 4. Run the Matcher & Auto-Tagger
-        // Ensure performLedgerMatch is imported at the top of your controller
         const results = parsedRows.map((t, index) => {
             const match = performLedgerMatch(t, ledgerMaster);
 
-            // =========================================================================
-            // 🔍 IMPROVED AUTO-TAGGING ENGINE (COMMISSION & SALES)
-            // =========================================================================
             const cleanNarration = (t.narration || "").toLowerCase();
             const matchedLedgerName = (match.name || "").toLowerCase();
             
@@ -552,63 +654,53 @@ exports.testLedgerMatching = async (req, res) => {
             let isSale = false;
             
             if (t.type === 'RECEIPT') {
-                // Rule A: Does the bank narration contain a keyword? (e.g., "TRAIL COMM")
                 const narrationHit = commKeywords.some(k => cleanNarration.includes(k));
                 
-                // Rule B: Did the Ledger Matcher guess a commission or Mutual Fund ledger?
                 const ledgerHit = matchedLedgerName.includes('commission') || 
                                   matchedLedgerName.includes('brokerage') ||
                                   matchedLedgerName.includes('mutual fund'); 
                 
                 isComm = narrationHit || ledgerHit;
 
-                // Rule C: Auto-Cascade logic with Split-GST Detection
                 if (isComm) {
                     const txDate = new Date(t.date);
 
                     if (!amcTracker[matchedLedgerName]) {
-                        // First time seeing a commission for this AMC (Base Commission)
                         amcTracker[matchedLedgerName] = txDate;
                         isSale = true; 
                     } else {
                         const lastDate = amcTracker[matchedLedgerName];
                         
-                        // Calculate difference in days
                         const diffTime = Math.abs(txDate - lastDate);
                         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                         
                         if (diffDays <= 30) {
-                            // Secondary drop within 30 days -> This is the GST portion
                             isSale = false;
                         } else {
-                            // Over 30 days -> This is a new month's Base Commission
                             amcTracker[matchedLedgerName] = txDate;
                             isSale = true;
                         }
                     }
                 } else if (matchedLedgerName.includes('lic') || matchedLedgerName.includes('insurance')) {
-                    // Catching Insurance/LIC as a Sale (but not a commission) based on your logs.
                     isSale = true; 
                 }
             }
-            // =========================================================================
 
             return { 
-                id: index, // Temporary UI ID
+                id: index, 
                 date: t.date,
                 type: t.type,
                 amount: t.amount,
                 narration: t.narration, 
                 suggestedLedger: match.name, 
                 confidence: match.confidence,
-                status: 'PENDING', // 'PENDING', 'CORRECT', 'INCORRECT'
+                status: 'PENDING',
                 correctedLedger: "",
                 isCommission: isComm, 
                 isSales: isSale       
             };
         });
 
-        // We return the ledger names as well so the UI dropdown can use them
         const ledgerNames = ledgerMaster.map(l => l.name).sort();
 
         res.json({ success: true, count: results.length, data: results, ledgers: ledgerNames });
@@ -616,77 +708,5 @@ exports.testLedgerMatching = async (req, res) => {
     } catch (error) { 
         console.error("MATCHER TEST ERROR:", error);
         res.status(500).json({ success: false, message: error.message }); 
-    }
-};
-
-// =========================================================================
-// TRANSACTION MANAGEMENT (SALES STEP & AUDIT STEP)
-// =========================================================================
-
-// 1. Single Transaction Update
-exports.updateTransaction = async (req, res) => {
-    try {
-        const updated = await Transaction.findByIdAndUpdate(
-            req.params.id, 
-            { $set: req.body }, 
-            { new: true }
-        );
-        
-        if (!updated) {
-            return res.status(404).json({ success: false, message: "Transaction not found" });
-        }
-
-        res.json({ success: true, data: updated });
-    } catch (err) { 
-        console.error("Update Transaction Error:", err);
-        res.status(500).json({ success: false, message: err.message }); 
-    }
-};
-
-// 2. Bulk Update Transactions (Used for "Verify All")
-exports.bulkUpdateTransactions = async (req, res) => {
-    try {
-        const { transactionIds, updateData } = req.body;
-
-        if (!transactionIds || !Array.isArray(transactionIds) || transactionIds.length === 0) {
-            return res.status(400).json({ success: false, message: "No transaction IDs provided" });
-        }
-
-        // Execute a multi-document atomic update
-        const result = await Transaction.updateMany(
-            { _id: { $in: transactionIds } },
-            { $set: updateData }
-        );
-
-        res.json({ 
-            success: true, 
-            message: "Bulk update successful",
-            matchedCount: result.matchedCount,
-            modifiedCount: result.modifiedCount
-        });
-    } catch (err) {
-        console.error("Bulk transaction update failed:", err);
-        res.status(500).json({ success: false, message: err.message });
-    }
-};
-
-// 3. Update Audit Settings (Used for the Global Ledger Fallback)
-exports.updateAuditSettings = async (req, res) => {
-    try {
-        // Find the audit session and apply updates (e.g., salesIncomeLedger)
-        const updatedAudit = await Audit.findByIdAndUpdate(
-            req.params.auditId,
-            { $set: req.body },
-            { new: true }
-        );
-
-        if (!updatedAudit) {
-            return res.status(404).json({ success: false, message: "Audit session not found" });
-        }
-
-        res.json({ success: true, data: updatedAudit });
-    } catch (err) {
-        console.error("Failed to update Audit Settings:", err);
-        res.status(500).json({ success: false, message: err.message });
     }
 };
