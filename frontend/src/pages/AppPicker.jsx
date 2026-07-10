@@ -112,7 +112,8 @@ const AppPicker = () => {
       </nav>
 
       {/* --- INTERACTIVE CARD DASHBOARD --- */}
-      <main className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-8 w-full max-w-6xl mx-auto px-5 pt-32 pb-24 lg:pt-0 lg:pb-0 relative z-10 min-h-dvh">
+      {/* FIXED: Changed mobile justification to 'start' and reduced top padding slightly so it doesn't float awkwardly in the center */}
+      <main className="flex-1 flex flex-col lg:flex-row items-center justify-start lg:justify-center gap-4 lg:gap-8 w-full max-w-6xl mx-auto px-5 pt-28 pb-24 lg:pt-0 lg:pb-0 relative z-10 min-h-dvh">
         
         {authorizedApps.map((app, idx) => (
           <div
@@ -123,54 +124,59 @@ const AppPicker = () => {
             className="group w-full max-w-sm lg:max-w-md cursor-pointer animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both"
             style={{ animationDelay: `${idx * 150}ms` }}
           >
-            {/* The Card Envelope (Sharper 3xl rounding, persistent mobile shadow) */}
-            <div className={`relative flex flex-col bg-white/90 backdrop-blur-2xl rounded-3xl p-7 lg:p-10 border border-slate-100 transition-all duration-500 ease-out h-full overflow-hidden
+            {/* The Card Envelope (Reduced padding on mobile) */}
+            <div className={`relative flex flex-col bg-white/90 backdrop-blur-2xl rounded-3xl p-5 lg:p-10 border border-slate-100 transition-all duration-500 ease-out h-full overflow-hidden
               shadow-xl lg:shadow-md ${app.theme.shadowColor}
               lg:hover:-translate-y-1.5 lg:hover:shadow-2xl ring-1 ring-transparent ${app.theme.hoverRing}
             `}>
               
-              {/* Internal Gradient Flare (Always subtly visible on mobile, reveals on desktop hover) */}
+              {/* Internal Gradient Flare */}
               <div className={`absolute top-0 right-0 w-64 h-64 bg-linear-to-bl ${app.theme.gradient} opacity-40 lg:opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-bl-full pointer-events-none`} />
 
-              {/* Background Index Number */}
-              <div className="absolute top-6 right-8 text-[80px] lg:text-[100px] font-[1000] italic leading-none pointer-events-none select-none text-slate-100/80 transition-transform duration-700 group-hover:scale-110 group-hover:-translate-y-2 group-hover:text-slate-200/50">
+              {/* Background Index Number (Scaled down on mobile) */}
+              <div className="absolute top-4 right-5 text-[50px] lg:top-6 lg:right-8 lg:text-[100px] font-[1000] italic leading-none pointer-events-none select-none text-slate-100/80 transition-transform duration-700 group-hover:scale-110 group-hover:-translate-y-2 group-hover:text-slate-200/50">
                 0{idx + 1}
               </div>
 
-              {/* Icon Container (Sharper 2xl rounding) */}
-              <div className={`relative z-10 w-16 h-16 lg:w-20 lg:h-20 rounded-2xl flex items-center justify-center mb-8 lg:mb-10 transition-all duration-500 shadow-sm border
-                ${app.theme.lightBg} ${app.theme.border} ${app.theme.text}
-                group-hover:scale-110 lg:group-hover:-rotate-3 group-hover:shadow-md
-              `}>
-                <app.icon size={32} strokeWidth={2.5} className="transition-transform duration-500" />
-              </div>
+              {/* FIXED: Flex Row on Mobile, Flex Col on Desktop */}
+              <div className="relative z-10 flex flex-row lg:flex-col items-start gap-4 lg:gap-0 flex-1">
+                
+                {/* Icon Container (Smaller on mobile, margin adjusted) */}
+                <div className={`shrink-0 w-14 h-14 lg:w-20 lg:h-20 rounded-2xl flex items-center justify-center lg:mb-10 transition-all duration-500 shadow-sm border
+                  ${app.theme.lightBg} ${app.theme.border} ${app.theme.text}
+                  group-hover:scale-110 lg:group-hover:-rotate-3 group-hover:shadow-md
+                `}>
+                  <app.icon className="w-6 h-6 lg:w-8 lg:h-8 transition-transform duration-500" strokeWidth={2.5} />
+                </div>
 
-              {/* Typography Structure */}
-              <div className="relative z-10 flex-1 flex flex-col justify-start">
-                <div className="inline-flex items-center gap-2 mb-3">
-                  <span className={`w-2 h-2 rounded-full ${app.theme.primary} animate-pulse`} />
-                  <p className="text-[10px] lg:text-[11px] font-black uppercase tracking-[0.3em] text-slate-400 group-hover:text-slate-500 transition-colors">
-                    {app.subtitle}
+                {/* Typography Structure */}
+                <div className="flex-1 flex flex-col justify-start">
+                  <div className="inline-flex items-center gap-2 mb-1.5 lg:mb-3">
+                    <span className={`w-2 h-2 rounded-full ${app.theme.primary} animate-pulse`} />
+                    <p className="text-[9px] lg:text-[11px] font-black uppercase tracking-[0.3em] text-slate-400 group-hover:text-slate-500 transition-colors">
+                      {app.subtitle}
+                    </p>
+                  </div>
+                  
+                  <h2 className="text-2xl lg:text-4xl font-[1000] uppercase tracking-tighter italic text-slate-900 leading-none mb-2 lg:mb-4 group-hover:text-slate-950 transition-colors">
+                    {app.title}
+                  </h2>
+
+                  {/* Description (Tighter margin on mobile) */}
+                  <p className="text-[12px] lg:text-[14px] font-medium text-slate-500 leading-relaxed max-w-[18rem] mb-4 lg:mb-10 transition-colors group-hover:text-slate-600">
+                    {app.description}
                   </p>
                 </div>
-                
-                <h2 className="text-3xl lg:text-4xl font-[1000] uppercase tracking-tighter italic text-slate-900 leading-none mb-4 group-hover:text-slate-950 transition-colors">
-                  {app.title}
-                </h2>
-
-                <p className="text-[13px] lg:text-[14px] font-medium text-slate-500 leading-relaxed max-w-[18rem] mb-6 lg:mb-10 transition-colors group-hover:text-slate-600">
-                  {app.description}
-                </p>
               </div>
 
-              {/* Dad-Proof Action Button (Proper Tailwind generation prevents color bleeding) */}
-              <div className="relative z-10 mt-auto pt-4">
-                <button className={`w-full py-4 rounded-xl flex items-center justify-center gap-3 text-[11px] lg:text-xs font-[1000] uppercase tracking-[0.25em] transition-all duration-300 border focus:outline-none
+              {/* Dad-Proof Action Button (Tighter padding on mobile) */}
+              <div className="relative z-10 mt-auto pt-2 lg:pt-4">
+                <button className={`w-full py-3.5 lg:py-4 rounded-xl flex items-center justify-center gap-3 text-[11px] lg:text-xs font-[1000] uppercase tracking-[0.25em] transition-all duration-300 border focus:outline-none
                   bg-slate-50 text-slate-700 border-slate-200
                   ${app.theme.btnHover}
                 `}>
                   Launch Application 
-                  <ArrowRight size={18} strokeWidth={3} className={`transition-transform duration-300 group-hover:translate-x-1 ${app.theme.arrowBase} ${app.theme.arrowHover}`} />
+                  <ArrowRight size={16} strokeWidth={3} className={`lg:w-[18px] lg:h-[18px] transition-transform duration-300 group-hover:translate-x-1 ${app.theme.arrowBase} ${app.theme.arrowHover}`} />
                 </button>
               </div>
 
