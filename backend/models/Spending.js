@@ -31,11 +31,22 @@ const spendingSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  // Flag to identify if funds came from/went to an external source (protects the Drawer)
+  isExternal: {
+    type: Boolean,
+    default: false
+  },
   // Date of the actual spending (not necessarily the entry date)
   date: {
     type: Date,
     default: Date.now
-  }
+  },
+  balanceBefore: {
+    type: Number
+  },
+  balanceAfter: {
+    type: Number
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Spending', spendingSchema);
