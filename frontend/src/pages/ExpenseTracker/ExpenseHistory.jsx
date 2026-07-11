@@ -23,17 +23,22 @@ const ExpenseHistory = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editData, setEditData] = useState({ amount: "", category: "", description: "", sourceWallet: "", type: "DEBIT" });
 
+  // 1. DEBOUNCED API CALL (Fixes Network Storms & UI Freezes)
   useEffect(() => {
     let isMounted = true;
-    const fetchHistoryData = async () => {
+    
+    const delayDebounceFn = setTimeout(async () => {
       const query = `month=${selectedMonth}&year=${selectedYear}&walletId=${activeWallet}&search=${searchQuery}`;
       const res = await request(`/spending/history?${query}`, "GET");
       if (isMounted && res?.success) {
         setTransactions(res.data || []);
       }
+    }, 300); // Waits 300ms after you stop typing before hitting the backend
+
+    return () => { 
+      isMounted = false; 
+      clearTimeout(delayDebounceFn); 
     };
-    fetchHistoryData();
-    return () => { isMounted = false; };
   }, [request, selectedMonth, selectedYear, activeWallet, searchQuery, refreshKey]);
 
   const handleEditClick = (t) => {
@@ -51,7 +56,9 @@ const ExpenseHistory = () => {
   const handleEditSubmit = async (e) => {
     if (e) e.preventDefault();
     const res = await request(`/spending/${editData._id}`, "PUT", { ...editData, amount: Number(editData.amount) });
-    if (res) {
+    
+    // Safety Check: Only close and refresh if the backend successfully updated
+    if (res?.success || res) {
       setIsEditModalOpen(false);
       const query = `month=${selectedMonth}&year=${selectedYear}&walletId=${activeWallet}&search=${searchQuery}`;
       const refreshRes = await request(`/spending/history?${query}`, "GET");
@@ -100,10 +107,10 @@ const ExpenseHistory = () => {
           <div className="relative w-full flex items-center bg-white/70 dark:bg-[#0B1120]/70 backdrop-blur-md rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] focus-within:border-emerald-500/80 dark:focus-within:border-emerald-400/80 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all group overflow-hidden">
             
             {/* Elegant Focus Edge */}
-            <div className="absolute top-0 left-0 h-full w-0.75 bg-linear-to-b from-emerald-400 to-emerald-600 opacity-0 group-focus-within:opacity-100 transition-opacity" />
+            <div className="absolute top-0 left-0 h-full w-1 bg-gradient-to-b from-emerald-400 to-emerald-600 opacity-0 group-focus-within:opacity-100 transition-opacity" />
 
             <div className="pl-4 sm:pl-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors">
-              <Search size={16} strokeWidth={2.5} className="sm:w-4.5 sm:h-4.5" />
+              <Search size={16} strokeWidth={2.5} className="sm:w-4 sm:h-4" />
             </div>
             <input 
               value={searchQuery}
@@ -112,7 +119,7 @@ const ExpenseHistory = () => {
               className="w-full bg-transparent py-3.5 sm:py-4 pl-3 pr-4 text-xs sm:text-sm font-semibold outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white"
             />
             {searchQuery && (
-              <button type="button" onClick={() => setSearchQuery("")} className="p-1.5 mr-2 sm:mr-3 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+              <button type="button" onClick={() => setSearchQuery("")} className="p-1.5 mr-2 sm:mr-3 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer">
                 <X size={14} strokeWidth={2.5} />
               </button>
             )}
@@ -123,7 +130,7 @@ const ExpenseHistory = () => {
             
             <div className="border-b border-slate-100 dark:border-slate-800/80 pb-4 sm:pb-5 mb-6 sm:mb-8 flex flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2.5">
-                <div className="p-1.5 sm:p-2 bg-linear-to-br from-emerald-500 to-teal-600 text-white rounded-lg shadow-md shadow-emerald-500/20">
+                <div className="p-1.5 sm:p-2 bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-lg shadow-md shadow-emerald-500/20">
                   <Activity size={14} strokeWidth={3} className="sm:w-4 sm:h-4" />
                 </div>
                 <h2 className="text-[10px] sm:text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none mt-0.5">
@@ -169,9 +176,8 @@ const ExpenseHistory = () => {
         </div>
       </main>
 
-      {/* MODALS */}
+      {/* MODALS: Safely decoupled from DOM thrashing keys */}
       <ExpenseModal 
-        key={isEditModalOpen ? `edit-${editData._id}` : "closed"}
         isOpen={isEditModalOpen} 
         setOpen={setIsEditModalOpen}
         wallets={wallets} 
@@ -186,10 +192,13 @@ const ExpenseHistory = () => {
           target={deleteTarget} 
           onClose={() => setDeleteTarget(null)} 
           onConfirm={async () => {
-            await request(`/spending/${deleteTarget._id}`, "DELETE");
-            setTransactions(prev => prev.filter(t => t._id !== deleteTarget._id));
+            const res = await request(`/spending/${deleteTarget._id}`, "DELETE");
+            // Only erase from the UI if the database successfully deleted it
+            if (res?.success || res) {
+              setTransactions(prev => prev.filter(t => t._id !== deleteTarget._id));
+              fetchWallets();
+            }
             setDeleteTarget(null);
-            fetchWallets();
           }} 
         />
       )}
