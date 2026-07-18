@@ -40,22 +40,39 @@ const DataSync = () => {
     setFiles((prev) => ({ ...prev, [id]: file }));
   };
 
-  const handleSync = async () => {
+const handleSync = async () => {
+    // DIAGNOSTIC: Check what is actually in the state before appending
+    console.log("State Files Object:", files);
+
+    // 1. EXTRACT THE BLOB: Ensure we send the actual File, not a FileList array
+    const aumBlob = Array.isArray(files.aum) || files.aum instanceof FileList ? files.aum[0] : files.aum;
+    const famBlob = Array.isArray(files.family) || files.family instanceof FileList ? files.family[0] : files.family;
+    const nfBlob = Array.isArray(files.nonfam) || files.nonfam instanceof FileList ? files.nonfam[0] : files.nonfam;
+
+    if (!aumBlob || !famBlob || !nfBlob) {
+      return toast.error("Missing Files", { description: "Please attach all 3 files before syncing." });
+    }
+
     const formData = new FormData();
-    formData.append("aumFile", files.aum);
-    formData.append("familyFile", files.family);
-    formData.append("nonFamFile", files.nonfam);
+    formData.append("aumFile", aumBlob);
+    formData.append("familyFile", famBlob);
+    formData.append("nonFamFile", nfBlob);
 
     try {
+      // CRITICAL WARNING: Ensure your custom `request` function does NOT force 
+      // {'Content-Type': 'application/json'} when passing a FormData object.
+      // fetch() needs to calculate the multipart boundary automatically!
       const response = await request("/upload/sync", "POST", formData);
+      
       setSyncStatus({ isOpen: true, success: true, summary: response?.summary });
       setLastSync(new Date());
       setFiles({ aum: null, family: null, nonfam: null });
       toast.success("Sync executed successfully.");
-    } catch  {
+    } catch (err) {
+      console.error("Sync Request Failed:", err);
       setSyncStatus({ isOpen: true, success: false, summary: null });
-      toast.error("Sync process encountered an error.");
-    }
+      toast.error(err?.message || "Sync process encountered an error.");
+    } 
   };
 
   return (

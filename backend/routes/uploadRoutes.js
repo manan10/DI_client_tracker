@@ -4,8 +4,10 @@ const multer = require("multer");
 const uploadController = require("../controllers/uploadController");
 const { protect } = require("../middleware/authmiddleware");
 
+// Using memoryStorage to buffer the files for ExcelJS
 const upload = multer({ storage: multer.memoryStorage() });
 
+// Correctly maps to the exact FormData keys from the frontend
 const uploadFields = upload.fields([
   { name: "aumFile", maxCount: 1 },
   { name: "familyFile", maxCount: 1 },
@@ -13,6 +15,10 @@ const uploadFields = upload.fields([
 ]);
 
 router.post("/sync", protect, uploadFields, uploadController.syncWealthElite);
-router.get("/sync-status", protect, uploadController.getSyncStatus);
+
+// Assuming you have this method built out
+if (uploadController.getSyncStatus) {
+  router.get("/sync-status", protect, uploadController.getSyncStatus);
+}
 
 module.exports = router;
