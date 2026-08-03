@@ -175,6 +175,18 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
   }, [vouchers]);
 
   // =========================================================================
+  // AUTO-UNLOCK WIZARD PARENT WHEN SYNC COMPLETES
+  // =========================================================================
+  useEffect(() => {
+    // If all generated valid vouchers have been fully processed, unlock the AuditWizard footer
+    if (vouchers.length > 0 && stats.pending === 0 && !isProcessing) {
+      if (onCompleteRef.current) {
+        onCompleteRef.current();
+      }
+    }
+  }, [stats.pending, vouchers.length, isProcessing]);
+
+  // =========================================================================
   // EXECUTION ENGINE (TALLY SYNC)
   // =========================================================================
   const processBatch = async (idsToProcess) => {
@@ -224,10 +236,10 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
           cgstLedger: "CGST", sgstLedger: "SGST", igstLedger: "IGST",
           cgstAmount: targetVoucher.cgst, sgstAmount: targetVoucher.sgst, igstAmount: targetVoucher.igst,
           narration: finalNarration,
-          partyState: ledgerObj?.stateName || "",     
+          partyState: ledgerObj?.stateName || "",    
           partyCountry: ledgerObj?.country || "India",
           partyGstRegType: ledgerObj?.gstRegistrationType || (ledgerObj?.gstin ? "Regular" : "Unregistered"),
-          partyGstin: ledgerObj?.gstin || "",         
+          partyGstin: ledgerObj?.gstin || "",        
           partyAddress: ledgerObj?.address || []  
         };
         xmlPayload = tallyTemplates.generateSalesVoucher(salesData);
@@ -275,8 +287,6 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
   const handleSyncType = (type) => processBatch(vouchers.filter(v => v.status === 'PENDING' && v.vType === type).map(v => v.id));
   const handleSyncGroup = (groupId) => processBatch(vouchers.filter(v => v.status === 'PENDING' && v.groupId === groupId && v.vType !== 'MANUAL').map(v => v.id));
   const handleSyncAll = () => processBatch(vouchers.filter(v => v.status === 'PENDING' && v.vType !== 'MANUAL').map(v => v.id));
-  
-  // FIX: Added the missing Individual sync handler
   const handleSyncSingle = (id) => processBatch([id]);
 
   // =========================================================================
@@ -541,16 +551,6 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
                 </div>
               );
             })}
-          </div>
-        )}
-
-        {/* FINAL FINALIZE BUTTON */}
-        {vouchers.length > 0 && stats.pending === 0 && !isProcessing && (
-          <div className="mt-16 flex justify-center pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <button onClick={() => { if (onCompleteRef.current) onCompleteRef.current(); }}
-              className="px-10 py-4 bg-slate-900 text-white hover:bg-slate-800 rounded-xl text-sm font-black uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 flex items-center gap-3">
-              <CheckCircle2 size={18} /> Finalize & Close Sync
-            </button>
           </div>
         )}
       </div>

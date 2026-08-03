@@ -1,5 +1,78 @@
 const mongoose = require('mongoose');
 const Commission = require('../models/Commission');
+const Amc = require('../models/Amc'); 
+
+const csv = require('csv-parser');
+const { Readable } = require('stream');
+
+const HEADER_VARIANTS = {
+    date: ['date', 'txn date', 'transaction date', 'value dat', 'vch date'],
+    narration: ['narration', 'particulars', 'description', 'remarks', 'transaction details', 'details'],
+    refNo: ['chq/ref number', 'ref no', 'cheque', 'reference', 'instrument id', 'txn id'],
+    debit: ['debit amount', 'withdrawal', 'dr', 'payment', 'debit'],
+    credit: ['credit amount', 'deposit', 'cr', 'receipt', 'credit'],
+    balance: ['closing balance', 'balance', 'bal', 'running balance']
+};
+
+const mapHeadersToStandard = (headers) => {
+    const mapping = {};
+    headers.forEach(h => {
+        const clean = h.toLowerCase().trim();
+        Object.keys(HEADER_VARIANTS).forEach(standardKey => {
+            if (!mapping[standardKey] && HEADER_VARIANTS[standardKey].some(variant => clean.includes(variant))) {
+                mapping[standardKey] = h;
+            }
+        });
+    });
+    return mapping;
+};
+
+const standardizeDate = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const clean = dateStr.trim();
+    const parts = clean.split(/[-/ ]/);
+    if (parts.length < 3) return clean;
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    let d = parts[0].padStart(2, '0');
+    let m = isNaN(parts[1]) ? parts[1].substring(0, 3).toUpperCase() : months[parseInt(parts[1], 10) - 1];
+    let y = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
+    return `${d}-${m}-${y}`;
+};
+
+const parseRobust = (buffer) => {
+    return new Promise((resolve, reject) => {
+        const rawContent = buffer.toString().trim();
+        const lines = rawContent.split(/\r?\n/);
+        const headerIndex = lines.findIndex(line => 
+            line.toLowerCase().includes('date') && 
+            (line.toLowerCase().includes('narration') || line.toLowerCase().includes('particulars'))
+        );
+        if (headerIndex === -1) return reject(new Error("Header row not found."));
+        const cleanContent = lines.slice(headerIndex).join('\n');
+        const results = [];
+        let columnMap = null;
+        Readable.from(cleanContent)
+            .pipe(csv({ mapHeaders: ({ header }) => header.trim().replace(/\s+/g, ' ') }))
+            .on('headers', (headers) => { columnMap = mapHeadersToStandard(headers); })
+            .on('data', (row) => {
+                if (!columnMap || !row[columnMap.date]?.trim()) return;
+                const cleanNum = (val) => val ? parseFloat(val.toString().replace(/,/g, '').trim()) || 0 : 0;
+                const dr = cleanNum(row[columnMap.debit]);
+                const cr = cleanNum(row[columnMap.credit]);
+                if (dr === 0 && cr === 0) return;
+                results.push({
+                    date: standardizeDate(row[columnMap.date]),
+                    narration: row[columnMap.narration]?.replace(/\s+/g, ' ').trim() || "N/A",
+                    refNo: row[columnMap.refNo]?.trim() || "N/A",
+                    amount: dr > 0 ? dr : cr,
+                    type: dr > 0 ? 'PAYMENT' : 'RECEIPT',
+                    balance: cleanNum(row[columnMap.balance])
+                });
+            })
+            .on('end', () => resolve(results))
+            .on('error', reject);
+    });
+};
 
 /**
  * @desc    Save or Update a monthly commission record
@@ -280,5 +353,102 @@ exports.deleteCommissionRecord = async (req, res) => {
         res.status(200).json({ success: true, data: {} });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+/**
+ * ============================================================================
+ * @desc    Extract and map AMC commissions from raw bank statements
+ * @route   POST /api/commissions/extract-statements
+ * ============================================================================
+ */
+exports.extractCommissionsFromStatement = async (req, res) => {
+    try {
+        console.log("==================================================");
+        console.log("🚀 [AUTO-LOG] STATEMENT EXTRACTION INITIATED");
+        console.log("==================================================");
+        
+        const { arnId, month, year } = req.body;
+
+        if (!req.files || req.files.length === 0) {
+            console.warn("⚠️ [AUTO-LOG] Aborted: No files received.");
+            return res.status(200).json({ success: true, data: [], message: "No files were uploaded." });
+        }
+
+        // 1. Fetch AMC Master Registry
+        const amcList = await Amc.find().lean();
+        
+        // 2. Parse All Uploaded Files
+        let allParsedRows = [];
+        for (const file of req.files) {
+            const fileName = file.originalname.toLowerCase();
+            try {
+                let parsedRows = [];
+                if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+                    parsedRows = await parseExcel(file.buffer);
+                } else {
+                    parsedRows = await parseRobust(file.buffer); 
+                }
+                allParsedRows.push(...parsedRows);
+            } catch (parseError) {
+                console.error(`❌ [AUTO-LOG] Failed to parse ${fileName}:`, parseError.message);
+            }
+        }
+
+        // 3. Filter for ALL Receipts
+        const receipts = allParsedRows
+            .filter(row => row.type === 'RECEIPT')
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        console.log(`📊 [AUTO-LOG] Processing ${receipts.length} total receipt transactions.`);
+
+        // 4. Grouping & Auto-Matching Engine
+        const extractedData = {}; 
+
+        const commKeywords = ['comm', 'broker', 'trail', 'incentive', 'upfront', 'brk', 'mutual fund'];
+        const results = []; 
+
+        let matchCount = 0;
+        let unmappedCount = 0;
+
+        receipts.forEach((t, index) => {
+            const cleanNarration = (t.narration || "").toLowerCase();
+            const isComm = commKeywords.some(k => cleanNarration.includes(k));
+            
+            if (isComm) {
+                let matchedAmcName = "";
+
+                // Fuzzy Match against Master AMC List
+                amcList.forEach(amc => {
+                    const cleanAmcName = amc.name.toLowerCase();
+                    const amcPrimaryKeyword = cleanAmcName.split(' ')[0]; 
+                    if (cleanNarration.includes(amcPrimaryKeyword)) {
+                        matchedAmcName = amc.name;
+                    }
+                });
+
+                const txAmount = parseFloat(t.amount) || 0;
+                
+                results.push({
+                    id: `tx_${index}`,
+                    amcName: matchedAmcName, 
+                    rawNarration: t.narration,
+                    amount: txAmount,
+                    date: t.date, // FULL DATE STRING
+                    isExcluded: false 
+                });
+
+                matchedAmcName ? matchCount++ : unmappedCount++;
+            }
+        });
+
+        console.log(`🎉 [AUTO-LOG] EXTRACTION COMPLETE!`);
+        console.log(`   -> Total Filtered: ${results.length}`);
+        
+        return res.status(200).json({ success: true, data: results });
+
+    } catch (error) { 
+        console.error("🔥 [AUTO-LOG] FATAL EXTRACTION ERROR:", error);
+        return res.status(200).json({ success: true, data: [], message: "Processing encountered an error." }); 
     }
 };

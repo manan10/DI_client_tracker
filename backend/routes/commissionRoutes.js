@@ -7,8 +7,17 @@ const {
     getArnStats,
     getDashboardSummary,
     getWorkspaceAnalytics,
-    deleteCommissionRecord  
+    deleteCommissionRecord,
+    extractCommissionsFromStatement
 } = require('../controllers/commissionController');
+
+const multer = require('multer');
+
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
 
 // Standard Operations
 router.post('/save', saveMonthlyCommission);
@@ -25,5 +34,11 @@ router.get('/stats/:arnId', getArnStats);
 router.get('/:arnId/:month', getMonthlyRecord);
 
 router.delete('/:id', deleteCommissionRecord);
+
+router.post(
+    '/extract-statements', 
+    upload.array('files', 10), 
+    extractCommissionsFromStatement
+);
 
 module.exports = router;
