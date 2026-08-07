@@ -88,10 +88,9 @@ exports.generateRegistrationOptions = async (req, res) => {
     const options = await generateRegistrationOptions({
       rpName: 'Dalal Investment App',
       rpID: process.env.RP_ID || 'di-node-nh0x.onrender.com',
-      // FIX: Converts string ID to Buffer to satisfy SimpleWebAuthn v10+ requirement
       userID: Buffer.from(user._id.toString()),
       userName: user.username,
-      // Don't re-register devices that are already paired
+      // Exclude already registered devices
       excludeCredentials: user.credentials.map(cred => ({
         id: cred.credentialID,
         type: 'public-key',
@@ -103,7 +102,6 @@ exports.generateRegistrationOptions = async (req, res) => {
       },
     });
 
-    // Save challenge temporarily in the database
     user.currentChallenge = options.challenge;
     await user.save();
 
@@ -120,7 +118,7 @@ exports.verifyRegistration = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     const expectedChallenge = user.currentChallenge;
-    const body = req.body; // The response from @simplewebauthn/browser
+    const body = req.body; 
 
     let verification;
     try {
@@ -135,17 +133,14 @@ exports.verifyRegistration = async (req, res) => {
     }
 
     if (verification.verified) {
-      const { registrationInfo } = verification;
-      const { credentialID, credentialPublicKey, counter } = registrationInfo;
-
-      // Encode ID to base64url format for easy lookups
-      const base64CredentialID = Buffer.from(credentialID).toString('base64url');
-
+      // FIX 1: Access `credential` object nested under registrationInfo (v13 Standard)
+      const { credential } = verification.registrationInfo;
+      
       user.credentials.push({
-        credentialID: base64CredentialID,
-        credentialPublicKey: Buffer.from(credentialPublicKey),
-        counter,
-        transports: body.response?.transports || []
+        credentialID: credential.id, // v13 provides this safely as a base64url string
+        credentialPublicKey: Buffer.from(credential.publicKey), // Extract raw Uint8Array and convert to Buffer for Mongoose
+        counter: credential.counter,
+        transports: credential.transports || body.response?.transports || []
       });
 
       user.currentChallenge = null;
@@ -183,7 +178,7 @@ exports.generateAuthOptions = async (req, res) => {
     const options = await generateAuthenticationOptions({
       rpID: process.env.RP_ID || 'di-node-nh0x.onrender.com',
       allowCredentials: user.credentials.map(cred => ({
-        id: cred.credentialID,
+        id: cred.credentialID, // Already mapped as base64url string
         type: 'public-key',
         transports: cred.transports,
       })),
@@ -223,9 +218,10 @@ exports.verifyAuth = async (req, res) => {
         expectedChallenge,
         expectedOrigin: process.env.FRONTEND_URL || 'https://di-node-nh0x.onrender.com',
         expectedRPID: process.env.RP_ID || 'di-node-nh0x.onrender.com',
-        authenticator: {
-          credentialID: Buffer.from(authenticator.credentialID, 'base64url'),
-          credentialPublicKey: authenticator.credentialPublicKey,
+        // FIX 2: v13 standardizes "authenticator" input parameter to "credential"
+        credential: {
+          id: authenticator.credentialID, 
+          publicKey: new Uint8Array(authenticator.credentialPublicKey), // Back to Uint8Array for the library
           counter: authenticator.counter,
           transports: authenticator.transports,
         }
