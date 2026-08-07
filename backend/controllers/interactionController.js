@@ -24,7 +24,8 @@ exports.createInteraction = async (req, res) => {
     const newInteraction = new Interaction({
       client,
       user: userId,
-      date: date ? new Date(date) : new Date(),
+      // Uses exact local date/time received from frontend datetime-local
+      date: date ? new Date(date) : new Date(), 
       type,
       discussionPoints,
       summary,

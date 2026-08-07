@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, Fragment } from 'react';
 import { X, Search, Mic, Lock, ChevronDown, Check, Calendar as CalendarIcon, Clock, Sparkles, Loader2, RotateCcw } from 'lucide-react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useApi } from '../hooks/useApi';
+import DateTimePicker from './DateTimePicker';
 
 const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient, editingData }) => {
   const { request, loading } = useApi();
@@ -12,13 +13,33 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient, editingDa
   const [originalSummary, setOriginalSummary] = useState('');
   const dropdownRef = useRef(null);
 
-  const getToday = () => new Date().toISOString().split('T')[0];
+  // Helper to get current local date and time in YYYY-MM-DDTHH:mm format
+  const getNowLocal = () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - offset).toISOString().slice(0, 16);
+  };
+
+  // // Helper to get just the date for Follow Up
+  // const getTodayDateOnly = () => {
+  //   const now = new Date();
+  //   const offset = now.getTimezoneOffset() * 60000;
+  //   return new Date(now.getTime() - offset).toISOString().split('T')[0];
+  // };
+
+  // Format existing date to YYYY-MM-DDTHH:mm for datetime-local input
+  const formatForDateTimeLocal = (dateString) => {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    const offset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+  };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     client: '',
     clientName: '',
-    date: getToday(),
+    date: getNowLocal(),
     type: 'In-Person',
     discussionPoints: [],
     summary: '',
@@ -34,7 +55,7 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient, editingDa
         setFormData({
           client: editingData.client?._id || editingData.client || '',
           clientName: editingData.clientName || initialClient?.name || '',
-          date: editingData.date ? new Date(editingData.date).toISOString().split('T')[0] : getToday(),
+          date: editingData.date ? formatForDateTimeLocal(editingData.date) : getNowLocal(),
           type: editingData.type || 'In-Person',
           discussionPoints: editingData.discussionPoints || [],
           summary: editingData.summary || '',
@@ -47,7 +68,7 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient, editingDa
         setFormData({
           client: initialClient?._id || '',
           clientName: initialClient?.name || '',
-          date: getToday(),
+          date: getNowLocal(),
           type: 'In-Person',
           discussionPoints: [],
           summary: '',
@@ -240,19 +261,11 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient, editingDa
 
                         <div className="space-y-6">
                           <div className="min-w-0">
-                            <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Date of Interaction</label>
-                            <div className="relative flex items-center bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg h-11">
-                              <div className="px-4 text-slate-400"><Clock size={14} /></div>
-                              <input 
-                                type="date"
-                                required
-                                className="flex-1 h-full pr-9 text-[11px] font-bold bg-transparent outline-none dark:text-white uppercase relative z-10"
-                                value={formData.date}
-                                onChange={(e) => setFormData({...formData, date: e.target.value})}
-                                style={{ colorScheme: 'dark' }}
-                              />
-                              <CalendarIcon size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-0" />
-                            </div>
+                            <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Date & Time of Interaction</label>
+                            <DateTimePicker 
+                              value={formData.date} 
+                              onChange={(newDate) => setFormData({...formData, date: newDate})} 
+                            />
                           </div>
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -390,7 +403,8 @@ const InteractionModal = ({ isOpen, onClose, onRefresh, initialClient, editingDa
         </div>
 
         <style>{`
-          input[type="date"]::-webkit-calendar-picker-indicator {
+          input[type="date"]::-webkit-calendar-picker-indicator,
+          input[type="datetime-local"]::-webkit-calendar-picker-indicator {
             background: transparent; color: transparent; cursor: pointer; height: 100%; width: 100%; position: absolute; top: 0; left: 0; opacity: 0;
           }
           .custom-scrollbar::-webkit-scrollbar { width: 4px; }
