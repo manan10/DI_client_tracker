@@ -20,6 +20,7 @@ import TallyLedgerImport from "../../components/Settings/TallyLedgerImport";
 import UserManagement from "../../components/Settings/UserManagement";
 import WorkflowManagement from "../../components/Settings/WorkflowManagement";
 import AccessDenied from "../../components/AccessDenied";
+import DeviceRegistration from "../../components/Settings/DeviceRegistration";
 
 const Settings = () => {
   const { request } = useApi();
@@ -69,6 +70,7 @@ const Settings = () => {
     { id: "workflows", label: "Workflow Engine", icon: GitBranch },
     { id: "tally", label: "Tally Ledgers", icon: Terminal },
     { id: "system", label: "Appearance", icon: Bell },
+    { id: "device", label: "Biometric Login", icon: Lock },
     { id: "compliance", label: "Compliance", icon: ShieldCheck, locked: true },
   ];
 
@@ -86,6 +88,7 @@ const Settings = () => {
       case "arns": return <ArnManagement />;
       case "accounts": return <BankAccounts />;
       case "system": return <AppearanceConfig isDark={isDark} onToggleTheme={toggleTheme} />;
+      case "device": return <DeviceRegistration />;
       case "data": return <DataSync />;
       default: return null;
     }

@@ -2,63 +2,66 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const admin = require("firebase-admin");
+const {
+  generateRegistrationOptions,
+  verifyRegistrationResponse,
+  generateAuthenticationOptions,
+  verifyAuthenticationResponse
+} = require('@simplewebauthn/server');
+
+// Helper to generate the JWT Token for successful logins
+const generateTokenAndPayload = (user) => {
+  const token = jwt.sign(
+    { id: user._id, isAdmin: user.isAdmin }, 
+    process.env.JWT_SECRET, 
+    { expiresIn: '7d' }
+  );
+
+  return {
+    token,
+    user: { 
+      _id: user._id,
+      name: user.name, 
+      username: user.username,
+      email: user.email,
+      isAdmin: user.isAdmin || false,
+      allowedApps: user.allowedApps || []
+    }
+  };
+};
+
+// =========================================================
+// STANDARD AUTHENTICATION
+// =========================================================
 
 exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
-    
-    // Normalize username to match how it's stored
     const user = await User.findOne({ username: username.toLowerCase().trim() });
     
     if (!user) {
       return res.status(401).json({ error: "Access Denied: Invalid Credentials" });
     }
 
-    // Use the method from our User model or bcrypt directly
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ error: "Access Denied: Invalid Credentials" });
     }
 
-    // Generate JWT
-    // UPDATED: Include isAdmin in the token payload for server-side middleware checks
-    const token = jwt.sign(
-      { 
-        id: user._id, 
-        isAdmin: user.isAdmin // Added to JWT payload
-      }, 
-      process.env.JWT_SECRET, 
-      { expiresIn: '7d' }
-    );
-
-    // Return the user object
-    res.status(200).json({
-      token,
-      user: { 
-        _id: user._id,
-        name: user.name, 
-        username: user.username,
-        email: user.email,
-        isAdmin: user.isAdmin || false, // CRITICAL: Frontend needs this to show/hide admin menus
-        allowedApps: user.allowedApps || []
-      }
-    });
+    const payload = generateTokenAndPayload(user);
+    res.status(200).json(payload);
   } catch (err) {
     console.error("Login Error:", err);
     res.status(500).json({ error: "Internal System Handshake Error" });
   }
 };
 
-// @desc    Generate a Firebase Custom Token for Storage Access
-// @route   GET /api/auth/firebase-token
 exports.getFirebaseToken = async (req, res) => {
   try {
-    // UPDATED: Use the actual MongoDB User ID instead of a hardcoded string
-    // This ensures Firebase audit logs match your app's user IDs
     const uid = req.user.id.toString(); 
 
     const additionalClaims = {
-      isAdmin: req.user.isAdmin || false, // Pass admin status to Firebase Storage/DB rules
+      isAdmin: req.user.isAdmin || false,
       premiumUser: true,
     };
 
@@ -68,5 +71,184 @@ exports.getFirebaseToken = async (req, res) => {
   } catch (error) {
     console.error("Firebase Admin Error:", error);
     res.status(500).json({ message: "Failed to generate security token" });
+  }
+};
+
+// =========================================================
+// WEBAUTHN / BIOMETRIC SETUP (Pairing a Device)
+// =========================================================
+
+// @route   POST /api/auth/webauthn/register-options
+// @desc    Generate the challenge for a logged-in user to register their phone fingerprint
+exports.generateRegistrationOptions = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    const options = await generateRegistrationOptions({
+      rpName: 'Dalal Investment App',
+      rpID: process.env.RP_ID || 'localhost',
+      userID: user._id.toString(),
+      userName: user.username,
+      // Don't re-register devices that are already paired
+      excludeCredentials: user.credentials.map(cred => ({
+        id: cred.credentialID,
+        type: 'public-key',
+        transports: cred.transports,
+      })),
+      authenticatorSelection: {
+        residentKey: 'required',
+        userVerification: 'preferred',
+      },
+    });
+
+    // Save challenge temporarily in the database
+    user.currentChallenge = options.challenge;
+    await user.save();
+
+    res.status(200).json(options);
+  } catch (error) {
+    console.error("Generate Reg Options Error:", error);
+    res.status(500).json({ error: "Failed to generate registration options" });
+  }
+};
+
+// @route   POST /api/auth/webauthn/register-verify
+// @desc    Verify the public key signature and save the device to MongoDB
+exports.verifyRegistration = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const expectedChallenge = user.currentChallenge;
+    const body = req.body; // The response from @simplewebauthn/browser
+
+    let verification;
+    try {
+      verification = await verifyRegistrationResponse({
+        response: body,
+        expectedChallenge,
+        expectedOrigin: process.env.FRONTEND_URL || 'http://localhost:3000',
+        expectedRPID: process.env.RP_ID || 'localhost',
+      });
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    if (verification.verified) {
+      const { registrationInfo } = verification;
+      const { credentialID, credentialPublicKey, counter } = registrationInfo;
+
+      // Safely encode ID to standard base64url format for easy lookups
+      const base64CredentialID = Buffer.from(credentialID).toString('base64url');
+
+      user.credentials.push({
+        credentialID: base64CredentialID,
+        credentialPublicKey: Buffer.from(credentialPublicKey), // Store raw bytes
+        counter,
+        transports: body.response.transports || []
+      });
+
+      user.currentChallenge = null; // Clear challenge
+      await user.save();
+
+      return res.status(200).json({ verified: true, message: "Device successfully paired!" });
+    }
+    
+    res.status(400).json({ error: "Verification failed" });
+  } catch (error) {
+    console.error("Verify Reg Error:", error);
+    res.status(500).json({ error: "Internal server error during verification" });
+  }
+};
+
+// =========================================================
+// WEBAUTHN / BIOMETRIC LOGIN (Using a Paired Device)
+// =========================================================
+
+// @route   POST /api/auth/webauthn/login-options
+// @desc    User enters username -> we give them a challenge to sign with their fingerprint
+exports.generateAuthOptions = async (req, res) => {
+  try {
+    const { username } = req.body;
+    
+    if (!username) return res.status(400).json({ error: "Username required" });
+
+    const user = await User.findOne({ username: username.toLowerCase().trim() });
+    
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user.credentials || user.credentials.length === 0) {
+      return res.status(400).json({ error: "No biometric devices registered for this user." });
+    }
+
+    const options = await generateAuthenticationOptions({
+      rpID: process.env.RP_ID || 'localhost',
+      // Allow any of the user's paired devices to answer
+      allowCredentials: user.credentials.map(cred => ({
+        id: cred.credentialID, // already a base64url string
+        type: 'public-key',
+        transports: cred.transports,
+      })),
+      userVerification: 'preferred',
+    });
+
+    user.currentChallenge = options.challenge;
+    await user.save();
+
+    res.status(200).json(options);
+  } catch (error) {
+    console.error("Generate Auth Options Error:", error);
+    res.status(500).json({ error: "Failed to generate authentication options" });
+  }
+};
+
+// @route   POST /api/auth/webauthn/login-verify
+// @desc    Verify the fingerprint signature. If valid, log them in like normal!
+exports.verifyAuth = async (req, res) => {
+  try {
+    const { username, response } = req.body;
+    const user = await User.findOne({ username: username.toLowerCase().trim() });
+    
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const expectedChallenge = user.currentChallenge;
+    
+    // Find the specific device they used to sign the challenge
+    const authenticator = user.credentials.find(c => c.credentialID === response.id);
+
+    if (!authenticator) {
+      return res.status(400).json({ error: "Authenticator is not registered with this account." });
+    }
+
+    let verification;
+    try {
+      verification = await verifyAuthenticationResponse({
+        response,
+        expectedChallenge,
+        expectedOrigin: process.env.FRONTEND_URL || 'http://localhost:3000',
+        expectedRPID: process.env.RP_ID || 'localhost',
+        authenticator: {
+          credentialID: Buffer.from(authenticator.credentialID, 'base64url'),
+          credentialPublicKey: authenticator.credentialPublicKey,
+          counter: authenticator.counter,
+          transports: authenticator.transports,
+        }
+      });
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    if (verification.verified) {
+      // Update device counter for replay-attack prevention
+      authenticator.counter = verification.authenticationInfo.newCounter;
+      user.currentChallenge = null;
+      await user.save();
+
+      // They passed the fingerprint check! Hand them a standard JWT token.
+      const payload = generateTokenAndPayload(user);
+      return res.status(200).json(payload);
+    }
+
+    res.status(400).json({ error: "Biometric verification failed" });
+  } catch (error) {
+    console.error("Verify Auth Error:", error);
+    res.status(500).json({ error: "Internal server error during biometric login" });
   }
 };

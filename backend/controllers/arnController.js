@@ -16,7 +16,6 @@ exports.getAllArns = async (req, res) => {
 // @desc    Create new ARN
 exports.createArn = async (req, res) => {
     try {
-        // DEFENSIVE: Ensure gstCompliant is evaluated as a strict primitive boolean if provided
         if (req.body.gstCompliant !== undefined) {
             req.body.gstCompliant = String(req.body.gstCompliant) === 'true';
         }
@@ -31,7 +30,6 @@ exports.createArn = async (req, res) => {
 // @desc    Update basic ARN details, Tally Links, and GST configuration status
 exports.updateArn = async (req, res) => {
     try {
-        // DEFENSIVE: Sanitize the flag incoming from client check toggles
         if (req.body.gstCompliant !== undefined) {
             req.body.gstCompliant = String(req.body.gstCompliant) === 'true';
         }

@@ -154,6 +154,43 @@ exports.updatePreferences = async (req, res) => {
     }
 };
 
+// @desc    Remove a registered Biometric Device
+// @route   DELETE /api/users/:id/credentials/:credentialId
+exports.removeBiometricDevice = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Security check: Only Admins or the actual user can delete their device
+        if (req.user.id.toString() !== user._id.toString() && !req.user.isAdmin) {
+            return res.status(403).json({ message: 'Not authorized to modify this user\'s devices' });
+        }
+
+        const originalLength = user.credentials.length;
+        
+        // Filter out the credential ID passed in the URL parameters
+        user.credentials = user.credentials.filter(
+            (cred) => cred.credentialID !== req.params.credentialId
+        );
+
+        if (user.credentials.length === originalLength) {
+            return res.status(404).json({ message: 'Device key not found on this account' });
+        }
+
+        await user.save();
+
+        res.status(200).json({ 
+            message: 'Biometric device removed successfully', 
+            credentialsCount: user.credentials.length 
+        });
+    } catch (error) {
+        console.error("Remove Device Error:", error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // @desc    Delete User
 // @route   DELETE /api/users/:id
 exports.deleteUser = async (req, res) => {

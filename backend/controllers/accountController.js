@@ -27,7 +27,7 @@ exports.addAccount = async (req, res) => {
     const newAccount = await Account.create({
       name: accountName,
       accountNumber: accountNumber,
-      arn: arn,        // Added ARN support
+      arn: arn,
       category: category || 'Bank'
     });
     
@@ -48,7 +48,7 @@ exports.updateAccount = async (req, res) => {
       { 
         name: accountName, 
         accountNumber: accountNumber,
-        arn: arn,        // Added ARN support
+        arn: arn,
         category: category 
       }, 
       { new: true, runValidators: true }
@@ -75,20 +75,16 @@ exports.deleteAccount = async (req, res) => {
   }
 };
 
-// --- Snapshot Logic (No changes needed, but ensuring it populates ARN) ---
-
 exports.getHistory = async (req, res) => {
   try {
     const history = await BalanceSnapshot.find()
-      .populate('balances.accountId', 'name category arn') // Added 'arn' to population
+      .populate('balances.accountId', 'name category arn') 
       .sort({ date: -1 });
     res.json({ success: true, data: history });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 };
-
-// --- Snapshot Logic ---
 
 exports.saveSnapshot = async (req, res) => {
   try {

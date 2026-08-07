@@ -13,7 +13,6 @@ exports.getAllAmcs = async (req, res) => {
 // @desc    Create new AMC
 exports.createAmc = async (req, res) => {
     try {
-        // Sanitize isLocal if it is included in the payload
         if (req.body.isLocal !== undefined) {
             req.body.isLocal = String(req.body.isLocal) === 'true';
         }
@@ -28,7 +27,6 @@ exports.createAmc = async (req, res) => {
 // @desc    Update an existing AMC configuration (Handles renaming and local state flips)
 exports.updateAmc = async (req, res) => {
     try {
-        // Sanitize isLocal if it is included in the patch update
         if (req.body.isLocal !== undefined) {
             req.body.isLocal = String(req.body.isLocal) === 'true';
         }

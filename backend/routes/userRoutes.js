@@ -21,6 +21,10 @@ router.patch('/:id/toggle-app', protect, userController.toggleAppAccess);
 router.patch('/:id/reset-password', protect, userController.resetPassword);
 router.patch('/preferences', protect, userController.updatePreferences);
 
+// --- WEBAUTHN DEVICE MANAGEMENT ---
+// Revoke a paired biometric device
+router.delete('/:id/credentials/:credentialId', protect, userController.removeBiometricDevice);
+
 // --- REMOVAL ---
 router.delete('/:id', protect, userController.deleteUser);
 

@@ -16,7 +16,7 @@ exports.getCategoryTree = async (req, res) => {
             };
         });
 
-        res.json({ success: true, data: tree }); // Wrapped in success for useApi compatibility
+        res.json({ success: true, data: tree });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -44,7 +44,7 @@ exports.createSubCategory = async (req, res) => {
 // @desc    Reorder Parent Categories
 exports.reorderCategories = async (req, res) => {
     try {
-        const { order } = req.body; // Array of IDs in new order
+        const { order } = req.body;
         
         const ops = order.map((id, index) => ({
             updateOne: {
@@ -63,7 +63,7 @@ exports.reorderCategories = async (req, res) => {
 // @desc    Reorder Sub-Categories within a parent
 exports.reorderSubCategories = async (req, res) => {
     try {
-        const { order } = req.body; // Array of sub-category IDs
+        const { order } = req.body;
         
         const ops = order.map((id, index) => ({
             updateOne: {
@@ -85,7 +85,6 @@ exports.createCategory = async (req, res) => {
         const category = new Category(req.body);
         await category.save();
         
-        // Return wrapped in success for frontend useApi hook
         res.status(201).json({ success: true, data: category });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -97,7 +96,6 @@ exports.updateCategory = async (req, res) => {
     try {
         const { id } = req.params;
         
-        // Prevent a category from being its own parent (recursive loop)
         if (req.body.parent === id) {
             return res.status(400).json({ success: false, message: "Category cannot be its own parent." });
         }
@@ -125,7 +123,6 @@ exports.deleteCategory = async (req, res) => {
         const { id } = req.params;
         const { migrateToId } = req.query; 
 
-        // 1. Check total usage (Parent + all its Sub-categories)
         const subCategories = await Category.find({ parent: id }).session(session);
         const subIds = subCategories.map(s => s._id);
         const allTargetIds = [id, ...subIds];
@@ -134,7 +131,6 @@ exports.deleteCategory = async (req, res) => {
             category: { $in: allTargetIds } 
         }).session(session);
 
-        // 2. The Handshake: If in use and no migration target provided, stop.
         if (usageCount > 0 && !migrateToId) {
             await session.abortTransaction();
             return res.status(409).json({ 
@@ -145,7 +141,6 @@ exports.deleteCategory = async (req, res) => {
             });
         }
 
-        // 3. Perform Migration if required
         if (usageCount > 0 && migrateToId) {
             await Spending.updateMany(
                 { category: { $in: allTargetIds } },
@@ -153,15 +148,10 @@ exports.deleteCategory = async (req, res) => {
                 { session }
             );
         } else if (usageCount > 0 && !migrateToId) {
-            // This block is technically unreachable due to step 2, 
-            // but for absolute safety in high-load prod:
             throw new Error("Critical: Migration ID required for non-empty category purging.");
         }
 
-        // 4. PURGE CATEGORY HIERARCHY
-        // Delete all children first
         await Category.deleteMany({ parent: id }).session(session);
-        // Delete the parent
         await Category.findByIdAndDelete(id).session(session);
 
         await session.commitTransaction();
@@ -183,7 +173,6 @@ exports.mergeCategories = async (req, res) => {
     try {
         const { categoryIds, newCategoryName, newCategoryColor } = req.body;
 
-        // 1. Validation: Ensure all categories to be merged are currently parents (no existing parent)
         const checkCategories = await Category.find({ _id: { $in: categoryIds } });
         const hasSubCategories = checkCategories.some(c => c.parent !== null);
         
@@ -194,7 +183,6 @@ exports.mergeCategories = async (req, res) => {
             });
         }
 
-        // 2. Create the new Parent Category
         const newParent = new Category({
             label: newCategoryName,
             color: newCategoryColor || '#6366f1',
@@ -202,7 +190,6 @@ exports.mergeCategories = async (req, res) => {
         });
         await newParent.save();
 
-        // 3. Update selected categories to become children of the new parent
         await Category.updateMany(
             { _id: { $in: categoryIds } },
             { $set: { parent: newParent._id } }

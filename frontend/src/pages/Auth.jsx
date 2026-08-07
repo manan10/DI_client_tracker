@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Lock, Loader2, ChevronRight, Eye, EyeOff, User, Check, Monitor, Wallet, ShieldCheck } from 'lucide-react';
+import { Lock, Loader2, ChevronRight, Eye, EyeOff, User, Check, Monitor, Wallet, ShieldCheck, Fingerprint } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useApi } from '../hooks/useApi';
 import Logo from '../assets/logo_nobrand.png';
+import { startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser';
 
 const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,11 +17,18 @@ const Auth = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const dropdownRef = useRef(null);
 
+  // Biometric States
+  const [isBiometricSupported, setIsBiometricSupported] = useState(false);
+  const [isBiometricLoading, setIsBiometricLoading] = useState(false);
+
   const { login } = useAuth();
   const { request } = useApi();
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check if the current browser/device supports Face ID, Touch ID, or Passkeys
+    setIsBiometricSupported(browserSupportsWebAuthn());
+
     const fetchUsers = async () => {
       try {
         const data = await request('/users', 'GET');
@@ -50,6 +58,17 @@ const Auth = () => {
     setIsOpen(false);
   };
 
+  const handleNavigation = (apps) => {
+    if (apps.length === 1 && apps.includes('EXPENSE_TRACKER')) {
+      navigate('/expenses');
+    } else if (apps.length === 1 && apps.includes('CLIENT_TRACKER')) {
+      navigate('/dashboard');
+    } else {
+      navigate('/');
+    }
+  };
+
+  // --- STANDARD PASSWORD LOGIN ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.username) return;
@@ -62,19 +81,43 @@ const Auth = () => {
 
       if (data && data.token) {
         login(data.user, data.token);
-        const apps = data.user.allowedApps || [];
-        if (apps.length === 1 && apps.includes('EXPENSE_TRACKER')) {
-          navigate('/expenses');
-        } else if (apps.length === 1 && apps.includes('CLIENT_TRACKER')) {
-          navigate('/dashboard');
-        } else {
-          navigate('/');
-        }
+        handleNavigation(data.user.allowedApps || []);
       }
     } catch (err) {
       console.error("Login failed:", err);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // --- BIOMETRIC LOGIN ---
+  const handleBiometricLogin = async () => {
+    if (!selectedUser) return;
+    setIsBiometricLoading(true);
+    try {
+      // 1. Request authentication challenge from server
+      const options = await request('/auth/webauthn/login-options', 'POST', { 
+        username: selectedUser.username 
+      });
+
+      // 2. Pass challenge to device's native fingerprint/FaceID scanner
+      const authResp = await startAuthentication(options);
+
+      // 3. Send the signed response back to the server for verification
+      const verificationRes = await request('/auth/webauthn/login-verify', 'POST', {
+        username: selectedUser.username,
+        response: authResp
+      });
+
+      if (verificationRes && verificationRes.token) {
+        login(verificationRes.user, verificationRes.token);
+        handleNavigation(verificationRes.user.allowedApps || []);
+      }
+    } catch (err) {
+      console.error("Biometric verification failed:", err);
+      // Fails silently on the UI so the user can just type their password instead
+    } finally {
+      setIsBiometricLoading(false);
     }
   };
 
@@ -106,7 +149,7 @@ const Auth = () => {
       {/* --- RIGHT PANEL (Mobile + Desktop Form) --- */}
       <div className="w-full lg:w-[45%] flex flex-col justify-center items-center p-6 sm:p-12 relative min-h-dvh lg:min-h-0 bg-white lg:bg-slate-50">
         
-        {/* Subtle Background Glows (Elegant, not funky) */}
+        {/* Subtle Background Glows */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-100 bg-emerald-500/5 blur-[100px] rounded-full pointer-events-none" />
 
         <div className="w-full max-w-100 flex flex-col relative z-10">
@@ -219,6 +262,33 @@ const Auth = () => {
                 </>
               )}
             </button>
+
+            {/* --- BIOMETRIC TOGGLE --- */}
+            {isBiometricSupported && selectedUser?.credentials?.length > 0 && (
+              <>
+                <div className="flex items-center gap-4 my-2 opacity-50">
+                  <div className="h-px bg-slate-400 flex-1"></div>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Or</span>
+                  <div className="h-px bg-slate-400 flex-1"></div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleBiometricLogin}
+                  disabled={isBiometricLoading || isSubmitting}
+                  className="w-full bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl py-4 font-[1000] text-[11px] uppercase tracking-[0.2em] shadow-sm hover:bg-emerald-100 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                >
+                  {isBiometricLoading ? (
+                    <Loader2 size={18} className="animate-spin text-emerald-600" />
+                  ) : (
+                    <>
+                      <Fingerprint size={18} strokeWidth={2.5} />
+                      <span>Use Fingerprint / Face ID</span>
+                    </>
+                  )}
+                </button>
+              </>
+            )}
           </form>
 
           {/* Footer Info */}

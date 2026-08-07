@@ -6,7 +6,6 @@ exports.getGlobalAnalytics = async (req, res) => {
     const report = await Commission.aggregate([
       {
         $facet: {
-          // 1. Monthly Aggregates (Root level - Remains Same)
           "monthlyTotals": [
             { 
               $group: { 
@@ -24,7 +23,6 @@ exports.getGlobalAnalytics = async (req, res) => {
             { $sort: { "_id": -1 } }
           ],
 
-          // 2. ARN Distribution (Root level - Remains Same)
           "arnDistribution": [
             { $group: { _id: "$arnId", value: { $sum: "$totalGross" } } },
             { $lookup: {
@@ -43,18 +41,15 @@ exports.getGlobalAnalytics = async (req, res) => {
             { $sort: { value: -1 } }
           ],
 
-          // 3. AMC Distribution (FIXED: Handles Nested Entries)
           "amcDistribution": [
-            { $unwind: "$entries" }, // Step 1: Flatten the entries array
+            { $unwind: "$entries" },
             { 
               $group: { 
-                // Step 2: Group by amcId OR amcName inside the unwound entry
                 _id: { $ifNull: ["$entries.amcId", "$entries.amcName"] }, 
                 value: { $sum: "$entries.amount" } 
               } 
             },
             {
-              // Step 3: Fetch clean names from your AMC master collection
               $lookup: {
                 from: "amcs",
                 localField: "_id",
@@ -65,7 +60,6 @@ exports.getGlobalAnalytics = async (req, res) => {
             { $unwind: { path: "$amcInfo", preserveNullAndEmptyArrays: true } },
             {
               $project: {
-                // Step 4: Final name selection
                 name: { $ifNull: ["$amcInfo.name", { $ifNull: ["$_id", "Unknown AMC"] }] },
                 value: 1
               }
@@ -73,8 +67,6 @@ exports.getGlobalAnalytics = async (req, res) => {
             { $sort: { value: -1 } },
             { $limit: 10 }
           ],
-
-          // 4. Seasonality (Remains Same)
           "seasonalityRaw": [
              { $group: { _id: "$accountingMonth", monthlySum: { $sum: "$totalGross" } } },
              { $project: {
@@ -91,13 +83,11 @@ exports.getGlobalAnalytics = async (req, res) => {
 
     const data = report[0];
 
-    // Identity Mappings
     const arnMap = {};
     data.arnDistribution.forEach(a => {
       arnMap[a._id.toString()] = a.nickname || a.arnCode || a._id.toString();
     });
 
-    // Monthly Deltas
     const monthlyWithDeltas = data.monthlyTotals.map((curr, idx, arr) => {
       const prev = arr[idx + 1];
       const delta = prev ? ((curr.total - prev.total) / prev.total) * 100 : 0;
@@ -108,7 +98,6 @@ exports.getGlobalAnalytics = async (req, res) => {
       };
     });
 
-    // Financial Year Logic
     const fyTotals = {};
     data.monthlyTotals.forEach(item => {
       const parts = item._id.split('-');

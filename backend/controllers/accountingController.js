@@ -122,14 +122,11 @@ exports.processBulkStatements = async (req, res) => {
 
         let savedTransactions = [];
         if (allTransactions.length > 0) {
-            // Standardizing the response: Capture the docs returned by insertMany
             savedTransactions = await Transaction.insertMany(allTransactions);
         }
 
-        // Filter out the empty marker for the count reported to user
         const realCount = savedTransactions.filter(t => t.narration !== "EMPTY_FILE_MARKER").length;
 
-        // RETURN: success, count, AND the transactions themselves
         res.json({ 
             success: true, 
             count: realCount, 
