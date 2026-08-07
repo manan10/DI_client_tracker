@@ -25,7 +25,8 @@ const generateTokenAndPayload = (user) => {
       username: user.username,
       email: user.email,
       isAdmin: user.isAdmin || false,
-      allowedApps: user.allowedApps || []
+      allowedApps: user.allowedApps || [],
+      credentials: user.credentials || []
     }
   };
 };
@@ -86,8 +87,9 @@ exports.generateRegistrationOptions = async (req, res) => {
 
     const options = await generateRegistrationOptions({
       rpName: 'Dalal Investment App',
-      rpID: process.env.RP_ID || 'localhost',
-      userID: user._id.toString(),
+      rpID: process.env.RP_ID || 'di-node-nh0x.onrender.com',
+      // FIX: Converts string ID to Buffer to satisfy SimpleWebAuthn v10+ requirement
+      userID: Buffer.from(user._id.toString()),
       userName: user.username,
       // Don't re-register devices that are already paired
       excludeCredentials: user.credentials.map(cred => ({
@@ -125,8 +127,8 @@ exports.verifyRegistration = async (req, res) => {
       verification = await verifyRegistrationResponse({
         response: body,
         expectedChallenge,
-        expectedOrigin: process.env.FRONTEND_URL || 'http://localhost:3000',
-        expectedRPID: process.env.RP_ID || 'localhost',
+        expectedOrigin: process.env.FRONTEND_URL || 'https://di-node-nh0x.onrender.com',
+        expectedRPID: process.env.RP_ID || 'di-node-nh0x.onrender.com',
       });
     } catch (error) {
       return res.status(400).json({ error: error.message });
@@ -136,17 +138,17 @@ exports.verifyRegistration = async (req, res) => {
       const { registrationInfo } = verification;
       const { credentialID, credentialPublicKey, counter } = registrationInfo;
 
-      // Safely encode ID to standard base64url format for easy lookups
+      // Encode ID to base64url format for easy lookups
       const base64CredentialID = Buffer.from(credentialID).toString('base64url');
 
       user.credentials.push({
         credentialID: base64CredentialID,
-        credentialPublicKey: Buffer.from(credentialPublicKey), // Store raw bytes
+        credentialPublicKey: Buffer.from(credentialPublicKey),
         counter,
-        transports: body.response.transports || []
+        transports: body.response?.transports || []
       });
 
-      user.currentChallenge = null; // Clear challenge
+      user.currentChallenge = null;
       await user.save();
 
       return res.status(200).json({ verified: true, message: "Device successfully paired!" });
@@ -179,10 +181,9 @@ exports.generateAuthOptions = async (req, res) => {
     }
 
     const options = await generateAuthenticationOptions({
-      rpID: process.env.RP_ID || 'localhost',
-      // Allow any of the user's paired devices to answer
+      rpID: process.env.RP_ID || 'di-node-nh0x.onrender.com',
       allowCredentials: user.credentials.map(cred => ({
-        id: cred.credentialID, // already a base64url string
+        id: cred.credentialID,
         type: 'public-key',
         transports: cred.transports,
       })),
@@ -209,8 +210,6 @@ exports.verifyAuth = async (req, res) => {
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const expectedChallenge = user.currentChallenge;
-    
-    // Find the specific device they used to sign the challenge
     const authenticator = user.credentials.find(c => c.credentialID === response.id);
 
     if (!authenticator) {
@@ -222,8 +221,8 @@ exports.verifyAuth = async (req, res) => {
       verification = await verifyAuthenticationResponse({
         response,
         expectedChallenge,
-        expectedOrigin: process.env.FRONTEND_URL || 'http://localhost:3000',
-        expectedRPID: process.env.RP_ID || 'localhost',
+        expectedOrigin: process.env.FRONTEND_URL || 'https://di-node-nh0x.onrender.com',
+        expectedRPID: process.env.RP_ID || 'di-node-nh0x.onrender.com',
         authenticator: {
           credentialID: Buffer.from(authenticator.credentialID, 'base64url'),
           credentialPublicKey: authenticator.credentialPublicKey,
@@ -236,12 +235,10 @@ exports.verifyAuth = async (req, res) => {
     }
 
     if (verification.verified) {
-      // Update device counter for replay-attack prevention
       authenticator.counter = verification.authenticationInfo.newCounter;
       user.currentChallenge = null;
       await user.save();
 
-      // They passed the fingerprint check! Hand them a standard JWT token.
       const payload = generateTokenAndPayload(user);
       return res.status(200).json(payload);
     }
