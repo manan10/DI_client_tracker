@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ArrowDownToLine, ReceiptIndianRupee, ArrowRightLeft } from 'lucide-react';
+import { Plus, ArrowDownToLine, ReceiptIndianRupee, ArrowRightLeft, ChevronRight } from 'lucide-react';
 
 const FloatingActions = ({ onOpenExpense, onOpenTopUp, onOpenTransfer }) => {
   const [isOpen, setIsOpen] = useState(false);
 
+  // Lock body scroll when the command menu is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -15,94 +16,103 @@ const FloatingActions = ({ onOpenExpense, onOpenTopUp, onOpenTransfer }) => {
 
   const handleAction = (actionCallback) => {
     setIsOpen(false);
-    actionCallback();
+    // Slight delay to allow the menu to animate out before opening the respective modal
+    setTimeout(() => actionCallback(), 150);
   };
 
   return (
     <>
+      {/* Cinematic Blur Backdrop */}
       <div 
-        className={`fixed inset-0 bg-slate-900/20 dark:bg-slate-950/70 backdrop-blur-sm transition-all duration-500 ease-out ${
-          isOpen ? 'opacity-100 pointer-events-auto z-40' : 'opacity-0 pointer-events-none -z-10'
+        className={`fixed inset-0 bg-slate-900/20 dark:bg-[#020617]/60 backdrop-blur-sm transition-opacity duration-300 ease-out z-90 ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         onClick={() => setIsOpen(false)}
       />
 
-      <div className="relative flex flex-col items-end z-50 select-none">
+      {/* Action Container anchored to Bottom Right */}
+      <div className="fixed bottom-5 right-5 md:bottom-8 md:right-8 z-100 flex flex-col items-end select-none">
         
-        <div className={`flex flex-col items-end gap-3 md:gap-4 mb-5 origin-bottom pointer-events-none`}>
-          
-          {/* Action 1: Top Up Wallet */}
-          <div 
-            className={`transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-              isOpen ? 'scale-100 opacity-100 translate-y-0 pointer-events-auto delay-150' : 'scale-90 opacity-0 translate-y-10 pointer-events-none delay-50'
-            }`}
-          >
-            <button 
-              onClick={() => handleAction(onOpenTopUp)}
-              className="group flex items-center justify-between gap-5 pl-5 pr-2 py-2 md:pl-6 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] hover:shadow-xl active:scale-95 transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-            >
-              <span className="text-[12px] md:text-sm font-[1000] uppercase tracking-[0.2em] text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                Top Up
-              </span>
-              <div className="bg-slate-50 dark:bg-slate-900/50 text-blue-600 dark:text-blue-400 p-2.5 md:p-3 rounded-xl border border-slate-100 dark:border-slate-700/50 group-hover:scale-105 group-hover:bg-blue-50 dark:group-hover:bg-blue-500/20 transition-all duration-300">
-                <ArrowDownToLine size={20} strokeWidth={2.5} />
-              </div>
-            </button>
+        {/* Unified Command Menu Card */}
+        <div 
+          className={`mb-4 w-64 sm:w-72 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-2xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.7)] origin-bottom-right transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden ${
+            isOpen 
+              ? 'scale-100 opacity-100 translate-y-0 pointer-events-auto' 
+              : 'scale-90 opacity-0 translate-y-4 pointer-events-none'
+          }`}
+        >
+          {/* Header */}
+          <div className="px-5 py-3 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/20">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+              Quick Actions
+            </span>
           </div>
 
-          {/* Action 2: Internal Transfer (NEW) */}
-          <div 
-            className={`transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-              isOpen ? 'scale-100 opacity-100 translate-y-0 pointer-events-auto delay-100' : 'scale-90 opacity-0 translate-y-8 pointer-events-none delay-100'
-            }`}
-          >
-            <button 
-              onClick={() => handleAction(onOpenTransfer)}
-              className="group flex items-center justify-between gap-5 pl-5 pr-2 py-2 md:pl-6 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] hover:shadow-xl active:scale-95 transition-all outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-            >
-              <span className="text-[12px] md:text-sm font-[1000] uppercase tracking-[0.2em] text-slate-600 dark:text-slate-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                Transfer
-              </span>
-              <div className="bg-slate-50 dark:bg-slate-900/50 text-indigo-600 dark:text-indigo-400 p-2.5 md:p-3 rounded-xl border border-slate-100 dark:border-slate-700/50 group-hover:scale-105 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-500/20 transition-all duration-300">
-                <ArrowRightLeft size={20} strokeWidth={2.5} />
-              </div>
-            </button>
-          </div>
-
-          {/* Action 3: Add Expense (Primary) */}
-          <div 
-            className={`transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-              isOpen ? 'scale-100 opacity-100 translate-y-0 pointer-events-auto delay-50' : 'scale-90 opacity-0 translate-y-6 pointer-events-none delay-150'
-            }`}
-          >
+          {/* Action List */}
+          <div className="p-1.5 space-y-0.5">
+            
+            {/* Primary Action: Expense */}
             <button 
               onClick={() => handleAction(onOpenExpense)}
-              className="group flex items-center justify-between gap-5 pl-5 pr-2 py-2 md:pl-6 bg-linear-to-l from-emerald-500 to-emerald-600 border border-emerald-400/50 rounded-2xl shadow-[0_10px_30px_rgba(16,185,129,0.3)] hover:shadow-[0_15px_40px_rgba(16,185,129,0.4)] active:scale-95 transition-all outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
             >
-              <span className="text-[12px] md:text-sm font-[1000] uppercase tracking-[0.2em] text-white">
-                Expense
-              </span>
-              <div className="bg-white/20 text-white p-2.5 md:p-3 rounded-xl border border-white/20 group-hover:scale-105 transition-all duration-300 shadow-sm">
-                <ReceiptIndianRupee size={20} strokeWidth={2.5} />
+              <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20 group-hover:scale-105 transition-transform shrink-0 shadow-sm">
+                <ReceiptIndianRupee size={18} strokeWidth={2.5} />
               </div>
+              <div className="text-left flex-1 min-w-0">
+                <div className="text-sm font-bold text-slate-900 dark:text-white truncate">Add Expense</div>
+                <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate">Record an expense</div>
+              </div>
+              <ChevronRight size={14} className="text-slate-300 dark:text-slate-600 group-hover:text-emerald-500 transition-colors shrink-0" />
             </button>
+
+            {/* Secondary Action: Top Up */}
+            <button 
+              onClick={() => handleAction(onOpenTopUp)}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20 group-hover:scale-105 transition-transform shrink-0 shadow-sm">
+                <ArrowDownToLine size={18} strokeWidth={2.5} />
+              </div>
+              <div className="text-left flex-1 min-w-0">
+                <div className="text-sm font-bold text-slate-900 dark:text-white truncate">Top-up Wallet</div>
+                <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate">Add money to a wallet</div>
+              </div>
+              <ChevronRight size={14} className="text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors shrink-0" />
+            </button>
+
+            {/* Secondary Action: Transfer */}
+            <button 
+              onClick={() => handleAction(onOpenTransfer)}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            >
+              <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20 group-hover:scale-105 transition-transform shrink-0 shadow-sm">
+                <ArrowRightLeft size={18} strokeWidth={2.5} />
+              </div>
+              <div className="text-left flex-1 min-w-0">
+                <div className="text-sm font-bold text-slate-900 dark:text-white truncate">Internal Transfer</div>
+                <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate">Move funds between wallets</div>
+              </div>
+              <ChevronRight size={14} className="text-slate-300 dark:text-slate-600 group-hover:text-indigo-500 transition-colors shrink-0" />
+            </button>
+
           </div>
-          
         </div>
 
+        {/* Master FAB Toggle */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-full shadow-2xl transition-all duration-500 ease-out outline-none active:scale-90 ${
+          className={`relative flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] outline-none active:scale-90 z-10 ${
             isOpen 
-              ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 shadow-lg' 
-              : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/40 hover:shadow-emerald-500/50'
+              ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border border-transparent dark:border-white/10' 
+              : 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white shadow-emerald-600/30 dark:shadow-emerald-500/20 border border-emerald-500 dark:border-emerald-400'
           }`}
-          aria-label="Toggle Actions"
+          aria-label="Toggle Menu"
         >
           <Plus 
-            size={isOpen ? 30 : 34} 
+            size={26} 
             strokeWidth={2.5} 
-            className={`transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isOpen ? 'rotate-135 scale-110' : 'rotate-0'}`} 
+            className={`transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isOpen ? 'rotate-45 scale-110' : 'rotate-0 scale-100'}`} 
           />
         </button>
 
