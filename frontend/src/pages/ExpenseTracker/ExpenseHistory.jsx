@@ -82,7 +82,7 @@ const ExpenseHistory = () => {
   }, [transactions]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#030712] text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#030712] text-slate-900 dark:text-slate-100 transition-colors duration-300">
       
       {/* 1. SEAMLESS HEADER */}
       <HistoryCommandCenter 
@@ -96,68 +96,69 @@ const ExpenseHistory = () => {
       />
 
       {/* 2. PRECISION WORKSPACE */}
-      <main className="max-w-400 mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 relative z-10">
+      {/* Fixed: max-w-400 typo to a fluid max-w-4xl for proper desktop constraints */}
+      <main className="w-full max-w-350 mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 relative z-10 min-w-0">
         
-        {/* Very subtle background depth texture */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-slate-200/40 via-transparent to-transparent dark:from-emerald-900/10 pointer-events-none -z-10" />
+        {/* Subtle background depth texture */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-slate-200/40 via-transparent to-transparent dark:from-emerald-900/5 pointer-events-none -z-10" />
 
-        <div className="space-y-5 sm:space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           
           {/* CINEMATIC SEARCH BAR */}
-          <div className="relative w-full flex items-center bg-white/70 dark:bg-[#0B1120]/70 backdrop-blur-md rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] focus-within:border-emerald-500/80 dark:focus-within:border-emerald-400/80 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all group overflow-hidden">
+          <div className="relative w-full flex items-center bg-white dark:bg-[#0B1120] rounded-xl border border-slate-200 dark:border-white/10 shadow-sm focus-within:border-emerald-500 dark:focus-within:border-emerald-500/80 focus-within:ring-1 focus-within:ring-emerald-500 transition-all group overflow-hidden">
             
-            {/* Elegant Focus Edge */}
-            <div className="absolute top-0 left-0 h-full w-1 bg-gradient-to-b from-emerald-400 to-emerald-600 opacity-0 group-focus-within:opacity-100 transition-opacity" />
-
-            <div className="pl-4 sm:pl-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors">
-              <Search size={16} strokeWidth={2.5} className="sm:w-4 sm:h-4" />
+            <div className="pl-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors shrink-0">
+              <Search size={16} strokeWidth={2.5} />
             </div>
             <input 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search historical ledger notes or amounts..."
-              className="w-full bg-transparent py-3.5 sm:py-4 pl-3 pr-4 text-xs sm:text-sm font-semibold outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white"
+              className="w-full bg-transparent py-3 sm:py-3.5 pl-3 pr-4 text-sm font-semibold outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white"
             />
             {searchQuery && (
-              <button type="button" onClick={() => setSearchQuery("")} className="p-1.5 mr-2 sm:mr-3 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer">
+              <button 
+                type="button" 
+                onClick={() => setSearchQuery("")} 
+                className="p-1.5 mr-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer shrink-0 outline-none"
+              >
                 <X size={14} strokeWidth={2.5} />
               </button>
             )}
           </div>
 
           {/* MAIN TRANSACTION LEDGER */}
-          <div className="bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-2xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl sm:rounded-4xl p-4 sm:p-8 shadow-sm">
+          <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-sm min-w-0">
             
-            <div className="border-b border-slate-100 dark:border-slate-800/80 pb-4 sm:pb-5 mb-6 sm:mb-8 flex flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 sm:p-2 bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-lg shadow-md shadow-emerald-500/20">
-                  <Activity size={14} strokeWidth={3} className="sm:w-4 sm:h-4" />
+            {/* Header Strip */}
+            <div className="border-b border-slate-200 dark:border-white/10 pb-4 mb-5 sm:mb-6 flex flex-row items-center justify-between gap-4 min-w-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-1.5 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-md shrink-0">
+                  <Activity size={14} strokeWidth={2.5} />
                 </div>
-                <h2 className="text-[10px] sm:text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none mt-0.5">
+                <h2 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest truncate">
                   Verified Data Stream
                 </h2>
               </div>
-              <span className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg border border-emerald-100 dark:border-emerald-500/20 leading-none">
+              <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-md border border-slate-200 dark:border-white/5 shrink-0">
                 {transactions.length} Nodes
               </span>
             </div>
 
-            <div className="space-y-6 sm:space-y-8">
+            {/* Ledger List */}
+            <div className="space-y-5 sm:space-y-6">
               {loading && transactions.length === 0 ? (
-                <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
-                  <div className="relative w-10 h-10">
-                    <div className="absolute inset-0 border-4 border-slate-100 dark:border-slate-800 rounded-full" />
-                    <div className="absolute inset-0 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                  </div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Syncing Ledger...</p>
+                <div className="py-16 flex flex-col items-center justify-center text-center space-y-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 dark:border-slate-800 border-t-emerald-500" />
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Syncing Ledger...</p>
                 </div>
               ) : Object.keys(groupedTransactions).length === 0 ? (
-                <div className="py-20 flex flex-col items-center justify-center text-center">
-                  <div className="w-14 h-14 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mb-4 border border-slate-100 dark:border-slate-800 shadow-inner">
-                    <Search size={20} className="text-slate-400" />
+                <div className="py-16 flex flex-col items-center justify-center text-center px-4">
+                  <div className="w-12 h-12 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mb-3 border border-slate-200 dark:border-white/5">
+                    <Search size={18} className="text-slate-400" />
                   </div>
-                  <p className="text-sm sm:text-base font-black text-slate-900 dark:text-white mb-1">No Transactions Found</p>
-                  <p className="text-[11px] sm:text-xs font-medium text-slate-500 max-w-xs">There are no records matching your current filters and timeline.</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">No Transactions Found</p>
+                  <p className="text-xs font-medium text-slate-500">There are no records matching your current filters and timeline.</p>
                 </div>
               ) : (
                 Object.keys(groupedTransactions).map(date => (
@@ -176,7 +177,7 @@ const ExpenseHistory = () => {
         </div>
       </main>
 
-      {/* MODALS: Safely decoupled from DOM thrashing keys */}
+      {/* MODALS */}
       <ExpenseModal 
         isOpen={isEditModalOpen} 
         setOpen={setIsEditModalOpen}
@@ -193,7 +194,6 @@ const ExpenseHistory = () => {
           onClose={() => setDeleteTarget(null)} 
           onConfirm={async () => {
             const res = await request(`/spending/${deleteTarget._id}`, "DELETE");
-            // Only erase from the UI if the database successfully deleted it
             if (res?.success || res) {
               setTransactions(prev => prev.filter(t => t._id !== deleteTarget._id));
               fetchWallets();
