@@ -30,8 +30,10 @@ const FloatingActions = ({ onOpenExpense, onOpenTopUp, onOpenTransfer }) => {
         onClick={() => setIsOpen(false)}
       />
 
-      {/* Action Container anchored to Bottom Right */}
-      <div className="fixed bottom-5 right-5 md:bottom-8 md:right-8 z-100 flex flex-col items-end select-none">
+      {/* Action Container anchored to Bottom Right 
+          FIX: Lifted mobile bottom from bottom-5 to bottom-24 to clear bottom nav bars 
+      */}
+      <div className="fixed bottom-24 right-5 md:bottom-8 md:right-8 z-100 flex flex-col items-end select-none">
         
         {/* Unified Command Menu Card */}
         <div 
@@ -61,7 +63,7 @@ const FloatingActions = ({ onOpenExpense, onOpenTopUp, onOpenTransfer }) => {
               </div>
               <div className="text-left flex-1 min-w-0">
                 <div className="text-sm font-bold text-slate-900 dark:text-white truncate">Add Expense</div>
-                <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate">Record an expense</div>
+                <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate">Record a new expense</div>
               </div>
               <ChevronRight size={14} className="text-slate-300 dark:text-slate-600 group-hover:text-emerald-500 transition-colors shrink-0" />
             </button>
@@ -69,31 +71,31 @@ const FloatingActions = ({ onOpenExpense, onOpenTopUp, onOpenTransfer }) => {
             {/* Secondary Action: Top Up */}
             <button 
               onClick={() => handleAction(onOpenTopUp)}
-              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
-              <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20 group-hover:scale-105 transition-transform shrink-0 shadow-sm">
+              <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20 group-hover:scale-105 transition-transform shrink-0 shadow-sm">
                 <ArrowDownToLine size={18} strokeWidth={2.5} />
               </div>
               <div className="text-left flex-1 min-w-0">
                 <div className="text-sm font-bold text-slate-900 dark:text-white truncate">Top-up Wallet</div>
                 <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate">Add money to a wallet</div>
               </div>
-              <ChevronRight size={14} className="text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors shrink-0" />
+              <ChevronRight size={14} className="text-slate-300 dark:text-slate-600 group-hover:text-indigo-500 transition-colors shrink-0" />
             </button>
 
             {/* Secondary Action: Transfer */}
             <button 
               onClick={() => handleAction(onOpenTransfer)}
-              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
             >
-              <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20 group-hover:scale-105 transition-transform shrink-0 shadow-sm">
+              <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20 group-hover:scale-105 transition-transform shrink-0 shadow-sm">
                 <ArrowRightLeft size={18} strokeWidth={2.5} />
               </div>
               <div className="text-left flex-1 min-w-0">
                 <div className="text-sm font-bold text-slate-900 dark:text-white truncate">Internal Transfer</div>
                 <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate">Move funds between wallets</div>
               </div>
-              <ChevronRight size={14} className="text-slate-300 dark:text-slate-600 group-hover:text-indigo-500 transition-colors shrink-0" />
+              <ChevronRight size={14} className="text-slate-300 dark:text-slate-600 group-hover:text-amber-500 transition-colors shrink-0" />
             </button>
 
           </div>
@@ -105,14 +107,14 @@ const FloatingActions = ({ onOpenExpense, onOpenTopUp, onOpenTransfer }) => {
           className={`relative flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] outline-none active:scale-90 z-10 ${
             isOpen 
               ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border border-transparent dark:border-white/10' 
-              : 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white shadow-emerald-600/30 dark:shadow-emerald-500/20 border border-emerald-500 dark:border-emerald-400'
+              : 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white shadow-[0_8px_30px_rgba(16,185,129,0.3)] border border-emerald-500 dark:border-emerald-400'
           }`}
           aria-label="Toggle Menu"
         >
           <Plus 
             size={26} 
             strokeWidth={2.5} 
-            className={`transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isOpen ? 'rotate-45 scale-110' : 'rotate-0 scale-100'}`} 
+            className={`transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isOpen ? 'rotate-45 scale-110 text-slate-500 dark:text-slate-400' : 'rotate-0 scale-100'}`} 
           />
         </button>
 

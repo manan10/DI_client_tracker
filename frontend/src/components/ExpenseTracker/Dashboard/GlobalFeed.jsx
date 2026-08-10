@@ -33,11 +33,11 @@ const GlobalFeed = ({ history, wallets }) => {
               <History size={14} className="text-emerald-600 dark:text-emerald-400" />
             </div>
             <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider truncate">
-              Active Ledger
+              Transaction History
             </h2>
           </div>
           <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest pl-9 truncate mt-0.5">
-            Live Transaction Feed
+            Latest Transaction Feed
           </p>
         </div>
         
@@ -46,7 +46,7 @@ const GlobalFeed = ({ history, wallets }) => {
           className="group flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-md transition-all duration-200 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
         >
           <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
-            Archive
+            View All
           </span>
           <MoveUpRight size={12} className="text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-colors" />
         </Link>

@@ -76,7 +76,7 @@ const TransferModal = ({ isOpen, setOpen, wallets, transferData, setTransferData
                 onClick={() => setStep(s)}
                 className={`flex items-center gap-2 transition-all outline-none ${step === s ? 'opacity-100' : 'opacity-40'}`}
               >
-                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step >= s ? 'bg-indigo-600 dark:bg-indigo-500 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step >= s ? 'bg-amber-600 dark:bg-amber-500 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>
                   {s}
                 </span>
                 {step === s && (
@@ -113,8 +113,8 @@ const TransferModal = ({ isOpen, setOpen, wallets, transferData, setTransferData
           {step === 1 && (
             <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
               <div className="text-left mb-2">
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Origin Account</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Select the funding source for this transfer.</p>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Select Origin Wallet</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Select the wallet from which you want to transfer funds.</p>
               </div>
               <div className="flex flex-col gap-2.5">
                 {wallets.filter(w => !w.isVirtual).map(w => (
@@ -124,11 +124,11 @@ const TransferModal = ({ isOpen, setOpen, wallets, transferData, setTransferData
                     className={`flex items-center justify-between p-3.5 rounded-lg border transition-all text-left outline-none ${
                       w.isGeneralPool 
                       ? 'bg-slate-900 border-slate-800 text-white dark:bg-white dark:text-slate-900 shadow-sm' 
-                      : 'bg-white border-slate-200 dark:bg-[#0B1120] dark:border-white/10 hover:border-indigo-500 dark:hover:border-indigo-500'
+                      : 'bg-white border-slate-200 dark:bg-[#0B1120] dark:border-white/10 hover:border-amber-500 dark:hover:border-amber-500'
                     }`}
                   >
                     <div className="flex items-center gap-3 overflow-hidden min-w-0">
-                      <div className={`p-2 rounded-md shrink-0 ${w.isGeneralPool ? 'bg-indigo-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
+                      <div className={`p-2 rounded-md shrink-0 ${w.isGeneralPool ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
                         {w.isGeneralPool ? <Landmark size={16} /> : <Wallet size={16} />}
                       </div>
                       <div className="flex flex-col min-w-0">
@@ -155,8 +155,8 @@ const TransferModal = ({ isOpen, setOpen, wallets, transferData, setTransferData
                   <ArrowLeft size={16} />
                 </button>
                 <div className="flex flex-col min-w-0">
-                  <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">Destination</h2>
-                  <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest truncate">From: {sourceWalletObj?.walletName}</p>
+                  <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">Select Destination Wallet</h2>
+                  <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest truncate">From: {sourceWalletObj?.walletName}</p>
                 </div>
               </div>
 
@@ -168,11 +168,11 @@ const TransferModal = ({ isOpen, setOpen, wallets, transferData, setTransferData
                     className={`flex items-center justify-between p-3.5 rounded-lg border transition-all text-left outline-none ${
                       w.isGeneralPool 
                       ? 'bg-slate-900 border-slate-800 text-white dark:bg-white dark:text-slate-900 shadow-sm' 
-                      : 'bg-white border-slate-200 dark:bg-[#0B1120] dark:border-white/10 hover:border-indigo-500 dark:hover:border-indigo-500'
+                      : 'bg-white border-slate-200 dark:bg-[#0B1120] dark:border-white/10 hover:border-amber-500 dark:hover:border-amber-500'
                     }`}
                   >
                     <div className="flex items-center gap-3 overflow-hidden min-w-0">
-                      <div className={`p-2 rounded-md shrink-0 ${w.isGeneralPool ? 'bg-indigo-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
+                      <div className={`p-2 rounded-md shrink-0 ${w.isGeneralPool ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
                         {w.isGeneralPool ? <Landmark size={16} /> : <Wallet size={16} />}
                       </div>
                       <div className="flex flex-col min-w-0">
@@ -206,7 +206,7 @@ const TransferModal = ({ isOpen, setOpen, wallets, transferData, setTransferData
               </div>
 
               {/* Amount Input */}
-              <div className="relative border-b border-slate-200 dark:border-white/10 focus-within:border-indigo-500 transition-colors pt-2">
+              <div className="relative border-b border-slate-200 dark:border-white/10 focus-within:border-amber-500 transition-colors pt-2">
                 <span className="absolute left-0 bottom-3 text-2xl font-bold text-slate-400 dark:text-slate-600">₹</span>
                 <input
                     type="text"
@@ -222,25 +222,25 @@ const TransferModal = ({ isOpen, setOpen, wallets, transferData, setTransferData
               {/* Pathway Visualizer */}
               <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-white/5">
                 <div className="flex-1 min-w-0 pr-2">
-                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Debiting</p>
+                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">From</p>
                   <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">{sourceWalletObj?.walletName}</p>
                 </div>
                 <div className="shrink-0 w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-400 shadow-sm">
                   <ArrowRight size={14} strokeWidth={2} />
                 </div>
                 <div className="flex-1 min-w-0 pl-2 text-right">
-                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Crediting</p>
+                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">To</p>
                   <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">{targetWalletObj?.walletName}</p>
                 </div>
               </div>
 
               {/* Memo Input */}
               <div className="space-y-1.5 pt-2">
-                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Internal Memo (Optional)</label>
+                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Comments (Optional)</label>
                  <textarea 
                    rows="2" 
-                   placeholder="E.g., Replenishing cash drawer..."
-                   className="w-full bg-white dark:bg-[#0B1120] p-3 rounded-lg text-sm text-slate-900 dark:text-white outline-none border border-slate-200 dark:border-white/10 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all no-scrollbar placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                   placeholder="Add details..."
+                   className="w-full bg-white dark:bg-[#0B1120] p-3 rounded-lg text-sm text-slate-900 dark:text-white outline-none border border-slate-200 dark:border-white/10 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all no-scrollbar placeholder:text-slate-400 dark:placeholder:text-slate-600"
                    value={transferData.description} 
                    onChange={(e) => setTransferData({...transferData, description: e.target.value})} 
                  />
@@ -251,12 +251,12 @@ const TransferModal = ({ isOpen, setOpen, wallets, transferData, setTransferData
                 <button 
                   disabled={!transferData.amount || Number(transferData.amount) <= 0 || loading}
                   onClick={handleFinalSubmit}
-                  className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 transition-all outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-600 dark:focus-visible:ring-offset-[#0B1120]"
+                  className="w-full h-12 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 transition-all outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-amber-600 dark:focus-visible:ring-offset-[#0B1120]"
                 >
                   {loading ? (
                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />
                    ) : (
-                     <>Execute Transfer <Check size={16} strokeWidth={3}/></>
+                     <>Complete Transfer <Check size={16} strokeWidth={3}/></>
                    )}
                 </button>
               </div>

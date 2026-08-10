@@ -90,7 +90,7 @@ const ReconcileModal = ({ isOpen, setOpen, wallet, onSubmit, loading }) => {
                 <Scale size={14} strokeWidth={2.5} />
             </div>
             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-700 dark:text-slate-300">
-                Ledger Sync
+                Wallet Reconciliation
             </span>
           </div>
           <button onClick={handleClose} className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500 active:scale-95 outline-none">
@@ -113,13 +113,13 @@ const ReconcileModal = ({ isOpen, setOpen, wallet, onSubmit, loading }) => {
                 {wallet.walletName}
             </h2>
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                Current System Record: <span className="font-bold tabular-nums text-slate-700 dark:text-slate-300">₹{currentBalance.toLocaleString('en-IN')}</span>
+                Amount showing in Wallet: <span className="font-bold tabular-nums text-slate-700 dark:text-slate-300">₹{currentBalance.toLocaleString('en-IN')}</span>
             </p>
           </div>
 
           <div className="relative border-b border-slate-200 dark:border-white/10 focus-within:border-amber-500 transition-colors pt-3">
             <p className="text-[10px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest absolute top-0 left-0">
-                True Physical Balance
+                Actual Physical Balance
             </p>
             <span className="absolute left-0 bottom-3 text-2xl font-bold text-slate-400 dark:text-slate-600">₹</span>
             <input
@@ -141,7 +141,7 @@ const ReconcileModal = ({ isOpen, setOpen, wallet, onSubmit, loading }) => {
           }`}>
              <div className="flex flex-col min-w-0 pr-2">
                <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                 Deviation
+                 Difference
                </span>
                <span className={`text-xs font-semibold truncate mt-0.5 ${
                  isBalanced ? 'text-slate-600 dark:text-slate-300' :
@@ -169,7 +169,7 @@ const ReconcileModal = ({ isOpen, setOpen, wallet, onSubmit, loading }) => {
               {loading ? (
                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />
                ) : (
-                 <>Commit Correction <RefreshCw size={14} strokeWidth={2.5}/></>
+                 <>Perform Correction <RefreshCw size={14} strokeWidth={2.5}/></>
                )}
             </button>
           </div>

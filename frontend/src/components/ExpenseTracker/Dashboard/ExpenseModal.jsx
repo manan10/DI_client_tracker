@@ -190,7 +190,7 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                 className={`flex items-center gap-2 transition-all outline-none ${step === s ? 'opacity-100' : 'opacity-40'}`}
               >
                 <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step >= s ? 'bg-emerald-600 dark:bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>{s}</span>
-                {step === s && <span className="text-[10px] font-bold uppercase tracking-widest text-slate-900 dark:text-white">{s === 1 ? "Source" : s === 2 ? "Amount" : s === 3 ? "Group" : "Details"}</span>}
+                {step === s && <span className="text-[10px] font-bold uppercase tracking-widest text-slate-900 dark:text-white">{s === 1 ? "Select Wallet" : s === 2 ? "Add Amount" : s === 3 ? "Select Group" : "Details"}</span>}
               </button>
             ))}
           </div>
@@ -211,20 +211,20 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
             <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
               <div className="text-left mb-2">
                 <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                  {isEditMode ? "Switch Source" : "Funding Source"}
+                  {isEditMode ? "Switch Wallet" : "Wallet Selection"}
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Select the account to debit this expense from.
+                  Select the wallet the expense was made from
                 </p>
               </div>
 
               {/* Segmented Control */}
               <div className="bg-slate-100 dark:bg-slate-900/50 p-1 rounded-lg flex gap-1 border border-slate-200 dark:border-white/5">
                 <button onClick={() => setActiveTab("cash")} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all outline-none ${activeTab === "cash" ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}>
-                  <Coins size={14} /> Cash
+                  <Coins size={14} /> Cash Wallets
                 </button>
                 <button onClick={() => setActiveTab("online")} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all outline-none ${activeTab === "online" ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}>
-                  <Globe size={14} /> Digital
+                  <Globe size={14} /> Digital Accounts
                 </button>
               </div>
 
@@ -248,7 +248,7 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                           {w.walletName}
                         </span>
                         <span className={`text-[9px] font-bold uppercase tracking-wider mt-0.5 ${expenseData.sourceWallet === w._id ? 'opacity-80' : 'text-slate-500'}`}>
-                          {w.isVirtual ? "Linked" : "Vault"}
+                          {w.isVirtual ? "DIGITAL ACCOUNT" : "CASH WALLET"}
                         </span>
                       </div>
                     </div>
@@ -273,8 +273,8 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                     <ArrowLeft size={16} />
                  </button>
                  <div className="flex flex-col min-w-0">
-                   <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">Expense Volume</h2>
-                   <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest truncate">From: {currentWallet?.walletName}</p>
+                   <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">Expense Amount</h2>
+                   <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest truncate">From wallet: {currentWallet?.walletName}</p>
                  </div>
               </div>
 
@@ -327,7 +327,7 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                        </div>
                      )}
                      <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight truncate">
-                       {selectedParent ? selectedParent.label : "Categorization"}
+                       {selectedParent ? selectedParent.label : "Select Category"}
                      </h2>
                    </div>
                  </div>
@@ -458,7 +458,7 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                       >
                         <Plus size={14} strokeWidth={2.5}/> 
                         <span className="text-xs font-bold uppercase tracking-widest">
-                          New Entry
+                          New Sub Category
                         </span>
                       </button>
                     ) : (
@@ -488,7 +488,7 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                  <button onClick={() => setStep(isEditMode ? 1 : 3)} disabled={loading} className="p-1 -ml-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors outline-none disabled:opacity-50">
                     <ArrowLeft size={16} />
                  </button>
-                 <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">Review Entry</h2>
+                 <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">Review Expense</h2>
               </div>
               
               <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-white/10">
@@ -508,13 +508,13 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                      <span className="truncate">From: {currentWallet?.walletName}</span>
                    </div>
                    <span className="uppercase tracking-widest shrink-0 bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded-sm">
-                     {currentWallet?.isVirtual ? "Linked" : "Vault"}
+                     {currentWallet?.isVirtual ? "Digital" : "Cash"}
                    </span>
                  </div>
               </div>
 
               <div className="space-y-1.5 pt-2">
-                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Memo (Optional)</label>
+                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Comments (Optional)</label>
                  <textarea 
                    rows="2" 
                    placeholder="Purchase details..." 
@@ -530,7 +530,7 @@ const ExpenseModal = ({ isOpen, setOpen, wallets, expenseData, setExpenseData, o
                   disabled={loading} 
                   className="w-full text-white h-12 rounded-lg font-bold uppercase text-xs tracking-wider shadow-sm active:scale-[0.98] flex items-center justify-center gap-2 transition-all disabled:opacity-50 outline-none bg-emerald-600 hover:bg-emerald-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-600 dark:focus-visible:ring-offset-[#0B1120]"
                 >
-                  {loading ? <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" /> : <>{isEditMode ? "Update Entry" : "Save Entry"} <Check size={16} strokeWidth={3}/></>}
+                  {loading ? <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" /> : <>{isEditMode ? "Update Expense" : "Add Expense"} <Check size={16} strokeWidth={3}/></>}
                 </button>
               </div>
             </div>

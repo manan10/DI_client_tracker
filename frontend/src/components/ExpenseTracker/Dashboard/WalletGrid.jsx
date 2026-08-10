@@ -23,7 +23,7 @@ const WalletGrid = ({ wallets, onReconcile }) => {
                 <Coins size={14} />
               </div>
               <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest truncate">
-                Total Cash Balance
+                Total Cash In Hand
               </p>
             </div>
 
@@ -79,7 +79,7 @@ const WalletGrid = ({ wallets, onReconcile }) => {
                 <Globe size={14} />
               </div>
               <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest truncate">
-                Digital Assets
+                Digital Accounts
               </p>
             </div>
             <ShieldCheck size={16} className="text-slate-400 shrink-0" />

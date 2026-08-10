@@ -87,13 +87,13 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
                 onClick={() => setStep(s)}
                 className={`flex items-center gap-2 transition-all outline-none ${step === s ? 'opacity-100' : 'opacity-40'}`}
               >
-                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step >= s ? 'bg-emerald-600 dark:bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step >= s ? 'bg-indigo-600 dark:bg-indigo-500 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>
                   {s}
                 </span>
                 {step === s && (
                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-900 dark:text-white">
-                    {s === 1 && "Destination"}
-                    {s === 2 && "Volume"}
+                    {s === 1 && "Select Wallet"}
+                    {s === 2 && "Amount"}
                     {s === 3 && "Review"}
                   </span>
                 )}
@@ -124,8 +124,8 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
           {step === 1 && (
             <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
               <div className="text-left mb-2">
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Refill Destination</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Select the account to receive the injection.</p>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Select Wallet</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Select the wallet to receive the top-up.</p>
               </div>
               <div className="flex flex-col gap-2.5">
                 {wallets.filter(w => !w.isVirtual).map(w => (
@@ -135,11 +135,11 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
                     className={`flex items-center justify-between p-3.5 rounded-lg border transition-all text-left outline-none ${
                       w.isGeneralPool 
                       ? 'bg-slate-900 border-slate-800 text-white dark:bg-white dark:text-slate-900 shadow-sm' 
-                      : 'bg-white border-slate-200 dark:bg-[#0B1120] dark:border-white/10 hover:border-emerald-500 dark:hover:border-emerald-500'
+                      : 'bg-white border-slate-200 dark:bg-[#0B1120] dark:border-white/10 hover:border-indigo-500 dark:hover:border-indigo-500'
                     }`}
                   >
                     <div className="flex items-center gap-3 overflow-hidden min-w-0">
-                      <div className={`p-2 rounded-md shrink-0 ${w.isGeneralPool ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
+                      <div className={`p-2 rounded-md shrink-0 ${w.isGeneralPool ? 'bg-indigo-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
                         {w.isGeneralPool ? <Landmark size={16} /> : <Wallet size={16} />}
                       </div>
                       <div className="flex flex-col min-w-0">
@@ -166,8 +166,8 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
                     <ArrowLeft size={16} />
                  </button>
                  <div className="flex flex-col min-w-0">
-                   <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">Funding Details</h2>
-                   <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest truncate">Target: {currentWallet?.walletName}</p>
+                   <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">Top-up Details</h2>
+                   <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest truncate">Target wallet: {currentWallet?.walletName}</p>
                  </div>
               </div>
 
@@ -175,9 +175,9 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
               <div className="bg-slate-100 dark:bg-slate-900/50 p-1 rounded-lg flex gap-1 border border-slate-200 dark:border-white/5">
                 <button 
                   onClick={() => setTopUpData({...topUpData, isExternal: false})}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all outline-none ${!topUpData.isExternal ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all outline-none ${!topUpData.isExternal ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                 >
-                  <Box size={14} /> Internal Drawer
+                  <Box size={14} /> Internal Source
                 </button>
                 <button 
                   onClick={() => setTopUpData({...topUpData, isExternal: true})}
@@ -188,7 +188,7 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
               </div>
 
               {/* Amount Input */}
-              <div className="relative border-b border-slate-200 dark:border-white/10 focus-within:border-emerald-500 transition-colors pt-2">
+              <div className="relative border-b border-slate-200 dark:border-white/10 focus-within:border-indigo-500 transition-colors pt-2">
                 <span className="absolute left-0 bottom-3 text-2xl font-bold text-slate-400 dark:text-slate-600">₹</span>
                 <input
                     ref={amountInputRef}
@@ -220,28 +220,28 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
                  <button onClick={prevStep} disabled={loading} className="p-1 -ml-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors outline-none disabled:opacity-50">
                     <ArrowLeft size={16} />
                  </button>
-                 <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">Review Transfer</h2>
+                 <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">Review Top-Up</h2>
                </div>
                
                {/* Receipt Card */}
                <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-white/10 relative overflow-hidden">
                  
-                 <div className={`absolute top-0 right-0 px-3 py-1 rounded-bl-lg text-[9px] font-bold uppercase tracking-widest text-white ${topUpData.isExternal ? 'bg-indigo-600' : 'bg-emerald-600'}`}>
+                 <div className={`absolute top-0 right-0 px-3 py-1 rounded-bl-lg text-[9px] font-bold uppercase tracking-widest text-white ${topUpData.isExternal ? 'bg-indigo-600' : 'bg-indigo-600'}`}>
                    {topUpData.isExternal ? 'External' : 'Internal'}
                  </div>
 
                  <div className="flex justify-between items-end border-b border-slate-200 dark:border-white/10 pb-3 mt-3 sm:mt-1">
                    <div className="space-y-0.5 text-left pr-2 min-w-0">
-                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Destination</p>
+                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Wallet</p>
                      <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">{currentWallet?.walletName}</p>
                    </div>
-                   <p className={`text-2xl sm:text-3xl font-bold tabular-nums tracking-tight shrink-0 ${topUpData.isExternal ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                   <p className={`text-2xl sm:text-3xl font-bold tabular-nums tracking-tight shrink-0 ${topUpData.isExternal ? 'text-indigo-600 dark:text-indigo-400' : 'text-indigo-600 dark:text-indigo-400'}`}>
                      +₹{Number(topUpData.amount).toLocaleString('en-IN')}
                    </p>
                  </div>
 
                  <div className="flex items-center justify-between text-[10px] font-semibold text-slate-500 pt-3">
-                   <span>Projected Balance</span>
+                   <span>Projected Balance after Top-Up</span>
                    <span className="tabular-nums font-bold text-slate-700 dark:text-slate-300">
                      ₹{((currentWallet?.balance || 0) + Number(topUpData.amount)).toLocaleString('en-IN')}
                    </span>
@@ -249,11 +249,11 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
                </div>
 
                <div className="space-y-1.5 pt-2">
-                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Internal Memo (Optional)</label>
+                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest"> Comments (Optional)</label>
                  <textarea 
                    rows="2" 
-                   placeholder={topUpData.isExternal ? "Source details..." : "Reason for refill..."}
-                   className="w-full bg-white dark:bg-[#0B1120] p-3 rounded-lg text-sm text-slate-900 dark:text-white outline-none border border-slate-200 dark:border-white/10 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all no-scrollbar placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                   placeholder={topUpData.isExternal ? "Add details..." : "Add details..."}
+                   className="w-full bg-white dark:bg-[#0B1120] p-3 rounded-lg text-sm text-slate-900 dark:text-white outline-none border border-slate-200 dark:border-white/10 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all no-scrollbar placeholder:text-slate-400 dark:placeholder:text-slate-600"
                    value={topUpData.description} 
                    onChange={(e) => setTopUpData({...topUpData, description: e.target.value})} 
                  />
@@ -263,12 +263,12 @@ const TopUpModal = ({ isOpen, setOpen, wallets, topUpData, setTopUpData, onSubmi
                  <button 
                     onClick={handleFinalSubmit} 
                     disabled={loading}
-                    className={`w-full text-white h-12 rounded-lg font-bold uppercase text-xs tracking-wider shadow-sm active:scale-[0.98] flex items-center justify-center gap-2 transition-all disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B1120] ${topUpData.isExternal ? 'bg-indigo-600 hover:bg-indigo-700 focus-visible:ring-indigo-600' : 'bg-emerald-600 hover:bg-emerald-700 focus-visible:ring-emerald-600'}`}
+                    className={`w-full text-white h-12 rounded-lg font-bold uppercase text-xs tracking-wider shadow-sm active:scale-[0.98] flex items-center justify-center gap-2 transition-all disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B1120] ${topUpData.isExternal ? 'bg-indigo-600 hover:bg-indigo-700 focus-visible:ring-indigo-600' : 'bg-indigo-600 hover:bg-indigo-700 focus-visible:ring-indigo-600'}`}
                  >
                    {loading ? (
                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />
                    ) : (
-                     <>Authorize Transfer <Check size={16} strokeWidth={3}/></>
+                     <>Complete Top-Up <Check size={16} strokeWidth={3}/></>
                    )}
                  </button>
                </div>
