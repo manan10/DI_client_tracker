@@ -183,7 +183,7 @@ const Home = () => {
           setSelectedClient(null);
           setIsInteractionOpen(true);
         }}
-        className="fixed bottom-8 right-6 z-50 flex items-center justify-center w-14 h-14 bg-emerald-600 text-white rounded-full shadow-[0_8px_30px_rgba(16,185,129,0.4)] hover:bg-emerald-500 hover:-translate-y-1 hover:scale-105 active:scale-95 transition-all xl:hidden border border-emerald-400/50"
+        className="fixed bottom-24 right-6 z-50 flex items-center justify-center w-14 h-14 bg-emerald-600 text-white rounded-full shadow-[0_8px_30px_rgba(16,185,129,0.4)] hover:bg-emerald-500 hover:-translate-y-1 hover:scale-105 active:scale-95 transition-all xl:hidden border border-emerald-400/50"
       >
         <Plus size={26} strokeWidth={2.5} />
       </button>
