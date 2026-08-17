@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Search, User, ArrowRight, X, Zap } from "lucide-react";
+import { Search, User, ArrowRight, X, Command, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom"; 
 import { useApi } from "../../hooks/useApi";
 
@@ -62,26 +62,21 @@ const UniversalSearch = () => {
 
   return (
     <div className="relative w-full" ref={wrapperRef}>
-      <div className="relative group flex items-center">
-        {/* SEARCH ANCHOR: Original High-Vis Green */}
-        <div className="absolute left-2.5 md:left-3 w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-green-600 flex items-center justify-center text-white shadow-lg shadow-green-500/30 group-focus-within:scale-105 transition-all duration-300 z-10">
-          <Search size={16} md:size={20} strokeWidth={3} />
+      
+      {/* 1. THE COMMAND INPUT */}
+      <div className="relative flex items-center w-full group">
+        
+        {/* Dynamic Search Icon - Lights up on focus */}
+        <div className="absolute left-3.5 flex items-center justify-center text-slate-400 group-focus-within:text-emerald-500 transition-colors duration-300 pointer-events-none">
+          <Search className="w-4 h-4" strokeWidth={2.5} />
         </div>
         
         <input
           ref={inputRef}
           type="text"
-          placeholder="SEARCH CLIENTS BY NAME OR PAN..."
+          placeholder="Search by Name or PAN..."
           autoComplete="off"
-          className="w-full pl-12 md:pl-16 pr-12 md:pr-16 py-3.5 md:py-5 
-                     bg-white dark:bg-slate-800/80 
-                     text-slate-900 dark:text-white 
-                     border-2 border-slate-200 dark:border-white/10 
-                     focus:border-green-600 dark:focus:border-green-500
-                     rounded-lg md:rounded-xl shadow-sm
-                     text-sm md:text-base font-[1000] uppercase tracking-wider
-                     placeholder:text-slate-400 dark:placeholder:text-slate-600 
-                     outline-none transition-all duration-300"
+          className="w-full pl-10 pr-24 py-2.5 bg-white dark:bg-[#0B1120] text-sm font-semibold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border border-slate-300 dark:border-white/10 rounded-md outline-none focus:border-emerald-500 dark:focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all shadow-sm"
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
@@ -90,85 +85,95 @@ const UniversalSearch = () => {
           onFocus={() => setIsOpen(true)}
         />
 
-        {/* KEYBOARD HINT: Original High-Vis Green Key */}
-        <div className="absolute right-4 hidden md:flex items-center gap-1.5 pointer-events-none group-focus-within:opacity-0 transition-opacity">
-          <kbd className="px-2.5 py-1.5 text-[10px] font-black bg-green-50 dark:bg-green-500/10 border-2 border-green-200 dark:border-green-500/20 text-green-600 dark:text-green-400 rounded-lg">
-            CMD + K
-          </kbd>
+        {/* Action Controls (Right) */}
+        <div className="absolute right-2 flex items-center gap-1.5 z-10">
+          {searchTerm ? (
+            <button 
+              onClick={() => {
+                setSearchTerm("");
+                inputRef.current?.focus();
+              }}
+              className="p-1.5 rounded-sm text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors focus:outline-none"
+              aria-label="Clear search"
+            >
+              <X className="w-4 h-4" strokeWidth={2.5} />
+            </button>
+          ) : (
+            <div className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-sm pointer-events-none select-none group-focus-within:opacity-0 transition-opacity duration-200">
+              <Command className="w-3 h-3" strokeWidth={2} /> K
+            </div>
+          )}
         </div>
-
-        {searchTerm && (
-          <button 
-            onClick={() => setSearchTerm("")}
-            className="absolute right-3.5 p-1.5 md:p-2 bg-red-100 dark:bg-red-500/10 text-red-600 rounded-lg md:rounded-xl hover:bg-red-600 hover:text-white transition-all"
-          >
-            <X size={16} strokeWidth={3} />
-          </button>
-        )}
       </div>
 
-      {/* RESULTS LIST: Sharper Corners, Compact, Colors Intact */}
+      {/* 2. THE RESULTS PALETTE */}
       {isOpen && searchTerm.length > 0 && (
-        <div className="absolute z-100 w-full mt-2 
-                        bg-white dark:bg-slate-800 
-                        border-2 border-slate-300 dark:border-slate-700
-                        rounded-lg md:rounded-xl shadow-2xl
-                        overflow-hidden animate-in fade-in zoom-in-98 duration-200">
+        <div className="absolute z-50 w-full mt-1.5 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-md shadow-xl dark:shadow-[0_12px_40px_-15px_rgba(0,0,0,0.5)] overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
           
-          <div className="px-4 py-2.5 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5 flex items-center gap-2">
-            <Zap size={12} className="text-green-500" fill="currentColor" />
-            <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">
-              Intelligence Database Results
-            </p>
+          {/* Header Bar */}
+          <div className="px-3 py-2 bg-slate-50/80 dark:bg-white/2 border-b border-slate-100 dark:border-white/5 flex items-center gap-2">
+            <Activity className="w-3.5 h-3.5 text-emerald-500" strokeWidth={2.5} />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+              Directory Matches
+            </span>
           </div>
           
-          <div className="p-2 md:p-3 max-h-75 overflow-y-auto no-scrollbar space-y-1 md:space-y-2">
+          {/* Scrollable Results */}
+          <div className="max-h-[50vh] overflow-y-auto p-1.5 scroll-smooth">
             {filteredClients.length > 0 ? (
-              filteredClients.map((c) => (
-                <div 
-                  key={c._id} 
-                  onClick={() => handleSelect(c)} 
-                  className="flex items-center justify-between p-3 md:p-4 
-                             bg-white dark:bg-slate-800/40 
-                             border border-transparent
-                             hover:border-green-600 dark:hover:border-green-500 
-                             rounded-lg md:rounded-xl cursor-pointer group transition-all"
-                >
-                  <div className="flex items-center gap-3 md:gap-5">
-                    {/* Compacted mobile icon but original hover/colors intact */}
-                    <div className="w-10 h-10 md:w-14 md:h-14 bg-slate-50 dark:bg-white/5 
-                                    border-2 border-slate-100 dark:border-white/5 
-                                    rounded-lg md:rounded-2xl flex items-center justify-center 
-                                    text-slate-400 dark:text-slate-600
-                                    group-hover:bg-green-600 group-hover:text-white transition-all">
-                      <User size={18} md:size={24} strokeWidth={3} />
-                    </div>
-                    <div>
-                      {/* Compacted text size on mobile but colors intact */}
-                      <p className="text-xs md:text-[16px] font-black text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-green-600 transition-colors">
-                        {c.name}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[9px] md:text-[10px] font-black px-1.5 py-0.5 md:px-2 md:py-0.5 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-500 rounded border border-green-100 dark:border-green-500/20 tracking-widest font-mono">
+              <div className="flex flex-col gap-0.5">
+                {filteredClients.map((c) => (
+                  <button 
+                    key={c._id} 
+                    onClick={() => handleSelect(c)} 
+                    className="group relative flex items-center justify-between w-full p-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-sm cursor-pointer transition-all outline-none focus:bg-slate-50 dark:focus:bg-white/5 text-left border border-transparent hover:border-slate-200 dark:hover:border-white/10"
+                  >
+                    
+                    {/* Left: Info Stack */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      
+                      {/* Avatar Square - Interactive Color Swap */}
+                      <div className="w-8 h-8 rounded-sm bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:bg-emerald-500 group-hover:border-emerald-500 group-hover:text-white transition-all duration-300 shrink-0">
+                        <User className="w-4 h-4" strokeWidth={2.5} />
+                      </div>
+                      
+                      {/* Name & Badge Container */}
+                      <div className="flex flex-col items-start min-w-0">
+                        <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                          {c.name}
+                        </span>
+                        
+                        {/* Sharp Tech Badge for PAN */}
+                        <span className="mt-0.5 inline-flex items-center px-1.5 py-0.5 rounded-[3px] text-[9px] font-mono font-bold bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700/50 tracking-widest">
                           {c.pan}
                         </span>
                       </div>
                     </div>
-                  </div>
-                  {/* Original High-Vis Green hover state restored */}
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-300 dark:text-slate-700 group-hover:bg-green-600 group-hover:text-white transition-all">
-                    <ArrowRight size={18} md:size={20} strokeWidth={3} />
-                  </div>
-                </div>
-              ))
+                    
+                    {/* Right: Slide-in Action Arrow */}
+                    <div className="w-6 h-6 flex items-center justify-center text-slate-300 dark:text-slate-600 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 shrink-0 ml-2 overflow-hidden">
+                      <ArrowRight className="w-4 h-4 -translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 ease-out" strokeWidth={2.5} />
+                    </div>
+                  </button>
+                ))}
+              </div>
             ) : (
-              <div className="p-10 md:p-20 text-center">
-                <p className="text-[10px] md:text-[12px] font-black text-slate-400 dark:text-slate-700 uppercase tracking-[0.3em]">
-                  No Records Found
-                </p>
+              
+              /* Empty State */
+              <div className="px-4 py-8 flex flex-col items-center justify-center text-center">
+                <div className="w-10 h-10 rounded-sm bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center justify-center mb-3">
+                  <Search className="w-4 h-4 text-slate-400" strokeWidth={2} />
+                </div>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-600 dark:text-slate-300">
+                  No records found
+                </span>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 max-w-55">
+                  Adjust your search criteria to find missing clients.
+                </span>
               </div>
             )}
           </div>
+
         </div>
       )}
     </div>

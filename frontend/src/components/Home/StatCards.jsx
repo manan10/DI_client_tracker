@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Clock, ShieldCheck, TrendingUp, Users, Home as HomeIcon } from "lucide-react";
+import { Clock, TrendingUp, Users, Home as HomeIcon } from "lucide-react";
 import StatCard from "./StatCard";
 import { useApi } from "../../hooks/useApi";
 
@@ -25,10 +25,16 @@ const StatCards = () => {
             totalInteractions: data.totalInteractions || 0
           });
         }
-      } catch (err) { console.error("Stats fetch failed", err); }
+      } catch (err) { 
+        console.error("Stats fetch failed", err); 
+      }
     };
+    
     fetchStats();
-    return () => { isMounted = false; };
+    
+    return () => { 
+      isMounted = false; 
+    };
   }, [request]);
 
   const formatAUM = (value) => {
@@ -37,39 +43,62 @@ const StatCards = () => {
     return `₹${value.toLocaleString('en-IN')}`;
   };
 
+  // Structured Themes for the Ambient Glows and Icons
+  const themes = {
+    families: {
+      bg: "bg-slate-50 dark:bg-slate-500/10",
+      border: "border-slate-200 dark:border-slate-500/20",
+      text: "text-slate-600 dark:text-slate-400",
+      glow: "bg-slate-400/20 dark:bg-slate-500/20"
+    },
+    clients: {
+      bg: "bg-orange-50 dark:bg-orange-500/10",
+      border: "border-orange-200 dark:border-orange-500/20",
+      text: "text-orange-600 dark:text-orange-400",
+      glow: "bg-orange-400/20 dark:bg-orange-500/20"
+    },
+    logs: {
+      bg: "bg-amber-50 dark:bg-amber-500/10",
+      border: "border-amber-200 dark:border-amber-500/20",
+      text: "text-amber-600 dark:text-amber-400",
+      glow: "bg-amber-400/20 dark:bg-amber-500/20"
+    },
+    aum: {
+      bg: "bg-emerald-50 dark:bg-emerald-500/10",
+      border: "border-emerald-200 dark:border-emerald-500/20",
+      text: "text-emerald-600 dark:text-emerald-400",
+      glow: "bg-emerald-400/20 dark:bg-emerald-500/20"
+    }
+  };
+
   return (
-    /* GRID STRATEGY:
-       - grid-cols-2: 2 cards per row on mobile for high density/no scroll.
-       - gap-2: Compact mobile spacing.
-       - md:flex: Reverts to desktop row layout.
-    */
-    <div className="grid grid-cols-2 md:flex md:flex-row md:items-center gap-2 md:gap-4 md:justify-center w-full">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 w-full min-w-0">
       <StatCard 
-        title="Families" 
+        title="Total Families" 
         value={stats.totalFamilies} 
         icon={<HomeIcon />} 
-        colorClass="text-slate-600 dark:text-slate-400" 
+        theme={themes.families}
       />
       
       <StatCard 
-        title="Clients" 
+        title="Total Clients" 
         value={stats.totalClients} 
         icon={<Users />} 
-        colorClass="text-orange-600 dark:text-orange-500" 
+        theme={themes.clients}
       />
       
       <StatCard 
-        title="Logs" 
+        title="Interaction Logs" 
         value={stats.totalInteractions} 
         icon={<Clock />} 
-        colorClass="text-amber-600 dark:text-amber-500" 
+        theme={themes.logs}
       />
       
       <StatCard 
-        title="AUM" 
+        title="Managed AUM" 
         value={formatAUM(stats.totalAUM)} 
         icon={<TrendingUp />} 
-        colorClass="text-emerald-700 dark:text-emerald-500" 
+        theme={themes.aum}
       />
     </div>
   );

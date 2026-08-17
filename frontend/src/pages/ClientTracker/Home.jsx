@@ -6,15 +6,14 @@ import UniversalSearch from "../../components/Home/UniversalSearch";
 import QuickActionsGrid from "../../components/Home/QuickActionsGrid"; 
 import InteractionTimeline from "../../components/Home/InteractionTimeline";
 import FollowUpWidget from "../../components/Home/FollowupWidget";
-import StuckSubmissionsWidget from "../../components/Home/StuckSubmissionsWidget"; 
 import ActiveTasksWidget from "../../components/Home/ActiveTasksWidget"; 
 import DormancyWidget from "../../components/Home/DormancyWidget";
 import InteractionModal from "../../components/InteractionModal";
 
-import NewSubmission from "../../components/Operations//Submissions/NewSubmission";
+import NewSubmission from "../../components/Operations/Submissions/NewSubmission";
 import NewTicketPanel from "../../components/Operations/TaskBoard/NewTicketPanel";
 
-import { Plus, Activity, Zap, Layers } from "lucide-react";
+import { Plus, Activity, Layers, Compass, Zap } from "lucide-react";
 
 const Home = () => {
   // Drawer States
@@ -24,87 +23,148 @@ const Home = () => {
   const [isTaskOpen, setIsTaskOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 transition-colors duration-300">
-      <Navbar />
-
-      {/* FIXED STATS HEADER */}
-      <div className="top-0 z-40 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-xl border-b-2 border-slate-200 dark:border-white/10 shadow-md">
-        <div className="max-w-450 mx-auto px-4 sm:px-6 py-2 sm:py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <StatCards />
-          <TallyPulse />
-        </div>
+    <div className="relative min-h-screen bg-slate-50 dark:bg-[#0B1120] text-slate-900 dark:text-slate-200 transition-colors duration-300">
+      
+      {/* --- AMBIENT BACKGROUND GLOW --- */}
+      <div className="absolute top-0 left-0 w-full overflow-hidden h-200 pointer-events-none z-0">
+        <div className="absolute -top-50 -left-50 w-200 h-200 bg-emerald-500/10 dark:bg-emerald-500/5 blur-[120px] rounded-full opacity-60" />
       </div>
 
-      <main className="max-w-450 mx-auto flex flex-col xl:flex-row pb-28">
-        
-        {/* LEFT COLUMN: PRIMARY FEED */}
-        <div className="flex-1 px-4 sm:px-6 lg:px-12 pt-8 sm:pt-10 border-r-0 xl:border-r-2 border-slate-100 dark:border-white/5">
+      <div className="relative z-10">
+        <Navbar />
+
+        {/* --- MAIN WORKSPACE CONTAINER --- */}
+        <main className="w-full max-w-384 mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 sm:py-10 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
           
-          <section className="mb-6">
-            <div className="p-1.5 sm:p-2 bg-slate-100 dark:bg-white/5 rounded-2xl sm:rounded-3xl border-2 border-slate-200 dark:border-white/10 shadow-inner">
+          {/* HEADER & SEARCH ROW */}
+          <section className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10 sm:mb-12">
+            <div className="flex flex-col gap-2">
+              <h1 className="text-3xl sm:text-4xl font-[1000] text-slate-900 dark:text-white tracking-tight">
+                Dalal Investment Portal
+              </h1>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-xl">
+                Track investor relationships, monitor portfolio growth, and manage daily business operations from one place.
+              </p>
+            </div>
+            
+            <div className="w-full lg:w-120 xl:w-135 shrink-0">
               <UniversalSearch />
             </div>
           </section>
 
-          {/* QUICK ACTIONS GRID */}
-          <section className="mb-10 sm:mb-16">
-            <QuickActionsGrid 
-               onLogInteraction={() => {
-                 setSelectedClient(null);
-                 setIsInteractionOpen(true);
-               }} 
-               onNewSubmission={() => setIsSubmissionOpen(true)}
-               onNewTask={() => setIsTaskOpen(true)}
-            />
+          {/* KPI METRICS (Full Width) */}
+          <section className="w-full mb-12 sm:mb-16">
+            <StatCards />
           </section>
 
-          <section className="space-y-6 sm:space-y-10">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <Activity size={16} sm:size={18} className="text-blue-600" strokeWidth={3} />
-              <h2 className="text-[10px] sm:text-[12px] font-[1000] uppercase tracking-[0.2em] sm:tracking-[0.4em] text-slate-900 dark:text-slate-400">
-                Activity stream
-              </h2>
-              <div className="flex-1 h-0.5 bg-slate-100 dark:bg-white/5" />
-            </div>
-            <div className="relative">
-              <InteractionTimeline />
-            </div>
-          </section>
-        </div>
-
-        {/* RIGHT COLUMN: ALERTS & NOTIFICATIONS */}
-        <aside className="w-full xl:w-100 bg-slate-50/50 dark:bg-slate-950/50 p-6 sm:p-8 lg:p-10 space-y-8 sm:space-y-12">
-          
-          <div className="space-y-6 sm:space-y-8">
-            <div className="flex items-center gap-3">
-              <Zap size={16} sm:size={18} className="text-amber-500" strokeWidth={3} />
-              <h2 className="text-[10px] sm:text-[12px] font-[1000] uppercase tracking-[0.2em] sm:tracking-[0.4em] text-slate-900 dark:text-slate-400">
-                Priority Alerts
-              </h2>
-            </div>
+          {/* ========================================= */}
+          {/* FLUID TWO-COLUMN LAYOUT                   */}
+          {/* ========================================= */}
+          <div className="flex flex-col xl:flex-row gap-10 xl:gap-16 items-start">
             
-            <div className="space-y-4 sm:space-y-6">
-              <FollowUpWidget />
-              <StuckSubmissionsWidget />
-              <DormancyWidget />
-            </div>
-          </div>
+            {/* ------------------------------------- */}
+            {/* LEFT COLUMN: CORE OPERATIONS (~65%)   */}
+            {/* ------------------------------------- */}
+            <div className="flex-1 w-full min-w-0 flex flex-col gap-12 sm:gap-16">
+              
+              {/* Quick Actions */}
+              <div className="w-full">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-md bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0">
+                    <Zap size={16} strokeWidth={2.5} />
+                  </div>
+                  <div>
+                    <h2 className="text-[13px] font-bold uppercase tracking-widest text-slate-900 dark:text-white leading-none">
+                      Quick Actions
+                    </h2>
+                  </div>
+                </div>
+                <QuickActionsGrid 
+                  onLogInteraction={() => {
+                    setSelectedClient(null);
+                    setIsInteractionOpen(true);
+                  }} 
+                  onNewSubmission={() => setIsSubmissionOpen(true)}
+                  onNewTask={() => setIsTaskOpen(true)}
+                />
+              </div>
 
-          <div className="space-y-6 sm:space-y-8">
-            <div className="flex items-center gap-3">
-              <Layers size={16} sm:size={18} className="text-emerald-500" strokeWidth={3} />
-              <h2 className="text-[10px] sm:text-[12px] font-[1000] uppercase tracking-[0.2em] sm:tracking-[0.4em] text-slate-900 dark:text-slate-400">
-                Ops Taskboard
-              </h2>
-            </div>
-            
-            <div className="space-y-4 sm:space-y-6">
-              <ActiveTasksWidget />
-            </div>
-          </div>
+              {/* Activity Feed */}
+              <div className="w-full flex flex-col">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-md bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                    <Activity size={16} strokeWidth={2.5} />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-[13px] font-bold uppercase tracking-widest text-slate-900 dark:text-white leading-none truncate">
+                      Global Activity Log
+                    </h2>
+                    <p className="text-[11px] font-medium text-slate-500 mt-1.5 truncate">
+                      Real-time chronological feed of all client interactions
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Embedded Feed Container */}
+                <div className="bg-white/60 dark:bg-[#0B1120]/40 border border-slate-200 dark:border-white/5 rounded-2xl p-4 sm:p-6 lg:p-8 min-h-125">
+                  <InteractionTimeline />
+                </div>
+              </div>
 
-        </aside>
-      </main>
+            </div>
+
+            {/* ------------------------------------- */}
+            {/* RIGHT COLUMN: INTELLIGENCE RAIL (~35%)*/}
+            {/* ------------------------------------- */}
+            <aside className="w-full xl:w-105 2xl:w-115 shrink-0 flex flex-col gap-10">
+              
+              {/* Hardware / System Status */}
+              <div className="w-full">
+                <TallyPulse />
+              </div>
+
+              <hr className="border-slate-200 dark:border-white/10" />
+
+              {/* Actionable Intelligence */}
+              <div className="w-full flex flex-col gap-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-md bg-amber-100 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+                    <Compass size={16} strokeWidth={2.5} />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-[13px] font-bold uppercase tracking-widest text-slate-900 dark:text-white leading-none truncate">
+                      Actionable Intelligence
+                    </h2>
+                  </div>
+                </div>
+                
+                <FollowUpWidget />
+                <DormancyWidget />
+              </div>
+
+              <hr className="border-slate-200 dark:border-white/10" />
+
+              {/* Active Operations */}
+              <div className="w-full flex flex-col gap-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-md bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
+                    <Layers size={16} strokeWidth={2.5} />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-[13px] font-bold uppercase tracking-widest text-slate-900 dark:text-white leading-none truncate">
+                      Active Operations
+                    </h2>
+                  </div>
+                </div>
+                
+                <ActiveTasksWidget />
+              </div>
+
+            </aside>
+
+          </div>
+        </main>
+      </div>
 
       {/* MOBILE FAB */}
       <button
@@ -112,9 +172,9 @@ const Home = () => {
           setSelectedClient(null);
           setIsInteractionOpen(true);
         }}
-        className="fixed bottom-24 right-6 sm:bottom-22 sm:right-8 z-50 bg-slate-950 dark:bg-orange-600 text-white p-4 sm:p-5 rounded-2xl shadow-2xl hover:scale-110 active:scale-90 transition-all border-2 border-white/20"
+        className="fixed bottom-8 right-6 z-50 flex items-center justify-center w-14 h-14 bg-emerald-600 text-white rounded-full shadow-[0_8px_30px_rgba(16,185,129,0.4)] hover:bg-emerald-500 hover:-translate-y-1 hover:scale-105 active:scale-95 transition-all xl:hidden border border-emerald-400/50"
       >
-        <Plus size={24} sm:size={28} strokeWidth={4} />
+        <Plus size={26} strokeWidth={2.5} />
       </button>
 
       {/* ======================= */}
@@ -131,16 +191,16 @@ const Home = () => {
       <NewSubmission 
         isOpen={isSubmissionOpen}
         onClose={() => setIsSubmissionOpen(false)}
-        onCreated={(newSub) => {
-          // You could optionally trigger a refresh of your StuckSubmissionsWidget here
+        onCreated={() => {
+          // Trigger a refresh logic if needed
         }}
       />
 
       <NewTicketPanel  
         isOpen={isTaskOpen}
         onClose={() => setIsTaskOpen(false)}
-        onCreated={(newTask) => {
-          // You could optionally trigger a refresh of your ActiveTasksWidget here
+        onCreated={() => {
+          // Trigger a refresh logic if needed
         }}
       />
 

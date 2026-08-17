@@ -2,7 +2,7 @@ import React from 'react'
 
 const StuckSubmissionsWidget = () => {
   return (
-    <div>StuckSubmissionsWidget</div>
+    <div></div>
   )
 }
 

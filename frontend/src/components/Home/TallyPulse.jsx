@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { DatabaseZap, Wifi, WifiOff, Loader2 } from "lucide-react";
+import { DatabaseZap, Loader2, Server, FileText } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 import { tallyTemplates } from "../../utils/tallyTemplates";
 
@@ -60,54 +60,71 @@ const TallyPulse = () => {
   }, [checkConnection, fetchAudits]);
 
   return (
-    <div className="hidden sm:flex items-center gap-3 md:gap-4 bg-white dark:bg-slate-900/80 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm shrink-0">
-      {/* SECTION 1: TALLY CONNECTION STATUS */}
-      <div className="flex items-center gap-2 md:gap-3 pr-3 md:pr-4 border-r border-slate-200 dark:border-slate-700">
-        {isLoading ? (
-          <Loader2 size={16} className="animate-spin text-slate-400" />
-        ) : isTallyOnline ? (
-          <div className="relative flex h-3 w-3 items-center justify-center">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-          </div>
-        ) : (
-          <div className="relative flex h-3 w-3 items-center justify-center">
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
-          </div>
-        )}
+    <div className="space-y-5 w-full">
+      
+      {/* WIDGET HEADER */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center justify-center w-8 h-8 rounded-md bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0">
+          <Server size={16} strokeWidth={2.5} />
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-[13px] font-bold uppercase tracking-widest text-slate-900 dark:text-white leading-none truncate">
+            System Bridge
+          </h2>
+          <p className="text-[11px] font-medium text-slate-500 mt-1 truncate">
+            Local Tally ERP connection & sync queue
+          </p>
+        </div>
+      </div>
+
+      {/* METRIC CARDS GRID */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
         
-        <div className="flex flex-col min-w-[75px]">
-          <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none mb-0.5">
-            Tally Connection
+        {/* Card 1: Connection Status */}
+        <div className="flex flex-col p-3.5 sm:p-4 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
+          <div className="flex items-center justify-between mb-4">
+            <DatabaseZap size={16} className="text-slate-400 dark:text-slate-500" strokeWidth={2.5} />
+            {isLoading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
+            ) : isTallyOnline ? (
+              <div className="relative flex h-2.5 w-2.5 items-center justify-center">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </div>
+            ) : (
+              <div className="relative flex h-2.5 w-2.5 items-center justify-center">
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+              </div>
+            )}
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
+            Local Node
           </span>
-          <span className={`text-[11px] font-bold uppercase tracking-wider leading-none ${
+          <span className={`text-sm sm:text-base font-semibold tracking-tight truncate ${
             isLoading ? "text-slate-400" :
-            isTallyOnline ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+            isTallyOnline ? "text-slate-900 dark:text-white" : "text-rose-600 dark:text-rose-500"
           }`}>
-            {isLoading ? "POLLING..." : isTallyOnline ? "ONLINE" : "OFFLINE"}
+            {isLoading ? "Polling..." : isTallyOnline ? "Connected" : "Offline"}
           </span>
         </div>
-      </div>
 
-      {/* SECTION 2: PENDING AUDIT DOSSIERS */}
-      <div className="flex items-center gap-2 md:gap-3 pl-1">
-        <div className={`p-1.5 rounded-md ${pendingAudits > 0 ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'}`}>
-          <DatabaseZap size={14} strokeWidth={2.5} />
-        </div>
-        
-        <div className="flex flex-col min-w-[90px]">
-          <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none mb-0.5">
-            Pending Audits
+        {/* Card 2: Pending Audits */}
+        <div className="flex flex-col p-3.5 sm:p-4 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
+          <div className="flex items-center justify-between mb-4">
+            <FileText size={16} className={`${pendingAudits > 0 ? 'text-amber-500' : 'text-slate-400 dark:text-slate-500'}`} strokeWidth={2.5} />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
+            Draft Dossiers
           </span>
-          <span className={`text-[11px] font-bold uppercase tracking-wider leading-none ${
+          <span className={`text-sm sm:text-base font-semibold tracking-tight truncate ${
             isLoading ? "text-slate-400" : 
-            pendingAudits > 0 ? "text-amber-600 dark:text-amber-400" : "text-slate-700 dark:text-slate-300"
+            pendingAudits > 0 ? "text-amber-600 dark:text-amber-500" : "text-slate-900 dark:text-white"
           }`}>
-            {isLoading ? "--" : pendingAudits > 0 ? `${pendingAudits} IN DRAFT` : "ALL CLEAR"}
+            {isLoading ? "--" : pendingAudits > 0 ? `${pendingAudits} Pending` : "All Clear"}
           </span>
         </div>
-      </div>
 
+      </div>
     </div>
   );
 };
