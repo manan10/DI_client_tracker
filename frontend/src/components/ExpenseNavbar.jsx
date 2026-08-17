@@ -42,68 +42,147 @@ const ExpenseNavbar = () => {
 
   return (
     <>
-      <nav className="bg-white/80 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 shadow-sm transition-all duration-300">
-        <div className="max-w-[98%] mx-auto px-4 md:px-6 h-20">
-          <div className="flex justify-between items-center h-20">
+      {/* ========================================= */}
+      {/* TOP NAVIGATION BAR (Desktop & Mobile Top)   */}
+      {/* ========================================= */}
+      <nav className="sticky top-0 z-50 bg-white/80 dark:bg-[#0B1120]/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 transition-colors duration-300">
+        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 2xl:px-16">
+          <div className="relative flex justify-between items-center h-18">
             
-            {/* Logo & Branding */}
-            <div className="flex items-center gap-3">
-              <Link to="/expenses" className="flex items-center gap-3 shrink-0 active:scale-95 transition-transform">
-                <img src={Logo} alt="Logo" className="h-9 md:h-11 w-auto" />
-                <div className="flex flex-col text-left">
-                  <span className="block text-sm md:text-base font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Dalal Family</span>
-                  <span className="text-[9px] md:text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-[0.2em] mt-1 italic">Finance Hub</span>
+            {/* --- LEFT: LOGO & BRANDING --- */}
+            <div className="flex items-center shrink-0 min-w-0 z-20">
+              <Link to="/expenses" className="flex items-center gap-3 group outline-none">
+                <img src={Logo} alt="Logo" className="h-8 sm:h-9 w-auto group-hover:scale-105 transition-transform duration-300" />
+                <div className="flex flex-col text-left min-w-0">
+                  <span className="text-[14px] sm:text-[16px] font-[1000] text-slate-900 dark:text-white uppercase tracking-tight leading-none truncate">
+                    Dalal Family
+                  </span>
+                  <div className="flex items-center mt-1">
+                    <span className="px-1.5 py-0.5 rounded-sm text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 uppercase tracking-widest leading-none border border-emerald-100 dark:border-emerald-500/20">
+                      Finance Hub
+                    </span>
+                  </div>
                 </div>
               </Link>
             </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-lg border border-slate-200/50 dark:border-slate-700/50">
+            {/* --- CENTER: ABSOLUTE NAVIGATION (Desktop Only) --- */}
+            <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-1 p-1 bg-slate-50 dark:bg-white/3 border border-slate-200 dark:border-white/5 rounded-lg z-10">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
                 return (
-                  <Link key={item.name} to={item.path} className={`flex items-center gap-2.5 px-5 py-2 rounded-sm text-[11px] font-black uppercase tracking-wider transition-all ${isActive ? 'bg-white dark:bg-slate-700 text-emerald-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-900'}`}>
-                    <Icon size={16} strokeWidth={isActive ? 3 : 2} /> {item.name}
+                  <Link 
+                    key={item.name} 
+                    to={item.path} 
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-semibold transition-all duration-200 outline-none select-none ${
+                      isActive 
+                      ? 'bg-white dark:bg-[#151e2e] text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-slate-200 dark:ring-white/10' 
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/50 dark:hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon size={16} strokeWidth={isActive ? 2.5 : 2} /> 
+                    {item.name}
                   </Link>
                 );
               })}
             </div>
 
-            {/* Actions Section */}
-            <div className="flex items-center gap-2 md:gap-4">
-              <Link to="/app-picker" className="p-2.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
-                <Grid size={20} />
-              </Link>
-              <button onClick={() => setIsDark(!isDark)} className="p-2.5 rounded-md bg-slate-50 dark:bg-slate-800 text-slate-600 border border-slate-200 dark:border-slate-700">
-                {isDark ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
+            {/* --- RIGHT: ACTIONS & USER IDENTITY --- */}
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0 z-20">
               
-              <div className="hidden sm:flex flex-col items-end border-l border-slate-200 dark:border-slate-800 pl-4">
-                <span className="text-[10px] font-black uppercase truncate max-w-20">{user?.name || 'User'}</span>
+              {/* App Picker & Theme Toggle */}
+              <div className="flex items-center gap-1">
+                <Link 
+                  to="/app-picker" 
+                  className="flex items-center justify-center w-9 h-9 rounded-md text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors outline-none"
+                  aria-label="App Picker"
+                >
+                  <Grid size={18} strokeWidth={2.5} />
+                </Link>
+                
+                <button 
+                  onClick={() => setIsDark(!isDark)} 
+                  className="flex items-center justify-center w-9 h-9 rounded-md text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors outline-none"
+                  aria-label="Toggle Theme"
+                >
+                  {isDark ? <Sun size={18} strokeWidth={2.5} /> : <Moon size={18} strokeWidth={2.5} />}
+                </button>
               </div>
-              <button onClick={handleLogout} className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-md text-slate-400 hover:text-red-600 border border-slate-200 dark:border-slate-700">
-                <LogOut size={18} />
+
+              {/* Hardware Divider */}
+              <div className="hidden sm:block w-px h-6 bg-slate-200 dark:bg-white/10 mx-1" />
+
+              {/* User Profile Chip */}
+              <div className="hidden sm:flex items-center gap-3 pl-1 p-1 pr-3 rounded-full hover:bg-slate-50 dark:hover:bg-white/5 border border-transparent hover:border-slate-200 dark:hover:border-white/10 transition-colors cursor-default">
+                
+                {/* Avatar */}
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold text-sm shrink-0 border border-emerald-200 dark:border-emerald-500/30 shadow-sm">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+                
+                {/* Identity */}
+                <div className="flex flex-col text-left min-w-0 pr-2">
+                  <span className="text-[13px] font-bold text-slate-900 dark:text-white leading-none truncate max-w-30">
+                    {user?.name || 'User'}
+                  </span>
+                </div>
+                
+                {/* Logout Button */}
+                <button 
+                  onClick={handleLogout} 
+                  className="flex items-center justify-center w-8 h-8 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors outline-none shrink-0 ml-1"
+                  title="Sign Out"
+                >
+                  <LogOut size={16} strokeWidth={2.5} />
+                </button>
+
+              </div>
+
+              {/* Mobile Logout Quick Icon */}
+              <button 
+                onClick={handleLogout} 
+                className="sm:hidden flex items-center justify-center w-9 h-9 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors outline-none"
+                aria-label="Sign Out"
+              >
+                <LogOut size={18} strokeWidth={2.5} />
               </button>
+
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 w-full h-18 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/80 z-40 flex items-center justify-around px-2 pb-2 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname === item.path;
-          return (
-            <Link key={item.name} to={item.path} className="flex flex-col items-center justify-center w-full h-full gap-1">
-              <div className={`p-1.5 rounded-xl ${isActive ? 'text-emerald-600' : 'text-slate-500'}`}>
-                <Icon size={20} />
-              </div>
-              <span className={`text-[9px] font-black uppercase ${isActive ? 'text-emerald-700' : 'text-slate-500'}`}>{item.name}</span>
-            </Link>
-          );
-        })}
+      {/* ========================================= */}
+      {/* MOBILE BOTTOM NAVIGATION BAR                */}
+      {/* ========================================= */}
+      <div className="md:hidden fixed bottom-0 left-0 w-full bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+        <div className="flex items-center justify-around h-17 px-2 max-w-md mx-auto">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+            
+            return (
+              <Link 
+                key={item.name} 
+                to={item.path} 
+                className="relative flex flex-col items-center justify-center w-full h-full gap-1.5 outline-none group"
+              >
+                {/* Active Indicator Top Bar */}
+                {isActive && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-0.75 bg-emerald-500 rounded-b-full shadow-[0_2px_8px_rgba(16,185,129,0.5)]" />
+                )}
+                
+                <div className={`mt-1 transition-colors duration-200 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`}>
+                  <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                </div>
+                <span className={`text-[10px] font-semibold tracking-wide ${isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`}>
+                  {item.name}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </>
   );

@@ -38,12 +38,23 @@ const Home = () => {
           
           {/* HEADER & SEARCH ROW */}
           <section className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10 sm:mb-12">
-            <div className="flex flex-col gap-2">
-              <h1 className="text-3xl sm:text-4xl font-[1000] text-slate-900 dark:text-white tracking-tight">
+            <div className="flex flex-col gap-2.5">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-md border border-emerald-200/60 dark:border-emerald-500/20">
+                  Executive Workspace
+                </span>
+                <span className="text-slate-300 dark:text-slate-700">•</span>
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 tracking-wider">
+                  Live System Overview
+                </span>
+              </div>
+              
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-[1000] uppercase tracking-tight bg-linear-to-r from-slate-900 via-slate-800 to-emerald-700 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent">
                 Dalal Investment Portal
               </h1>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-xl">
-                Track investor relationships, monitor portfolio growth, and manage daily business operations from one place.
+              
+              <p className="text-sm sm:text-base font-medium text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
+                Track investor relationships, monitor portfolio growth, and manage daily business operations from one centralized command hub.
               </p>
             </div>
             
