@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2, Users, Search, Sparkles } from "lucide-react";
 
 // Components
 import Navbar from "../../components/Navbar";
 import DirectoryFilters from "../../components/Directory/DirectoryFilters";
-import ClientTableRow from "../../components/Directory/ClientTableRow";
 import TierSummary from "../../components/Directory/TierSummary";
-import SortableHeader from "../../components/Directory/SortableHeader";
+import ClientTableContainer from "../../components/Directory/ClientTableContainer";
 
 // Hooks
 import { useApi } from "../../hooks/useApi";
@@ -82,128 +81,77 @@ const ClientDirectory = () => {
   const totalRecords = filteredFamilies.length;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-[#0B1120] text-slate-900 dark:text-slate-200 transition-colors duration-300">
       <Navbar />
-      <main className="w-full max-w-[98%] mx-auto px-4 sm:px-6 py-12 md:pb-12 pb-32">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div>
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="flex items-center text-emerald-600 text-[10px] font-black uppercase tracking-[0.2em] mb-3 hover:text-emerald-700 transition-colors"
-            >
-              <ArrowLeft size={14} className="mr-2" /> Back to Dashboard
-            </button>
-            <h1 className="text-3xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight leading-none">
+      
+      {/* EXPANDED FLUID WORKSPACE */}
+      <main className="w-full max-w-384 mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 sm:py-12 pb-32">
+        
+        {/* COMMAND HEADER */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end pb-8 mb-8 border-b border-slate-200 dark:border-white/10 gap-6">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-[1000] uppercase tracking-tight bg-linear-to-r from-slate-900 via-slate-800 to-emerald-700 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent">
               Client Directory
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-[11px] font-bold uppercase tracking-widest mt-2">
-              {loading
-                ? "Refreshing..."
-                : `Managing ${totalRecords} Wealth Portfolios`}
-            </p>
-          </div>
-          <DirectoryFilters
-            onSearchChange={(v) => {
-              setSearchTerm(v);
-              setCurrentPage(1);
-            }}
-            onTierChange={(v) => {
-              setFilterTier(v);
-              setCurrentPage(1);
-            }}
-          />
-        </div>
-
-        {/* Global Business Summary */}
-        {thresholds && allFamilies.length > 0 && (
-          <TierSummary
-            families={allFamilies}
-            activeTier={filterTier}
-            thresholds={thresholds}
-          />
-        )}
-
-        {/* Main Records Table */}
-        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl border-t-4 border-t-emerald-500 border-x border-b border-slate-200 dark:border-slate-800 overflow-hidden transition-colors w-full mt-8">
-          <div className="w-full">
-            <table className="w-full text-left border-collapse block md:table">
-              <thead className="hidden md:table-header-group bg-slate-50/50 dark:bg-slate-900/50 text-[10px] font-black uppercase tracking-[0.15em] border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <SortableHeader
-                    label="Client / Family Name"
-                    sortKey="name"
-                    sortConfig={sortConfig}
-                    requestSort={requestSort}
-                  />
-                  <SortableHeader
-                    label="Total Family AUM"
-                    sortKey="aum"
-                    sortConfig={sortConfig}
-                    requestSort={requestSort}
-                  />
-                  <th className="hidden md:table-cell px-8 py-5 text-slate-400 dark:text-slate-500 font-black">
-                    Relationship Status
-                  </th>
-                  <SortableHeader
-                    label="Last Interaction"
-                    sortKey="updatedAt"
-                    sortConfig={sortConfig}
-                    requestSort={requestSort}
-                    align="right"
-                    className="hidden md:table-cell"
-                  />
-                </tr>
-              </thead>
-              
-              <tbody className="block md:table-row-group">
-                {/* CRITICAL FIX: Passing the index to ClientTableRow so it can calculate even/odd accurately 
-                */}
-                {currentRecords.map((family, index) => (
-                  <ClientTableRow
-                    key={family._id}
-                    client={family}
-                    index={index} 
-                    onClick={handleClientClick}
-                  />
-                ))}
-                {currentRecords.length === 0 && !loading && (
-                  <tr className="block md:table-row">
-                    <td colSpan="4" className="block md:table-cell px-8 py-20 text-center">
-                      <p className="text-slate-400 dark:text-slate-600 font-black uppercase text-[10px] tracking-[0.2em]">
-                        No records found
-                      </p>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination Controls */}
-          <div className="flex justify-between items-center px-6 md:px-10 py-6 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800">
-            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hidden sm:block">
-              Showing {totalRecords > 0 ? indexOfFirstRecord + 1 : 0} to{" "}
-              {Math.min(indexOfLastRecord, totalRecords)} of {totalRecords} Records
-            </p>
-            <div className="flex gap-3 w-full sm:w-auto justify-between sm:justify-start">
-              <button
-                disabled={currentPage === 1 || loading}
-                onClick={() => setCurrentPage((prev) => prev - 1)}
-                className="px-4 py-2 text-[10px] font-black uppercase border rounded-sm border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 transition-all"
-              >
-                Previous
-              </button>
-              <button
-                disabled={indexOfLastRecord >= totalRecords || loading}
-                onClick={() => setCurrentPage((prev) => prev + 1)}
-                className="px-4 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-sm hover:bg-emerald-700 disabled:opacity-30 transition-all shadow-md"
-              >
-                Next
-              </button>
+            
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-md border border-emerald-200/60 dark:border-emerald-500/20">
+                Registry
+              </span>
+              <span className="text-slate-300 dark:text-slate-700">•</span>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                {loading ? "Synchronizing registry..." : `Managing ${totalRecords} active family wealth portfolios`}
+              </p>
             </div>
           </div>
+
+          <div className="w-full lg:w-auto shrink-0">
+            <DirectoryFilters
+              onSearchChange={(v) => {
+                setSearchTerm(v);
+                setCurrentPage(1);
+              }}
+              onTierChange={(v) => {
+                setFilterTier(v);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
         </div>
+
+        {/* HORIZONTAL SPLIT LAYOUT FOR DESKTOP (Natural Document Flow - No Sticky Scroll Traps) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* LEFT SIDEBAR: Tier Summary Rail */}
+          {thresholds && allFamilies.length > 0 && (
+            <div className="lg:col-span-4 xl:col-span-3">
+              <TierSummary
+                families={allFamilies}
+                activeTier={filterTier}
+                thresholds={thresholds}
+              />
+            </div>
+          )}
+
+          {/* RIGHT MAIN AREA: Client Records Table Container */}
+          <div className={`${thresholds && allFamilies.length > 0 ? 'lg:col-span-8 xl:col-span-9' : 'lg:col-span-12'} min-w-0`}>
+            <ClientTableContainer
+              currentRecords={currentRecords}
+              totalRecords={totalRecords}
+              sortConfig={sortConfig}
+              requestSort={requestSort}
+              handleClientClick={handleClientClick}
+              loading={loading}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              recordsPerPage={recordsPerPage}
+              indexOfFirstRecord={indexOfFirstRecord}
+              indexOfLastRecord={indexOfLastRecord}
+            />
+          </div>
+
+        </div>
+
       </main>
     </div>
   );
