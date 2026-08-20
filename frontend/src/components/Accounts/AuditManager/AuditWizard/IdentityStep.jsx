@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Building2, ChevronLeft, ChevronRight, Check, 
-  Loader2, WifiOff, Calendar, Sparkles 
+  Loader2, WifiOff, Calendar, Sparkles, ShieldCheck,
+  Hash, Layers
 } from 'lucide-react';
 import { tallyTemplates } from '../../../../utils/tallyTemplates';
 import { useApi } from '../../../../hooks/useApi';
@@ -42,6 +43,8 @@ const IdentityStep = ({ selection, setSelection, arns }) => {
     });
   };
 
+  const matchedArnObject = arns?.find(a => a._id === selection.arnId || a.linkedTallyFirms?.includes(selection.tallyCompany));
+
   return (
     <>
       <style dangerouslySetInnerHTML={{__html: `
@@ -49,134 +52,188 @@ const IdentityStep = ({ selection, setSelection, arns }) => {
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}} />
       
-      <div className="flex flex-col lg:flex-row h-full w-full bg-[#FBFBFC] dark:bg-[#050607] overflow-hidden relative">
+      <div className="flex flex-col lg:flex-row h-full w-full overflow-hidden relative min-w-0">
         
-        {/* LEFT COLUMN: ACTIVE COMPANY SELECTION */}
-        <section className="flex flex-col flex-1 lg:border-r border-slate-200 dark:border-white/5 bg-white dark:bg-transparent overflow-hidden">
+        {/* ========================================================================= */}
+        {/* LEFT COLUMN: ACTIVE COMPANY REGISTRY SELECTION                            */}
+        {/* ========================================================================= */}
+        <section className="flex flex-col flex-1 lg:border-r border-slate-200/80 dark:border-white/10 overflow-hidden min-w-0">
           
-          <div className="px-5 lg:px-10 py-5 lg:py-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-black/20">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-emerald-500 mb-2">
-                  <Sparkles size={14} className="lg:w-4 lg:h-4" />
-                  <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-[0.3em]">Step 1</span>
+          {/* Header Strip */}
+          <div className="px-5 lg:px-8 py-4 border-b border-slate-200/80 dark:border-white/10 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-800/20">
+            <div className="space-y-0.5 min-w-0">
+              <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                <Sparkles size={13} />
+                <span className="text-[10px] font-black uppercase tracking-widest">Stage 1 • Scope Definition</span>
               </div>
-              <h3 className="text-xl lg:text-3xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic leading-none">
-                Company <span className="text-emerald-500">Registry</span>
+              <h3 className="text-base lg:text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">
+                Select Active Tally Company
               </h3>
             </div>
             
-            {isLoading && <Loader2 size={18} className="animate-spin text-emerald-500" />}
+            {isLoading && (
+              <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold shrink-0">
+                <Loader2 size={13} className="animate-spin" />
+                <span className="text-[10px] uppercase tracking-wider hidden sm:inline">Scanning Bridge</span>
+              </div>
+            )}
           </div>
           
-          <div className="flex-1 overflow-y-auto no-scrollbar p-4 lg:p-8 space-y-3 min-h-62.5 lg:min-h-0">
+          {/* Company Cards List */}
+          <div className="flex-1 overflow-y-auto no-scrollbar p-4 lg:p-6 space-y-2.5 min-w-0">
             {tallyFirms.map((firm) => {
               const isSelected = selection.tallyCompany === firm;
+              const firmArn = arns?.find(a => a.linkedTallyFirms?.includes(firm));
+
               return (
                 <button
                   key={firm}
                   onClick={() => handleFirmSelect(firm)} 
-                  className={`w-full p-4 lg:p-6 text-left border lg:border-2 transition-all duration-300 flex items-center justify-between rounded-xl lg:rounded-2xl group shrink-0 ${
+                  className={`w-full p-4 text-left border rounded-xl transition-all duration-200 flex items-center justify-between gap-3 group shrink-0 cursor-pointer ${
                     isSelected 
-                      ? 'border-emerald-500 bg-emerald-500/5 shadow-[0_8px_20px_-6px_rgba(16,185,129,0.25)] ring-1 ring-emerald-500/50' 
-                      : 'bg-white dark:bg-white/5 border-slate-100 dark:border-white/5 hover:border-slate-300 lg:hover:shadow-md'
+                      ? 'border-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/15 shadow-sm ring-1 ring-emerald-500/40' 
+                      : 'bg-white dark:bg-slate-900/60 border-slate-200/80 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-50/50 dark:hover:bg-slate-800/40'
                   }`}
                 >
-                  <div className="flex items-center gap-3 lg:gap-4 overflow-hidden pr-4">
-                    <div className={`w-8 h-8 lg:w-10 lg:h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white'}`}>
-                      <Building2 size={16} className="lg:w-5 lg:h-5" />
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                      isSelected 
+                        ? 'bg-emerald-600 text-white shadow-xs' 
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-white'
+                    }`}>
+                      <Building2 size={17} />
                     </div>
-                    <span className={`text-sm lg:text-base font-[1000] uppercase italic tracking-tight transition-colors truncate ${isSelected ? 'text-emerald-600' : 'text-slate-700 dark:text-slate-200'}`}>
-                      {firm}
-                    </span>
+                    
+                    <div className="min-w-0 space-y-0.5">
+                      <p className={`text-xs lg:text-sm font-black uppercase tracking-tight truncate ${
+                        isSelected ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-800 dark:text-slate-100'
+                      }`}>
+                        {firm}
+                      </p>
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
+                        <span>Tally ERP Connection</span>
+                        {firmArn && (
+                          <>
+                            <span>•</span>
+                            <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
+                              ARN: {firmArn.arnCode || firmArn.nickname}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   
-                  <div className={`w-6 h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center transition-all shrink-0 border-2 ${isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200 dark:border-white/20 text-transparent'}`}>
-                    <Check size={14} strokeWidth={4} />
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all shrink-0 border ${
+                    isSelected 
+                      ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs' 
+                      : 'border-slate-300 dark:border-white/20 text-transparent'
+                  }`}>
+                    <Check size={11} strokeWidth={3.5} />
                   </div>
                 </button>
               );
             })}
 
             {tallyFirms.length === 0 && !isLoading && (
-              <div className="h-full min-h-50 flex flex-col items-center justify-center opacity-30 gap-4">
-                <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center">
-                  <WifiOff size={28} className="text-slate-500" strokeWidth={2} />
+              <div className="h-56 flex flex-col items-center justify-center border-2 border-dashed border-slate-200/80 dark:border-white/10 rounded-xl p-6 text-center space-y-2 bg-slate-50/40 dark:bg-slate-900/20">
+                <div className="w-11 h-11 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400">
+                  <WifiOff size={20} strokeWidth={2} />
                 </div>
-                <p className="text-[10px] lg:text-xs font-black uppercase tracking-widest text-center leading-relaxed">
-                  Bridge not found.<br/>Open a company in Tally.
-                </p>
+                <div className="space-y-0.5">
+                  <p className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    No Open Companies Found
+                  </p>
+                  <p className="text-[11px] font-medium text-slate-400 leading-relaxed max-w-xs">
+                    Ensure Tally ERP is open with an active company loaded and ODBC/XML bridge enabled on port 9000.
+                  </p>
+                </div>
               </div>
             )}
           </div>
         </section>
 
-        {/* RIGHT COLUMN: PERIOD SELECTION & CONTEXT SUMMARY */}
-        {/* FIX: min-h-0 and flex-1 allows dynamic scroll handling on mobile without overriding the parent height */}
-        <section className="w-full lg:w-105 flex flex-col flex-1 lg:flex-none bg-slate-50 dark:bg-black/20 border-t lg:border-t-0 border-slate-200 dark:border-white/5 overflow-y-auto no-scrollbar min-h-0 pb-8 lg:pb-0">
+        {/* ========================================================================= */}
+        {/* RIGHT COLUMN: TARGET PERIOD SELECTION & CONTEXT HUD                       */}
+        {/* ========================================================================= */}
+        <section className="w-full lg:w-96 flex flex-col shrink-0 bg-slate-50/60 dark:bg-slate-900/30 overflow-y-auto no-scrollbar min-w-0 p-4 lg:p-6 space-y-5">
           
-          <div className="p-4 lg:p-8 shrink-0">
-            <div className="relative overflow-hidden bg-slate-900 dark:bg-[#0D0E12] rounded-2xl lg:rounded-3xl p-6 lg:p-8 shadow-2xl border border-slate-800 dark:border-white/10">
-              <div className="absolute -top-6 -right-6 opacity-10 text-emerald-500 mix-blend-overlay">
-                <Building2 size={140} strokeWidth={1} />
-              </div>
-              
-              <div className="relative z-10 flex flex-col h-full">
-                <span className="text-[9px] lg:text-[10px] text-emerald-400 font-black uppercase tracking-[0.3em] mb-2">
-                  Dossier Target
+          {/* Target HUD Card */}
+          <div className="relative overflow-hidden bg-slate-900 dark:bg-slate-950 rounded-xl p-5 shadow-lg border border-slate-800 dark:border-white/10 text-white space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest flex items-center gap-1.5">
+                <ShieldCheck size={13} /> Batch Scope Context
+              </span>
+              {matchedArnObject && (
+                <span className="px-2 py-0.5 rounded bg-white/10 text-[9px] font-mono font-bold uppercase tracking-wider text-slate-300">
+                  {matchedArnObject.arnCode}
                 </span>
-                
-                <h4 className="text-white text-lg lg:text-2xl font-[1000] italic leading-tight mb-6 wrap-break-word">
-                  {selection.tallyCompany || 'Select a Company'}
-                </h4>
-                
-                <div className="flex items-center gap-6 mt-auto pt-4 border-t border-white/10">
-                  <div>
-                    <p className="text-[8px] lg:text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1">Audit Month</p>
-                    <p className="text-sm lg:text-base text-white font-black">{currentMonthName}</p>
-                  </div>
-                  <div className="w-px h-8 bg-white/10" />
-                  <div>
-                    <p className="text-[8px] lg:text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1">Fiscal Year</p>
-                    <p className="text-sm lg:text-base text-white font-black">{selection.year}</p>
-                  </div>
-                </div>
+              )}
+            </div>
+            
+            <div className="space-y-1 min-w-0">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Target Entity</p>
+              <h4 className="text-sm font-black uppercase tracking-tight text-white truncate">
+                {selection.tallyCompany || 'Awaiting Company Selection'}
+              </h4>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/10">
+              <div className="space-y-0.5">
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Batch Period</p>
+                <p className="text-xs font-black uppercase text-emerald-400">{currentMonthName}</p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Fiscal Year</p>
+                <p className="text-xs font-black uppercase text-white font-mono">{selection.year}</p>
               </div>
             </div>
           </div>
 
-          <div className="p-4 lg:p-8 pt-0 lg:pt-0 flex flex-col shrink-0">
-            <div className="flex items-center justify-between mb-4 lg:mb-6">
-              <div className="flex items-center gap-2">
-                <Calendar size={16} className="text-slate-400" />
-                <span className="text-[10px] lg:text-xs font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white">
-                  Select Month
+          {/* Month & Year Selection Grid */}
+          <div className="bg-white dark:bg-slate-900/70 border border-slate-200/80 dark:border-white/10 rounded-xl p-4 shadow-xs space-y-3.5">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-white/5">
+              <div className="flex items-center gap-1.5">
+                <Calendar size={14} className="text-emerald-600 dark:text-emerald-400" />
+                <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  Accounting Cycle
                 </span>
               </div>
               
-              <div className="flex items-center bg-white dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm p-1">
-                <button onClick={() => setSelection(prev => ({...prev, year: prev.year - 1}))} className="p-2 text-slate-400 hover:text-emerald-500 transition-colors active:scale-90">
-                  <ChevronLeft size={16} />
+              {/* Year Selector Control */}
+              <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200/60 dark:border-white/5">
+                <button 
+                  onClick={() => setSelection(prev => ({...prev, year: prev.year - 1}))} 
+                  className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors active:scale-90 cursor-pointer"
+                  title="Previous Year"
+                >
+                  <ChevronLeft size={14} />
                 </button>
-                <span className="px-4 text-[11px] lg:text-xs font-[1000] text-slate-900 dark:text-white min-w-16 text-center select-none">
+                <span className="px-2 text-xs font-mono font-black text-slate-900 dark:text-white select-none">
                   {selection.year}
                 </span>
-                <button onClick={() => setSelection(prev => ({...prev, year: prev.year + 1}))} className="p-2 text-slate-400 hover:text-emerald-500 transition-colors active:scale-90">
-                  <ChevronRight size={16} />
+                <button 
+                  onClick={() => setSelection(prev => ({...prev, year: prev.year + 1}))} 
+                  className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors active:scale-90 cursor-pointer"
+                  title="Next Year"
+                >
+                  <ChevronRight size={14} />
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 lg:gap-3">
+            {/* 12-Month Matrix */}
+            <div className="grid grid-cols-3 gap-1.5">
               {months.map((m, i) => {
                 const isSelected = selection.month === i + 1;
                 return (
                   <button 
                     key={m} 
                     onClick={() => setSelection({ ...selection, month: i + 1 })}
-                    className={`py-3 lg:py-4 rounded-xl text-[10px] lg:text-[11px] font-black uppercase tracking-widest transition-all border-2 ${
+                    className={`py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all border cursor-pointer ${
                       isSelected 
-                        ? 'bg-slate-900 dark:bg-white border-slate-900 dark:border-white text-white dark:text-black shadow-lg scale-[1.02]' 
-                        : 'bg-white dark:bg-white/2 text-slate-400 border-slate-100 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20'
+                        ? 'bg-slate-900 dark:bg-white border-slate-900 dark:border-white text-white dark:text-slate-900 shadow-xs' 
+                        : 'bg-slate-50/50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
                     {m}

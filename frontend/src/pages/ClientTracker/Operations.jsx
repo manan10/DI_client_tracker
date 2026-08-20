@@ -5,9 +5,9 @@ import { toast } from "sonner";
 import Navbar from "../../components/Navbar";
 import OperationsDashboard from "../../components/Operations/TaskBoard";
 import Submissions from "../../components/Operations/Submissions";
-import FolioReconciler from "../../components/Operations/FolioReconciler";
-import ArnTransferReconciler from "../../components/Operations/ArnTransferReconciler";
-import BrokerageAuditor from "../../components/Operations/BrokerageAuditor";
+// import FolioReconciler from "../../components/Operations/FolioReconciler";
+// import ArnTransferReconciler from "../../components/Operations/ArnTransferReconciler";
+// import BrokerageAuditor from "../../components/Operations/BrokerageAuditor";
 
 const Operations = () => {
   const [activeTab, setActiveTab] = useState("submissions");
@@ -17,7 +17,7 @@ const Operations = () => {
     { id: "dashboard", name: "Task Board", icon: Kanban, isLocked: false },
     // { id: "folio", name: "Folio Reconciler", icon: Send, isLocked: false },
     // { id: "arn", name: "ARN Reconciler", icon: Mail, isLocked: false },
-    { id: "brokerage", name: "Brokerage Auditor", icon: Mail, isLocked: false },
+    // { id: "brokerage", name: "Brokerage Auditor", icon: Mail, isLocked: false },
   ];
 
   const handleTabClick = (tab) => {
@@ -31,83 +31,112 @@ const Operations = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] dark:bg-slate-950 transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-[#0B1120] text-slate-900 dark:text-slate-200 transition-colors duration-300 relative">
       <Navbar />
 
-      <main className="max-w-400 mx-auto px-5 md:px-12 lg:px-20 pt-8 md:pt-16 pb-32 md:pb-20 w-full">
-        {/* Header Section */}
-        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-10 md:mb-16 gap-6 md:gap-8 w-full">
-          <div className="space-y-1.5 md:space-y-2 w-full xl:w-auto">
-            <h1 className="text-3xl md:text-5xl font-[1000] text-slate-950 dark:text-white uppercase tracking-tighter">
-              Operations <span className="text-emerald-500 italic">Center</span>
+      {/* CONTINUOUS FLUID DOCUMENT WORKSPACE */}
+      <main className="w-full max-w-384 mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 sm:py-12 pb-32">
+        
+        {/* BORDERLESS COMMAND HEADER */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end pb-8 mb-8 border-b border-slate-200 dark:border-white/10 gap-6">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-[1000] uppercase tracking-tight bg-linear-to-r from-slate-900 via-slate-800 to-emerald-700 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent">
+              Operations Center
             </h1>
-            <p className="text-[10px] md:text-[12px] font-black text-slate-400 uppercase tracking-[0.3em]">
-              Submission Fulfillment & Task Registry
-            </p>
+            
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-md border border-emerald-200/60 dark:border-emerald-500/20">
+                Fulfillment Suite
+              </span>
+              <span className="text-slate-300 dark:text-slate-700">•</span>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Submission Fulfillment & Task Registry
+              </p>
+            </div>
           </div>
 
-          {/* DESKTOP VIEW: Horizontal Pill */}
-          <div className="hidden md:flex flex-row w-auto bg-slate-100 dark:bg-slate-900/50 p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 backdrop-blur-sm gap-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => handleTabClick(tab)}
-                className={`flex items-center justify-center gap-3 px-10 py-4 rounded-md text-[12px] font-black uppercase tracking-widest transition-all duration-300 relative outline-none
-                  ${
-                    activeTab === tab.id
-                      ? "bg-white dark:bg-slate-800 text-emerald-600 shadow-lg scale-[1.02]"
-                      : tab.isLocked
-                        ? "text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-60"
-                        : "text-slate-400 hover:bg-transparent hover:text-slate-600 dark:hover:text-slate-200"
-                  }`}
-              >
-                {tab.isLocked ? (
-                  <Lock size={14} />
-                ) : (
-                  <tab.icon size={16} strokeWidth={2.5} />
-                )}
-                {tab.name}
-              </button>
-            ))}
-          </div>
-
-          {/* MOBILE VIEW: iOS Stack */}
-          <div className="md:hidden w-full">
-            <div className="flex justify-between w-full bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 gap-1">
+          {/* ========================================== */}
+          {/* CONTINUOUS ENTERPRISE NAVIGATION          */}
+          {/* ========================================== */}
+          <div className="w-full lg:w-auto">
+            
+            {/* Desktop & Tablet: Clean Underline-Border Tabs (Zero Widget Box) */}
+            <nav className="hidden sm:flex items-center gap-8">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => handleTabClick(tab)}
-                    className={`flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl transition-all outline-none
-                      ${isActive ? "bg-white dark:bg-slate-800 text-emerald-600 shadow-sm" : "text-slate-400"}
-                      ${tab.isLocked ? "opacity-50 cursor-not-allowed" : "hover:bg-slate-200/50 dark:hover:bg-slate-800/50"}
+                    className={`
+                      flex items-center gap-2 pb-2 text-xs font-bold uppercase tracking-wider transition-all relative outline-none cursor-pointer
+                      ${
+                        isActive
+                          ? "text-slate-900 dark:text-white font-black"
+                          : tab.isLocked
+                            ? "text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-50"
+                            : "text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                      }
                     `}
                   >
                     {tab.isLocked ? (
-                      <Lock size={18} />
+                      <Lock size={14} strokeWidth={2.5} />
                     ) : (
-                      <tab.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                      <tab.icon size={15} strokeWidth={isActive ? 2.5 : 2} className={isActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"} />
                     )}
-                    <span className="text-[8px] font-black uppercase tracking-widest text-center px-1 leading-tight">
+                    <span>{tab.name}</span>
+
+                    {/* Active Bottom Indicator Line */}
+                    {isActive && (
+                      <span className="absolute -bottom-8 left-0 right-0 h-0.5 bg-emerald-600 dark:bg-emerald-400 animate-in fade-in duration-200" />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* Mobile View: High-Visibility Equal-Width Grid (Zero Hidden Tabs, Zero Dropdowns) */}
+            <div className="sm:hidden grid grid-cols-3 gap-1 bg-slate-100 dark:bg-white/3 p-1 rounded-xl border border-slate-200 dark:border-white/10 w-full">
+              {tabs.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleTabClick(tab)}
+                    className={`
+                      flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all outline-none cursor-pointer
+                      ${
+                        isActive
+                          ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs font-black"
+                          : tab.isLocked
+                            ? "text-slate-400 dark:text-slate-600 cursor-not-allowed opacity-50"
+                            : "text-slate-600 dark:text-slate-400 font-bold"
+                      }
+                    `}
+                  >
+                    {tab.isLocked ? (
+                      <Lock size={14} strokeWidth={2.5} />
+                    ) : (
+                      <tab.icon size={15} strokeWidth={isActive ? 2.5 : 2} className={isActive ? "text-emerald-400 dark:text-emerald-600" : "text-slate-400"} />
+                    )}
+                    <span className="text-[9px] uppercase tracking-wider text-center leading-tight truncate w-full">
                       {tab.name}
                     </span>
                   </button>
                 );
               })}
             </div>
+
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
+        {/* CONTENT AREA (Continuous Document Flow) */}
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out w-full min-w-0">
           {activeTab === "submissions" && <Submissions />}
           {activeTab === "dashboard" && <OperationsDashboard />}
-          {/* {activeTab === "folio" && <FolioReconciler />}
-          {activeTab === "arn" && <ArnTransferReconciler />} */}
           {activeTab === "brokerage" && <BrokerageAuditor />}
         </div>
+
       </main>
     </div>
   );

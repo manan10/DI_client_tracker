@@ -3,7 +3,8 @@ import {
   Plus, ArrowRight, CheckCircle2, Inbox, 
   RefreshCw, WifiOff, Loader2, Check, 
   Building2, Activity, Trash2, AlertTriangle, 
-  CloudSync, LayoutList, ChevronDown, ChevronRight
+  CloudSync, LayoutList, ChevronDown, ChevronRight,
+  Landmark, ArrowUpRight, ArrowDownLeft, ShieldCheck
 } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
 import { tallyTemplates } from '../../utils/tallyTemplates'; 
@@ -168,7 +169,7 @@ const AuditManager = () => {
 
         await request("/ledgers/bulk-sync", "POST", { 
             ledgers: mapped, 
-            company: firm,
+            company: firm, 
             arnId: matchedArn._id 
         });
 
@@ -202,152 +203,201 @@ const AuditManager = () => {
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}} />
 
-      <div className="min-h-screen w-full bg-[#FBFBFC] dark:bg-[#050607] flex flex-col font-sans text-left overflow-x-hidden">
+      <div className="w-full flex flex-col font-sans text-left min-w-0">
         
-        <header className="w-full px-4 md:px-12 pt-6 md:pt-14 pb-4 md:pb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-6 bg-white dark:bg-black/20 border-b border-slate-100 dark:border-white/5 shrink-0">
-          <div className="space-y-4 md:space-y-6 w-full md:w-auto">
-            <div className="flex flex-wrap items-center gap-3 md:gap-6">
-              <div className={`px-3 md:px-5 py-1.5 md:py-2 rounded-xl md:rounded-2xl flex items-center gap-2 border md:border-2 transition-all shadow-sm ${isTallyOnline ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-600' : 'bg-rose-500/5 border-rose-500/20 text-rose-400'}`}>
-                <div className={`w-1.5 h-1.5 md:w-2.5 md:h-2.5 rounded-full ${isTallyOnline ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-                <span className="text-[9px] md:text-xs font-black uppercase tracking-widest">{isTallyOnline ? 'Tally Active' : 'Offline'}</span>
+        {/* TOP COMMAND STRIP & WORKSPACE HEADER */}
+        <header className="w-full pb-6 pt-2 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0 border-b border-slate-200/80 dark:border-white/10">
+          <div className="space-y-2 min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Connection Pill */}
+              <div className={`px-3 py-1 rounded-md flex items-center gap-2 border text-xs font-bold transition-all shadow-sm ${
+                isTallyOnline 
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400' 
+                  : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400'
+              }`}>
+                <span className="relative flex h-2 w-2">
+                  {isTallyOnline && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
+                  <span className={`relative inline-flex rounded-full h-2 w-2 ${isTallyOnline ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-wider">
+                  {isTallyOnline ? 'Tally Bridge Online' : 'Bridge Offline'}
+                </span>
               </div>
               
               <button 
                 onClick={refreshData}
                 disabled={syncState.isSyncing}
-                className="group flex items-center gap-1.5 md:gap-2.5 text-[9px] md:text-xs font-black uppercase tracking-widest text-slate-400 hover:text-emerald-500 transition-all disabled:opacity-30"
+                className="group flex items-center gap-1.5 px-3 py-1 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-800/40 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500/30 transition-all disabled:opacity-40"
               >
-                <RefreshCw size={14} className={`md:w-4 md:h-4 ${syncState.isSyncing ? 'animate-spin' : 'group-active:rotate-180 transition-transform duration-500'}`} /> 
+                <RefreshCw size={12} className={`${syncState.isSyncing ? 'animate-spin' : 'group-active:rotate-180 transition-transform duration-500'}`} /> 
                 Refresh
               </button>
             </div>
-            <h1 className="text-4xl md:text-7xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic leading-none wrap-break-word">
-              Tally <span className="text-emerald-500">DataSync</span>
-            </h1>
+            
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-xl md:text-3xl uppercase font-1000 tracking-tight bg-linear-to-r from-slate-900 via-slate-800 to-emerald-500 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent">
+                Tally Automation Zone
+              </h1>
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 hidden sm:inline">
+                • Tally Batch Processing and Reconciliation Engine
+              </span>
+            </div>
           </div>
 
           <button 
             onClick={() => { setSelection({ ...selection, isFreshStart: true, tallyCompanyName: null, audit: null }); setIsWizardOpen(true); }} 
-            className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white px-5 md:px-12 py-3 md:py-6 rounded-xl md:rounded-4xl font-black uppercase text-[10px] md:text-xs tracking-[0.2em] md:hover:scale-105 active:scale-95 transition-all shadow-lg md:shadow-2xl flex justify-center items-center shrink-0"
+            className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all shadow-md shadow-emerald-500/20 active:scale-98 flex justify-center items-center gap-2 shrink-0 cursor-pointer"
           >
-            <Plus size={16} md:size={20} strokeWidth={4} className="inline mr-2 md:mr-3" /> Start Audit
+            <Plus size={16} strokeWidth={2.5} /> Start New Batch
           </button>
         </header>
 
-        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+        {/* WORKSPACE CONTENT GRID */}
+        <div className="flex flex-col lg:flex-row gap-6 pt-6 min-w-0">
           
-          {/* MOBILE SIDEBAR REPLACEMENT */}
-          <div className="lg:hidden w-full border-b border-slate-100 dark:border-white/5 bg-white/40 dark:bg-black/10 p-4 flex flex-col gap-3 shrink-0">
-              <div className="flex items-center justify-between">
-                 <h2 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Bridge Intelligence</h2>
-                 <button 
-                   onClick={() => handleSync(null)} 
-                   disabled={!isTallyOnline || activeFirms.length === 0} 
-                   className="flex items-center gap-1.5 px-3 py-1.5 bg-linear-to-r from-emerald-600 to-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-md shadow-emerald-500/20 active:scale-95 disabled:opacity-50 transition-all"
-                 >
-                    <CloudSync size={12} /> Sync All
-                 </button>
-              </div>
-              
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full">
-                 {activeFirms.length > 0 ? activeFirms.map((firm, idx) => (
-                   <div key={idx} className="p-2.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl shadow-sm space-y-1.5 overflow-hidden">
-                     <div className="flex items-center justify-between">
-                        <Building2 size={12} className="text-emerald-500" />
-                        <button 
-                          onClick={() => handleSync(firm)} 
-                          className="p-1 rounded-md bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 hover:bg-emerald-100 transition-colors shadow-sm"
-                        >
-                           <RefreshCw size={10} />
-                        </button>
-                     </div>
-                     <p className="text-[10px] font-[1000] text-slate-900 dark:text-white uppercase italic leading-tight truncate">{firm}</p>
-                   </div>
-                 )) : (
-                   <div className="col-span-2 py-3 px-4 text-center border border-dashed border-slate-200 dark:border-white/5 rounded-xl opacity-50">
-                     <p className="text-[8px] font-black uppercase tracking-widest">Scanning Bridge...</p>
-                   </div>
-                 )}
-              </div>
-          </div>
-
-          {/* DESKTOP SIDEBAR */}
-          <aside className="w-80 border-r border-slate-100 dark:border-white/5 bg-white/30 dark:bg-black/10 p-8 overflow-y-auto no-scrollbar hidden lg:flex flex-col gap-8 shrink-0">
-            <div className="flex items-end justify-between">
-              <div className="space-y-1">
-                <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Bridge Intelligence</h2>
-                <p className="text-xs font-bold text-slate-500 italic">Open Entities</p>
+          {/* MOBILE BRIDGE INTELLIGENCE STRIP (< lg) */}
+          <div className="lg:hidden w-full bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/10 rounded-xl p-4 flex flex-col gap-3 shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CloudSync size={14} className="text-emerald-600 dark:text-emerald-400" />
+                <h2 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Live Bridge Entities</h2>
               </div>
               <button 
-                onClick={() => handleSync(null)}
-                disabled={!isTallyOnline || activeFirms.length === 0}
-                className="px-4 py-2 bg-linear-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:scale-105 active:scale-95 flex items-center gap-2 disabled:opacity-50"
+                onClick={() => handleSync(null)} 
+                disabled={!isTallyOnline || activeFirms.length === 0} 
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm shadow-emerald-500/20 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
               >
-                <CloudSync size={14} /> Sync All
+                <CloudSync size={12} /> Sync All
               </button>
             </div>
-
-            <div className="space-y-3">
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
               {activeFirms.length > 0 ? activeFirms.map((firm, idx) => (
-                <div key={idx} className="group p-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm hover:border-emerald-500/30 transition-all space-y-3">
-                  <div className="flex items-center justify-between">
-                     <div className="flex items-center gap-2">
-                         <Building2 size={16} className="text-emerald-500" />
-                         <div className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 text-[8px] font-black uppercase tracking-widest">Live</div>
-                     </div>
-                     
-                     <button 
-                       onClick={() => handleSync(firm)}
-                       className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 dark:hover:bg-emerald-500/20 transition-all shadow-sm active:scale-95"
-                       title={`Sync ${firm} Ledgers`}
-                     >
-                        <RefreshCw size={12} />
-                     </button>
+                <div key={idx} className="p-3 bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 rounded-lg shadow-xs flex items-center justify-between gap-2 overflow-hidden">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Building2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <p className="text-xs font-black text-slate-900 dark:text-white uppercase truncate">{firm}</p>
                   </div>
-                  <p className="text-[11px] font-[1000] text-slate-900 dark:text-white uppercase italic leading-tight">{firm}</p>
-                  <div className="h-px bg-slate-100 dark:bg-white/5 w-full" />
-                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Tally ERP 9 Connection</p>
+                  <button 
+                    onClick={() => handleSync(firm)} 
+                    className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/20 transition-colors shrink-0"
+                    title={`Sync ${firm}`}
+                  >
+                    <RefreshCw size={12} />
+                  </button>
                 </div>
               )) : (
-                <div className="py-12 px-4 text-center border-2 border-dashed border-slate-200 dark:border-white/5 rounded-2xl opacity-40">
-                  <WifiOff size={24} className="mx-auto mb-2 text-slate-300" />
-                  <p className="text-[9px] font-black uppercase tracking-widest leading-relaxed">Scanning Bridge for open firms...</p>
+                <div className="col-span-full py-4 text-center border border-dashed border-slate-300 dark:border-white/10 rounded-lg">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">No active entities detected in Tally</p>
                 </div>
               )}
             </div>
+          </div>
 
-            <div className="mt-auto p-5 bg-slate-900 rounded-2xl space-y-2">
-                <div className="flex items-center gap-2">
-                  <Activity size={12} className="text-emerald-500" />
-                  <span className="text-[9px] font-black text-white uppercase tracking-widest">System Health</span>
+          {/* DESKTOP SIDEBAR (>= lg) */}
+          <aside className="w-80 shrink-0 hidden lg:flex flex-col gap-5">
+            <div className="p-4 bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/10 rounded-xl space-y-4 shadow-xs">
+              <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 pb-3">
+                <div className="space-y-0.5">
+                  <h2 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Bridge Intelligence</h2>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white">Active Tally Entities</p>
                 </div>
-                <p className="text-[8px] font-bold text-slate-400 leading-relaxed uppercase">Update master ledgers to ensure accuracy before processing bank statements.</p>
+                <button 
+                  onClick={() => handleSync(null)}
+                  disabled={!isTallyOnline || activeFirms.length === 0}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-[10px] font-black uppercase tracking-wider transition-all shadow-sm shadow-emerald-500/20 active:scale-95 flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                >
+                  <CloudSync size={12} /> Sync All
+                </button>
+              </div>
+
+              <div className="space-y-2.5">
+                {activeFirms.length > 0 ? activeFirms.map((firm, idx) => (
+                  <div key={idx} className="group p-3 bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 rounded-lg shadow-xs hover:border-emerald-500/40 transition-all space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Building2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[9px] font-black uppercase tracking-wider">Live</span>
+                      </div>
+                      
+                      <button 
+                        onClick={() => handleSync(firm)}
+                        className="p-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/20 transition-all cursor-pointer"
+                        title={`Sync ${firm} Ledgers`}
+                      >
+                        <RefreshCw size={11} />
+                      </button>
+                    </div>
+                    <p className="text-xs font-black text-slate-900 dark:text-white uppercase truncate">{firm}</p>
+                    <div className="h-px bg-slate-100 dark:bg-white/5 w-full" />
+                    <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Tally Connected</p>
+                  </div>
+                )) : (
+                  <div className="py-8 px-4 text-center border border-dashed border-slate-300 dark:border-white/10 rounded-lg">
+                    <WifiOff size={20} className="mx-auto mb-2 text-slate-400 opacity-60" />
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Bridge Offline • Open Tally</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Health / Guidance Card */}
+            <div className="p-4 bg-slate-900 text-white rounded-xl space-y-2 border border-slate-800 shadow-md">
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={14} className="text-emerald-400" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Auditor Protocol</span>
+              </div>
+              <p className="text-[11px] font-medium text-slate-300 leading-relaxed">
+                Ensure all bank statements are synchronized with the active Tally master ledgers before triggering export files.
+              </p>
             </div>
           </aside>
 
-          <section className="flex-1 flex flex-col overflow-hidden w-full max-w-full">
-            <div className="px-4 md:px-12 py-3 md:py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 bg-white/50 backdrop-blur-md shrink-0">
-              <div className="flex w-full sm:w-auto p-1 bg-slate-100 dark:bg-white/5 rounded-lg md:rounded-2xl">
-                <button onClick={() => setActiveTab('current')} className={`flex-1 sm:flex-none text-center px-4 md:px-12 py-2 md:py-3 rounded-md md:rounded-xl text-[9px] md:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'current' ? 'bg-white dark:bg-slate-800 text-emerald-600 shadow-sm md:shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>Incomplete</button>
-                <button onClick={() => setActiveTab('history')} className={`flex-1 sm:flex-none text-center px-4 md:px-12 py-2 md:py-3 rounded-md md:rounded-xl text-[9px] md:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'history' ? 'bg-white dark:bg-slate-800 text-emerald-600 shadow-sm md:shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>Archives</button>
+          {/* MAIN DOSSIER WORKBENCH */}
+          <section className="flex-1 flex flex-col min-w-0 space-y-4">
+            
+            {/* Filter & Global Status Strip */}
+            <div className="p-3 bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/10 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex p-1 bg-slate-200/70 dark:bg-slate-900/60 rounded-lg w-full sm:w-auto">
+                <button 
+                  onClick={() => setActiveTab('current')} 
+                  className={`flex-1 sm:flex-none text-center px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer ${
+                    activeTab === 'current' 
+                      ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs' 
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  Incomplete ({audits.filter(a => a.status === 'DRAFT').length})
+                </button>
+                <button 
+                  onClick={() => setActiveTab('history')} 
+                  className={`flex-1 sm:flex-none text-center px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer ${
+                    activeTab === 'history' 
+                      ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs' 
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  Archives ({audits.filter(a => a.status === 'EXPORTED').length})
+                </button>
               </div>
-              <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto">
-                <span className="text-slate-400 text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-60">Last Master Sync</span>
-                <span className="text-slate-900 dark:text-white text-[9px] md:text-[11px] font-[1000] italic uppercase">{lastGlobalSync}</span>
+              
+              <div className="flex items-center justify-between sm:justify-end gap-2 px-1 text-right">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Master Sync:</span>
+                <span className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight">{lastGlobalSync}</span>
               </div>
             </div>
 
-            <main className="flex-1 px-4 md:px-12 py-4 md:py-10 overflow-y-auto no-scrollbar space-y-4 md:space-y-6">
-              
-              {/* AUDIT MASTER TABLE */}
-              {displayAudits.length > 0 ? (
-                <div className="w-full overflow-x-auto bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm">
-                  <table className="w-full text-left border-collapse whitespace-nowrap">
+            {/* AUDIT MASTER CONTAINER */}
+            {displayAudits.length > 0 ? (
+              <>
+                {/* DESKTOP TABLE VIEW (>= lg) */}
+                <div className="hidden lg:block w-full overflow-hidden bg-white/40 dark:bg-slate-900/40 border border-slate-200/80 dark:border-white/10 rounded-xl shadow-xs">
+                  <table className="w-full text-left border-collapse table-fixed">
                     <thead>
-                      <tr className="bg-slate-50 dark:bg-black/20 border-b border-slate-200 dark:border-white/10 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                        <th className="px-6 py-5">Entity & Period</th>
-                        <th className="px-6 py-5 text-center">Process Stage</th>
-                        <th className="px-6 py-5 text-right">Actions</th>
+                      <tr className="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-white/10 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                        <th className="px-5 py-3.5 w-1/2">Company Scope</th>
+                        <th className="px-5 py-3.5 text-center w-1/4">Status Stage</th>
+                        <th className="px-5 py-3.5 text-right w-1/4">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-white/5">
@@ -376,76 +426,125 @@ const AuditManager = () => {
                     </tbody>
                   </table>
                 </div>
-              ) : (
-                <div className="h-48 md:h-64 flex flex-col items-center justify-center opacity-20 border-2 border-dashed border-slate-200 dark:border-white/5 rounded-2xl md:rounded-[4rem] mt-6 md:mt-10 mx-auto max-w-lg">
-                  <Inbox size={40} md:size={60} strokeWidth={1} />
-                  <p className="text-[9px] md:text-xs font-black uppercase tracking-[0.5em] mt-4 md:mt-6 text-center">Workspace Clear</p>
+
+                {/* MOBILE CARD VIEW (< lg) */}
+                <div className="lg:hidden space-y-3">
+                  {displayAudits.map(audit => (
+                    <AuditMobileCard
+                      key={audit._id}
+                      audit={audit}
+                      isOnline={isTallyOnline}
+                      onAction={() => {
+                        if (audit.status === 'EXPORTED') return;
+                        setSelection({ 
+                          audit, 
+                          tallyCompanyName: audit.tallyCompanyName, 
+                          arn: audit.arnId, 
+                          month: audit.month, 
+                          year: audit.year, 
+                          stagedData: null, 
+                          verifiedIds: [], 
+                          isFreshStart: false 
+                        });
+                        setIsWizardOpen(true);
+                      }}
+                      onDelete={() => setAuditToDelete(audit._id)}
+                    />
+                  ))}
                 </div>
-              )}
-            </main>
+              </>
+            ) : (
+              <div className="h-56 flex flex-col items-center justify-center border-2 border-dashed border-slate-200/80 dark:border-white/10 rounded-xl bg-slate-50/30 dark:bg-slate-900/20 text-slate-400">
+                <Inbox size={36} strokeWidth={1.5} className="mb-2 opacity-50" />
+                <p className="text-xs font-black uppercase tracking-widest">Workspace Clear</p>
+                <p className="text-[11px] font-medium text-slate-400 mt-0.5">No dossiers found for this status view.</p>
+              </div>
+            )}
           </section>
         </div>
 
-        {/* SYNC OVERLAY & CUSTOM DELETE MODAL REMAIN UNCHANGED */}
+        {/* SYNC MODAL OVERLAY */}
         {syncState.isOpen && (
-          <div className="fixed inset-0 z-200 flex items-center justify-center p-4 bg-white/90 dark:bg-[#050607]/95 backdrop-blur-xl animate-in fade-in duration-300">
-             <div className="w-full max-w-2xl text-center space-y-6 md:space-y-12 p-6 md:p-16">
-                 <div className="relative inline-flex">
-                     <div className="absolute inset-0 bg-emerald-500/20 blur-3xl rounded-full animate-pulse" />
-                     {syncState.isComplete ? (
-                         <div className="w-16 h-16 md:w-24 md:h-24 rounded-2xl md:rounded-[2.5rem] bg-emerald-500 flex items-center justify-center text-white shadow-2xl relative z-10 animate-in zoom-in">
-                             <Check size={32} md:size={48} strokeWidth={4} />
-                         </div>
-                     ) : (
-                         <Loader2 className="animate-spin text-emerald-500 relative z-10 w-16 h-16 md:w-24 md:h-24" strokeWidth={1.5} />
-                     )}
-                 </div>
-                 <div className="space-y-2 md:space-y-4 px-4">
-                     <h3 className="text-2xl md:text-5xl font-[1000] uppercase italic tracking-tighter text-slate-900 dark:text-white leading-none wrap-break-word">
-                         {syncState.isComplete ? 'Sync Finished' : 'Syncing Data'}
-                     </h3>
-                     <p className="text-[10px] md:text-sm font-black text-emerald-600 uppercase tracking-[0.2em] md:tracking-[0.4em] wrap-break-word">
-                         {syncState.isComplete ? 'Bridge operations reconciled' : `Processing ${syncState.currentFirm || 'Connecting'}...`}
-                     </p>
-                 </div>
-                 <div className="w-full h-1.5 md:h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden max-w-md mx-auto shadow-inner">
-                     <div className="h-full bg-emerald-500 transition-all duration-700 ease-out" style={{ width: `${syncState.progress}%` }} />
-                 </div>
-                 <div className="max-h-32 md:max-h-48 overflow-y-auto space-y-2 md:space-y-3 px-2 md:px-4 no-scrollbar">
-                     {syncState.logs.map((log, i) => (
-                         <p key={i} className="text-[10px] md:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide text-center italic animate-in fade-in slide-in-from-bottom-1 wrap-break-word">{log}</p>
-                     ))}
-                 </div>
-                 <button 
-                   onClick={() => setSyncState({ isOpen: false, isComplete: false, logs: [], currentFirm: '', progress: 0, isSyncing: false })}
-                   className={`w-full max-w-sm py-3 md:py-6 rounded-xl md:rounded-3xl font-black uppercase text-[9px] md:text-xs tracking-[0.2em] md:tracking-[0.3em] transition-all shadow-xl mx-auto block ${syncState.isComplete ? 'bg-slate-900 text-white hover:bg-emerald-600' : 'bg-slate-100 text-slate-300 pointer-events-none'}`}
-                 >
-                   {syncState.isComplete ? 'Close Workspace' : 'Processing Bridge...'}
-                 </button>
-             </div>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl space-y-6 text-center">
+              <div className="relative inline-flex mx-auto">
+                {syncState.isComplete ? (
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30 animate-in zoom-in">
+                    <Check size={28} strokeWidth={3} />
+                  </div>
+                ) : (
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 border border-emerald-500/20">
+                    <Loader2 className="animate-spin" size={28} strokeWidth={2} />
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <h3 className="text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white">
+                  {syncState.isComplete ? 'Sync Completed' : 'Synchronizing Tally Masters'}
+                </h3>
+                <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider truncate px-4">
+                  {syncState.isComplete ? 'Bridge operations reconciled successfully' : `Processing: ${syncState.currentFirm || 'Connecting...'}`}
+                </p>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-emerald-500 transition-all duration-500 ease-out" 
+                  style={{ width: `${syncState.progress}%` }} 
+                />
+              </div>
+
+              {/* Logs Viewport */}
+              <div className="max-h-36 overflow-y-auto space-y-1.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-white/5 text-left custom-scroll">
+                {syncState.logs.map((log, i) => (
+                  <p key={i} className="text-[11px] font-mono text-slate-600 dark:text-slate-300 leading-tight">
+                    • {log}
+                  </p>
+                ))}
+              </div>
+
+              <button 
+                onClick={() => setSyncState({ isOpen: false, isComplete: false, logs: [], currentFirm: '', progress: 0, isSyncing: false })}
+                disabled={!syncState.isComplete}
+                className={`w-full py-2.5 rounded-lg font-bold uppercase text-xs tracking-wider transition-all shadow-sm ${
+                  syncState.isComplete 
+                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-emerald-600 dark:hover:bg-emerald-400 hover:text-white cursor-pointer' 
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                }`}
+              >
+                {syncState.isComplete ? 'Done' : 'Sync In Progress...'}
+              </button>
+            </div>
           </div>
         )}
 
+        {/* CUSTOM DELETE CONFIRMATION MODAL */}
         {auditToDelete && (
-          <div className="fixed inset-0 z-300 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-[#111214] border border-slate-200 dark:border-white/10 rounded-2xl p-6 lg:p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95">
-              <div className="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center mb-4 border border-rose-100 dark:border-rose-500/20 text-rose-500">
-                <AlertTriangle size={20} strokeWidth={2.5} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 space-y-4">
+              <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center border border-rose-200 dark:border-rose-500/20 text-rose-500">
+                <AlertTriangle size={18} strokeWidth={2.5} />
               </div>
-              <h3 className="text-lg font-[1000] text-slate-900 dark:text-white uppercase tracking-tight mb-2">Delete Dossier</h3>
-              <p className="text-xs font-bold text-slate-500 leading-relaxed mb-6 whitespace-normal">
-                Are you sure you want to permanently delete this company dossier? This action cannot be undone and will erase all synced bank ledgers for this month.
-              </p>
-              <div className="flex items-center gap-3">
+              
+              <div className="space-y-1">
+                <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">Delete Batch</h3>
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Are you sure you want to permanently delete this batch? This will discard all staged data for this month.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
                 <button 
                   onClick={() => setAuditToDelete(null)}
-                  className="flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                  className="flex-1 py-2.5 px-4 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={confirmDeleteAudit}
-                  className="flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-white bg-rose-500 hover:bg-rose-600 shadow-md shadow-rose-500/20 transition-colors"
+                  className="flex-1 py-2.5 px-4 rounded-lg text-xs font-bold uppercase tracking-wider text-white bg-rose-600 hover:bg-rose-500 shadow-sm shadow-rose-600/20 transition-colors cursor-pointer"
                 >
                   Delete
                 </button>
@@ -454,6 +553,7 @@ const AuditManager = () => {
           </div>
         )}
 
+        {/* AUDIT WIZARD MODAL */}
         {isWizardOpen && (
           <AuditWizard 
             onClose={() => { setIsWizardOpen(false); refreshData(); }} 
@@ -468,6 +568,9 @@ const AuditManager = () => {
 };
 
 
+// ----------------------------------------------------------------------
+// DESKTOP TABLE ROW SUB-COMPONENT
+// ----------------------------------------------------------------------
 const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const isDraft = audit?.status === 'DRAFT' || audit?.status === 'Draft';
@@ -481,11 +584,10 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
     }).format(amount || 0);
   };
 
-  // Maps the current state directly to the Step it will open in the AuditWizard
   const getStageDisplay = () => {
-    if (!isDraft) return { label: 'Step 6: Audit Result (Exported)', color: 'bg-emerald-500 text-white' };
-    if (bankSummaries.length > 0) return { label: 'Step 3-5: Verification / Matrix', color: 'bg-blue-500/10 text-blue-600' };
-    return { label: 'Step 2: Data Ingestion (Awaiting Uploads)', color: 'bg-amber-500/10 text-amber-600' };
+    if (!isDraft) return { label: 'Step 6: Exported', color: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20' };
+    if (bankSummaries.length > 0) return { label: 'Step 3-5: Matrix Verification', color: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20' };
+    return { label: 'Step 2: Ingestion Staging', color: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20' };
   };
 
   const stage = getStageDisplay();
@@ -493,121 +595,129 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
   return (
     <React.Fragment>
       {/* PARENT ROW */}
-      <tr className={`group transition-all cursor-pointer ${isExpanded ? 'bg-slate-50/50 dark:bg-white/2' : 'hover:bg-slate-50 dark:hover:bg-white/2'} ${!isDraft && 'opacity-75 hover:opacity-100'}`} onClick={() => setIsExpanded(!isExpanded)}>
-        
-        {/* ENTITY & PERIOD */}
-        <td className="px-6 py-4">
-          <div className="flex items-center gap-3">
-            <button className="p-1 rounded bg-slate-100 dark:bg-white/10 text-slate-500 hover:text-emerald-500 transition-colors">
+      <tr 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`group transition-all cursor-pointer ${
+          isExpanded ? 'bg-slate-50/80 dark:bg-slate-800/40' : 'hover:bg-slate-50/50 dark:hover:bg-slate-800/20'
+        }`}
+      >
+        {/* ENTITY & SCOPE */}
+        <td className="px-5 py-3.5">
+          <div className="flex items-center gap-3 min-w-0">
+            <button 
+              onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+              className="p-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0"
+            >
               {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </button>
-            <div className={`w-1.5 h-8 rounded-full shrink-0 ${isDraft ? 'bg-amber-400' : 'bg-emerald-500'}`} />
-            <div>
-              <h3 className="text-base font-[1000] uppercase text-slate-900 dark:text-white tracking-tight italic leading-none mb-1">
+            <div className={`w-1 h-8 rounded-full shrink-0 ${isDraft ? 'bg-amber-400' : 'bg-emerald-500'}`} />
+            <div className="min-w-0">
+              <h3 className="text-xs font-black uppercase text-slate-900 dark:text-white tracking-tight truncate">
                 {audit?.tallyCompanyName || audit?.clientName || "Client Accounts A/C"}
               </h3>
-              <span className="text-[9px] font-black px-2 py-0.5 bg-slate-100 dark:bg-white/10 text-slate-500 rounded tracking-widest uppercase">
-                Period: {audit?.month || 1}/{audit?.year || 2026} • {bankSummaries.length} Bank Statements
-              </span>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide truncate">
+                Period: {audit?.month || 1}/{audit?.year || 2026} • {bankSummaries.length} Bank Account(s)
+              </p>
             </div>
           </div>
         </td>
 
-        {/* STATUS / PROCESS STAGE */}
-        <td className="px-6 py-4 text-center">
-          <div className={`inline-flex items-center px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${stage.color}`}>
+        {/* PROCESS STAGE */}
+        <td className="px-5 py-3.5 text-center">
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${stage.color}`}>
             {stage.label}
-          </div>
+          </span>
         </td>
 
         {/* ACTIONS */}
-        <td className="px-6 py-4 text-right">
+        <td className="px-5 py-3.5 text-right">
           <div className="flex items-center justify-end gap-2 shrink-0">
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              title="Delete Audit"
-              className="p-2.5 rounded-lg border border-rose-200 dark:border-rose-500/30 text-rose-500 bg-rose-50/50 dark:bg-rose-500/10 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 transition-all shadow-sm active:scale-95 shrink-0"
+              title="Delete Batch"
+              className="p-2 rounded-lg border border-slate-200 dark:border-white/10 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:border-rose-300 dark:hover:border-rose-500/30 transition-all cursor-pointer"
             >
-              <Trash2 size={16} />
+              <Trash2 size={14} />
             </button>
+            
             <button 
               onClick={(e) => { e.stopPropagation(); onAction(); }}
-              className={`px-5 py-2.5 rounded-lg flex items-center gap-2 font-black text-[10px] uppercase tracking-widest transition-all shadow-sm active:scale-95 shrink-0 ${
-              isDraft 
-                ? (isOnline ? 'bg-slate-900 text-white hover:bg-emerald-600' : 'bg-slate-100 text-slate-300 cursor-not-allowed') 
-                : 'bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100'
-            }`}>
+              className={`px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider transition-all shadow-xs active:scale-95 shrink-0 cursor-pointer ${
+                isDraft 
+                  ? (isOnline ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-emerald-600 dark:hover:bg-emerald-400 hover:text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed') 
+                  : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100'
+              }`}
+            >
               {isDraft ? (
-                isOnline ? <><LayoutList size={14} /> Open Dossier <ArrowRight size={14} /></> : <>Tally Offline</>
+                isOnline ? <><LayoutList size={13} /> Open Batch <ArrowRight size={13} /></> : <>Tally Offline</>
               ) : (
-                <><CheckCircle2 size={14} /> View Exported</>
+                <><CheckCircle2 size={13} />Completed</>
               )}
             </button>
           </div>
         </td>
       </tr>
 
-      {/* NESTED ACCORDION TABLE (CHILD ROW) */}
+      {/* EXPANDABLE ACCORDION ROW */}
       {isExpanded && (
         <tr>
-          <td colSpan="3" className="p-0 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-black/20">
-            <div className="w-full px-6 py-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          <td colSpan="3" className="p-0 bg-slate-50/50 dark:bg-slate-900/30 border-t border-b border-slate-200/80 dark:border-white/5">
+            <div className="p-4 animate-in fade-in duration-200">
               {bankSummaries.length > 0 ? (
-                <div className="border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden bg-white dark:bg-[#0B0C10] shadow-sm">
+                <div className="border border-slate-200 dark:border-white/10 rounded-lg overflow-hidden bg-white dark:bg-slate-900 shadow-xs">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-slate-50/80 dark:bg-white/5 border-b border-slate-200 dark:border-white/10 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                        <th className="px-4 py-3">Bank Ledger</th>
-                        <th className="px-4 py-3 text-right">Total Receipts</th>
-                        <th className="px-4 py-3 text-right">Sales (isSales)</th>
-                        <th className="px-4 py-3 text-right">Total Payments</th>
-                        <th className="px-4 py-3 text-right">Total Inflow</th>
-                        <th className="px-4 py-3 text-right">Total Outflow</th>
+                      <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-white/10 text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                        <th className="px-3.5 py-2.5">Bank Ledger Account</th>
+                        <th className="px-3.5 py-2.5 text-right">Receipts</th>
+                        <th className="px-3.5 py-2.5 text-right">Sales</th>
+                        <th className="px-3.5 py-2.5 text-right">Payments</th>
+                        <th className="px-3.5 py-2.5 text-right text-emerald-700 dark:text-emerald-400">Total Inflow</th>
+                        <th className="px-3.5 py-2.5 text-right text-rose-700 dark:text-rose-400">Total Outflow</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                       {bankSummaries.map((bank, i) => (
-                        <tr key={i} className="hover:bg-slate-50 dark:hover:bg-white/2 transition-colors">
-                          <td className="px-4 py-3 text-xs font-[1000] italic uppercase text-slate-700 dark:text-slate-300">
+                        <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                          <td className="px-3.5 py-2 text-xs font-bold uppercase text-slate-800 dark:text-slate-200">
                             {bank.tallyLedgerName}
                           </td>
-                          <td className="px-4 py-3 text-right text-xs font-bold tabular-nums text-slate-500">
+                          <td className="px-3.5 py-2 text-right text-xs font-mono font-semibold text-slate-600 dark:text-slate-400">
                             {bank.receiptCount || 0}
                           </td>
-                          <td className="px-4 py-3 text-right text-xs font-bold tabular-nums text-indigo-500 bg-indigo-50/30 dark:bg-indigo-500/5">
+                          <td className="px-3.5 py-2 text-right text-xs font-mono font-semibold text-indigo-600 dark:text-indigo-400">
                             {bank.salesCount || 0}
                           </td>
-                          <td className="px-4 py-3 text-right text-xs font-bold tabular-nums text-slate-500">
+                          <td className="px-3.5 py-2 text-right text-xs font-mono font-semibold text-slate-600 dark:text-slate-400">
                             {bank.paymentCount || 0}
                           </td>
-                          <td className="px-4 py-3 text-right text-xs font-black italic tabular-nums text-emerald-600">
+                          <td className="px-3.5 py-2 text-right text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
                             ₹{formatINRValue(bank.totalReceipts)}
                           </td>
-                          <td className="px-4 py-3 text-right text-xs font-black italic tabular-nums text-rose-600">
+                          <td className="px-3.5 py-2 text-right text-xs font-mono font-bold text-rose-600 dark:text-rose-400">
                             ₹{formatINRValue(bank.totalPayments)}
                           </td>
                         </tr>
                       ))}
                     </tbody>
-                    {/* GRAND TOTAL */}
                     <tfoot>
-                      <tr className="bg-slate-50 dark:bg-white/5 border-t-2 border-slate-200 dark:border-white/10">
-                        <td className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white">
+                      <tr className="bg-slate-100/70 dark:bg-slate-800/80 border-t border-slate-200 dark:border-white/10 font-bold">
+                        <td className="px-3.5 py-2 text-[10px] uppercase tracking-wider text-slate-900 dark:text-white">
                           Grand Total
                         </td>
-                        <td className="px-4 py-3 text-right text-sm font-[1000] tabular-nums text-slate-900 dark:text-white">
+                        <td className="px-3.5 py-2 text-right text-xs font-mono font-black text-slate-900 dark:text-white">
                           {audit?.summary?.receiptCount || 0}
                         </td>
-                        <td className="px-4 py-3 text-right text-sm font-[1000] tabular-nums text-indigo-600">
+                        <td className="px-3.5 py-2 text-right text-xs font-mono font-black text-indigo-600 dark:text-indigo-400">
                           {audit?.summary?.salesCount || 0}
                         </td>
-                        <td className="px-4 py-3 text-right text-sm font-[1000] tabular-nums text-slate-900 dark:text-white">
+                        <td className="px-3.5 py-2 text-right text-xs font-mono font-black text-slate-900 dark:text-white">
                           {audit?.summary?.paymentCount || 0}
                         </td>
-                        <td className="px-4 py-3 text-right text-sm font-[1000] italic tabular-nums text-emerald-600">
+                        <td className="px-3.5 py-2 text-right text-xs font-mono font-black text-emerald-600 dark:text-emerald-400">
                           ₹{formatINRValue(audit?.summary?.totalReceipts)}
                         </td>
-                        <td className="px-4 py-3 text-right text-sm font-[1000] italic tabular-nums text-rose-600">
+                        <td className="px-3.5 py-2 text-right text-xs font-mono font-black text-rose-600 dark:text-rose-400">
                           ₹{formatINRValue(audit?.summary?.totalPayments)}
                         </td>
                       </tr>
@@ -615,8 +725,8 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
                   </table>
                 </div>
               ) : (
-                <div className="w-full p-4 bg-white dark:bg-[#0B0C10] border border-dashed border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-center">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">No Data Parsed For This Dossier Yet</p>
+                <div className="w-full p-4 border border-dashed border-slate-200 dark:border-white/10 rounded-lg text-center">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">No bank statement items parsed in this dossier</p>
                 </div>
               )}
             </div>
@@ -624,6 +734,107 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
         </tr>
       )}
     </React.Fragment>
+  );
+};
+
+
+// ----------------------------------------------------------------------
+// MOBILE DOSSIER CARD SUB-COMPONENT (< lg)
+// ----------------------------------------------------------------------
+const AuditMobileCard = ({ audit, onAction, onDelete, isOnline }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const isDraft = audit?.status === 'DRAFT' || audit?.status === 'Draft';
+  const bankSummaries = audit?.bankSummaries || [];
+
+  const formatINRValue = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      maximumFractionDigits: 2,
+      notation: "compact", 
+      compactDisplay: "short"
+    }).format(amount || 0);
+  };
+
+  const getStageDisplay = () => {
+    if (!isDraft) return { label: 'Exported', color: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20' };
+    if (bankSummaries.length > 0) return { label: 'Matrix Verification', color: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20' };
+    return { label: 'Ingestion Staging', color: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20' };
+  };
+
+  const stage = getStageDisplay();
+
+  return (
+    <div className="bg-white/60 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/10 rounded-xl p-4 shadow-xs space-y-3">
+      {/* Top Meta Bar */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 space-y-1">
+          <div className="flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full shrink-0 ${isDraft ? 'bg-amber-400' : 'bg-emerald-500'}`} />
+            <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${stage.color}`}>
+              {stage.label}
+            </span>
+          </div>
+          <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase truncate">
+            {audit?.tallyCompanyName || audit?.clientName || "Client Accounts A/C"}
+          </h3>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+            Period: {audit?.month || 1}/{audit?.year || 2026} • {bankSummaries.length} Bank Account(s)
+          </p>
+        </div>
+
+        <button
+          onClick={onDelete}
+          className="p-2 rounded-lg border border-slate-200 dark:border-white/10 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all shrink-0"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+
+      {/* Main Action Bar */}
+      <button 
+        onClick={onAction}
+        className={`w-full py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-wider transition-all shadow-xs active:scale-98 ${
+          isDraft 
+            ? (isOnline ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed') 
+            : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30'
+        }`}
+      >
+        {isDraft ? (
+          isOnline ? <><LayoutList size={14} /> Open Dossier <ArrowRight size={14} /></> : <>Tally Offline</>
+        ) : (
+          <><CheckCircle2 size={14} /> View Exported File</>
+        )}
+      </button>
+
+      {/* Accordion Toggle */}
+      {bankSummaries.length > 0 && (
+        <div className="pt-1 border-t border-slate-100 dark:border-white/5">
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-slate-500 py-1"
+          >
+            <span>Breakdown ({bankSummaries.length} Banks)</span>
+            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          </button>
+
+          {isExpanded && (
+            <div className="space-y-2 pt-2 animate-in fade-in duration-200">
+              {bankSummaries.map((bank, idx) => (
+                <div key={idx} className="p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200/60 dark:border-white/5 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black uppercase text-slate-900 dark:text-white truncate">{bank.tallyLedgerName}</span>
+                    <span className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 font-bold">{bank.salesCount || 0} Sales</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs font-mono pt-1 border-t border-slate-200/50 dark:border-white/5">
+                    <span className="text-emerald-600 font-bold">In: ₹{formatINRValue(bank.totalReceipts)}</span>
+                    <span className="text-rose-600 font-bold">Out: ₹{formatINRValue(bank.totalPayments)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
 

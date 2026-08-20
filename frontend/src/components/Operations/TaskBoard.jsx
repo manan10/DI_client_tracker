@@ -11,9 +11,12 @@ import { arrayMove } from "@dnd-kit/sortable";
 import {
   Plus,
   Search,
-  ListTodoIcon,
   Filter,
   Loader2,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  Kanban
 } from "lucide-react";
 
 import { useTasks } from "../../hooks/useTasks";
@@ -83,73 +86,90 @@ const TaskBoard = () => {
       t.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  // Live Metrics Count
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter((t) => t.status === "COMPLETED").length;
+  const inProgressTasks = tasks.filter((t) => t.status === "IN_PROGRESS").length;
+  // const pendingTasks = tasks.filter((t) => t.status === "PENDING_CLIENT" || t.status === "BACKLOG").length;
+
   return (
-    <div className="min-h-screen dark:bg-slate-950 transition-colors duration-300">
-      <div className="w-full px-4 md:px-8 py-6 space-y-6">
+    <div className="min-h-screen bg-transparent text-slate-900 dark:text-slate-200 transition-colors duration-300 relative">
+      <div className="w-full space-y-6">
         
-        {/* HEADER SECTION - Optimized for Mobile Flow */}
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-600/10 dark:bg-emerald-500/5 rounded-lg flex items-center justify-center border border-emerald-500/20 shadow-inner shrink-0">
-                <ListTodoIcon size={20} className="text-emerald-500" />
-              </div>
-              <h1 className="text-xl md:text-4xl font-[1000] dark:text-white uppercase italic tracking-tighter">
-                Ops <span className="text-emerald-500">Board</span>
-              </h1>
+        {/* COMMAND & ACTION BAR (Border-free flat layout inspired by Vercel/Linear to eliminate widget boxes) */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center py-2 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20">
+              <Kanban size={18} strokeWidth={2.5} />
+            </div>
+            <div>
+              <h2 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">
+                Fulfillment Kanban Pipeline
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                Real-time tracking of operational tickets, workflow handoffs, and client action queues.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 w-full lg:w-auto">
+            <div className="hidden sm:flex items-center gap-6 px-4 py-1.5 bg-slate-100/70 dark:bg-slate-900/40 rounded-lg border border-slate-200/60 dark:border-white/5 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-400"></span> Total: <strong className="text-slate-900 dark:text-white">{totalTasks}</strong></span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Active: <strong className="text-slate-900 dark:text-white">{inProgressTasks}</strong></span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Done: <strong className="text-slate-900 dark:text-white">{completedTasks}</strong></span>
             </div>
 
             <button
               onClick={() => setIsPanelOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 md:px-8 py-3 rounded-lg font-black text-[10px] md:text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-emerald-900/30 active:scale-95 transition-all flex items-center gap-2"
+              className="w-full lg:w-auto px-5 py-2.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-xs font-bold uppercase tracking-wider transition-all shadow-xs flex items-center justify-center gap-2 outline-none cursor-pointer"
             >
-              <Plus size={16} strokeWidth={4} />
-              <span className="hidden sm:inline">Create New Ticket</span>
+              <Plus size={15} strokeWidth={2.5} />
+              <span>Create Ticket</span>
             </button>
           </div>
         </div>
 
-        {/* SEARCH & FILTER ROW */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 border-b border-slate-200 dark:border-white/5 pb-6">
+        {/* SEARCH & TEAM TOOLBAR STRIP */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
           <div className="relative group flex-1">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"
-              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"
+              size={15}
             />
             <input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search tasks or clients..."
-              className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg text-[12px] focus:ring-2 ring-emerald-500/20 outline-none transition-all placeholder:text-slate-400"
+              placeholder="Search tasks, descriptions or client accounts..."
+              className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-semibold focus:ring-1 ring-emerald-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 dark:text-white shadow-2xs"
             />
           </div>
 
-          <div className="flex items-center justify-between sm:justify-start gap-4">
-            <div className="flex items-center -space-x-2.5">
+          <div className="flex items-center justify-between sm:justify-end gap-3">
+            <div className="flex items-center -space-x-1.5">
               {["AD", "MD", "UD", "PD"].map((initials, i) => (
                 <div
                   key={i}
-                  className="w-9 h-9 rounded-full border-2 border-[#F4F5F7] dark:border-[#020303] bg-slate-800 flex items-center justify-center text-[10px] font-black text-white shadow-md cursor-pointer hover:-translate-y-1 transition-transform"
+                  className="w-7 h-7 rounded-full border-2 border-white dark:border-slate-950 bg-slate-800 flex items-center justify-center text-[9px] font-black text-white shadow-2xs cursor-pointer hover:-translate-y-0.5 transition-transform"
                 >
                   {initials}
                 </div>
               ))}
-              <div className="w-9 h-9 rounded-full border-2 border-[#F4F5F7] dark:border-[#020303] bg-slate-200 dark:bg-white/10 flex items-center justify-center text-[10px] font-black text-slate-500">
+              <div className="w-7 h-7 rounded-full border-2 border-white dark:border-slate-950 bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[9px] font-black text-slate-600 dark:text-slate-300">
                 +4
               </div>
             </div>
-            <button className="sm:hidden p-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg">
-              <Filter size={18} className="text-slate-400" />
+            <button className="sm:hidden p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg text-slate-500">
+              <Filter size={15} />
             </button>
           </div>
         </div>
 
         {/* BOARD AREA */}
         {loading && tasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-[50vh] gap-4">
+          <div className="flex flex-col items-center justify-center h-[40vh] gap-4">
             <Loader2 className="animate-spin text-emerald-500" size={32} />
             <span className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.3em]">
-              Syncing Tasks...
+              Syncing Board Tasks...
             </span>
           </div>
         ) : (
@@ -160,7 +180,7 @@ const TaskBoard = () => {
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-20">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-20 items-stretch">
               {COLUMNS.map((col) => (
                 <Column
                   key={col.id}
@@ -180,7 +200,7 @@ const TaskBoard = () => {
               }}
             >
               {activeId ? (
-                <div className="rotate-3 scale-105 shadow-[0_30px_70px_rgba(0,0,0,0.5)]">
+                <div className="rotate-2 scale-105 shadow-2xl opacity-90">
                   <TaskCard
                     task={tasks.find((t) => t._id === activeId)}
                     isOverlay

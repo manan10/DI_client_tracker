@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import confetti from 'canvas-confetti';
+import { Loader2 } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
 import AccountHero from './AccountBalances/AccountHero';
 import SnapshotForm from './AccountBalances/SnapshotForm';
@@ -37,7 +38,7 @@ const AccountBalances = () => {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // --- NEW LOGIC: Checks if the selected date already exists in history ---
+  // --- Checks if the selected date already exists in history ---
   const handleDateChange = (newDate) => {
     setEntryDate(newDate);
     
@@ -119,36 +120,54 @@ const AccountBalances = () => {
     }
   };
 
-  if (loading) return <div className="h-[60vh] w-full flex items-center justify-center italic text-slate-400">Loading Assets...</div>;
+  if (loading) {
+    return (
+      <div className="h-[50vh] w-full flex flex-col items-center justify-center gap-3">
+        <Loader2 size={28} className="text-emerald-600 dark:text-emerald-400 animate-spin" strokeWidth={2.5} />
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+          Synchronizing Liquidity Records...
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full md:px-12 py-6 md:py-10 space-y-8 md:space-y-14">
-      <AccountHero 
-        currentTotal={performance.currentTotal}
-        growth={performance.growth}
-        isEntryOpen={isEntryOpen}
-        setIsEntryOpen={handleOpenNewEntry}
-        editingId={editingId}
-      />
+    <div className="w-full space-y-8 animate-in fade-in duration-500">
+      
+      {/* HERO METRICS SECTION */}
+      <div className="w-full">
+        <AccountHero 
+          currentTotal={performance.currentTotal}
+          growth={performance.growth}
+          isEntryOpen={isEntryOpen}
+          setIsEntryOpen={handleOpenNewEntry}
+          editingId={editingId}
+        />
+      </div>
 
-      <SnapshotForm 
-        isOpen={isEntryOpen}
-        onClose={() => { setIsEntryOpen(false); setEditingId(null); }}
-        groupedAccounts={groupedAccounts}
-        inputValues={inputValues}
-        setInputValues={setInputValues}
-        entryDate={entryDate}
-        onDateChange={handleDateChange} // Passing the new handler
-        note={note}
-        setNote={setNote}
-        onSave={handleSaveSnapshot}
-        saving={saving}
-        editingId={editingId}
-      />
+      {/* SNAPSHOT FORM / ENTRY DRAWER */}
+      <div className="w-full">
+        <SnapshotForm 
+          isOpen={isEntryOpen}
+          onClose={() => { setIsEntryOpen(false); setEditingId(null); }}
+          groupedAccounts={groupedAccounts}
+          inputValues={inputValues}
+          setInputValues={setInputValues}
+          entryDate={entryDate}
+          onDateChange={handleDateChange}
+          note={note}
+          setNote={setNote}
+          onSave={handleSaveSnapshot}
+          saving={saving}
+          editingId={editingId}
+        />
+      </div>
 
+      {/* HISTORICAL LEDGER TABLE */}
       <div className="w-full">
         <HistoryTable accounts={accounts} history={history} onEdit={startEdit} />
       </div>
+
     </div>
   );
 };
