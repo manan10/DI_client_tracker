@@ -1,94 +1,107 @@
 import React from 'react';
-import { Layers, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Layers, ArrowLeft, CheckCircle2, Calendar, Building2, IndianRupee } from 'lucide-react';
 
-const formatIndianNumber = (num) => {
-  if (!num) return '0.00';
-  const numStr = num.toString();
-  const parts = numStr.split('.');
-  const integerPart = parts[0].replace(/,/g, '');
-  const decimalPart = parts[1] !== undefined ? '.' + parts[1].padEnd(2, '0') : '.00';
-  const lastThree = integerPart.slice(-3);
-  const otherParts = integerPart.slice(0, -3);
-  const formattedInteger = otherParts ? (otherParts.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' + lastThree) : lastThree;
-  return formattedInteger + decimalPart;
+const formatINR = (val) => {
+  return new Intl.NumberFormat('en-IN', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+  }).format(val || 0);
 };
 
 const formatFullDate = (dateStr) => {
-  if (!dateStr) return 'Unknown Date';
+  if (!dateStr) return 'Earliest Cycle Date';
   return new Date(dateStr).toLocaleDateString('en-IN', {
-    day: '2-digit', month: 'short', year: 'numeric'
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
   });
 };
 
-const MergedLedgerPreview = ({ mergedLedgers, onBack, onConfirm }) => {
-  const totalAmount = mergedLedgers.reduce((sum, item) => sum + item.amount, 0);
+const MergedLedgerPreview = ({ mergedLedgers = [], onBack, onConfirm }) => {
+  const totalAmount = mergedLedgers.reduce((sum, item) => sum + (item.amount || 0), 0);
 
   return (
-    <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-[#010413] animate-in slide-in-from-right-8 z-40">
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 flex flex-col max-w-4xl mx-auto w-full">
-        
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-6 shrink-0">
-          <div className="p-4 sm:p-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-gradient-to-r from-blue-50/50 to-transparent dark:from-blue-900/10 border-b border-slate-200 dark:border-slate-800">
-            <div>
-              <h3 className="text-lg sm:text-xl font-[1000] text-slate-800 dark:text-white flex items-center gap-2 uppercase tracking-tight italic">
-                <Layers className="text-blue-500" size={22} /> Merged Ledgers
-              </h3>
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">
-                Grouped into <span className="text-slate-700 dark:text-slate-200">{mergedLedgers.length}</span> unique AMC entries based on earliest payment date.
-              </p>
+    <div className="w-full max-w-4xl mx-auto flex flex-col gap-6 animate-in fade-in duration-200 pb-20">
+      
+      {/* 1. Summary Ledger Header Card */}
+      <div className="bg-white dark:bg-[#0B1120] rounded-xl border border-slate-200 dark:border-white/10 p-5 shadow-xs flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20">
+              <Layers size={16} />
             </div>
-            <div className="text-right bg-white dark:bg-slate-950 px-5 py-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
-              <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Final Gross Total</div>
-              <div className="text-xl sm:text-2xl font-[1000] text-blue-600 dark:text-blue-400 leading-none tracking-tighter">
-                ₹{formatIndianNumber(totalAmount)}
-              </div>
-            </div>
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white uppercase tracking-tight font-mono">
+              Merged Ledger Review
+            </h3>
+          </div>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+            Grouped into <strong className="text-slate-800 dark:text-slate-200 font-bold">{mergedLedgers.length}</strong> unique AMC entries based on the earliest payout date.
+          </p>
+        </div>
+
+        <div className="text-left sm:text-right bg-slate-50/70 dark:bg-white/2 p-3.5 rounded-lg border border-slate-200/70 dark:border-white/5 shrink-0">
+          <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+            Consolidated Gross Sum
+          </span>
+          <div className="flex items-baseline sm:justify-end gap-1 mt-0.5">
+            <span className="text-xs font-bold text-slate-400">₹</span>
+            <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400 tabular-nums tracking-tight">
+              {formatINR(totalAmount)}
+            </span>
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-col gap-3 pb-8">
-          {mergedLedgers.map((item, idx) => (
-            <div key={idx} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between gap-4">
-              <div className="flex flex-col min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded">
-                    Merged {item.count} Entries
-                  </span>
-                </div>
-                <span className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">{item.amcName}</span>
+      {/* 2. Merged Items Breakdown List */}
+      <div className="space-y-2.5">
+        {mergedLedgers.map((item, idx) => (
+          <div 
+            key={idx} 
+            className="bg-white dark:bg-[#0B1120] p-4 rounded-xl border border-slate-200/90 dark:border-white/10 shadow-xs flex items-center justify-between gap-4"
+          >
+            <div className="flex flex-col min-w-0 pr-2">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                  {item.count} Statement Entry{item.count > 1 ? 's' : ''} Merged
+                </span>
               </div>
-              <div className="text-right shrink-0">
-                <div className="text-sm sm:text-base font-black text-slate-900 dark:text-white tabular-nums leading-none mb-1">
-                  ₹{formatIndianNumber(item.amount)}
-                </div>
-                <div className="text-[10px] font-bold text-slate-400 uppercase">
-                  Dated {formatFullDate(item.date)}
-                </div>
-              </div>
+              <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase truncate font-mono">
+                {item.amcName}
+              </span>
             </div>
-          ))}
-        </div>
+
+            <div className="text-right shrink-0">
+              <span className="text-sm sm:text-base font-black font-mono text-slate-900 dark:text-white tabular-nums block">
+                ₹{formatINR(item.amount)}
+              </span>
+              <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 block mt-0.5">
+                Dated {formatFullDate(item.date)}
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* FIXED FOOTER */}
-      <div className="shrink-0 p-4 sm:p-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 z-50">
-        <div className="max-w-4xl mx-auto grid grid-cols-3 gap-3">
-          <button 
-            type="button"
-            onClick={onBack}
-            className="col-span-1 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 py-4 rounded-xl font-[1000] uppercase text-[10px] tracking-[0.2em] transition-all flex items-center justify-center gap-2"
-          >
-            <ArrowLeft size={16} /> Back
-          </button>
-          <button 
-            type="button"
-            onClick={onConfirm} 
-            className="col-span-2 bg-blue-600 text-white py-4 rounded-xl font-[1000] uppercase text-[10px] tracking-[0.2em] shadow-xl hover:bg-blue-500 active:scale-95 transition-all flex justify-center items-center gap-2"
-          >
-            <CheckCircle2 size={16} /> Confirm & Write Ledgers
-          </button>
-        </div>
+      {/* 3. Action Footer */}
+      <div className="pt-4 border-t border-slate-200 dark:border-white/10 grid grid-cols-3 gap-3">
+        <button 
+          type="button"
+          onClick={onBack}
+          className="col-span-1 py-3 px-4 rounded-xl font-mono text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <ArrowLeft size={15} /> Back
+        </button>
+
+        <button 
+          type="button"
+          onClick={onConfirm} 
+          className="col-span-2 py-3 px-6 rounded-xl font-mono text-xs font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 text-white shadow-md hover:shadow-emerald-600/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <CheckCircle2 size={15} />
+          <span>Confirm & Write to Workbench</span>
+        </button>
       </div>
+
     </div>
   );
 };

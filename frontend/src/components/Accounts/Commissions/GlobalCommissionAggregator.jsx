@@ -1,16 +1,10 @@
-import React, { useState, useMemo } from 'react';
-import { ChevronDown, CalendarDays, Check, LetterText, BarChart3, TrendingUp, Users, Clock } from 'lucide-react';
-
+import React, { useMemo } from 'react';
+import { Layers, Calendar, BarChart3, TrendingUp } from 'lucide-react';
 import GlobalStatsGrid from './GlobalStatsGrid';
 import GlobalRiskAnalysis from './GlobalRiskAnalysis';
 import GlobalCommissionMatrix from './GlobalCommissionMatrix';
 
-const GlobalCommissionAggregator = ({ data, loading, selectedFY, setSelectedFY }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const availableYears = ["2025-26", "2026-27"];
-
+const GlobalCommissionAggregator = ({ data, loading, selectedFY }) => {
   const filteredData = useMemo(() => {
     if (!data) return { monthlyAggregates: [], currentFYStats: { totalFY: 0, growth: 0, monthCount: 0 }, selectedFY };
     const fyStats = data.fiscalYearTotals?.find(f => f.fiscalYear === selectedFY) || { total: 0, yoyGrowth: 0 };
@@ -33,67 +27,63 @@ const GlobalCommissionAggregator = ({ data, loading, selectedFY, setSelectedFY }
   }, [data, selectedFY]);
 
   return (
-    <div className="space-y-4">
-      {/* HEADER */}
-      <div className="flex justify-between items-center px-1">
-        <h2 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Aggregator</h2>
-        <button onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
-          <span className="text-[10px] font-black italic">FY {selectedFY}</span>
-          <ChevronDown size={12} />
-        </button>
-      </div>
-
-      {/* DROPDOWN MENU */}
-      {isOpen && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-lg p-1 z-50">
-          {availableYears.map(year => (
-            <button 
-              key={year} 
-              onClick={() => { setSelectedFY(year); setIsOpen(false); }} 
-              className="w-full flex items-center justify-between px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg"
-            >
-              FY {year} {selectedFY === year && <Check size={12} className="text-emerald-500" />}
-            </button>
-          ))}
+    <div className="w-full space-y-8 animate-in fade-in duration-300">
+      
+      {/* 1. FIRMWIDE OVERVIEW HEADER STRIP */}
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-2 border-b border-slate-200/80 dark:border-white/5">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Firmwide Revenue Overview
+            </h2>
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 uppercase">
+              FY {selectedFY}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Consolidated totals and mutual fund payout breakdown across all active family ARNs.
+          </p>
         </div>
-      )}
-
-      {/* MOBILE COMPACT STATS GRID */}
-      <div className="md:hidden grid grid-cols-2 gap-2">
-        <CompactStat label="Revenue" value={`₹${(filteredData.currentFYStats.totalFY / 100000).toFixed(2)}L`} icon={BarChart3} />
-        <CompactStat label="Growth" value={`${filteredData.currentFYStats.growth}%`} icon={TrendingUp} />
-        <CompactStat label="ARNs" value={data?.activeArns || 0} icon={Users} />
-        <CompactStat label="Months" value={filteredData.currentFYStats.monthCount} icon={Clock} />
       </div>
 
-      {/* DESKTOP ORIGINAL */}
-      <div className="hidden md:block cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
-        <GlobalStatsGrid data={filteredData} isExpanded={isExpanded} loading={loading} />
-      </div>
+      {/* 2. SUMMARY KPI STATS GRID */}
+      <section className="w-full">
+        <GlobalStatsGrid data={filteredData} loading={loading} />
+      </section>
 
-      {/* EXPANDED CONTENT */}
-      <button onClick={() => setIsExpanded(!isExpanded)} className="md:hidden w-full py-2 text-[8px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
-        {isExpanded ? "Hide Details" : "View Details"}
-      </button>
-
-      {isExpanded && (
-        <div className="space-y-6 animate-in slide-in-from-top-4 fade-in duration-500">
+      {/* 3. MONTHLY ARN RECONCILIATION SCHEDULE */}
+      <section className="w-full space-y-3 pt-2">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            <Calendar size={15} className="text-emerald-600 dark:text-emerald-400" />
+            <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              Monthly Payout Schedule
+            </h3>
+          </div>
+          <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+            All currency values in INR (₹)
+          </span>
+        </div>
+        
+        <div className="w-full bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl shadow-xs overflow-hidden">
           <GlobalCommissionMatrix data={filteredData} />
-          <GlobalRiskAnalysis data={filteredData} />
         </div>
-      )}
+      </section>
+
+      {/* 4. VISUAL DISTRIBUTION & AMC CHARTS */}
+      <section className="w-full space-y-4 pt-4 border-t border-slate-200 dark:border-white/10">
+        <div className="flex items-center gap-2 px-1">
+          <BarChart3 size={15} className="text-emerald-600 dark:text-emerald-400" />
+          <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+            Distribution & AMC Analytics
+          </h3>
+        </div>
+        
+        <GlobalRiskAnalysis data={filteredData} />
+      </section>
+
     </div>
   );
 };
-
-const CompactStat = ({ label, value, icon: Icon }) => (
-  <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-3 rounded-xl flex items-center gap-3">
-    <Icon size={14} className="text-emerald-500" />
-    <div>
-      <p className="text-[7px] font-black uppercase text-slate-400">{label}</p>
-      <p className="text-[11px] font-[1000] tracking-tight">{value}</p>
-    </div>
-  </div>
-);
 
 export default GlobalCommissionAggregator;

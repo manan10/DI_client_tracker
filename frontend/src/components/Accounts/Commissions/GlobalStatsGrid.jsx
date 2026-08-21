@@ -1,8 +1,7 @@
 import React from 'react';
-import { IndianRupee, Landmark, Activity, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { Users, Clock, TrendingUp, Sparkles, Building2 } from 'lucide-react';
 
-const GlobalStatsGrid = ({ data, isExpanded, loading }) => {
-  // Extract data from the filtered object we built above
+const GlobalStatsGrid = ({ data, loading }) => {
   const stats = data?.currentFYStats || {};
   const arnConcentration = data?.arnConcentration || [];
   
@@ -10,71 +9,128 @@ const GlobalStatsGrid = ({ data, isExpanded, loading }) => {
   const monthsRecorded = stats.monthCount || 0;
   const activeARNs = arnConcentration.length;
   
-  const format = (num) => new Intl.NumberFormat('en-IN').format(Math.round(num || 0));
+  const formatINR = (num) => new Intl.NumberFormat('en-IN', { 
+    maximumFractionDigits: 0 
+  }).format(Math.round(num || 0));
+
   const avgMonthly = monthsRecorded > 0 ? fyTotal / monthsRecorded : 0;
 
   return (
-    <div className={`relative overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all rounded-lg ${isExpanded ? '' : 'rounded-lg'}`}>
+    <div className="relative w-full bg-white dark:bg-[#0B1120] border border-slate-200/90 dark:border-white/10 rounded-xl shadow-sm overflow-hidden transition-all duration-300">
       
+      {/* Dynamic Top Ambient Strip */}
+      <div className="h-0.5 w-full bg-linear-to-r from-emerald-500 via-teal-400 to-indigo-500 opacity-80" />
+
       {/* Loading Overlay */}
       {loading && (
-        <div className="absolute inset-0 bg-white/60 dark:bg-slate-800/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
-          <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <div className="absolute inset-0 bg-white/75 dark:bg-[#0B1120]/80 backdrop-blur-[1px] z-20 flex items-center justify-center">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg shadow-sm">
+            <div className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+              Reconciling...
+            </span>
+          </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
+      {/* High-Density 4-Column Metric Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/80 dark:divide-white/10">
         
-        {/* ANNUAL YIELD */}
-        <div className="lg:col-span-4 p-8 lg:p-10 border-b lg:border-b-0 lg:border-r border-slate-100 dark:border-slate-700">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-            <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em]">Annual Enterprise Commission</span>
+        {/* 1. Total Commission Hero Metric */}
+        <div className="p-4 sm:p-5 flex items-center justify-between gap-4 bg-linear-to-br from-emerald-500/5 via-transparent to-transparent dark:from-emerald-500/8 dark:to-transparent">
+          <div className="min-w-0 space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 truncate">
+                Total Accrued Payout
+              </span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">₹</span>
+              <span className="text-2xl sm:text-3xl font-[1000] font-mono text-slate-900 dark:text-white tabular-nums tracking-tight">
+                {formatINR(fyTotal)}
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">
+              FY {data?.selectedFY || ''} Consolidated Gross
+            </p>
           </div>
-          
-          <div className="flex items-baseline gap-2">
-            <span className="text-xl font-light text-emerald-600 italic">₹</span>
-            <h2 className="text-4xl font-[1000] text-slate-900 dark:text-white tracking-tighter italic uppercase leading-none">
-              {format(fyTotal)}
-            </h2>
+
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20 shadow-2xs">
+            <Sparkles size={18} strokeWidth={2.2} />
           </div>
         </div>
 
-        {/* METRICS */}
-        <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 h-full bg-slate-50/30 dark:bg-slate-900/20">
-          
-          <div className="p-8 lg:p-10 flex flex-col justify-center border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-700">
-            <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mb-1">License Network</p>
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-2xl font-[1000] text-slate-700 dark:text-slate-200 tracking-tighter uppercase italic">{activeARNs}</h3>
-              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">Active ARNs</span>
+        {/* 2. Active ARN Entities */}
+        <div className="p-4 sm:p-5 flex items-center justify-between gap-4 bg-linear-to-br from-indigo-500/3 via-transparent to-transparent dark:from-indigo-500/5 dark:to-transparent">
+          <div className="min-w-0 space-y-1">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block truncate">
+              Active Family ARNs
+            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl font-[1000] font-mono text-slate-900 dark:text-white tabular-nums tracking-tight">
+                {activeARNs}
+              </span>
+              <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
+                Licenses
+              </span>
             </div>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">
+              Reporting Portfolios
+            </p>
           </div>
 
-          <div className="p-8 lg:p-10 flex flex-col justify-center border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-700">
-            <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mb-1">Total Months Recorded</p>
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-2xl font-[1000] text-emerald-600 dark:text-emerald-500 tracking-tighter uppercase italic">{monthsRecorded}</h3>
-              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">Months</span>
-            </div>
-          </div>
-
-          <div className="p-8 lg:p-10 flex flex-col justify-center">
-            <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mb-1">Monthly Average</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-xs font-bold text-slate-400 dark:text-slate-500 italic">₹</span>
-              <h3 className="text-2xl font-[1000] text-slate-700 dark:text-slate-200 tracking-tighter uppercase italic">{format(avgMonthly)}</h3>
-            </div>
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-200/60 dark:border-indigo-500/20 shadow-2xs">
+            <Building2 size={18} strokeWidth={2.2} />
           </div>
         </div>
-      </div>
 
-      {/* TOGGLE */}
-      <div className="bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 py-3 flex justify-center items-center gap-3 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/20 transition-colors cursor-pointer">
-        <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 uppercase tracking-[0.2em]">
-          {isExpanded ? 'Collapse Detailed View' : 'View Full Matrix & Analysis'}
-        </span>
-        <ChevronDown size={14} className={`transition-transform duration-300 ${isExpanded ? 'rotate-180 text-emerald-600' : 'text-slate-400 group-hover:text-emerald-600'}`} />
+        {/* 3. Logged Accounting Cycles */}
+        <div className="p-4 sm:p-5 flex items-center justify-between gap-4 bg-linear-to-br from-cyan-500/3 via-transparent to-transparent dark:from-cyan-500/5 dark:to-transparent">
+          <div className="min-w-0 space-y-1">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block truncate">
+              Logged Months
+            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl font-[1000] font-mono text-cyan-600 dark:text-cyan-400 tabular-nums tracking-tight">
+                {monthsRecorded}
+              </span>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+                / 12 Cycles
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">
+              Audit Periods Reconciled
+            </p>
+          </div>
+
+          <div className="w-10 h-10 rounded-xl bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-200/60 dark:border-cyan-500/20 shadow-2xs">
+            <Clock size={18} strokeWidth={2.2} />
+          </div>
+        </div>
+
+        {/* 4. Monthly Average Run-Rate */}
+        <div className="p-4 sm:p-5 flex items-center justify-between gap-4 bg-linear-to-br from-amber-500/3 via-transparent to-transparent dark:from-amber-500/5 dark:to-transparent">
+          <div className="min-w-0 space-y-1">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block truncate">
+              Monthly Run-Rate
+            </span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-sm font-extrabold text-amber-600 dark:text-amber-400 font-mono">₹</span>
+              <span className="text-2xl sm:text-3xl font-[1000] font-mono text-slate-900 dark:text-white tabular-nums tracking-tight truncate">
+                {formatINR(avgMonthly)}
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">
+              Average Yield / Month
+            </p>
+          </div>
+
+          <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-200/60 dark:border-amber-500/20 shadow-2xs">
+            <TrendingUp size={18} strokeWidth={2.2} />
+          </div>
+        </div>
+
       </div>
     </div>
   );

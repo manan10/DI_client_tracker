@@ -9,6 +9,12 @@ import {
   ChevronRight,
   ChevronDown,
   Loader2,
+  FileSpreadsheet,
+  Edit3,
+  Sparkles,
+  ShieldCheck,
+  Layers,
+  ArrowUpRight
 } from "lucide-react";
 
 import { useApi } from "../../../hooks/useApi";
@@ -60,6 +66,22 @@ const CommissionForm = ({
   const scrollContainerRef = useRef(null);
   const activePickerRef = useRef(null);
   const fileInputRef = useRef(null);
+  const monthPickerRef = useRef(null);
+
+  // Close month picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (monthPickerRef.current && !monthPickerRef.current.contains(event.target)) {
+        setShowMonthPicker(false);
+      }
+    };
+    if (showMonthPicker) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showMonthPicker]);
 
   const sortedAmcList = useMemo(() => {
     if (!amcList || amcList.length === 0) return [];
@@ -79,7 +101,7 @@ const CommissionForm = ({
         const monthStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
         const result = await request(
           `/commissions/${arnId}/${monthStr}`,
-          "GET",
+          "GET"
         );
 
         const newFormData = {};
@@ -113,7 +135,7 @@ const CommissionForm = ({
     };
 
     fetchExistingRecord();
-  }, [selectedMonth, selectedYear, arnId, isOpen, sortedAmcList]);
+  }, [selectedMonth, selectedYear, arnId, isOpen, sortedAmcList, request]);
 
   useEffect(() => {
     if (activeDayPicker && activePickerRef.current) {
@@ -133,7 +155,7 @@ const CommissionForm = ({
   const totalGross = useMemo(() => {
     return Object.values(formData).reduce(
       (sum, item) => sum + (Number(item.amount) || 0),
-      0,
+      0
     );
   }, [formData]);
 
@@ -180,20 +202,20 @@ const CommissionForm = ({
       const result = await request(
         "/commissions/extract-statements",
         "POST",
-        uploadData,
+        uploadData
       );
 
       if (result && result.success) {
         setExtractedResults(result.data);
       } else {
         throw new Error(
-          result?.message || "Failed to extract data from statements.",
+          result?.message || "Failed to extract data from statements."
         );
       }
     } catch (error) {
       console.error("Statement processing error:", error);
       alert(
-        error.message || "Something went wrong while processing the files.",
+        error.message || "Something went wrong while processing the files."
       );
     } finally {
       setIsProcessingFiles(false);
@@ -222,16 +244,14 @@ const CommissionForm = ({
     setFormData((prev) => {
       const updated = { ...prev };
 
-      // mergedDataPayload contains items grouped by AMC: { amcName, amount, date }
       mergedDataPayload.forEach((match) => {
         const registryKey = Object.keys(updated).find(
           (k) =>
             k.toLowerCase().includes(match.amcName.toLowerCase()) ||
-            match.amcName.toLowerCase().includes(k.toLowerCase()),
+            match.amcName.toLowerCase().includes(k.toLowerCase())
         );
 
         if (registryKey) {
-          // Extract the integer day (e.g. 15) from the date string to match manual formatting
           const earliestDay = match.date
             ? new Date(match.date).getDate()
             : null;
@@ -258,65 +278,80 @@ const CommissionForm = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex justify-end bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="w-full h-dvh sm:w-125 lg:w-200 bg-white dark:bg-slate-950 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right-[100%] duration-300 border-l border-slate-200 dark:border-slate-800">
-        {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-950 shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center text-slate-900 shadow-lg">
-              <Landmark size={20} strokeWidth={2.5} />
+    <div className="fixed inset-0 z-9999 flex justify-end bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="w-full h-dvh sm:w-135 lg:w-215 bg-white dark:bg-[#0B1120] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-300 border-l border-slate-200 dark:border-white/10">
+        
+        {/* --- 1. TOP DRAWER HEADER --- */}
+        <div className="px-6 py-4.5 border-b border-slate-200 dark:border-white/10 flex justify-between items-center bg-slate-50/70 dark:bg-[#0B1120] shrink-0">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-2xs">
+              <Landmark size={18} strokeWidth={2.2} />
             </div>
-            <div>
-              <h2 className="text-xl font-[1000] dark:text-white uppercase italic tracking-tighter">
-                {arnName}
-              </h2>
-              <p className="text-[10px] text-emerald-500 uppercase font-black tracking-widest">
-                {arnNickname}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight truncate">
+                  {arnName}
+                </h2>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10 shrink-0">
+                  {arnNickname}
+                </span>
+              </div>
+              <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500 mt-0.5">
+                Brokerage Reconciliation Workbench
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            {/* ONLY show Date Picker in MANUAL mode */}
+          <div className="flex items-center gap-3 shrink-0">
+            {/* Custom Month/Year Selector */}
             {entryMode === "MANUAL" && (
-              <div className="relative animate-in fade-in zoom-in-95 duration-200">
+              <div className="relative" ref={monthPickerRef}>
                 <button
+                  type="button"
                   onClick={() => setShowMonthPicker(!showMonthPicker)}
-                  className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 px-4 py-2 text-[10px] font-black uppercase rounded-lg border border-slate-200 dark:border-slate-800 dark:text-white transition-all hover:border-emerald-500"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-emerald-500 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 transition-all shadow-2xs cursor-pointer"
                 >
-                  <Calendar size={14} className="text-emerald-500" />
-                  {MONTHS[selectedMonth]} {selectedYear}
-                  <ChevronDown size={14} />
+                  <Calendar size={13} className="text-emerald-600 dark:text-emerald-400" />
+                  <span>{MONTHS[selectedMonth]} {selectedYear}</span>
+                  <ChevronDown size={13} className="text-slate-400" />
                 </button>
 
                 {showMonthPicker && (
-                  <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-4 z-[100] animate-in fade-in zoom-in-95">
-                    <div className="flex justify-between items-center mb-4">
+                  <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-[#0E1626] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl p-3.5 z-100 animate-in fade-in zoom-in-95">
+                    <div className="flex justify-between items-center mb-3 pb-2 border-b border-slate-100 dark:border-white/5">
                       <button
+                        type="button"
                         onClick={() => setSelectedYear((y) => y - 1)}
-                        className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md"
+                        className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-md transition-colors cursor-pointer"
                       >
                         <ChevronLeft size={16} />
                       </button>
-                      <span className="font-black text-xs dark:text-white">
+                      <span className="font-mono font-bold text-xs text-slate-900 dark:text-white">
                         {selectedYear}
                       </span>
                       <button
+                        type="button"
                         onClick={() => setSelectedYear((y) => y + 1)}
-                        className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md"
+                        className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-md transition-colors cursor-pointer"
                       >
                         <ChevronRight size={16} />
                       </button>
                     </div>
+
                     <div className="grid grid-cols-3 gap-1">
                       {MONTHS.map((m, idx) => (
                         <button
+                          type="button"
                           key={m}
                           onClick={() => {
                             setSelectedMonth(idx);
                             setShowMonthPicker(false);
                           }}
-                          className={`py-2 text-[9px] font-black uppercase rounded-md transition-all ${selectedMonth === idx ? "bg-emerald-500 text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"}`}
+                          className={`py-2 rounded-lg text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
+                            selectedMonth === idx
+                              ? "bg-emerald-600 text-white shadow-xs"
+                              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
+                          }`}
                         >
                           {m}
                         </button>
@@ -326,37 +361,62 @@ const CommissionForm = ({
                 )}
               </div>
             )}
+
+            {/* Close Modal Button */}
             <button
+              type="button"
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-rose-500 transition-colors"
+              className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>
 
-        {/* Mode Toggle */}
-        <div className="flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shrink-0">
-          <button
-            onClick={() => setEntryMode("MANUAL")}
-            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${entryMode === "MANUAL" ? "text-emerald-500 border-b-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
-          >
-            Manual Entry
-          </button>
-          <button
-            onClick={() => setEntryMode("UPLOAD")}
-            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${entryMode === "UPLOAD" ? "text-blue-500 border-b-2 border-blue-500 bg-blue-50 dark:bg-blue-500/10" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
-          >
-            Statement Auto-Log
-          </button>
+        {/* --- 2. HIGH-CONTRAST STRUCTURED TABS --- */}
+        <div className="px-6 py-3 border-b border-slate-200 dark:border-white/10 bg-slate-50/40 dark:bg-[#070B14] shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setEntryMode("MANUAL")}
+              className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer select-none border ${
+                entryMode === "MANUAL"
+                  ? "bg-white dark:bg-[#0B1120] text-emerald-700 dark:text-emerald-400 border-slate-200/90 dark:border-white/15 shadow-sm ring-2 ring-emerald-500/20"
+                  : "bg-slate-100/60 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-white/10"
+              }`}
+            >
+              <Edit3 size={14} className={entryMode === "MANUAL" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"} />
+              <span>Manual Entry</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setEntryMode("UPLOAD")}
+              className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer select-none border ${
+                entryMode === "UPLOAD"
+                  ? "bg-white dark:bg-[#0B1120] text-indigo-700 dark:text-indigo-400 border-slate-200/90 dark:border-white/15 shadow-sm ring-2 ring-indigo-500/20"
+                  : "bg-slate-100/60 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-white/10"
+              }`}
+            >
+              <FileSpreadsheet size={14} className={entryMode === "UPLOAD" ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400"} />
+              <span>Statement Auto-Log</span>
+            </button>
+          </div>
         </div>
 
-        {/* Content Area */}
+        {/* --- 3. DYNAMIC CONTENT WORKSPACE --- */}
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 bg-slate-50 dark:bg-[#010413]"
+          className="flex-1 overflow-y-auto p-5 sm:p-6 lg:p-8 bg-slate-50/50 dark:bg-[#070B14] no-scrollbar"
         >
-          {entryMode === "UPLOAD" ? (
+          {isFetching ? (
+            <div className="h-64 flex flex-col items-center justify-center gap-3">
+              <Loader2 className="animate-spin text-emerald-600 dark:text-emerald-400" size={24} />
+              <p className="text-xs font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                Synchronizing cycle records...
+              </p>
+            </div>
+          ) : entryMode === "UPLOAD" ? (
             <StatementUploadTab
               fileInputRef={fileInputRef}
               selectedFiles={selectedFiles}
@@ -387,26 +447,25 @@ const CommissionForm = ({
           )}
         </div>
 
-        {/* ONLY show primary Authorization Footer in MANUAL mode */}
+        {/* --- 4. TELEMETRY AUTHORIZATION FOOTER --- */}
         {entryMode === "MANUAL" && (
-          <div className="p-4 sm:p-6 sm:px-12 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 shrink-0 z-50 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex items-center gap-4">
-              <div className="p-2 sm:p-3 bg-emerald-500/10 rounded-lg text-emerald-500">
-                <IndianRupee size={20} />
+          <div className="p-4 sm:p-5 px-6 sm:px-8 bg-white dark:bg-[#0B1120] border-t border-slate-200 dark:border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4 shrink-0 z-50 animate-in fade-in duration-200">
+            <div className="flex items-center gap-3.5 w-full sm:w-auto">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <IndianRupee size={18} strokeWidth={2.2} />
               </div>
-              <div>
-                <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  Monthly Liquidity
-                </p>
-                <p className="text-xl sm:text-3xl font-[1000] dark:text-white italic tracking-tighter">
-                  ₹
-                  {totalGross.toLocaleString("en-IN", {
-                    minimumFractionDigits: 2,
-                  })}
+              <div className="min-w-0">
+                <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                  Monthly Total Gross
+                </span>
+                <p className="text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-white tracking-tight tabular-nums mt-0.5">
+                  ₹{totalGross.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
+
             <button
+              type="button"
               onClick={() =>
                 onSave({
                   arnId,
@@ -416,17 +475,18 @@ const CommissionForm = ({
                 })
               }
               disabled={saving || isFetching || sortedAmcList.length === 0}
-              className="w-full sm:w-auto bg-emerald-600 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-lg font-[1000] uppercase text-[10px] tracking-[0.2em] shadow-xl hover:bg-emerald-600/90 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider shadow-md hover:shadow-emerald-600/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale cursor-pointer shrink-0"
             >
               {saving ? (
-                <Loader2 className="animate-spin inline mr-2" size={16} />
+                <Loader2 className="animate-spin" size={15} />
               ) : (
-                <CheckCircle2 className="inline mr-2" size={16} />
+                <CheckCircle2 size={15} strokeWidth={2.2} />
               )}
-              Authorize Ledger
+              <span>{saving ? "Authorizing..." : "Authorize Ledger"}</span>
             </button>
           </div>
         )}
+
       </div>
     </div>
   );

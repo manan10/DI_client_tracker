@@ -5,7 +5,7 @@ import MergedLedgerPreview from './StatementUploadForm/MergedLedgerPreview';
 
 const StatementUploadTab = ({
   fileInputRef,
-  selectedFiles,
+  selectedFiles = [],
   onFileSelect,
   onRemoveFile,
   onProcess,
@@ -15,7 +15,7 @@ const StatementUploadTab = ({
   onDiscardResults,
   onUpdateMapping, 
   onToggleExclude,
-  sortedAmcList    
+  sortedAmcList = []   
 }) => {
   const [isReviewingMerged, setIsReviewingMerged] = useState(false);
 
@@ -28,6 +28,8 @@ const StatementUploadTab = ({
 
     active.forEach(r => {
       const amc = r.amcName;
+      if (!amc) return;
+
       if (!grouped[amc]) {
         grouped[amc] = { amcName: amc, amount: r.amount, date: r.date, count: 1 };
       } else {
@@ -48,10 +50,7 @@ const StatementUploadTab = ({
     onDiscardResults();
   };
 
-  // --------------------------------------------------------
-  // ROUTING LOGIC
-  // --------------------------------------------------------
-  
+  // Step Routing: Merged Review -> Raw Mapping -> Dropzone
   if (extractedResults && extractedResults.length > 0) {
     if (isReviewingMerged) {
       return (
