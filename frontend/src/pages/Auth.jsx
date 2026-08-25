@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Lock, Loader2, ChevronRight, Eye, EyeOff, User, 
-  Check, Fingerprint, Monitor, Wallet, ArrowRight, ShieldCheck 
+  Check, Fingerprint, Monitor, Wallet, ArrowRight, 
+  Sparkles, ShieldCheck
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -115,136 +116,97 @@ const Auth = () => {
   };
 
   return (
-    <div className="h-dvh w-full flex flex-col lg:flex-row font-sans bg-slate-50 text-slate-900 overflow-hidden">
-      
+    <div className="h-dvh w-full overflow-hidden font-sans select-none bg-slate-950">
+
       {/* ========================================================================= */}
-      {/* LEFT PANEL: MASSIVE BRANDING (Desktop Only)                               */}
+      {/* 1. MOBILE NATIVE VIEW (< lg)                                              */}
       {/* ========================================================================= */}
-      <div className="hidden lg:flex lg:w-[45%] xl:w-[50%] bg-[#0B1120] flex-col justify-center items-center p-12 lg:p-20 shrink-0 relative overflow-hidden">
+      <div className="lg:hidden relative flex flex-col justify-between h-dvh w-full p-2 sm:p-8 bg-linear-to-b from-slate-900 via-slate-950 to-slate-950 overflow-y-auto">
         
-        {/* Subtle Ambient Emerald Glow */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-emerald-500/10 blur-[100px] rounded-full" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[30vw] h-[30vw] bg-teal-500/10 blur-[90px] rounded-full" />
+        {/* Background Ambient Glows */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          <div className="absolute -top-16 -left-16 w-64 h-64 bg-emerald-500/15 blur-[80px] rounded-full" />
+          <div className="absolute top-1/2 -right-20 w-64 h-64 bg-emerald-600/10 blur-[90px] rounded-full" />
+          <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] bg-size-[20px_20px]" />
         </div>
 
-        <div className="relative z-10 flex flex-col items-start w-full max-w-lg">
-          {/* MASSIVE LOGO */}
-          <div className="mb-10 drop-shadow-2xl">
-            <img 
-              src={Logo} 
-              alt="Dalal Investment" 
-              className="h-48 lg:h-64 w-auto object-contain drop-shadow-[0_0_40px_rgba(16,185,129,0.2)]" 
-            />
+        {/* Top Header & Branding */}
+        <div className="relative z-10 flex flex-col items-center text-center shrink-0">
+          <div className="h-32 flex items-center justify-center shadow-xl">
+            <img src={Logo} alt="Logo" className="h-full w-auto object-contain drop-shadow" />
           </div>
+          
+          {/* <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-2">
+            <Sparkles size={10} className="animate-pulse" />
+            Private Ecosystem
+          </div> */}
 
-          <h1 className="text-5xl lg:text-7xl font-[1000] text-white tracking-tighter leading-none mb-5 uppercase">
-            Dalal <br />
-            <span className="text-emerald-500">Investment</span>
+          <h1 className="text-5xl mb-4 sm:text-4xl font-[1000] text-white tracking-tight uppercase leading-none">
+            Dalal <span className="text-transparent bg-clip-text bg-linear-to-r from-emerald-400 to-emerald-300">Investment</span>
           </h1>
-          
-          <div className="flex items-center gap-4">
-            <div className="h-1 w-12 bg-emerald-500 rounded-full" />
-            <p className="text-sm font-black text-slate-400 uppercase tracking-[0.4em]">
-              Wealth • Heritage • Growth
-            </p>
-          </div>
         </div>
 
-        <div className="absolute bottom-10 left-10 flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-widest">
-          <ShieldCheck size={16} className="text-emerald-600" />
-          Secure Enterprise Gateway
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* RIGHT PANEL: FULL-BLEED SEAMLESS FORM (Mobile First)                      */}
-      {/* ========================================================================= */}
-      <div className="flex-1 w-full bg-white flex flex-col justify-center px-6 sm:px-12 lg:px-24 h-full relative overflow-y-auto no-scrollbar">
-        
-        <div className="w-full max-w-md mx-auto flex flex-col justify-center">
-          
-          {/* MOBILE HEADER (Visible only on small screens) */}
-          <div className="lg:hidden flex flex-col items-center text-center mb-8 shrink-0">
-            <img 
-              src={Logo} 
-              alt="Dalal Investment" 
-              className="h-20 sm:h-24 w-auto object-contain mb-4 drop-shadow-md" 
-            />
-            <h1 className="text-3xl sm:text-4xl font-[1000] text-slate-900 tracking-tighter uppercase leading-none">
-              Dalal <span className="text-emerald-600">Investment</span>
-            </h1>
-          </div>
-
-          {/* DESKTOP WELCOME TEXT */}
-          <div className="hidden lg:block mb-10 text-left">
-            <h2 className="text-4xl font-[1000] text-slate-900 tracking-tight uppercase">Sign In</h2>
-            <p className="text-sm font-medium text-slate-500 mt-2">Select your profile to securely access your apps.</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 w-full shrink-0">
-
-            {/* --- PROFILE SELECTOR --- */}
+        {/* Form Console for Mobile */}
+        <div className="relative z-10 w-full max-w-sm mx-auto my-auto py-2">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            
+            {/* User Selector Dropdown */}
             <div className="relative" ref={dropdownRef}>
-              <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1.5 pl-2">
-                Select Profile
-              </label>
-              
               <button
                 type="button"
                 onClick={() => !loadingUsers && setIsOpen(!isOpen)}
-                className={`w-full flex items-center justify-between bg-slate-50 border ${
-                  isOpen ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200 hover:border-slate-300'
-                } rounded-2xl p-4 sm:p-5 transition-all outline-none`}
+                className={`w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all outline-none ${
+                  isOpen 
+                    ? 'border-emerald-500 bg-slate-900/90 shadow-[0_0_20px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/50' 
+                    : 'border-white/10 bg-slate-900/60 active:bg-slate-900'
+                }`}
               >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className={`p-2 rounded-xl shrink-0 transition-colors ${selectedUser ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
-                    <User size={20} strokeWidth={2.5} />
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                    selectedUser ? 'bg-emerald-500 text-white shadow-md' : 'bg-white/10 text-slate-400'
+                  }`}>
+                    <User size={18} strokeWidth={2.5} />
                   </div>
-                  <div className="flex flex-col items-start truncate text-left">
+                  <div className="flex flex-col items-start text-left truncate">
                     {loadingUsers ? (
-                      <span className="text-sm font-bold text-slate-400">Loading names...</span>
+                      <span className="text-xs font-bold text-slate-400">Loading directory...</span>
                     ) : selectedUser ? (
                       <>
-                        <span className="text-base font-black text-slate-900 uppercase truncate">{selectedUser.name}</span>
-                        <span className="text-xs font-bold text-slate-400">@{selectedUser.username}</span>
+                        <span className="text-sm font-[1000] text-white uppercase truncate tracking-tight">{selectedUser.name}</span>
+                        <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">@{selectedUser.username}</span>
                       </>
                     ) : (
-                      <span className="text-base font-bold text-slate-500">Choose your name</span>
+                      <span className="text-xs font-black uppercase tracking-wider text-slate-400">Choose Profile</span>
                     )}
                   </div>
                 </div>
-                <ChevronRight size={20} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-90 text-emerald-600' : ''}`} />
+                <ChevronRight size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-90 text-emerald-400' : ''}`} />
               </button>
 
-              {/* DROPDOWN MENU LIST */}
+              {/* Mobile Dropdown Menu */}
               {isOpen && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl p-1.5 max-h-56 overflow-y-auto z-50 animate-in fade-in zoom-in-95">
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-slate-900/95 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-2xl p-1.5 max-h-52 overflow-y-auto z-50 animate-in fade-in zoom-in-95">
                   {users.map((u) => (
                     <button
                       key={u._id}
                       type="button"
                       onClick={() => handleSelect(u)}
-                      className={`w-full flex items-center justify-between p-3.5 rounded-xl transition-all ${
+                      className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
                         selectedUser?._id === u._id 
-                          ? 'bg-emerald-50 text-emerald-900' 
-                          : 'hover:bg-slate-50 text-slate-700'
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                          : 'active:bg-white/5 text-slate-200'
                       }`}
                     >
                       <div className="flex flex-col items-start text-left">
-                        <span className="text-sm font-black uppercase tracking-tight">{u.name}</span>
-                        <span className="text-[10px] font-bold text-slate-400">@{u.username}</span>
+                        <span className="text-xs font-black uppercase tracking-tight">{u.name}</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">@{u.username}</span>
                       </div>
-                      
                       <div className="flex items-center gap-2">
-                        {/* App Access Badges */}
-                        <div className="flex gap-2 text-slate-400 mr-2">
-                          {u.allowedApps?.includes('CLIENT_TRACKER') && <Monitor size={15} title="Client App" />}
-                          {u.allowedApps?.includes('EXPENSE_TRACKER') && <Wallet size={15} title="Expense App" />}
+                        <div className="flex gap-1.5 text-slate-400 mr-1">
+                          {u.allowedApps?.includes('CLIENT_TRACKER') && <Monitor size={13} title="Client App" />}
+                          {u.allowedApps?.includes('EXPENSE_TRACKER') && <Wallet size={13} title="Expense App" />}
                         </div>
-                        {selectedUser?._id === u._id && (
-                          <Check size={18} className="text-emerald-600" strokeWidth={3} />
-                        )}
+                        {selectedUser?._id === u._id && <Check size={16} className="text-emerald-400" strokeWidth={3} />}
                       </div>
                     </button>
                   ))}
@@ -252,78 +214,281 @@ const Auth = () => {
               )}
             </div>
 
-            {/* --- PASSWORD FIELD --- */}
-            <div className="relative">
-              <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1.5 pl-2">
-                Password
-              </label>
-              <div className="relative flex items-center">
-                <div className={`absolute left-4 transition-colors ${formData.password ? 'text-emerald-600' : 'text-slate-400'}`}>
-                  <Lock size={20} strokeWidth={2.5} />
-                </div>
-                
-                <input
-                  type={showPassword ? "text" : "password"}
-                  required
-                  placeholder="Enter Password"
-                  className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-2xl py-4 sm:py-5 pl-12 pr-12 text-sm sm:text-base font-black text-slate-900 outline-none transition-all placeholder:font-bold placeholder:text-slate-400 tracking-widest placeholder:tracking-normal"
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                />
-                
-                <button 
-                  type="button" 
-                  onClick={() => setShowPassword(!showPassword)} 
-                  className="absolute right-3 p-2 text-slate-400 hover:text-emerald-600 rounded-xl transition-colors focus:outline-none"
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
+            {/* Password Input */}
+            <div className="relative flex items-center">
+              <div className={`absolute left-4 transition-colors ${formData.password ? 'text-emerald-400' : 'text-slate-500'}`}>
+                <Lock size={18} strokeWidth={2.5} />
               </div>
+              
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                placeholder="Password"
+                className="w-full bg-slate-900/60 border border-white/10 focus:border-emerald-500 focus:bg-slate-900 rounded-2xl py-3.5 pl-12 pr-12 text-sm font-black text-white outline-none transition-all placeholder:font-bold placeholder:text-slate-500 tracking-widest placeholder:tracking-normal"
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
+              
+              <button 
+                type="button" 
+                onClick={() => setShowPassword(!showPassword)} 
+                className="absolute right-3 p-1.5 text-slate-400 active:text-emerald-400 rounded-xl transition-colors focus:outline-none"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
 
-            {/* --- PRIMARY LOGIN BUTTON --- */}
+            {/* Submit Action */}
             <button
               type="submit"
               disabled={isSubmitting || !formData.username}
-              className="w-full flex items-center justify-center gap-2 bg-[#0B1120] hover:bg-slate-800 text-white rounded-2xl py-4 sm:py-5 transition-all shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              className="w-full flex items-center justify-center gap-2.5 bg-linear-to-r from-emerald-600 to-emerald-700 active:from-emerald-500 active:to-emerald-600 text-white rounded-2xl py-4 transition-all shadow-[0_8px_20px_rgba(16,185,129,0.25)] active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
             >
               {isSubmitting ? (
-                <Loader2 size={20} className="animate-spin text-emerald-400" />
+                <Loader2 size={18} className="animate-spin text-white" />
               ) : (
                 <>
-                  <span className="text-xs sm:text-sm font-black uppercase tracking-widest">Sign In</span>
-                  <ArrowRight size={18} className="text-emerald-400" strokeWidth={3} />
+                  <span className="text-xs font-[1000] uppercase tracking-widest">Sign In</span>
+                  <ArrowRight size={16} strokeWidth={3} />
                 </>
               )}
             </button>
 
-            {/* --- BIOMETRIC LOGIN --- */}
+            {/* Biometric Button */}
             {isBiometricSupported && selectedUser?.credentials?.length > 0 && (
-              <div className="pt-2 sm:pt-3">
-                <div className="flex items-center gap-3 mb-3 opacity-60">
-                  <div className="h-px bg-slate-300 flex-1" />
-                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-500">Or use</span>
-                  <div className="h-px bg-slate-300 flex-1" />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleBiometricLogin}
-                  disabled={isBiometricLoading || isSubmitting}
-                  className="w-full flex items-center justify-center gap-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-2xl py-3.5 sm:py-4 transition-all active:scale-[0.98] disabled:opacity-50"
-                >
-                  {isBiometricLoading ? (
-                    <Loader2 size={20} className="animate-spin text-emerald-600" />
-                  ) : (
-                    <>
-                      <Fingerprint size={20} strokeWidth={2.5} className="text-emerald-600" />
-                      <span className="text-xs font-black uppercase tracking-widest">Touch ID / Face ID</span>
-                    </>
-                  )}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleBiometricLogin}
+                disabled={isBiometricLoading || isSubmitting}
+                className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 active:bg-white/10 text-white rounded-2xl py-3 transition-all active:scale-[0.98] disabled:opacity-40 mt-2"
+              >
+                {isBiometricLoading ? (
+                  <Loader2 size={18} className="animate-spin text-white" />
+                ) : (
+                  <>
+                    <Fingerprint size={18} strokeWidth={2.5} className="text-emerald-400" />
+                    <span className="text-[11px] font-black uppercase tracking-widest">Touch ID / Face ID</span>
+                  </>
+                )}
+              </button>
             )}
           </form>
+        </div>
 
+        {/* Bottom Secure Badge */}
+        <div className="relative z-10 flex items-center justify-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-500 shrink-0 pb-1">
+          <ShieldCheck size={12} className="text-emerald-500" />
+          End-to-End Encrypted Gateway
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 2. DESKTOP FULL-SCREEN VIEW (>= lg)                                       */}
+      {/* ========================================================================= */}
+      <div className="hidden lg:flex h-full w-full bg-white font-sans text-slate-900">
+        
+        {/* Left Side: Brand Showcase Canvas */}
+        <div className="relative flex flex-col justify-between flex-1 bg-slate-950 overflow-hidden p-16">
+          <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 bg-linear-to-br from-slate-950 via-slate-900 to-emerald-950 opacity-90" />
+            <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] bg-emerald-500/20 blur-[100px] rounded-full mix-blend-screen animate-pulse" style={{ animationDuration: '6s' }} />
+            <div className="absolute top-[30%] -right-[10%] w-[60%] h-[60%] bg-emerald-600/20 blur-[120px] rounded-full mix-blend-screen animate-pulse" style={{ animationDuration: '8s' }} />
+            <div className="absolute -bottom-[20%] left-[20%] w-[70%] h-[70%] bg-emerald-400/15 blur-[100px] rounded-full mix-blend-screen animate-pulse" style={{ animationDuration: '10s' }} />
+            <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] bg-size-[24px_24px] opacity-20" />
+          </div>
+
+          <div className="relative z-10 flex flex-col h-full justify-between">
+            <div className="flex flex-col items-start text-left">
+              <div className="h-64 w-64 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-3 flex items-center justify-center mb-8 shadow-2xl">
+                <img src={Logo} alt="Logo" className="h-full w-auto object-contain drop-shadow-md" />
+              </div>
+              
+              {/* <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-emerald-400 uppercase tracking-widest backdrop-blur-md mb-4">
+                <Sparkles size={12} className="animate-pulse" />
+                Private Ecosystem
+              </div> */}
+
+              <h1 className="text-6xl xl:text-7xl font-[1000] text-white tracking-tighter uppercase leading-[1.05]">
+                Dalal <br />
+                <span className="text-transparent bg-clip-text bg-linear-to-r from-emerald-400 to-emerald-300">
+                  Investment
+                </span>
+              </h1>
+              
+              <p className="text-slate-300 font-medium text-lg max-w-md mt-6 leading-relaxed">
+                An institutional-grade command center unifying family wealth, active client portfolios, and live treasury operations.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-8 border-t border-white/10 pt-8">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400">
+                  <Monitor size={20} strokeWidth={2.5} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-white font-bold text-sm uppercase tracking-wider">Client Terminal</span>
+                  <span className="text-slate-400 text-xs">Portfolio Analytics</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400">
+                  <Wallet size={20} strokeWidth={2.5} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-white font-bold text-sm uppercase tracking-wider">Expense Hub</span>
+                  <span className="text-slate-400 text-xs">Live Treasury Ledger</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side: Desktop Login Console */}
+        <div className="w-120 xl:w-140 flex flex-col justify-center px-12 xl:px-16 bg-white z-20 shadow-[-20px_0_40px_rgba(0,0,0,0.05)]">
+          <div className="w-full max-w-sm mx-auto">
+            <div className="mb-10 text-left">
+              <h2 className="text-3xl font-[1000] text-slate-900 tracking-tighter uppercase mb-1">Sign In</h2>
+              <p className="text-sm font-bold text-slate-400">Select your profile to authenticate.</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              
+              {/* Dropdown Profile Picker */}
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => !loadingUsers && setIsOpen(!isOpen)}
+                  className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all outline-none ${
+                    isOpen 
+                      ? 'border-emerald-500 bg-emerald-50/30 shadow-[0_8px_30px_rgba(16,185,129,0.1)]' 
+                      : 'border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                      selectedUser ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-200 text-slate-500'
+                    }`}>
+                      <User size={20} strokeWidth={2.5} />
+                    </div>
+                    <div className="flex flex-col items-start text-left truncate">
+                      {loadingUsers ? (
+                        <span className="text-sm font-bold text-slate-400">Loading directory...</span>
+                      ) : selectedUser ? (
+                        <>
+                          <span className="text-base font-[1000] text-slate-900 uppercase truncate tracking-tight">{selectedUser.name}</span>
+                          <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">@{selectedUser.username}</span>
+                        </>
+                      ) : (
+                        <span className="text-sm font-black uppercase tracking-wider text-slate-400">Choose Profile</span>
+                      )}
+                    </div>
+                  </div>
+                  <ChevronRight size={20} className={`text-slate-400 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-90 text-emerald-600' : ''}`} />
+                </button>
+
+                {isOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-100 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.08)] p-2 max-h-60 overflow-y-auto z-50 animate-in fade-in zoom-in-95">
+                    {users.map((u) => (
+                      <button
+                        key={u._id}
+                        type="button"
+                        onClick={() => handleSelect(u)}
+                        className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
+                          selectedUser?._id === u._id 
+                            ? 'bg-emerald-50 text-emerald-900' 
+                            : 'hover:bg-slate-50 text-slate-700'
+                        }`}
+                      >
+                        <div className="flex flex-col items-start text-left">
+                          <span className="text-sm font-black uppercase tracking-tight">{u.name}</span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">@{u.username}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-2 text-slate-400 mr-2">
+                            {u.allowedApps?.includes('CLIENT_TRACKER') && <Monitor size={14} title="Client App" />}
+                            {u.allowedApps?.includes('EXPENSE_TRACKER') && <Wallet size={14} title="Expense App" />}
+                          </div>
+                          {selectedUser?._id === u._id && <Check size={18} className="text-emerald-600" strokeWidth={3} />}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Password */}
+              <div className="relative">
+                <div className="relative flex items-center">
+                  <div className={`absolute left-5 transition-colors ${formData.password ? 'text-emerald-600' : 'text-slate-400'}`}>
+                    <Lock size={20} strokeWidth={2.5} />
+                  </div>
+                  
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    placeholder="Enter Password"
+                    className="w-full bg-slate-50 border-2 border-slate-100 hover:border-slate-200 focus:bg-white focus:border-emerald-500 rounded-2xl py-5 pl-14 pr-14 text-base font-black text-slate-900 outline-none transition-all placeholder:font-bold placeholder:text-slate-400 tracking-widest placeholder:tracking-normal"
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  />
+                  
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)} 
+                    className="absolute right-3 p-2 text-slate-400 hover:text-emerald-600 rounded-xl transition-colors focus:outline-none"
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Primary Login Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting || !formData.username}
+                className="w-full flex items-center justify-center gap-3 bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-2xl py-5 transition-all shadow-[0_10px_20px_rgba(16,185,129,0.2)] active:scale-[0.98] disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed mt-2"
+              >
+                {isSubmitting ? (
+                  <Loader2 size={22} className="animate-spin text-white" />
+                ) : (
+                  <>
+                    <span className="text-sm font-[1000] uppercase tracking-widest">Sign In Securely</span>
+                    <ArrowRight size={18} strokeWidth={3} />
+                  </>
+                )}
+              </button>
+
+              {/* Biometrics for Desktop */}
+              {isBiometricSupported && selectedUser?.credentials?.length > 0 && (
+                <div className="pt-4">
+                  <div className="flex items-center gap-3 mb-4 opacity-60">
+                    <div className="h-px bg-slate-200 flex-1" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Or Access With</span>
+                    <div className="h-px bg-slate-200 flex-1" />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleBiometricLogin}
+                    disabled={isBiometricLoading || isSubmitting}
+                    className="w-full flex items-center justify-center gap-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl py-4 transition-all active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {isBiometricLoading ? (
+                      <Loader2 size={20} className="animate-spin text-white" />
+                    ) : (
+                      <>
+                        <Fingerprint size={20} strokeWidth={2.5} className="text-emerald-400" />
+                        <span className="text-xs font-black uppercase tracking-widest">Touch ID / Face ID</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </form>
+
+            <div className="mt-8 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              <ShieldCheck size={14} className="text-emerald-500" />
+              End-to-End Encrypted Session
+            </div>
+          </div>
         </div>
       </div>
     </div>
