@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Lock, Loader2, ChevronRight, Eye, EyeOff, User, 
   Check, Fingerprint, Monitor, Wallet, ArrowRight, 
-  Sparkles, ShieldCheck
+  ShieldCheck, Sun, Moon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -21,6 +21,26 @@ const Auth = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const dropdownRef = useRef(null);
 
+  // Theme Management with Persistent Storage
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('app-theme') || 'dark';
+  });
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    localStorage.setItem('app-theme', nextTheme);
+  };
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
+  // Biometrics States
   const [isBiometricSupported, setIsBiometricSupported] = useState(false);
   const [isBiometricLoading, setIsBiometricLoading] = useState(false);
 
@@ -51,12 +71,16 @@ const Auth = () => {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
   const handleSelect = (user) => {
     setSelectedUser(user);
-    setFormData({ ...formData, username: user.username });
+    setFormData((prev) => ({ ...prev, username: user.username }));
     setIsOpen(false);
   };
 
@@ -115,299 +139,235 @@ const Auth = () => {
     }
   };
 
+  const isDark = theme === 'dark';
+  const hasBiometrics = isBiometricSupported && selectedUser?.credentials?.length > 0;
+
   return (
-    <div className="h-dvh w-full overflow-hidden font-sans select-none bg-slate-950">
+    <div className={`h-dvh w-full font-sans select-none overflow-hidden relative transition-colors duration-300 flex flex-col justify-between ${
+      isDark 
+        ? 'bg-[#060A14] text-slate-100 selection:bg-emerald-500/30 selection:text-emerald-300' 
+        : 'bg-[#F1F5F9] text-slate-900 selection:bg-emerald-500/20 selection:text-emerald-900'
+    }`}>
 
-      {/* ========================================================================= */}
-      {/* 1. MOBILE NATIVE VIEW (< lg)                                              */}
-      {/* ========================================================================= */}
-      <div className="lg:hidden relative flex flex-col justify-between h-dvh w-full p-2 sm:p-8 bg-linear-to-b from-slate-900 via-slate-950 to-slate-950 overflow-y-auto">
-        
-        {/* Background Ambient Glows */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-          <div className="absolute -top-16 -left-16 w-64 h-64 bg-emerald-500/15 blur-[80px] rounded-full" />
-          <div className="absolute top-1/2 -right-20 w-64 h-64 bg-emerald-600/10 blur-[90px] rounded-full" />
-          <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] bg-size-[20px_20px]" />
-        </div>
-
-        {/* Top Header & Branding */}
-        <div className="relative z-10 flex flex-col items-center text-center shrink-0">
-          <div className="h-32 flex items-center justify-center shadow-xl">
-            <img src={Logo} alt="Logo" className="h-full w-auto object-contain drop-shadow" />
-          </div>
-          
-          {/* <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-2">
-            <Sparkles size={10} className="animate-pulse" />
-            Private Ecosystem
-          </div> */}
-
-          <h1 className="text-5xl mb-4 sm:text-4xl font-[1000] text-white tracking-tight uppercase leading-none">
-            Dalal <span className="text-transparent bg-clip-text bg-linear-to-r from-emerald-400 to-emerald-300">Investment</span>
-          </h1>
-        </div>
-
-        {/* Form Console for Mobile */}
-        <div className="relative z-10 w-full max-w-sm mx-auto my-auto py-2">
-          <form onSubmit={handleSubmit} className="space-y-3.5">
-            
-            {/* User Selector Dropdown */}
-            <div className="relative" ref={dropdownRef}>
-              <button
-                type="button"
-                onClick={() => !loadingUsers && setIsOpen(!isOpen)}
-                className={`w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all outline-none ${
-                  isOpen 
-                    ? 'border-emerald-500 bg-slate-900/90 shadow-[0_0_20px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/50' 
-                    : 'border-white/10 bg-slate-900/60 active:bg-slate-900'
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                    selectedUser ? 'bg-emerald-500 text-white shadow-md' : 'bg-white/10 text-slate-400'
-                  }`}>
-                    <User size={18} strokeWidth={2.5} />
-                  </div>
-                  <div className="flex flex-col items-start text-left truncate">
-                    {loadingUsers ? (
-                      <span className="text-xs font-bold text-slate-400">Loading directory...</span>
-                    ) : selectedUser ? (
-                      <>
-                        <span className="text-sm font-[1000] text-white uppercase truncate tracking-tight">{selectedUser.name}</span>
-                        <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">@{selectedUser.username}</span>
-                      </>
-                    ) : (
-                      <span className="text-xs font-black uppercase tracking-wider text-slate-400">Choose Profile</span>
-                    )}
-                  </div>
-                </div>
-                <ChevronRight size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-90 text-emerald-400' : ''}`} />
-              </button>
-
-              {/* Mobile Dropdown Menu */}
-              {isOpen && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-slate-900/95 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-2xl p-1.5 max-h-52 overflow-y-auto z-50 animate-in fade-in zoom-in-95">
-                  {users.map((u) => (
-                    <button
-                      key={u._id}
-                      type="button"
-                      onClick={() => handleSelect(u)}
-                      className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
-                        selectedUser?._id === u._id 
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
-                          : 'active:bg-white/5 text-slate-200'
-                      }`}
-                    >
-                      <div className="flex flex-col items-start text-left">
-                        <span className="text-xs font-black uppercase tracking-tight">{u.name}</span>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">@{u.username}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex gap-1.5 text-slate-400 mr-1">
-                          {u.allowedApps?.includes('CLIENT_TRACKER') && <Monitor size={13} title="Client App" />}
-                          {u.allowedApps?.includes('EXPENSE_TRACKER') && <Wallet size={13} title="Expense App" />}
-                        </div>
-                        {selectedUser?._id === u._id && <Check size={16} className="text-emerald-400" strokeWidth={3} />}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Password Input */}
-            <div className="relative flex items-center">
-              <div className={`absolute left-4 transition-colors ${formData.password ? 'text-emerald-400' : 'text-slate-500'}`}>
-                <Lock size={18} strokeWidth={2.5} />
-              </div>
-              
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                placeholder="Password"
-                className="w-full bg-slate-900/60 border border-white/10 focus:border-emerald-500 focus:bg-slate-900 rounded-2xl py-3.5 pl-12 pr-12 text-sm font-black text-white outline-none transition-all placeholder:font-bold placeholder:text-slate-500 tracking-widest placeholder:tracking-normal"
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
-              
-              <button 
-                type="button" 
-                onClick={() => setShowPassword(!showPassword)} 
-                className="absolute right-3 p-1.5 text-slate-400 active:text-emerald-400 rounded-xl transition-colors focus:outline-none"
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-
-            {/* Submit Action */}
-            <button
-              type="submit"
-              disabled={isSubmitting || !formData.username}
-              className="w-full flex items-center justify-center gap-2.5 bg-linear-to-r from-emerald-600 to-emerald-700 active:from-emerald-500 active:to-emerald-600 text-white rounded-2xl py-4 transition-all shadow-[0_8px_20px_rgba(16,185,129,0.25)] active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
-            >
-              {isSubmitting ? (
-                <Loader2 size={18} className="animate-spin text-white" />
-              ) : (
-                <>
-                  <span className="text-xs font-[1000] uppercase tracking-widest">Sign In</span>
-                  <ArrowRight size={16} strokeWidth={3} />
-                </>
-              )}
-            </button>
-
-            {/* Biometric Button */}
-            {isBiometricSupported && selectedUser?.credentials?.length > 0 && (
-              <button
-                type="button"
-                onClick={handleBiometricLogin}
-                disabled={isBiometricLoading || isSubmitting}
-                className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 active:bg-white/10 text-white rounded-2xl py-3 transition-all active:scale-[0.98] disabled:opacity-40 mt-2"
-              >
-                {isBiometricLoading ? (
-                  <Loader2 size={18} className="animate-spin text-white" />
-                ) : (
-                  <>
-                    <Fingerprint size={18} strokeWidth={2.5} className="text-emerald-400" />
-                    <span className="text-[11px] font-black uppercase tracking-widest">Touch ID / Face ID</span>
-                  </>
-                )}
-              </button>
-            )}
-          </form>
-        </div>
-
-        {/* Bottom Secure Badge */}
-        <div className="relative z-10 flex items-center justify-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-500 shrink-0 pb-1">
-          <ShieldCheck size={12} className="text-emerald-500" />
-          End-to-End Encrypted Gateway
-        </div>
+      {/* Atmospheric Background Ambient Grid & Soft Blooms */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className={`absolute inset-0 ${
+          isDark 
+            ? 'bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] bg-size-[24px_24px] opacity-40' 
+            : 'bg-[radial-gradient(#94a3b8_1px,transparent_1px)] bg-size-[24px_24px] opacity-30'
+        }`} />
+        <div className={`absolute -top-20 -left-20 w-100 lg:w-225 xl:w-275 h-100 lg:h-225 xl:h-275 rounded-full blur-[130px] lg:blur-[180px] ${
+          isDark ? 'bg-emerald-500/20' : 'bg-emerald-400/25'
+        }`} />
+        <div className={`absolute -bottom-20 -right-20 w-87.5 lg:w-212.5 xl:w-250 h-87.5 lg:h-212.5 xl:h-250 rounded-full blur-[130px] lg:blur-[180px] ${
+          isDark ? 'bg-teal-600/15' : 'bg-teal-300/25'
+        }`} />
       </div>
 
-      {/* ========================================================================= */}
-      {/* 2. DESKTOP FULL-SCREEN VIEW (>= lg)                                       */}
-      {/* ========================================================================= */}
-      <div className="hidden lg:flex h-full w-full bg-white font-sans text-slate-900">
-        
-        {/* Left Side: Brand Showcase Canvas */}
-        <div className="relative flex flex-col justify-between flex-1 bg-slate-950 overflow-hidden p-16">
-          <div className="absolute inset-0 z-0">
-            <div className="absolute inset-0 bg-linear-to-br from-slate-950 via-slate-900 to-emerald-950 opacity-90" />
-            <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] bg-emerald-500/20 blur-[100px] rounded-full mix-blend-screen animate-pulse" style={{ animationDuration: '6s' }} />
-            <div className="absolute top-[30%] -right-[10%] w-[60%] h-[60%] bg-emerald-600/20 blur-[120px] rounded-full mix-blend-screen animate-pulse" style={{ animationDuration: '8s' }} />
-            <div className="absolute -bottom-[20%] left-[20%] w-[70%] h-[70%] bg-emerald-400/15 blur-[100px] rounded-full mix-blend-screen animate-pulse" style={{ animationDuration: '10s' }} />
-            <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] bg-size-[24px_24px] opacity-20" />
+      {/* Floating Theme Switcher */}
+      <div className="absolute top-3 right-3 sm:top-5 sm:right-6 lg:top-8 lg:right-12 z-50">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className={`flex items-center gap-2 px-3 py-1.5 lg:px-4 lg:py-2 rounded-full border text-xs lg:text-sm font-bold transition-all duration-200 cursor-pointer shadow-xs active:scale-95 backdrop-blur-xl ${
+            isDark 
+              ? 'bg-slate-900/80 border-slate-700/80 text-slate-300 hover:text-white hover:border-slate-600' 
+              : 'bg-white/90 border-slate-300 text-slate-700 hover:text-slate-900 hover:border-slate-400'
+          }`}
+          aria-label="Toggle Theme"
+        >
+          {isDark ? (
+            <>
+              <Sun size={13} className="text-amber-400 lg:w-4 lg:h-4" />
+              <span className="text-[10px] lg:text-xs font-mono uppercase tracking-wider hidden sm:inline">Light</span>
+            </>
+          ) : (
+            <>
+              <Moon size={13} className="text-emerald-600 lg:w-4 lg:h-4" />
+              <span className="text-[10px] lg:text-xs font-mono uppercase tracking-wider hidden sm:inline">Dark</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Main Workspace Stage */}
+      <main className="relative z-10 h-full w-full max-w-7xl 2xl:max-w-375 mx-auto flex flex-col justify-between lg:grid lg:grid-cols-12 lg:gap-14 xl:gap-20 lg:items-center px-4 sm:px-8 lg:px-12 xl:px-16 pt-3 sm:pt-6 lg:py-8 pb-0 sm:pb-6 min-h-0 overflow-y-auto lg:overflow-visible">
+
+        {/* Brand Showcase Area */}
+        <div className="w-full lg:col-span-6 flex flex-col items-center lg:items-start text-center lg:text-left shrink-0 pt-1 lg:pt-0">
+          <div className="relative mb-2 lg:mb-6 xl:mb-8 select-none">
+            <div className="absolute -inset-4 lg:-inset-8 bg-linear-to-tr from-emerald-500/25 to-teal-400/20 blur-2xl lg:blur-3xl rounded-full scale-90 pointer-events-none" />
+            <img 
+              src={Logo} 
+              alt="Dalal Investment" 
+              className="relative z-10 h-14 sm:h-20 lg:h-52 xl:h-64 2xl:h-72 w-auto object-contain drop-shadow-[0_12px_24px_rgba(16,185,129,0.25)]" 
+            />
           </div>
 
-          <div className="relative z-10 flex flex-col h-full justify-between">
-            <div className="flex flex-col items-start text-left">
-              <div className="h-64 w-64 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-3 flex items-center justify-center mb-8 shadow-2xl">
-                <img src={Logo} alt="Logo" className="h-full w-auto object-contain drop-shadow-md" />
-              </div>
-              
-              {/* <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-emerald-400 uppercase tracking-widest backdrop-blur-md mb-4">
-                <Sparkles size={12} className="animate-pulse" />
-                Private Ecosystem
-              </div> */}
+          <h1 className={`text-2xl sm:text-4xl lg:text-6xl xl:text-7xl 2xl:text-8xl font-[1000] tracking-tight leading-[0.98] uppercase mb-0.5 sm:mb-1.5 lg:mb-3 ${
+            isDark ? 'text-white' : 'text-slate-950'
+          }`}>
+            Dalal <br className="hidden lg:inline" />
+            <span className="bg-linear-to-r from-emerald-500 via-teal-400 to-emerald-400 bg-clip-text text-transparent">
+              Investment
+            </span>
+          </h1>
 
-              <h1 className="text-6xl xl:text-7xl font-[1000] text-white tracking-tighter uppercase leading-[1.05]">
-                Dalal <br />
-                <span className="text-transparent bg-clip-text bg-linear-to-r from-emerald-400 to-emerald-300">
-                  Investment
-                </span>
-              </h1>
-              
-              <p className="text-slate-300 font-medium text-lg max-w-md mt-6 leading-relaxed">
-                An institutional-grade command center unifying family wealth, active client portfolios, and live treasury operations.
-              </p>
+          <div className="flex items-center gap-2 lg:gap-3 mb-1 lg:mb-6 xl:mb-8">
+            <div className="h-0.5 sm:h-1 lg:h-1.5 w-5 sm:w-8 lg:w-12 bg-linear-to-r from-emerald-500 to-teal-500 rounded-full" />
+            <p className="text-[10px] sm:text-xs lg:text-sm xl:text-base font-mono font-bold uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">
+              Wealth • Heritage • Growth
+            </p>
+          </div>
+
+          {/* Desktop App Indicators */}
+          <div className="hidden lg:grid grid-cols-2 gap-4 xl:gap-5 w-full max-w-lg xl:max-w-xl mt-4 xl:mt-6">
+            <div className={`flex items-center gap-3.5 xl:gap-4 p-4 xl:p-5 rounded-2xl border transition-all ${
+              isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200 shadow-xs'
+            }`}>
+              <div className="p-2.5 xl:p-3 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0">
+                <Monitor size={20} className="xl:w-6 xl:h-6" strokeWidth={2.4} />
+              </div>
+              <div className="text-left min-w-0">
+                <h4 className={`text-xs xl:text-sm font-bold uppercase tracking-wider truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  Client Tracker
+                </h4>
+                <p className="text-[11px] xl:text-xs text-slate-400 truncate">Portfolios & Analytics</p>
+              </div>
             </div>
 
-            <div className="flex items-center gap-8 border-t border-white/10 pt-8">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400">
-                  <Monitor size={20} strokeWidth={2.5} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-white font-bold text-sm uppercase tracking-wider">Client Terminal</span>
-                  <span className="text-slate-400 text-xs">Portfolio Analytics</span>
-                </div>
+            <div className={`flex items-center gap-3.5 xl:gap-4 p-4 xl:p-5 rounded-2xl border transition-all ${
+              isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200 shadow-xs'
+            }`}>
+              <div className="p-2.5 xl:p-3 rounded-xl bg-teal-500/10 text-teal-500 border border-teal-500/20 shrink-0">
+                <Wallet size={20} className="xl:w-6 xl:h-6" strokeWidth={2.4} />
               </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400">
-                  <Wallet size={20} strokeWidth={2.5} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-white font-bold text-sm uppercase tracking-wider">Expense Hub</span>
-                  <span className="text-slate-400 text-xs">Live Treasury Ledger</span>
-                </div>
+              <div className="text-left min-w-0">
+                <h4 className={`text-xs xl:text-sm font-bold uppercase tracking-wider truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  Expense Tracker
+                </h4>
+                <p className="text-[11px] xl:text-xs text-slate-400 truncate">Treasury Ledger</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Side: Desktop Login Console */}
-        <div className="w-120 xl:w-140 flex flex-col justify-center px-12 xl:px-16 bg-white z-20 shadow-[-20px_0_40px_rgba(0,0,0,0.05)]">
-          <div className="w-full max-w-sm mx-auto">
-            <div className="mb-10 text-left">
-              <h2 className="text-3xl font-[1000] text-slate-900 tracking-tighter uppercase mb-1">Sign In</h2>
-              <p className="text-sm font-bold text-slate-400">Select your profile to authenticate.</p>
+        {/* Distinct Form Card / Mobile Bottom Sheet */}
+        <div className="w-full lg:col-span-6 max-w-md lg:max-w-xl xl:max-w-2xl mx-auto shrink-0 mt-auto lg:mt-0">
+          <div className={`w-full rounded-t-3xl sm:rounded-2xl lg:rounded-3xl border-t-2 border-x-2 sm:border-2 lg:border-2 transition-all duration-300 shadow-2xl p-5 sm:p-7 lg:p-9 xl:p-11 ${
+            isDark 
+              ? 'bg-[#0E1626] border-emerald-500/30 text-white shadow-black/80' 
+              : 'bg-white border-slate-300 text-slate-900 shadow-slate-900/15'
+          }`}>
+
+            {/* Form Top Header */}
+            <div className="flex items-center justify-between pb-3 lg:pb-5 mb-3 sm:mb-4 lg:mb-6 border-b border-slate-200/80 dark:border-slate-800">
+              <div className="text-left">
+                <h2 className={`text-base sm:text-xl lg:text-2xl xl:text-3xl font-[1000] uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                  Sign In
+                </h2>
+                <p className="text-[11px] sm:text-xs lg:text-sm text-slate-400 font-medium mt-0.5">Choose your account to sign in</p>
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] lg:text-xs font-mono text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                <ShieldCheck size={14} className="lg:w-4 lg:h-4" strokeWidth={2.4} />
+                <span>Secure</span>
+              </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              
-              {/* Dropdown Profile Picker */}
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 lg:space-y-6 text-left w-full">
+
+              {/* Profile Selector */}
               <div className="relative" ref={dropdownRef}>
+                <div className="flex items-center justify-between mb-1 lg:mb-2 px-0.5">
+                  <label className="text-[10px] lg:text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Profile
+                  </label>
+                  {hasBiometrics && (
+                    <button
+                      type="button"
+                      onClick={handleBiometricLogin}
+                      disabled={isBiometricLoading || isSubmitting}
+                      className="inline-flex items-center gap-1.5 text-[10px] lg:text-xs font-bold text-emerald-500 hover:text-emerald-400 transition-colors cursor-pointer"
+                    >
+                      {isBiometricLoading ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <Fingerprint size={14} className="lg:w-4 lg:h-4" strokeWidth={2.4} />
+                      )}
+                      <span>Use Passkey</span>
+                    </button>
+                  )}
+                </div>
+
                 <button
                   type="button"
                   onClick={() => !loadingUsers && setIsOpen(!isOpen)}
-                  className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all outline-none ${
-                    isOpen 
-                      ? 'border-emerald-500 bg-emerald-50/30 shadow-[0_8px_30px_rgba(16,185,129,0.1)]' 
-                      : 'border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-slate-200'
+                  className={`w-full flex items-center justify-between p-2.5 sm:p-3 lg:p-4 rounded-xl lg:rounded-2xl border text-left transition-all duration-150 outline-none cursor-pointer ${
+                    isOpen
+                      ? 'border-emerald-500 ring-2 ring-emerald-500/20 ' + (isDark ? 'bg-slate-900' : 'bg-emerald-50/20')
+                      : isDark
+                        ? 'border-slate-700 bg-slate-900/90 hover:border-slate-600'
+                        : 'border-slate-300 bg-slate-50 hover:border-slate-400'
                   }`}
                 >
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                      selectedUser ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-200 text-slate-500'
+                  <div className="flex items-center gap-2.5 sm:gap-3 lg:gap-4 min-w-0">
+                    <div className={`h-8 w-8 lg:h-11 lg:w-11 rounded-lg lg:rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                      selectedUser 
+                        ? 'bg-emerald-600 text-white shadow-xs' 
+                        : isDark
+                          ? 'bg-slate-800 text-slate-400 border border-slate-700'
+                          : 'bg-slate-200 text-slate-600 border border-slate-300'
                     }`}>
-                      <User size={20} strokeWidth={2.5} />
+                      <User size={15} className="lg:w-5 lg:h-5" strokeWidth={2.4} />
                     </div>
-                    <div className="flex flex-col items-start text-left truncate">
+                    <div className="flex flex-col items-start truncate">
                       {loadingUsers ? (
-                        <span className="text-sm font-bold text-slate-400">Loading directory...</span>
+                        <span className="text-xs lg:text-sm text-slate-400 font-medium">Loading...</span>
                       ) : selectedUser ? (
                         <>
-                          <span className="text-base font-[1000] text-slate-900 uppercase truncate tracking-tight">{selectedUser.name}</span>
-                          <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">@{selectedUser.username}</span>
+                          <span className={`text-xs sm:text-sm lg:text-base font-bold uppercase tracking-tight truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                            {selectedUser.name}
+                          </span>
+                          <span className="text-[9px] sm:text-[10px] lg:text-xs font-mono text-emerald-500 uppercase tracking-wider">
+                            @{selectedUser.username}
+                          </span>
                         </>
                       ) : (
-                        <span className="text-sm font-black uppercase tracking-wider text-slate-400">Choose Profile</span>
+                        <span className="text-xs sm:text-sm lg:text-base font-bold text-slate-400">Select Profile</span>
                       )}
                     </div>
                   </div>
-                  <ChevronRight size={20} className={`text-slate-400 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-90 text-emerald-600' : ''}`} />
+                  <ChevronRight size={16} className={`text-slate-400 lg:w-5 lg:h-5 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-90 text-emerald-500' : ''}`} />
                 </button>
 
+                {/* Dropdown Menu List: In-flow expansion on mobile */}
                 {isOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-100 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.08)] p-2 max-h-60 overflow-y-auto z-50 animate-in fade-in zoom-in-95">
+                  <div className={`mt-2 rounded-xl lg:rounded-2xl border shadow-2xl p-1.5 lg:p-2 max-h-40 sm:max-h-52 lg:max-h-64 overflow-y-auto backdrop-blur-xl ${
+                    isDark ? 'bg-slate-900/95 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
+                  } lg:absolute lg:top-[calc(100%+6px)] lg:left-0 lg:right-0 lg:z-50 lg:mt-0`}>
                     {users.map((u) => (
                       <button
                         key={u._id}
                         type="button"
                         onClick={() => handleSelect(u)}
-                        className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
+                        className={`w-full flex items-center justify-between p-2 lg:p-3 rounded-lg lg:rounded-xl transition-all mb-0.5 last:mb-0 cursor-pointer ${
                           selectedUser?._id === u._id 
-                            ? 'bg-emerald-50 text-emerald-900' 
-                            : 'hover:bg-slate-50 text-slate-700'
+                            ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30' 
+                            : isDark
+                              ? 'hover:bg-slate-800 text-slate-200 border border-transparent'
+                              : 'hover:bg-slate-100 text-slate-800 border border-transparent'
                         }`}
                       >
-                        <div className="flex flex-col items-start text-left">
-                          <span className="text-sm font-black uppercase tracking-tight">{u.name}</span>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">@{u.username}</span>
+                        <div className="flex flex-col items-start text-left truncate min-w-0 pr-2">
+                          <span className="text-xs lg:text-sm font-bold uppercase tracking-tight truncate">{u.name}</span>
+                          <span className="text-[9px] lg:text-xs font-mono text-slate-400">@{u.username}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex gap-2 text-slate-400 mr-2">
-                            {u.allowedApps?.includes('CLIENT_TRACKER') && <Monitor size={14} title="Client App" />}
-                            {u.allowedApps?.includes('EXPENSE_TRACKER') && <Wallet size={14} title="Expense App" />}
+                        <div className="flex items-center gap-1.5 lg:gap-2 shrink-0">
+                          <div className="flex gap-1 lg:gap-1.5 text-slate-400 mr-0.5">
+                            {u.allowedApps?.includes('CLIENT_TRACKER') && <Monitor size={11} className="lg:w-3.5 lg:h-3.5" title="Client Tracker" />}
+                            {u.allowedApps?.includes('EXPENSE_TRACKER') && <Wallet size={11} className="lg:w-3.5 lg:h-3.5" title="Expense Tracker" />}
                           </div>
-                          {selectedUser?._id === u._id && <Check size={18} className="text-emerald-600" strokeWidth={3} />}
+                          {selectedUser?._id === u._id && <Check size={14} className="lg:w-4 lg:h-4 text-emerald-500" strokeWidth={3} />}
                         </div>
                       </button>
                     ))}
@@ -415,82 +375,87 @@ const Auth = () => {
                 )}
               </div>
 
-              {/* Password */}
-              <div className="relative">
+              {/* Password Field with Integrated Biometric Quick Action */}
+              <div className="space-y-1 lg:space-y-2">
+                <label className="text-[10px] lg:text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-0.5 block">
+                  Password
+                </label>
+
                 <div className="relative flex items-center">
-                  <div className={`absolute left-5 transition-colors ${formData.password ? 'text-emerald-600' : 'text-slate-400'}`}>
-                    <Lock size={20} strokeWidth={2.5} />
+                  <div className={`absolute left-3 lg:left-4 transition-colors ${formData.password ? 'text-emerald-500' : 'text-slate-400'}`}>
+                    <Lock size={14} className="lg:w-5 lg:h-5" strokeWidth={2.4} />
                   </div>
-                  
+
                   <input
                     type={showPassword ? "text" : "password"}
                     required
-                    placeholder="Enter Password"
-                    className="w-full bg-slate-50 border-2 border-slate-100 hover:border-slate-200 focus:bg-white focus:border-emerald-500 rounded-2xl py-5 pl-14 pr-14 text-base font-black text-slate-900 outline-none transition-all placeholder:font-bold placeholder:text-slate-400 tracking-widest placeholder:tracking-normal"
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="••••••••••••"
+                    className={`w-full border rounded-xl lg:rounded-2xl py-2.5 lg:py-3.5 pl-9 lg:pl-12 pr-16 lg:pr-20 text-xs sm:text-sm lg:text-base font-mono outline-none transition-all tracking-wider placeholder:font-sans placeholder:tracking-normal focus:ring-2 focus:ring-emerald-500/20 ${
+                      isDark 
+                        ? 'bg-slate-900/90 border-slate-700 text-white placeholder:text-slate-600 focus:border-emerald-500' 
+                        : 'bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-emerald-600'
+                    }`}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
                   />
-                  
-                  <button 
-                    type="button" 
-                    onClick={() => setShowPassword(!showPassword)} 
-                    className="absolute right-3 p-2 text-slate-400 hover:text-emerald-600 rounded-xl transition-colors focus:outline-none"
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
+
+                  {/* Actions inside password bar: Passkey (if supported) + Eye toggle */}
+                  <div className="absolute right-2.5 lg:right-3.5 flex items-center gap-1.5 lg:gap-2">
+                    {hasBiometrics && (
+                      <button
+                        type="button"
+                        onClick={handleBiometricLogin}
+                        disabled={isBiometricLoading || isSubmitting}
+                        title="Sign in with Passkey / Face ID"
+                        className="p-1 lg:p-1.5 text-emerald-500 hover:text-emerald-400 transition-colors focus:outline-none cursor-pointer"
+                        aria-label="Use Passkey"
+                      >
+                        {isBiometricLoading ? (
+                          <Loader2 size={14} className="lg:w-5 lg:h-5 animate-spin text-emerald-500" />
+                        ) : (
+                          <Fingerprint size={15} className="lg:w-5 lg:h-5" strokeWidth={2.4} />
+                        )}
+                      </button>
+                    )}
+
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)} 
+                      className="p-1 lg:p-1.5 text-slate-400 hover:text-emerald-500 transition-colors focus:outline-none cursor-pointer"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff size={14} className="lg:w-5 lg:h-5" /> : <Eye size={14} className="lg:w-5 lg:h-5" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Primary Login Button */}
+              {/* Login CTA */}
               <button
                 type="submit"
                 disabled={isSubmitting || !formData.username}
-                className="w-full flex items-center justify-center gap-3 bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-2xl py-5 transition-all shadow-[0_10px_20px_rgba(16,185,129,0.2)] active:scale-[0.98] disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed mt-2"
+                className="w-full mt-1 lg:mt-3 bg-linear-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl lg:rounded-2xl py-3 lg:py-4 font-bold text-xs sm:text-sm lg:text-base uppercase tracking-wider shadow-md shadow-emerald-600/20 active:scale-[0.99] disabled:opacity-40 transition-all duration-150 flex items-center justify-center gap-2 lg:gap-3 cursor-pointer"
               >
                 {isSubmitting ? (
-                  <Loader2 size={22} className="animate-spin text-white" />
+                  <Loader2 size={15} className="lg:w-5 lg:h-5 animate-spin text-white" />
                 ) : (
                   <>
-                    <span className="text-sm font-[1000] uppercase tracking-widest">Sign In Securely</span>
-                    <ArrowRight size={18} strokeWidth={3} />
+                    <span>Sign In</span>
+                    <ArrowRight size={14} className="lg:w-5 lg:h-5" strokeWidth={2.4} />
                   </>
                 )}
               </button>
-
-              {/* Biometrics for Desktop */}
-              {isBiometricSupported && selectedUser?.credentials?.length > 0 && (
-                <div className="pt-4">
-                  <div className="flex items-center gap-3 mb-4 opacity-60">
-                    <div className="h-px bg-slate-200 flex-1" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Or Access With</span>
-                    <div className="h-px bg-slate-200 flex-1" />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleBiometricLogin}
-                    disabled={isBiometricLoading || isSubmitting}
-                    className="w-full flex items-center justify-center gap-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl py-4 transition-all active:scale-[0.98] disabled:opacity-50"
-                  >
-                    {isBiometricLoading ? (
-                      <Loader2 size={20} className="animate-spin text-white" />
-                    ) : (
-                      <>
-                        <Fingerprint size={20} strokeWidth={2.5} className="text-emerald-400" />
-                        <span className="text-xs font-black uppercase tracking-widest">Touch ID / Face ID</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
             </form>
-
-            <div className="mt-8 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-              <ShieldCheck size={14} className="text-emerald-500" />
-              End-to-End Encrypted Session
-            </div>
           </div>
         </div>
-      </div>
+
+      </main>
+
+      {/* Desktop-Only Footer */}
+      <footer className="hidden lg:flex w-full max-w-7xl 2xl:max-w-375 mx-auto shrink-0 items-center justify-between text-xs lg:text-sm font-mono text-slate-400 dark:text-slate-500 px-4 sm:px-8 lg:px-12 xl:px-16 pb-3 lg:pb-4">
+        <p>© 2026 Dalal Investment</p>
+        <span className="text-emerald-500 font-bold">Gateway v2.6</span>
+      </footer>
+
     </div>
   );
 };
