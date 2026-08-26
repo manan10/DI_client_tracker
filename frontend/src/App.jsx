@@ -25,6 +25,7 @@ const MaintenanceView = lazy(() => import("./pages/ClientTracker/MaintenanceView
 
 // Home Expense Tracker App Components
 const ExpenseDashboard = lazy(() => import("./pages/ExpenseTracker/ExpenseDashboard"));
+const ExpenseDashboardNew = lazy(() => import("./pages/ExpenseTracker/ExpenseDashboardNew"));
 const MaintenanceViewExpenses = lazy(() => import("./pages/ExpenseTracker/MaintenanceViewExpenses"));
 const ExpenseSettings = lazy(() => import("./pages/ExpenseTracker/ExpenseSettings"));
 const ExpenseAnalytics = lazy(() => import("./pages/ExpenseTracker/ExpenseAnalytics"));
@@ -86,7 +87,7 @@ function App() {
                   </ProtectedRoute>
                 }
               >
-                <Route path="/expenses" element={<ExpenseDashboard />} />
+                <Route path="/expenses" element={<ExpenseDashboardNew />} />
                 <Route path="/expenses/analytics" element={<ExpenseAnalytics />} />
                 <Route path="/expenses/history" element={<ExpenseHistory />} />
               </Route>

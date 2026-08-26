@@ -20,16 +20,25 @@ const ExpenseTrackerLayout = () => {
   const initializationTriggered = useRef(false);
 
   const [expenseData, setExpenseData] = useState({
-    amount: "", category: "", description: "", sourceWallet: "", type: "DEBIT",
+    amount: "",
+    category: "",
+    description: "",
+    sourceWallet: "",
+    type: "DEBIT",
   });
 
   const [topUpData, setTopUpData] = useState({
-    amount: "", description: "", targetWallet: "", isExternal: false,
+    amount: "",
+    description: "",
+    targetWallet: "",
+    isExternal: false,
   });
 
-  // NEW: Transfer State
   const [transferData, setTransferData] = useState({
-    amount: "", description: "", sourceWallet: "", targetWallet: "",
+    amount: "",
+    description: "",
+    sourceWallet: "",
+    targetWallet: "",
   });
 
   const fetchWallets = useCallback(async () => {
@@ -37,12 +46,17 @@ const ExpenseTrackerLayout = () => {
       const data = await request("/spending/summary");
       if (data?.wallets) {
         setWallets(data.wallets);
-        const userWallet = data.wallets.find(w => 
-          w.walletName.toLowerCase().includes(user?.name?.toLowerCase()) || (!w.isGeneralPool && !w.isVirtual)
+        const userWallet = data.wallets.find(
+          (w) =>
+            w.walletName.toLowerCase().includes(user?.name?.toLowerCase()) ||
+            (!w.isGeneralPool && !w.isVirtual),
         );
-        const activeWallet = userWallet || data.wallets.find(w => !w.isGeneralPool);
+        const activeWallet = userWallet || data.wallets.find((w) => !w.isGeneralPool);
         if (activeWallet) {
-          setExpenseData(prev => ({ ...prev, sourceWallet: prev.sourceWallet || activeWallet._id }));
+          setExpenseData((prev) => ({
+            ...prev,
+            sourceWallet: prev.sourceWallet || activeWallet._id,
+          }));
         }
       }
     } catch (err) {
@@ -53,18 +67,28 @@ const ExpenseTrackerLayout = () => {
   useEffect(() => {
     if (!initializationTriggered.current) {
       initializationTriggered.current = true;
-      setTimeout(() => { fetchWallets(); }, 0);
+      setTimeout(() => {
+        fetchWallets();
+      }, 0);
     }
   }, [fetchWallets]);
 
   const handleExpenseSubmit = async (e) => {
     if (e) e.preventDefault();
-    const res = await request("/spending", "POST", { ...expenseData, amount: Number(expenseData.amount) });
+    const res = await request("/spending", "POST", {
+      ...expenseData,
+      amount: Number(expenseData.amount),
+    });
     if (res) {
       setIsExpenseModalOpen(false);
-      setExpenseData(prev => ({ ...prev, amount: "", description: "", category: "" }));
+      setExpenseData((prev) => ({
+        ...prev,
+        amount: "",
+        description: "",
+        category: "",
+      }));
       await fetchWallets();
-      setRefreshKey(prev => prev + 1);
+      setRefreshKey((prev) => prev + 1);
     }
   };
 
@@ -77,13 +101,17 @@ const ExpenseTrackerLayout = () => {
     });
     if (res) {
       setIsTopUpModalOpen(false);
-      setTopUpData({ amount: "", description: "", targetWallet: "", isExternal: false });
+      setTopUpData({
+        amount: "",
+        description: "",
+        targetWallet: "",
+        isExternal: false,
+      });
       await fetchWallets();
-      setRefreshKey(prev => prev + 1);
+      setRefreshKey((prev) => prev + 1);
     }
   };
 
-  // NEW: Transfer Submit Handler
   const handleTransferSubmit = async (e) => {
     if (e) e.preventDefault();
     const res = await request("/wallets/transfer", "POST", {
@@ -94,44 +122,70 @@ const ExpenseTrackerLayout = () => {
     });
     if (res) {
       setIsTransferModalOpen(false);
-      setTransferData({ amount: "", description: "", sourceWallet: "", targetWallet: "" });
+      setTransferData({
+        amount: "",
+        description: "",
+        sourceWallet: "",
+        targetWallet: "",
+      });
       await fetchWallets();
-      setRefreshKey(prev => prev + 1);
+      setRefreshKey((prev) => prev + 1);
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-500 flex flex-col">
       <ExpenseNavbar />
-      
+
       <div className="flex-1 pb-24 md:pb-0">
-        <Outlet context={{ fetchWallets, wallets, refreshKey }} />
+        <Outlet
+          context={{
+            fetchWallets,
+            wallets,
+            refreshKey,
+            setIsExpenseModalOpen,
+            setIsTopUpModalOpen,
+            setIsTransferModalOpen,
+            setExpenseData,
+            setTopUpData,
+            setTransferData,
+          }}
+        />
       </div>
 
       <div className="fixed bottom-24 md:bottom-10 right-5 md:right-10 z-40">
-        <FloatingActions 
+        <FloatingActions
           onOpenExpense={() => setIsExpenseModalOpen(true)}
           onOpenTopUp={() => setIsTopUpModalOpen(true)}
           onOpenTransfer={() => setIsTransferModalOpen(true)}
         />
       </div>
 
-      <ExpenseModal 
-        isOpen={isExpenseModalOpen} setOpen={setIsExpenseModalOpen}
-        wallets={wallets} expenseData={expenseData}
-        setExpenseData={setExpenseData} onSubmit={handleExpenseSubmit}
+      <ExpenseModal
+        isOpen={isExpenseModalOpen}
+        setOpen={setIsExpenseModalOpen}
+        wallets={wallets}
+        expenseData={expenseData}
+        setExpenseData={setExpenseData}
+        onSubmit={handleExpenseSubmit}
         loading={loading}
       />
-      <TopUpModal 
-        isOpen={isTopUpModalOpen} setOpen={setIsTopUpModalOpen}
-        wallets={wallets} topUpData={topUpData}
-        setTopUpData={setTopUpData} onSubmit={handleTopUpSubmit}
+      <TopUpModal
+        isOpen={isTopUpModalOpen}
+        setOpen={setIsTopUpModalOpen}
+        wallets={wallets}
+        topUpData={topUpData}
+        setTopUpData={setTopUpData}
+        onSubmit={handleTopUpSubmit}
         loading={loading}
       />
-      <TransferModal 
-        isOpen={isTransferModalOpen} setOpen={setIsTransferModalOpen}
-        wallets={wallets} transferData={transferData}
-        setTransferData={setTransferData} onSubmit={handleTransferSubmit}
+      <TransferModal
+        isOpen={isTransferModalOpen}
+        setOpen={setIsTransferModalOpen}
+        wallets={wallets}
+        transferData={transferData}
+        setTransferData={setTransferData}
+        onSubmit={handleTransferSubmit}
         loading={loading}
       />
     </div>
