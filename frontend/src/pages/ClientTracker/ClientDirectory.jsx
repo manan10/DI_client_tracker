@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Users, Search, Sparkles } from "lucide-react";
+import { Loader2, Users, Search, Sparkles, Layers } from "lucide-react";
 
 // Components
 import Navbar from "../../components/Navbar";
@@ -22,7 +22,7 @@ const ClientDirectory = () => {
     direction: "desc",
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 10;
+  const [recordsPerPage, setRecordsPerPage] = useState(30); // Default set to 30
 
   const navigate = useNavigate();
   const { request, loading } = useApi();
@@ -90,13 +90,13 @@ const ClientDirectory = () => {
         {/* COMMAND HEADER */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end pb-8 mb-8 border-b border-slate-200 dark:border-white/10 gap-6">
           <div className="flex flex-col gap-2">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-[1000] uppercase tracking-tight bg-linear-to-r from-slate-900 via-slate-800 to-emerald-700 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-[1000] uppercase tracking-tight text-slate-900 dark:text-white">
               Client Directory
             </h1>
             
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-md border border-emerald-200/60 dark:border-emerald-500/20">
-                Registry
+                Registry Ledger
               </span>
               <span className="text-slate-300 dark:text-slate-700">•</span>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -119,7 +119,7 @@ const ClientDirectory = () => {
           </div>
         </div>
 
-        {/* HORIZONTAL SPLIT LAYOUT FOR DESKTOP (Natural Document Flow - No Sticky Scroll Traps) */}
+        {/* HORIZONTAL SPLIT LAYOUT FOR DESKTOP */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* LEFT SIDEBAR: Tier Summary Rail */}
@@ -145,6 +145,7 @@ const ClientDirectory = () => {
               currentPage={currentPage}
               setCurrentPage={setCurrentPage}
               recordsPerPage={recordsPerPage}
+              setRecordsPerPage={setRecordsPerPage}
               indexOfFirstRecord={indexOfFirstRecord}
               indexOfLastRecord={indexOfLastRecord}
             />
