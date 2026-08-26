@@ -27,7 +27,7 @@ const WalletGridSection = ({
 
   return (
     <aside className="lg:col-span-5 w-full flex flex-col gap-6 relative">
-      {/* 1. Cash Wallets Section (Untouched) */}
+      {/* 1. Cash Wallets Section (3-in-a-row grid on mobile) */}
       <div className="flex flex-col gap-3">
         {/* Prominent Header Banner */}
         <div className="flex items-center justify-between pb-3 border-b-2 border-slate-200/90 dark:border-white/10 gap-3">
@@ -58,8 +58,8 @@ const WalletGridSection = ({
           </div>
         </div>
 
-        {/* 3-Column Responsive Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-2.5 items-start">
+        {/* 3-Column Uniform Grid for Cash Wallets */}
+        <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-2 items-start">
           {cashWallets.map((w, idx) => (
             <WalletCard
               key={w._id}
@@ -78,13 +78,13 @@ const WalletGridSection = ({
         </div>
       </div>
 
-      {/* 2. Digital & Bank Accounts Section (Sorted & Less Rounded Dock) */}
+      {/* 2. Digital & Bank Accounts Section (3-in-a-row structured grid) */}
       <div className="flex flex-col gap-2.5 pt-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
               <Globe size={13} className="text-indigo-500" />
-              Digital & Online Channels
+              Digital Channels
             </span>
             <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-xs bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-500/20">
               {sortedVirtualWallets.length}
@@ -97,8 +97,8 @@ const WalletGridSection = ({
           </span>
         </div>
 
-        {/* Horizontal Wrap Less-Rounded Dock */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* 3-Column Uniform Grid for Digital Accounts */}
+        <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-2 items-stretch">
           {sortedVirtualWallets.map((w, idx) => {
             const palette = getWalletColor(w._id || w.walletName, cashWallets.length + idx);
 
@@ -107,34 +107,32 @@ const WalletGridSection = ({
                 key={w._id}
                 type="button"
                 onClick={() => onCardClick(w)}
-                className="group relative inline-flex items-center gap-2 pl-2.5 pr-3 py-1.5 bg-white dark:bg-[#0B1120] hover:bg-slate-50 dark:hover:bg-white/4 border border-slate-200/90 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-500 rounded-lg shadow-2xs transition-all active:scale-95 outline-none cursor-pointer select-none"
+                className="group relative flex flex-col justify-between p-2.5 bg-white dark:bg-[#0B1120] hover:bg-slate-50 dark:hover:bg-white/4 border border-slate-200/90 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-500 rounded-lg shadow-2xs transition-all active:scale-95 outline-none cursor-pointer select-none text-left"
               >
-                {/* Micro Icon Box */}
-                <div className={`w-5 h-5 rounded-md flex items-center justify-center border shrink-0 transition-transform group-hover:scale-110 ${palette.iconBox}`}>
-                  <Smartphone size={10} />
-                </div>
-
-                {/* Account Name */}
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate max-w-40 sm:max-w-56">
-                  {w.walletName}
-                </span>
-
-                {/* Live Status Beacon */}
-                <span className="flex items-center gap-1 pl-1.5 border-l border-slate-200/80 dark:border-white/10 shrink-0">
+                <div className="flex items-center justify-between w-full mb-1">
+                  <div className={`w-6 h-6 rounded-md flex items-center justify-center border shrink-0 transition-transform group-hover:scale-110 ${palette.iconBox}`}>
+                    <Smartphone size={11} />
+                  </div>
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
                   </span>
-                  <span className="text-[9px] font-mono font-extrabold uppercase tracking-wider text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">
-                    Link
+                </div>
+
+                <div className="flex flex-col min-w-0 w-full">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate w-full">
+                    {w.walletName}
                   </span>
-                </span>
+                  <span className="text-[8px] font-mono uppercase tracking-wider text-slate-400">
+                    Linked Channel
+                  </span>
+                </div>
               </button>
             );
           })}
 
           {sortedVirtualWallets.length === 0 && (
-            <div className="w-full py-3 px-4 border border-dashed border-slate-200 dark:border-white/10 rounded-xl text-center text-slate-400 text-xs font-bold uppercase tracking-wider">
+            <div className="col-span-full py-3 px-4 border border-dashed border-slate-200 dark:border-white/10 rounded-xl text-center text-slate-400 text-xs font-bold uppercase tracking-wider">
               No Online Channels Connected
             </div>
           )}
