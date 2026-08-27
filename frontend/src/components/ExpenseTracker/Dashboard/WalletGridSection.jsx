@@ -26,7 +26,7 @@ const WalletGridSection = ({
   );
 
   return (
-    <aside className="lg:col-span-5 w-full flex flex-col gap-6 relative">
+    <aside className="lg:col-span-5 w-full flex flex-col gap-6 relative z-10">
       {/* 1. Cash Wallets Section (3-in-a-row grid on mobile) */}
       <div className="flex flex-col gap-3">
         {/* Prominent Header Banner */}
@@ -107,7 +107,7 @@ const WalletGridSection = ({
                 key={w._id}
                 type="button"
                 onClick={() => onCardClick(w)}
-                className="group relative flex flex-col justify-between p-2.5 bg-white dark:bg-[#0B1120] hover:bg-slate-50 dark:hover:bg-white/4 border border-slate-200/90 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-500 rounded-lg shadow-2xs transition-all active:scale-95 outline-none cursor-pointer select-none text-left"
+                className="group relative flex flex-col justify-between p-2.5 bg-white dark:bg-[#0B1120] hover:bg-slate-50 dark:hover:bg-white/4 border border-slate-200/90 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-500 rounded-lg shadow-2xs transition-all active:scale-95 outline-none cursor-pointer select-none text-left touch-manipulation"
               >
                 <div className="flex items-center justify-between w-full mb-1">
                   <div className={`w-6 h-6 rounded-md flex items-center justify-center border shrink-0 transition-transform group-hover:scale-110 ${palette.iconBox}`}>

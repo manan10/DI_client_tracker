@@ -24,23 +24,24 @@ const FloatingActions = ({ onOpenExpense, onOpenTopUp, onOpenTransfer }) => {
     <>
       {/* Cinematic Blur Backdrop */}
       <div 
-        className={`fixed inset-0 bg-slate-900/20 dark:bg-[#020617]/60 backdrop-blur-sm transition-opacity duration-300 ease-out z-90 ${
-          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        className={`fixed inset-0 bg-slate-900/20 dark:bg-[#020617]/60 backdrop-blur-sm transition-all duration-300 ease-out z-90 ${
+          isOpen ? 'opacity-100 pointer-events-auto visible' : 'opacity-0 pointer-events-none invisible'
         }`}
         onClick={() => setIsOpen(false)}
       />
 
       {/* Action Container anchored to Bottom Right 
           FIX: Lifted mobile bottom from bottom-5 to bottom-24 to clear bottom nav bars 
+          FIX: Added pointer-events-none so the invisible bounding area does not block wallet card taps
       */}
-      <div className="fixed bottom-24 right-5 md:bottom-8 md:right-8 z-100 flex flex-col items-end select-none">
+      <div className="fixed bottom-24 right-5 md:bottom-8 md:right-8 z-100 flex flex-col items-end select-none pointer-events-none">
         
         {/* Unified Command Menu Card */}
         <div 
           className={`mb-4 w-64 sm:w-72 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-2xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.7)] origin-bottom-right transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden ${
             isOpen 
-              ? 'scale-100 opacity-100 translate-y-0 pointer-events-auto' 
-              : 'scale-90 opacity-0 translate-y-4 pointer-events-none'
+              ? 'scale-100 opacity-100 translate-y-0 pointer-events-auto visible' 
+              : 'scale-90 opacity-0 translate-y-4 pointer-events-none invisible'
           }`}
         >
           {/* Header */}
@@ -55,8 +56,9 @@ const FloatingActions = ({ onOpenExpense, onOpenTopUp, onOpenTransfer }) => {
             
             {/* Primary Action: Expense */}
             <button 
+              type="button"
               onClick={() => handleAction(onOpenExpense)}
-              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 touch-manipulation cursor-pointer"
             >
               <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20 group-hover:scale-105 transition-transform shrink-0 shadow-sm">
                 <ReceiptIndianRupee size={18} strokeWidth={2.5} />
@@ -70,8 +72,9 @@ const FloatingActions = ({ onOpenExpense, onOpenTopUp, onOpenTransfer }) => {
 
             {/* Secondary Action: Top Up */}
             <button 
+              type="button"
               onClick={() => handleAction(onOpenTopUp)}
-              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 touch-manipulation cursor-pointer"
             >
               <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20 group-hover:scale-105 transition-transform shrink-0 shadow-sm">
                 <ArrowDownToLine size={18} strokeWidth={2.5} />
@@ -85,8 +88,9 @@ const FloatingActions = ({ onOpenExpense, onOpenTopUp, onOpenTransfer }) => {
 
             {/* Secondary Action: Transfer */}
             <button 
+              type="button"
               onClick={() => handleAction(onOpenTransfer)}
-              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-amber-500 touch-manipulation cursor-pointer"
             >
               <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20 group-hover:scale-105 transition-transform shrink-0 shadow-sm">
                 <ArrowRightLeft size={18} strokeWidth={2.5} />
@@ -103,8 +107,9 @@ const FloatingActions = ({ onOpenExpense, onOpenTopUp, onOpenTransfer }) => {
 
         {/* Master FAB Toggle */}
         <button
+          type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className={`relative flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] outline-none active:scale-90 z-10 ${
+          className={`pointer-events-auto relative flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] outline-none active:scale-90 z-10 touch-manipulation cursor-pointer ${
             isOpen 
               ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border border-transparent dark:border-white/10' 
               : 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white shadow-[0_8px_30px_rgba(16,185,129,0.3)] border border-emerald-500 dark:border-emerald-400'
