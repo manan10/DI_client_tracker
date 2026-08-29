@@ -5,9 +5,10 @@ import Navbar from "../../components/Navbar";
 import AccountBalances from "../../components/Accounts/AccountBalances";
 import Commissions from "../../components/Accounts/Commissions";
 import AuditManager from "../../components/Accounts/AuditManager";
+import Insurance from "../../components/Accounts/Insurance";
 import AccessDenied from "../../components/AccessDenied";
 import { useAuth } from "../../hooks/useAuth";
-import { Wallet, PieChart, FileText, Lock } from "lucide-react";
+import { Wallet, PieChart, FileText, ShieldCheck, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 const Accounts = () => {
@@ -19,6 +20,7 @@ const Accounts = () => {
 
   const tabs = [
     { id: "balances", name: "Account Balances", icon: Wallet, isLocked: false },
+    { id: "insurance", name: "Insurance", icon: ShieldCheck, isLocked: false },
     { id: "commissions", name: "Commissions", icon: PieChart, isLocked: false },
     { id: "audit", name: "Tally Zone", icon: FileText, isLocked: false },
   ];
@@ -73,7 +75,7 @@ const Accounts = () => {
           {/* ========================================== */}
           <div className="w-full lg:w-auto">
             
-            {/* Desktop & Tablet: Clean Underline-Border Tabs (Zero Widget Box) */}
+            {/* Desktop & Tablet: Clean Underline-Border Tabs */}
             <nav className="hidden sm:flex items-center gap-8">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
@@ -108,8 +110,8 @@ const Accounts = () => {
               })}
             </nav>
 
-            {/* Mobile View: High-Visibility Equal-Width Grid (Zero Hidden Tabs, Zero Dropdowns) */}
-            <div className="sm:hidden grid grid-cols-3 gap-1 bg-slate-100 dark:bg-white/3 p-1 rounded-xl border border-slate-200 dark:border-white/10 w-full">
+            {/* Mobile View: High-Visibility Equal-Width Grid */}
+            <div className="sm:hidden grid grid-cols-4 gap-1 bg-slate-100 dark:bg-white/3 p-1 rounded-xl border border-slate-200 dark:border-white/10 w-full">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -148,6 +150,7 @@ const Accounts = () => {
           {activeTab === "balances" && <AccountBalances />}
           {activeTab === "commissions" && <Commissions />}
           {activeTab === "audit" && <AuditManager />}
+          {activeTab === "insurance" && <Insurance />}
         </div>
 
       </main>

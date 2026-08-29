@@ -30,6 +30,7 @@ const MaintenanceViewExpenses = lazy(() => import("./pages/ExpenseTracker/Mainte
 const ExpenseSettings = lazy(() => import("./pages/ExpenseTracker/ExpenseSettings"));
 const ExpenseAnalytics = lazy(() => import("./pages/ExpenseTracker/ExpenseAnalytics"));
 const ExpenseHistory = lazy(() => import("./pages/ExpenseTracker/ExpenseHistory"));
+const ExpenseHistoryNew = lazy(() => import("./pages/ExpenseTracker/ExpenseHistoryNew"));
 
 // Shared Components
 const Auth = lazy(() => import("./pages/Auth"));
@@ -89,7 +90,8 @@ function App() {
               >
                 <Route path="/expenses" element={<ExpenseDashboardNew />} />
                 <Route path="/expenses/analytics" element={<ExpenseAnalytics />} />
-                <Route path="/expenses/history" element={<ExpenseHistory />} />
+                {/* <Route path="/expenses/history" element={<ExpenseHistory />} /> */}
+                <Route path="/expenses/history" element={<ExpenseHistoryNew />} />
               </Route>
 
               {/* Expense Settings (Excluded from Global Floating Actions) */}
