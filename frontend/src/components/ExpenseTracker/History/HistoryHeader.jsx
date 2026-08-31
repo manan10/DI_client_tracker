@@ -61,8 +61,33 @@ const HistoryHeader = ({
       </div>
 
       {/* Right Controls: Month Selector & Pure Typography Stats */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-5 w-full lg:w-auto">
-        
+      <div className="flex flex-col sm:flex-row sm:items-center gap-9 w-full lg:w-auto">
+
+        {/* Pure Typographic Period Totals (No Cards/Boxes) */}
+        <div className="flex items-center gap-5 sm:gap-6 sm:pl-3 sm:border-l border-slate-200 dark:border-white/10">
+          {/* Outflow Metric */}
+          <div className="flex flex-col">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 leading-none">
+              Total Spent
+            </span>
+            <span className="text-lg sm:text-xl font-mono font-[1000] text-rose-600 dark:text-rose-400 tabular-nums tracking-tight mt-1 leading-none">
+              ₹{formatINR(monthTotalOutflow)}
+            </span>
+          </div>
+
+          <div className="w-px h-7 bg-slate-200 dark:bg-slate-800" />
+
+          {/* Inflow Metric */}
+          <div className="flex flex-col">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 leading-none">
+              Total Inflow
+            </span>
+            <span className="text-lg sm:text-xl font-mono font-[1000] text-emerald-600 dark:text-emerald-400 tabular-nums tracking-tight mt-1 leading-none">
+              ₹{formatINR(monthTotalInflow)}
+            </span>
+          </div>
+        </div>
+
         {/* Month Picker Dropdown Trigger */}
         <div className="relative shrink-0" ref={dateDropdownRef}>
           <button
@@ -129,31 +154,6 @@ const HistoryHeader = ({
               </div>
             </div>
           )}
-        </div>
-
-        {/* Pure Typographic Period Totals (No Cards/Boxes) */}
-        <div className="flex items-center gap-5 sm:gap-6 sm:pl-3 sm:border-l border-slate-200 dark:border-white/10">
-          {/* Outflow Metric */}
-          <div className="flex flex-col">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 leading-none">
-              Total Spent
-            </span>
-            <span className="text-lg sm:text-xl font-mono font-[1000] text-rose-600 dark:text-rose-400 tabular-nums tracking-tight mt-1 leading-none">
-              ₹{formatINR(monthTotalOutflow)}
-            </span>
-          </div>
-
-          <div className="w-px h-7 bg-slate-200 dark:bg-slate-800" />
-
-          {/* Inflow Metric */}
-          <div className="flex flex-col">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 leading-none">
-              Total Inflow
-            </span>
-            <span className="text-lg sm:text-xl font-mono font-[1000] text-emerald-600 dark:text-emerald-400 tabular-nums tracking-tight mt-1 leading-none">
-              ₹{formatINR(monthTotalInflow)}
-            </span>
-          </div>
         </div>
 
       </div>

@@ -153,7 +153,7 @@ const ExpenseModalContent = ({
     return () => {
       isMounted = false;
     };
-  }, [request]);  
+  }, [request]);
 
   // Inline Category Handlers
   const handleCreateParent = async () => {
@@ -235,11 +235,25 @@ const ExpenseModalContent = ({
     return results.sort((a, b) => a.label.localeCompare(b.label));
   }, [searchQuery, categoryTree]);
 
+  // Robustly resolve the category handling strings, objects, and legacy parent IDs
   const currentSub = useMemo(() => {
     if (!categoryTree || !expenseData.category) return null;
-    return categoryTree
+
+    const targetId = typeof expenseData.category === 'object'
+      ? expenseData.category._id?.toString()
+      : expenseData.category?.toString();
+
+    // 1. Check SubCategories
+    let found = categoryTree
       .flatMap((p) => p.subCategories || [])
-      .find((s) => s._id === expenseData.category);
+      .find((s) => s._id?.toString() === targetId);
+
+    // 2. Check Parent Categories (fallback)
+    if (!found) {
+      found = categoryTree.find(p => p._id?.toString() === targetId);
+    }
+
+    return found || null;
   }, [categoryTree, expenseData.category]);
 
   const currentWallet = wallets.find((w) => w._id === expenseData.sourceWallet);
@@ -451,8 +465,11 @@ const ExpenseModalContent = ({
                   className="w-full bg-transparent pb-3 pl-8 text-3xl sm:text-4xl font-bold tabular-nums text-slate-900 dark:text-white outline-none placeholder:text-slate-200 dark:placeholder:text-slate-800"
                   value={formatDisplayAmount(expenseData.amount)}
                   onChange={handleAmountChange}
+                  onWheel={(e) => e.target.blur()}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && expenseData.amount && Number(expenseData.amount) > 0) {
+                    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                      e.preventDefault();
+                    } else if (e.key === "Enter" && expenseData.amount && Number(expenseData.amount) > 0) {
                       e.preventDefault();
                       if (isEditMode) {
                         setStep(4);
@@ -824,6 +841,22 @@ const ExpenseModal = ({
   onSubmit,
   loading,
 }) => {
+  // Clear data when modal closes to ensure fresh state the next time it opens
+  useEffect(() => {
+    if (!isOpen && setExpenseData) {
+      const timer = setTimeout(() => {
+        setExpenseData({
+          amount: "",
+          category: "",
+          description: "",
+          sourceWallet: "",
+          type: "DEBIT",
+        });
+      }, 300); // 300ms matches the transition-out timing
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, setExpenseData]);
+
   if (!isOpen) return null;
 
   return (
