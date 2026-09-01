@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
-  X, Loader2, Zap, Check, ArrowRight, ArrowLeft, 
-  Send, HardDriveUpload, ClipboardCheck, CheckCircle2,
-  Building2, Layers, Calendar, Sparkles, ShieldCheck
+  X, Loader2, Check, ArrowRight, ArrowLeft, 
+  Layers, Building2
 } from 'lucide-react';
 import { useApi } from '../../../hooks/useApi';
 import { toast } from 'sonner';
@@ -14,17 +13,15 @@ import SalesStep from './AuditWizard/SalesStep';
 import SummaryStep from './AuditWizard/SummaryStep';
 import ResultStep from './AuditWizard/ResultStep'; 
 
-const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOnline }) => {
+const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOnline, parentArns = [] }) => {
   const { request } = useApi();
-  const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSyncComplete, setIsSyncComplete] = useState(false);
   
-  const [arns, setArns] = useState([]);
+  const arns = parentArns;
   const [allAccounts, setAccounts] = useState([]);
   const [masterLedgers, setMasterLedgers] = useState([]);
 
-  // HELPER: Strict Boolean Parser to prevent "false" string truthy bugs
   const isTrue = (val) => val === true || String(val).toLowerCase() === 'true';
 
   const [step, setStep] = useState(() => {
@@ -34,13 +31,15 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
 
   const [selection, setSelection] = useState(() => {
     const auditObj = initialSelection?.audit;
+    const resolvedArnId = initialSelection?.arnId || initialSelection?.arn || auditObj?.arnId?._id || auditObj?.arnId;
     if (auditObj) {
       return {
         ...initialSelection,
         account: initialSelection.account || auditObj.accountId,
         month: initialSelection.month || auditObj.month,
         year: initialSelection.year || auditObj.year,
-        arnId: initialSelection.arnId || auditObj.arnId?._id || auditObj.arnId,
+        arnId: resolvedArnId,
+        arn: resolvedArnId,
         tallyCompany: initialSelection.tallyCompany || auditObj.tallyCompanyName,
         tallyLedger: initialSelection.tallyLedger || auditObj.tallyLedgerName,
         salesIncomeLedger: initialSelection.salesIncomeLedger || auditObj.salesIncomeLedger,
@@ -48,90 +47,99 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
         isFreshStart: false
       };
     }
-    return { ...initialSelection, stagedFiles: {} };
+    return { ...initialSelection, arnId: resolvedArnId, arn: resolvedArnId, stagedFiles: {} };
   });
 
-  const fetchMasterData = useCallback(async () => {
-    try {
-      const [arnRes, accRes] = await Promise.all([request('/arns', 'GET'), request('/accounts', 'GET')]);
-      const fetchedArns = arnRes?.data || [];
-      const fetchedAccounts = accRes?.data || [];
-      setArns(fetchedArns);
-      setAccounts(fetchedAccounts);
-
-      if (selection?.audit && selection.audit.accountIds?.length > 0) {
-        const targetAccountId = selection.audit.accountIds[0]?._id || selection.audit.accountIds[0];
-        const targetAccountObj = fetchedAccounts.find(a => a._id === targetAccountId);
-        setSelection(prev => ({ ...prev, account: targetAccountObj || prev.account }));
-      }
-    } catch { 
-      toast.error("System connection failed"); 
-    } finally { 
-      setLoading(false); 
-    }
-  }, [request, selection?.audit]);
-
-  useEffect(() => { fetchMasterData(); }, [fetchMasterData]);
-
+  // Fetch accounts ONCE on mount with stable ref guard
+  const isAccountsFetched = useRef(false);
   useEffect(() => {
+    if (isAccountsFetched.current) return;
+    isAccountsFetched.current = true;
+
+    let isMounted = true;
+    const loadAccounts = async () => {
+      try {
+        const accRes = await request('/accounts', 'GET');
+        if (isMounted && accRes?.data) {
+          setAccounts(accRes.data);
+        }
+      } catch (err) {
+        console.error("Accounts load error:", err);
+      }
+    };
+    loadAccounts();
+    return () => { isMounted = false; };
+  }, [request]);
+
+  // Fetch ledgers when company context changes
+  useEffect(() => {
+    if (!selection.tallyCompany) return;
+    let isMounted = true;
     const fetchLedgers = async () => {
-      if (!selection.tallyCompany) return;
       try {
         const res = await request(`/ledgers?company=${encodeURIComponent(selection.tallyCompany)}`, 'GET');
-        if (res?.data) setMasterLedgers(res.data);
+        if (res?.data && isMounted) setMasterLedgers(res.data);
       } catch (err) {
         console.error("Ledger Fetch Error:", err);
       }
     };
     fetchLedgers();
+    return () => { isMounted = false; };
   }, [selection.tallyCompany, request]);
 
-  // AUTO-RESUME ENGINE: Fetches transactions and calculates exact step
+  // Load transactions once per active audit
+  const activeLoadedAuditId = useRef(null);
+  const stagedTxsLength = selection.stagedData?.transactions?.length || 0;
+  
   useEffect(() => {
-    const activeAuditId = selection.audit?._id;
-    if (step >= 3 && activeAuditId && !selection.stagedData?.transactions) {
-      const recoverDraftTransactions = async () => {
-        try {
-          const res = await request(`/audit/${activeAuditId}/transactions`, 'GET');
-          if (res?.success && res.transactions) {
-            const fetchedTxs = res.transactions;
-            
-            setSelection(prev => ({
-              ...prev,
-              stagedData: { transactions: fetchedTxs },
-              verifiedIds: fetchedTxs.filter(t => isTrue(t.isChecked)).map(t => t._id)
-            }));
+    const currentAuditId = selection.audit?._id;
+    if (!currentAuditId) return;
+    if (activeLoadedAuditId.current === currentAuditId && stagedTxsLength > 0) return;
 
-            // --- INTELLIGENT AUTO-RESUME EVALUATION ---
-            const validTxs = fetchedTxs.filter(t => t.narration !== "EMPTY_FILE_MARKER");
-            const isAuditDone = validTxs.length > 0 && validTxs.every(t => isTrue(t.isChecked));
-            
-            const salesTxs = fetchedTxs.filter(t => isTrue(t.isSales) && t.type === 'RECEIPT');
-            const isSalesDone = salesTxs.length === 0 || salesTxs.every(t => isTrue(t.isSalesApproved));
+    activeLoadedAuditId.current = currentAuditId;
+    let isMounted = true;
 
-            const hasSyncedItems = validTxs.some(t => t.isSynced || t.tallySyncStatus === 'COMPLETED' || t.tallySyncStatus === 'SUCCESS');
-            const allItemsSynced = validTxs.length > 0 && validTxs.every(t => t.isSynced || t.tallySyncStatus === 'COMPLETED' || t.tallySyncStatus === 'SUCCESS');
+    const fetchAuditTransactions = async () => {
+      try {
+        const res = await request(`/audit/${currentAuditId}/transactions`, 'GET');
+        if (res?.success && res.transactions && isMounted) {
+          const fetchedTxs = res.transactions;
+          
+          setSelection(prev => ({
+            ...prev,
+            stagedData: { transactions: fetchedTxs },
+            verifiedIds: fetchedTxs.filter(t => isTrue(t.isChecked)).map(t => t._id)
+          }));
 
-            if (allItemsSynced) {
-              setIsSyncComplete(true);
-            }
+          const validTxs = fetchedTxs.filter(t => t.narration !== "EMPTY_FILE_MARKER");
+          const isAuditDone = validTxs.length > 0 && validTxs.every(t => isTrue(t.isChecked));
+          
+          const salesTxs = fetchedTxs.filter(t => isTrue(t.isSales) && t.type === 'RECEIPT');
+          const isSalesDone = salesTxs.length === 0 || salesTxs.every(t => isTrue(t.isSalesApproved));
 
-            // Fast-Forward the UI
-            if (hasSyncedItems) {
-              setStep(6);
-            } else if (isAuditDone && isSalesDone) {
-              setStep(5);
-            } else if (isAuditDone) {
-              setStep(4);
-            }
+          const hasSyncedItems = validTxs.some(t => t.isSynced || t.tallySyncStatus === 'COMPLETED' || t.tallySyncStatus === 'SUCCESS');
+          const allItemsSynced = validTxs.length > 0 && validTxs.every(t => t.isSynced || t.tallySyncStatus === 'COMPLETED' || t.tallySyncStatus === 'SUCCESS');
+
+          if (allItemsSynced) {
+            setIsSyncComplete(true);
           }
-        } catch {
-          toast.error("Failed to recover batch workspace registry");
+
+          if (hasSyncedItems) {
+            setStep(6);
+          } else if (isAuditDone && isSalesDone) {
+            setStep(5);
+          } else if (isAuditDone) {
+            setStep(4);
+          }
         }
-      };
-      recoverDraftTransactions();
-    }
-  }, [step, selection.audit?._id, selection.stagedData, request]);
+      } catch (err) {
+        console.error("Failed to load transactions", err);
+      }
+    };
+
+    fetchAuditTransactions();
+    return () => { isMounted = false; };
+  }, [selection.audit?._id, stagedTxsLength, request]);
 
   const validateAndProceed = useCallback(() => {
     const duplicate = audits?.find(a => {
@@ -143,11 +151,12 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
     if (duplicate) {
       if (duplicate.status === 'EXPORTED') return toast.error("This period is already finalized for this company.");
       
-      const resolvedArnId = duplicate.arnId?._id || duplicate.arnId || selection.arnId;
+      const resolvedArnId = duplicate.arnId?._id || duplicate.arnId || selection.arnId || selection.arn;
       setSelection(prev => ({ 
         ...prev, 
         audit: duplicate, 
         arnId: resolvedArnId,
+        arn: resolvedArnId,
         tallyCompany: duplicate.tallyCompanyName, 
         isFreshStart: false 
       }));
@@ -161,14 +170,15 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
       }
     }
     setStep(2);
-  }, [audits, selection]);
+  }, [audits, selection.tallyCompany, selection.month, selection.year, selection.arnId, selection.arn]);
 
   const handleBatchFileUpload = useCallback(async () => {
     const stagedFileMap = selection.stagedFiles || {};
     const bankLedgersToProcess = Object.keys(stagedFileMap);
+    const activeArn = selection.arnId || selection.arn;
     
     if (bankLedgersToProcess.length === 0) return;
-    if (!selection.tallyCompany || !selection.arnId) {
+    if (!selection.tallyCompany || !activeArn) {
        return toast.error("Bridge Error: Missing Company or ARN context.");
     }
 
@@ -188,7 +198,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
         files.forEach(f => formData.append('files', f));
         formData.append('tallyCompany', selection.tallyCompany);
         formData.append('tallyLedger', bankName);
-        formData.append('arnId', selection.arnId); 
+        formData.append('arnId', activeArn); 
         formData.append('month', selection.month);
         formData.append('year', selection.year);
         if (matchedAccount?._id) formData.append('accountId', matchedAccount._id);
@@ -217,7 +227,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
     } finally { 
       setIsProcessing(false); 
     }
-  }, [selection, allAccounts, request]);
+  }, [selection.stagedFiles, selection.tallyCompany, selection.arnId, selection.arn, selection.month, selection.year, selection.audit, allAccounts, request]);
 
   const handleSalesValidationComplete = useCallback(async () => {
     setIsProcessing(true);
@@ -258,7 +268,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
     } finally { 
       setIsProcessing(false); 
     }
-  }, [selection.audit, request, refreshData, onClose]);
+  }, [selection.audit?._id, request, refreshData, onClose]);
 
   const steps = [
     { id: 1, label: 'Entity Scope', subtitle: 'Company Selection' },
@@ -273,11 +283,10 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
     const txs = (selection.stagedData?.transactions || []).filter(t => t.narration !== "EMPTY_FILE_MARKER");
     if (txs.length === 0) return false;
     return txs.every(t => (selection.verifiedIds || []).includes(t._id));
-  }, [selection.stagedData, selection.verifiedIds]);
+  }, [selection.stagedData?.transactions, selection.verifiedIds]);
   
   const isStep4Valid = useMemo(() => {
     const txs = selection.stagedData?.transactions || [];
-    
     const salesTxs = txs.filter(t => isTrue(t.isSales) && t.type === 'RECEIPT');
     if (salesTxs.length === 0) return true;
     
@@ -286,7 +295,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
       const hasValidDate = !!(t.invoiceBillingDate || t.date); 
       return isTrue(t.isSalesApproved) && hasValidDate && hasValidLedger;
     });
-  }, [selection.stagedData, selection.salesIncomeLedger]);
+  }, [selection.stagedData?.transactions, selection.salesIncomeLedger]);
 
   const footerConfig = useMemo(() => {
     switch (step) {
@@ -311,7 +320,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
       default: 
         return { label: "Proceed", action: () => setStep(s => s + 1) };
     }
-  }, [step, selection, isProcessing, isTallyOnline, isStep3Valid, isStep4Valid, isSyncComplete, validateAndProceed, handleBatchFileUpload, handleSalesValidationComplete, handleFinalizeAudit]);
+  }, [step, selection.stagedData, selection.tallyCompany, selection.stagedFiles, isProcessing, isTallyOnline, isStep3Valid, isStep4Valid, isSyncComplete, validateAndProceed, handleBatchFileUpload, handleSalesValidationComplete, handleFinalizeAudit]);
 
   return (
     <>
@@ -323,12 +332,8 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
       <div className="fixed inset-0 z-50 flex animate-in fade-in duration-200 bg-slate-950/70 backdrop-blur-xs">
         <div className="w-full h-full flex flex-col overflow-hidden text-left bg-[#F8FAFC] dark:bg-[#07090E] min-w-0">
           
-          {/* ========================================================================= */}
-          {/* 1. TOP HEADER & PROGRESS HUB                                            */}
-          {/* ========================================================================= */}
           <header className="px-4 lg:px-8 py-3.5 bg-white dark:bg-slate-900/90 border-b border-slate-200/80 dark:border-white/10 flex flex-col gap-3 shrink-0 z-30 shadow-xs">
             <div className="flex items-center justify-between gap-4">
-              {/* Workspace Badge & Title */}
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                   <Layers size={18} strokeWidth={2.5} />
@@ -348,7 +353,6 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
                 </div>
               </div>
 
-              {/* Close Button */}
               <button 
                 onClick={onClose} 
                 className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors border border-slate-200/80 dark:border-white/10 shrink-0 cursor-pointer"
@@ -358,8 +362,6 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
               </button>
             </div>
 
-            {/* Stepper Strip */}
-            {/* Desktop View (>= lg) */}
             <div className="hidden lg:grid grid-cols-6 gap-2 pt-1 border-t border-slate-100 dark:border-white/5">
               {steps.map((s) => {
                 const isActive = step === s.id;
@@ -394,7 +396,6 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
               })}
             </div>
 
-            {/* Mobile / Tablet Horizontal Stepper (< lg) */}
             <div className="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
               {steps.map((s) => {
                 const isActive = step === s.id;
@@ -405,7 +406,7 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
                     key={s.id}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md shrink-0 text-[10px] font-black uppercase tracking-wider border ${
                       isActive 
-                        ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400' 
+                        ? 'bg-emerald-50/70 dark:bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400' 
                         : isDone 
                           ? 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200' 
                           : 'border-transparent text-slate-400 opacity-60'
@@ -423,46 +424,29 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
             </div>
           </header>
 
-          {/* ========================================================================= */}
-          {/* 2. ACTIVE STEP WORKSPACE                                                 */}
-          {/* ========================================================================= */}
           <main className="flex-1 overflow-hidden relative min-w-0">
-            {loading ? (
-              <div className="h-full flex flex-col items-center justify-center gap-3 text-slate-400">
-                <Loader2 className="animate-spin text-emerald-500" size={36} strokeWidth={2} />
-                <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                  Establishing Secure Bridge Session...
-                </span>
-              </div>
-            ) : (
-              <div className="h-full w-full flex flex-col overflow-y-auto lg:overflow-hidden no-scrollbar">
-                {step === 1 && <IdentityStep arns={arns} selection={selection} setSelection={setSelection} />}
-                {step === 2 && <SyncStep selection={selection} isProcessing={isProcessing} setSelection={setSelection} />}
-                {step === 3 && <AuditStep selection={selection} setSelection={setSelection} masterLedgers={masterLedgers} />}
-                {step === 4 && <SalesStep selection={selection} setSelection={setSelection} masterLedgers={masterLedgers} arns={arns} />}
-                {step === 5 && <SummaryStep selection={selection} arns={arns} />}
-                {step === 6 && (
-                   <ResultStep 
-                     transactions={(selection.stagedData?.transactions || [])} 
-                     companyName={selection.tallyCompany}
-                     bankLedgerName={selection.account?.name || selection.tallyLedger}
-                     salesIncomeLedger={selection.salesIncomeLedger}
-                     arns={arns}
-                     arnId={selection.arnId}
-                     masterLedgers={masterLedgers}
-                     onComplete={() => setIsSyncComplete(true)} 
-                   />
-                )}
-              </div>
-            )}
+            <div className="h-full w-full flex flex-col overflow-y-auto lg:overflow-hidden no-scrollbar">
+              {step === 1 && <IdentityStep arns={arns} selection={selection} setSelection={setSelection} />}
+              {step === 2 && <SyncStep selection={selection} isProcessing={isProcessing} setSelection={setSelection} />}
+              {step === 3 && <AuditStep selection={selection} setSelection={setSelection} masterLedgers={masterLedgers} arns={arns} />}
+              {step === 4 && <SalesStep selection={selection} setSelection={setSelection} masterLedgers={masterLedgers} arns={arns} />}
+              {step === 5 && <SummaryStep selection={selection} arns={arns} />}
+              {step === 6 && (
+                 <ResultStep 
+                   transactions={(selection.stagedData?.transactions || [])} 
+                   companyName={selection.tallyCompany}
+                   bankLedgerName={selection.account?.name || selection.tallyLedger}
+                   salesIncomeLedger={selection.salesIncomeLedger}
+                   arns={arns}
+                   arnId={selection.arnId || selection.arn}
+                   masterLedgers={masterLedgers}
+                   onComplete={() => setIsSyncComplete(true)} 
+                 />
+              )}
+            </div>
           </main>
 
-          {/* ========================================================================= */}
-          {/* 3. BOTTOM WORKBENCH DOCK                                                 */}
-          {/* ========================================================================= */}
           <footer className="px-4 lg:px-8 py-3.5 bg-white dark:bg-slate-900/90 border-t border-slate-200/80 dark:border-white/10 flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0 z-30 shadow-xs">
-            
-            {/* Left Scope Context */}
             <div className="flex items-center gap-3 w-full sm:w-auto min-w-0">
               <div className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 border text-[10px] font-bold uppercase tracking-wider shrink-0 ${
                 isTallyOnline 
@@ -486,7 +470,6 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
               </div>
             </div>
 
-            {/* Right Action Trigger Buttons */}
             <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end shrink-0">
               {[2, 4, 5].includes(step) && (
                 <button 
@@ -522,7 +505,6 @@ const AuditWizard = ({ onClose, refreshData, initialSelection, audits, isTallyOn
                 )}
               </button>
             </div>
-
           </footer>
         </div>
       </div>

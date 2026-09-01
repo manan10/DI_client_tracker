@@ -7,7 +7,7 @@ import TransactionInspector from './AuditStep/TransactionInspector';
 import LedgerSearchModal from './AuditStep/LedgerSearchModal';
 import ShortcutsModal from './AuditStep/ShortcutsModal';
 
-const AuditStep = ({ selection, setSelection, masterLedgers }) => {
+const AuditStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) => {
   const { request } = useApi();
   
   // Navigation & Bank Selection States
@@ -148,7 +148,7 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
 
     try {
       const res = await request(`/audit/transactions/${txId}`, 'PATCH', payload);
-      if (!res.success) throw new Error("API Update Failed");
+      if (!res?.success && res?.success !== undefined) throw new Error("API Update Failed");
     } catch {
       if (!silent) toast.error("Database sync failed. Reverting changes.");
       setSelection(prev => {
@@ -216,9 +216,7 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
     }
   }, [displayTransactions, currentIndex, selection.verifiedIds]);
 
-  // =========================================================================
-  // KEYBOARD NAVIGATION
-  // =========================================================================
+  // Keyboard Navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
       const isInputActive = ['input', 'textarea'].includes(document.activeElement?.tagName?.toLowerCase());
@@ -297,9 +295,10 @@ const AuditStep = ({ selection, setSelection, masterLedgers }) => {
           onSelectTab={(tab) => setActiveTab(tab)}
           onOpenShortcuts={() => setShowShortcuts(true)}
           formatINR={formatINR}
+          arns={arns}
         />
 
-        {/* RIGHT PANEL (60% - DISTINCT SLATE CONTAINER) */}
+        {/* RIGHT PANEL (60%) */}
         <section className="flex-1 flex flex-col justify-between min-w-0 overflow-hidden bg-slate-100/90 dark:bg-[#07090E] h-full border-l border-slate-200/80 dark:border-white/10 shadow-inner">
           <TransactionInspector
             activeTx={activeTx}

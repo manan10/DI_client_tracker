@@ -1,15 +1,17 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import axios from "axios";
 
 /**
- * Custom hook for handling API requests with loading and error states.
+ * Custom hook for handling API requests with stable function references.
  */
 export const useApi = (baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api") => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const activeRequests = useRef(0);
 
   const request = useCallback(
     async (endpoint, method = "GET", data = null) => {
+      activeRequests.current += 1;
       setLoading(true);
       setError(null);
 
@@ -33,28 +35,27 @@ export const useApi = (baseUrl = import.meta.env.VITE_API_URL || "http://localho
         const response = await axios(config);
         return response.data;
       } catch (err) {
-        // 1. Extract the specific message from the backend (e.g., "Insufficient funds")
-        const errorMessage = 
-          err.response?.data?.error || 
-          err.response?.data?.message || 
-          err.message || 
+        const errorMessage =
+          err.response?.data?.error ||
+          err.response?.data?.message ||
+          err.message ||
           "Something went wrong";
-        
+
         setError(errorMessage);
 
-        // Handle Token Expiry
         if (err.response?.status === 401) {
           console.warn("Session expired. Logging out...");
           localStorage.removeItem("token");
           localStorage.removeItem("user");
           window.location.href = "/login";
         }
-        
-        // 2. CRITICAL FIX: Throw the human-readable string instead of the raw Axios error.
-        // This ensures Modal catch blocks get the actual message from the backend.
-        throw new Error(errorMessage); 
+
+        throw new Error(errorMessage);
       } finally {
-        setLoading(false);
+        activeRequests.current = Math.max(0, activeRequests.current - 1);
+        if (activeRequests.current === 0) {
+          setLoading(false);
+        }
       }
     },
     [baseUrl]

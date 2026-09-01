@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   Plus, ArrowRight, CheckCircle2, Inbox, 
-  RefreshCw, WifiOff, Loader2, Check, 
-  Building2, Activity, Trash2, AlertTriangle, 
+  RefreshCw, WifiOff, Check, 
+  Building2, Trash2, AlertTriangle, 
   CloudSync, LayoutList, ChevronDown, ChevronRight,
-  Landmark, ArrowUpRight, ArrowDownLeft, ShieldCheck
+  ShieldCheck
 } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
 import { tallyTemplates } from '../../utils/tallyTemplates'; 
@@ -59,35 +59,40 @@ const AuditManager = () => {
       setIsTallyOnline(false); 
       setActiveFirms([]);
     }
-  }, [request]);
+  }, []);
 
   const fetchMasterData = useCallback(async () => {
     try {
-      const [arnRes] = await Promise.all([
-        request('/arns')
-      ]);
+      const arnRes = await request('/arns', 'GET');
       setArns(arnRes?.data || []);
-    } catch { // Silent catch
+    } catch { 
+      // Silent catch
     }
-  }, [request]);
+  }, []);
 
   const refreshData = useCallback(async () => {
     try {
-      const res = await request('/audit/summary-list');
+      const res = await request('/audit/summary-list', 'GET');
       if (res?.success) setAudits(res.data);
       await checkConnection();
       await fetchMasterData();
     } catch (err) {
       console.error("Error refreshing data", err);
     }
-  }, [request, checkConnection, fetchMasterData]);
+  }, [checkConnection, fetchMasterData]);
 
-  // Initial load & polling
+  // STABLE: Run once on component mount only
+  const hasMounted = useRef(false);
   useEffect(() => { 
-    refreshData();
-    const interval = setInterval(checkConnection, 30000);
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      refreshData();
+    }
+    const interval = setInterval(() => {
+      checkConnection();
+    }, 30000);
     return () => clearInterval(interval);
-  }, [refreshData, checkConnection]);
+  }, []); 
 
   const confirmDeleteAudit = async () => {
     if (!auditToDelete) return;
@@ -209,7 +214,6 @@ const AuditManager = () => {
         <header className="w-full pb-6 pt-2 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0 border-b border-slate-200/80 dark:border-white/10">
           <div className="space-y-2 min-w-0">
             <div className="flex flex-wrap items-center gap-3">
-              {/* Connection Pill */}
               <div className={`px-3 py-1 rounded-md flex items-center gap-2 border text-xs font-bold transition-all shadow-sm ${
                 isTallyOnline 
                   ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400' 
@@ -227,7 +231,7 @@ const AuditManager = () => {
               <button 
                 onClick={refreshData}
                 disabled={syncState.isSyncing}
-                className="group flex items-center gap-1.5 px-3 py-1 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-800/40 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500/30 transition-all disabled:opacity-40"
+                className="group flex items-center gap-1.5 px-3 py-1 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-800/40 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500/30 transition-all disabled:opacity-40 cursor-pointer"
               >
                 <RefreshCw size={12} className={`${syncState.isSyncing ? 'animate-spin' : 'group-active:rotate-180 transition-transform duration-500'}`} /> 
                 Refresh
@@ -255,7 +259,7 @@ const AuditManager = () => {
         {/* WORKSPACE CONTENT GRID */}
         <div className="flex flex-col lg:flex-row gap-6 pt-6 min-w-0">
           
-          {/* MOBILE BRIDGE INTELLIGENCE STRIP (< lg) */}
+          {/* MOBILE BRIDGE INTELLIGENCE STRIP */}
           <div className="lg:hidden w-full bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/10 rounded-xl p-4 flex flex-col gap-3 shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -280,7 +284,7 @@ const AuditManager = () => {
                   </div>
                   <button 
                     onClick={() => handleSync(firm)} 
-                    className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/20 transition-colors shrink-0"
+                    className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/20 transition-colors shrink-0 cursor-pointer"
                     title={`Sync ${firm}`}
                   >
                     <RefreshCw size={12} />
@@ -294,7 +298,7 @@ const AuditManager = () => {
             </div>
           </div>
 
-          {/* DESKTOP SIDEBAR (>= lg) */}
+          {/* DESKTOP SIDEBAR */}
           <aside className="w-80 shrink-0 hidden lg:flex flex-col gap-5">
             <div className="p-4 bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/10 rounded-xl space-y-4 shadow-xs">
               <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 pb-3">
@@ -341,7 +345,6 @@ const AuditManager = () => {
               </div>
             </div>
 
-            {/* Health / Guidance Card */}
             <div className="p-4 bg-slate-900 text-white rounded-xl space-y-2 border border-slate-800 shadow-md">
               <div className="flex items-center gap-2">
                 <ShieldCheck size={14} className="text-emerald-400" />
@@ -356,7 +359,6 @@ const AuditManager = () => {
           {/* MAIN DOSSIER WORKBENCH */}
           <section className="flex-1 flex flex-col min-w-0 space-y-4">
             
-            {/* Filter & Global Status Strip */}
             <div className="p-3 bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/10 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
               <div className="flex p-1 bg-slate-200/70 dark:bg-slate-900/60 rounded-lg w-full sm:w-auto">
                 <button 
@@ -387,10 +389,8 @@ const AuditManager = () => {
               </div>
             </div>
 
-            {/* AUDIT MASTER CONTAINER */}
             {displayAudits.length > 0 ? (
               <>
-                {/* DESKTOP TABLE VIEW (>= lg) */}
                 <div className="hidden lg:block w-full overflow-hidden bg-white/40 dark:bg-slate-900/40 border border-slate-200/80 dark:border-white/10 rounded-xl shadow-xs">
                   <table className="w-full text-left border-collapse table-fixed">
                     <thead>
@@ -411,7 +411,8 @@ const AuditManager = () => {
                             setSelection({ 
                               audit, 
                               tallyCompanyName: audit.tallyCompanyName, 
-                              arn: audit.arnId, 
+                              arnId: audit.arnId?._id || audit.arnId,
+                              arn: audit.arnId?._id || audit.arnId, 
                               month: audit.month, 
                               year: audit.year, 
                               stagedData: null, 
@@ -427,7 +428,6 @@ const AuditManager = () => {
                   </table>
                 </div>
 
-                {/* MOBILE CARD VIEW (< lg) */}
                 <div className="lg:hidden space-y-3">
                   {displayAudits.map(audit => (
                     <AuditMobileCard
@@ -439,7 +439,8 @@ const AuditManager = () => {
                         setSelection({ 
                           audit, 
                           tallyCompanyName: audit.tallyCompanyName, 
-                          arn: audit.arnId, 
+                          arnId: audit.arnId?._id || audit.arnId,
+                          arn: audit.arnId?._id || audit.arnId, 
                           month: audit.month, 
                           year: audit.year, 
                           stagedData: null, 
@@ -448,7 +449,7 @@ const AuditManager = () => {
                         });
                         setIsWizardOpen(true);
                       }}
-                      onDelete={() => setAuditToDelete(audit._id)}
+                      onDelete={() => setAuditToDelete(audit._id)} 
                     />
                   ))}
                 </div>
@@ -474,7 +475,7 @@ const AuditManager = () => {
                   </div>
                 ) : (
                   <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 border border-emerald-500/20">
-                    <Loader2 className="animate-spin" size={28} strokeWidth={2} />
+                    <RefreshCw className="animate-spin" size={28} strokeWidth={2} />
                   </div>
                 )}
               </div>
@@ -560,6 +561,7 @@ const AuditManager = () => {
             initialSelection={selection} 
             existingAudits={audits} 
             isTallyOnline={isTallyOnline} 
+            parentArns={arns}
           />
         )}
       </div>
@@ -567,10 +569,6 @@ const AuditManager = () => {
   );
 };
 
-
-// ----------------------------------------------------------------------
-// DESKTOP TABLE ROW SUB-COMPONENT
-// ----------------------------------------------------------------------
 const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const isDraft = audit?.status === 'DRAFT' || audit?.status === 'Draft';
@@ -594,14 +592,12 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
 
   return (
     <React.Fragment>
-      {/* PARENT ROW */}
       <tr 
         onClick={() => setIsExpanded(!isExpanded)}
         className={`group transition-all cursor-pointer ${
           isExpanded ? 'bg-slate-50/80 dark:bg-slate-800/40' : 'hover:bg-slate-50/50 dark:hover:bg-slate-800/20'
         }`}
       >
-        {/* ENTITY & SCOPE */}
         <td className="px-5 py-3.5">
           <div className="flex items-center gap-3 min-w-0">
             <button 
@@ -622,14 +618,12 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
           </div>
         </td>
 
-        {/* PROCESS STAGE */}
         <td className="px-5 py-3.5 text-center">
           <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${stage.color}`}>
             {stage.label}
           </span>
         </td>
 
-        {/* ACTIONS */}
         <td className="px-5 py-3.5 text-right">
           <div className="flex items-center justify-end gap-2 shrink-0">
             <button
@@ -658,7 +652,6 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
         </td>
       </tr>
 
-      {/* EXPANDABLE ACCORDION ROW */}
       {isExpanded && (
         <tr>
           <td colSpan="3" className="p-0 bg-slate-50/50 dark:bg-slate-900/30 border-t border-b border-slate-200/80 dark:border-white/5">
@@ -737,10 +730,6 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
   );
 };
 
-
-// ----------------------------------------------------------------------
-// MOBILE DOSSIER CARD SUB-COMPONENT (< lg)
-// ----------------------------------------------------------------------
 const AuditMobileCard = ({ audit, onAction, onDelete, isOnline }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const isDraft = audit?.status === 'DRAFT' || audit?.status === 'Draft';
@@ -764,7 +753,6 @@ const AuditMobileCard = ({ audit, onAction, onDelete, isOnline }) => {
 
   return (
     <div className="bg-white/60 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/10 rounded-xl p-4 shadow-xs space-y-3">
-      {/* Top Meta Bar */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 space-y-1">
           <div className="flex items-center gap-1.5">
@@ -789,7 +777,6 @@ const AuditMobileCard = ({ audit, onAction, onDelete, isOnline }) => {
         </button>
       </div>
 
-      {/* Main Action Bar */}
       <button 
         onClick={onAction}
         className={`w-full py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-wider transition-all shadow-xs active:scale-98 ${
@@ -805,7 +792,6 @@ const AuditMobileCard = ({ audit, onAction, onDelete, isOnline }) => {
         )}
       </button>
 
-      {/* Accordion Toggle */}
       {bankSummaries.length > 0 && (
         <div className="pt-1 border-t border-slate-100 dark:border-white/5">
           <button 

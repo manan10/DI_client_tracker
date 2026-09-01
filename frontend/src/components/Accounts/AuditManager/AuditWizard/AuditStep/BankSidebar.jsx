@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { 
   Landmark, Keyboard, Check, TrendingUp, TrendingDown, 
   Scale, ArrowDownLeft, ArrowUpRight, RefreshCw, X,
-  CheckCircle2, AlertCircle, Loader2
+  Loader2
 } from 'lucide-react';
 import { useApi } from '../../../../../hooks/useApi';
 import { tallyTemplates } from '../../../../../utils/tallyTemplates';
@@ -31,7 +31,6 @@ const BankSidebar = ({
   onSyncSuccess
 }) => {
   const { request } = useApi();
-  const [arns, setArns] = useState(passedArns);
   
   const [syncState, setSyncState] = useState({
     isOpen: false,
@@ -42,28 +41,7 @@ const BankSidebar = ({
     logs: []
   });
 
-  // Ensure ARNs are loaded locally if not passed down from parent
-  const fetchArns = useCallback(async () => {
-    if (passedArns && passedArns.length > 0) {
-      setArns(passedArns);
-      return;
-    }
-    try {
-      const res = await request('/arns');
-      if (res?.data) {
-        setArns(res.data);
-      } else if (Array.isArray(res)) {
-        setArns(res);
-      }
-    } catch (err) {
-      console.error("Failed to load ARNs in BankSidebar:", err);
-    }
-  }, [passedArns, request]);
-
-  useEffect(() => {
-    fetchArns();
-  }, [fetchArns]);
-
+  // Execute sync on demand only without polling or mounting fetches
   const handleSyncCompany = async (targetFirm = companyName) => {
     if (!targetFirm) {
       toast.error("No company selected for synchronization.");
@@ -118,12 +96,11 @@ const BankSidebar = ({
         return;
       }
 
-      // 2. Identify and validate ARN configuration
-      let currentArns = arns;
+      // 2. Resolve ARN configuration on demand
+      let currentArns = passedArns;
       if (!currentArns || currentArns.length === 0) {
-        const arnRes = await request('/arns');
+        const arnRes = await request('/arns', 'GET');
         currentArns = arnRes?.data || (Array.isArray(arnRes) ? arnRes : []);
-        setArns(currentArns);
       }
 
       const matchedArn = currentArns.find(a => a.linkedTallyFirms?.includes(targetFirm));
@@ -184,7 +161,7 @@ const BankSidebar = ({
         logs: [...prev.logs, `Parsed ${mapped.length} accounts from Tally. Updating database...`]
       }));
 
-      // 4. Update Ledgers collection in MongoDB
+      // 4. Bulk update master ledgers
       await request("/ledgers/bulk-sync", "POST", {
         ledgers: mapped,
         company: targetFirm,
@@ -246,7 +223,6 @@ const BankSidebar = ({
         </div>
         
         <div className="flex items-center gap-1.5 shrink-0">
-          {/* Tally Ledger Sync Button */}
           <button
             type="button"
             onClick={() => handleSyncCompany(companyName)}
@@ -258,7 +234,6 @@ const BankSidebar = ({
             <span className="hidden sm:inline">Sync Tally</span>
           </button>
 
-          {/* Keyboard Shortcuts Button */}
           <button 
             type="button"
             onClick={onOpenShortcuts}
@@ -436,7 +411,6 @@ const BankSidebar = ({
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-[#0E131F] w-full max-w-lg rounded-2xl border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
             
-            {/* Modal Header */}
             <div className="p-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between bg-slate-50 dark:bg-slate-900/60">
               <div className="flex items-center gap-2">
                 <Landmark size={16} className="text-emerald-500" />
@@ -455,7 +429,6 @@ const BankSidebar = ({
               )}
             </div>
 
-            {/* Modal Content */}
             <div className="p-5 space-y-4">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300 uppercase">
@@ -470,7 +443,6 @@ const BankSidebar = ({
                 </div>
               </div>
 
-              {/* Console Log Terminal Window */}
               <div className="p-3 bg-slate-950 text-slate-200 rounded-xl font-mono text-[11px] space-y-1.5 max-h-48 overflow-y-auto no-scrollbar border border-slate-800 shadow-inner">
                 {syncState.logs.map((log, index) => (
                   <p key={index} className="leading-relaxed">
@@ -481,7 +453,6 @@ const BankSidebar = ({
               </div>
             </div>
 
-            {/* Modal Footer Actions */}
             <div className="p-4 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-end">
               {syncState.isSyncing ? (
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-500">

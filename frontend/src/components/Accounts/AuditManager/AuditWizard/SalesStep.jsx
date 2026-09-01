@@ -1,7 +1,6 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { 
-  Landmark, ShieldCheck, ArrowRight, Layers, 
-  Keyboard, ChevronDown, Check, Edit3 
+  Layers, Keyboard, Check, Edit3 
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApi } from '../../../../hooks/useApi';
@@ -13,8 +12,22 @@ import GlobalLedgerModal from './SalesStep/GlobalLedgerModal';
 import SalesDatePickerModal from './SalesStep/SalesDatePickerModal';
 import KeyboardShortcutsModal from './SalesStep/KeyboardShortcutsModal';
 
-const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) => {
+const SalesStep = ({ 
+  selection, 
+  setSelection, 
+  masterLedgers = [], 
+  arns = [] 
+}) => {
   const { request } = useApi();
+
+  // 1. ISOLATED LOCAL STATE (Zero effect triggers to parent)
+  const [localTransactions, setLocalTransactions] = useState(() => {
+    return selection.stagedData?.transactions || [];
+  });
+
+  const [globalSalesLedger, setGlobalSalesLedger] = useState(() => {
+    return selection.salesIncomeLedger || "";
+  });
 
   // Navigation & UI States
   const [selectedBank, setSelectedBank] = useState("");
@@ -25,12 +38,15 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
   // Search & Modal States
   const [txSearchQuery, setTxSearchQuery] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [ledgerModalMode, setLedgerModalMode] = useState(null); // 'GLOBAL' | 'INDIVIDUAL' | null
+  const [ledgerModalMode, setLedgerModalMode] = useState(null);
   const [showAllLedgers, setShowAllLedgers] = useState(false);
 
   // Date Picker States
   const [activePickerId, setActivePickerId] = useState(null);
-  const [pickerNav, setPickerNav] = useState({ month: selection.month, year: selection.year });
+  const [pickerNav, setPickerNav] = useState({ 
+    month: selection.month || 1, 
+    year: selection.year || 2026 
+  });
 
   const monthsList = [
     "January", "February", "March", "April", "May", "June", 
@@ -46,9 +62,21 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
     }).format(amount || 0);
   };
 
+  // Robust ARN Resolution
+  const activeArnId = useMemo(() => {
+    const raw = selection.arnId || selection.arn || selection.audit?.arnId;
+    if (typeof raw === 'object' && raw !== null) return raw._id || raw.arnCode || raw.arn;
+    return raw;
+  }, [selection.arnId, selection.arn, selection.audit?.arnId]);
+
   const activeArnObject = useMemo(() => {
-    return arns.find(a => a._id === selection.arnId || a.arnCode === selection.arnId);
-  }, [arns, selection.arnId]);
+    if (!activeArnId || !arns.length) return null;
+    return arns.find(a => 
+      String(a._id) === String(activeArnId) || 
+      String(a.arnCode) === String(activeArnId) ||
+      String(a.arn) === String(activeArnId)
+    );
+  }, [arns, activeArnId]);
 
   const isGstCompliant = !!activeArnObject?.gstCompliant;
 
@@ -63,25 +91,13 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
     return allCompanyLedgers.filter(l => l.name.toLowerCase().includes("mf com"));
   }, [allCompanyLedgers]);
 
-  // Auto-Select IGST Global Ledger if GST Compliant without calling local setState in effect
-  useEffect(() => {
-    if (isGstCompliant && !selection.salesIncomeLedger && companyLedgers.length > 0) {
-      const igstLedger = companyLedgers.find(l => l.name.toLowerCase().includes("igst"));
-      if (igstLedger && selection.audit?._id) {
-        setSelection(prev => ({ ...prev, salesIncomeLedger: igstLedger.name }));
-        request(`/audit/${selection.audit._id}`, 'PUT', { salesIncomeLedger: igstLedger.name })
-          .catch(err => console.error("Failed to auto-set IGST ledger", err));
-      }
-    }
-  }, [isGstCompliant, selection.salesIncomeLedger, companyLedgers, request, selection.audit?._id, setSelection]);
-
-  // Transform Staged Transactions into Sales Matrix Records with full field persistence
+  // Transform Staged Transactions into Sales Matrix Records
   const salesTransactions = useMemo(() => {
-    return (selection.stagedData?.transactions || [])
+    return localTransactions
       .filter(t => t && isTrue(t.isSales) && t.type === 'RECEIPT')
       .map(tx => {
         const netAmount = tx.amount || 0; 
-        const activeSalesLedger = tx.individualSalesLedger || selection.salesIncomeLedger || tx.suggestedLedger || tx.partyLedger || "SUSPENSE SALES LEDGER";
+        const activeSalesLedger = tx.individualSalesLedger || globalSalesLedger || tx.suggestedLedger || tx.partyLedger || "SUSPENSE SALES LEDGER";
         
         const isLocalAmc = activeSalesLedger.toUpperCase().includes("NJ") || 
                            activeSalesLedger.toUpperCase().includes("LOCAL") || 
@@ -106,7 +122,7 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
             const d = new Date(tx.date);
             defaultDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
           } catch {
-            // invalid date fallback
+            // fallback
           }
         }
 
@@ -120,7 +136,7 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
           invoiceBillingDate: defaultDate
         };
       });
-  }, [selection.stagedData?.transactions, isGstCompliant, selection.salesIncomeLedger]);
+  }, [localTransactions, isGstCompliant, globalSalesLedger]);
 
   // Banks & Aggregates
   const availableBanks = useMemo(() => {
@@ -184,10 +200,10 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
     return displayTransactions.reduce((acc, curr) => acc + curr.grossVoucherTotal, 0);
   }, [displayTransactions]);
 
-  // Update Handlers
+  // Update Handlers (Updates purely local state and triggers background DB update)
   const handleUpdate = useCallback(async (txId, payload) => {
-    setSelection(prev => {
-      const updatedTxs = (prev.stagedData?.transactions || []).map(t => {
+    setLocalTransactions(prev => {
+      const updated = prev.map(t => {
         if (t._id === txId) {
           const isConfigChange = ('individualSalesLedger' in payload) || 
                                  ('applyCGST' in payload) || 
@@ -206,15 +222,26 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
         }
         return t;
       });
-      return { ...prev, stagedData: { ...prev.stagedData, transactions: updatedTxs } };
+
+      // Synchronize back to parent silently
+      setSelection(p => ({
+        ...p,
+        salesIncomeLedger: globalSalesLedger,
+        stagedData: {
+          ...p.stagedData,
+          transactions: updated
+        }
+      }));
+
+      return updated;
     });
 
     try {
       await request(`/audit/transactions/${txId}`, 'PUT', payload);
-    } catch (err) {
-      console.error("Auto-save failed for Transaction", err);
+    } catch {
+      // Silent catch
     }
-  }, [request, setSelection]);
+  }, [request, globalSalesLedger, setSelection]);
 
   const getLockedTaxPayload = useCallback((tx) => ({
     applyCGST: tx.applyCGST,
@@ -265,9 +292,8 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
     const isAllSelected = displayTransactions.every(tx => isTrue(tx.isSalesApproved));
     const targetState = !isAllSelected;
 
-    setSelection(prev => {
-      const currentTxs = prev.stagedData?.transactions || [];
-      const updatedTxs = currentTxs.map(t => {
+    setLocalTransactions(prev => {
+      const updated = prev.map(t => {
         const dTx = displayTransactions.find(d => d._id === t._id);
         if (dTx) {
           return targetState 
@@ -276,7 +302,17 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
         }
         return t;
       });
-      return { ...prev, stagedData: { ...prev.stagedData, transactions: updatedTxs } };
+
+      setSelection(p => ({
+        ...p,
+        salesIncomeLedger: globalSalesLedger,
+        stagedData: {
+          ...p.stagedData,
+          transactions: updated
+        }
+      }));
+
+      return updated;
     });
 
     toast.success(targetState ? `Approved all sales in view` : `Unapproved all sales in view`);
@@ -296,19 +332,22 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
           updateData: { isSalesApproved: false }
         });
       }
-    } catch (err) {
-      console.error("Bulk auto-save failed", err);
+    } catch {
+      // Silent catch
     }
   };
 
   const handleLedgerSelect = async (ledgerName) => {
-    if (ledgerModalMode === 'GLOBAL' || !selection.salesIncomeLedger) {
+    if (ledgerModalMode === 'GLOBAL' || !globalSalesLedger) {
+      setGlobalSalesLedger(ledgerName);
       setSelection(prev => ({ ...prev, salesIncomeLedger: ledgerName }));
       toast.success("Global sales income ledger locked");
-      try {
-        await request(`/audit/${selection.audit._id}`, 'PUT', { salesIncomeLedger: ledgerName });
-      } catch (err) {
-        console.error("Ledger save error", err);
+      if (selection.audit?._id) {
+        try {
+          await request(`/audit/${selection.audit._id}`, 'PUT', { salesIncomeLedger: ledgerName });
+        } catch {
+          // Silent catch
+        }
       }
     } else if (ledgerModalMode === 'INDIVIDUAL' && activeTx) {
       handleUpdate(activeTx._id, { individualSalesLedger: ledgerName });
@@ -334,7 +373,7 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
       const [y, m] = activeTx.invoiceBillingDate.split('-');
       setPickerNav({ month: parseInt(m), year: parseInt(y) });
     } else {
-      setPickerNav({ month: selection.month, year: selection.year });
+      setPickerNav({ month: selection.month || 1, year: selection.year || 2026 });
     }
     setActivePickerId(activeTx._id);
   }, [activeTx, selection.month, selection.year]);
@@ -388,88 +427,12 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
     }
   }, [activeTx, handleUpdate]);
 
-  // Keyboard Shortcuts Engine
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      const activeElement = document.activeElement?.tagName?.toLowerCase();
-      const isTyping = activeElement === 'input' || activeElement === 'textarea' || activeElement === 'select';
-
-      if (e.key === 'Escape') {
-        if (activePickerId) { setActivePickerId(null); return; }
-        if (ledgerModalMode) { setLedgerModalMode(null); setSearchQuery(""); return; }
-        if (showShortcuts) { setShowShortcuts(false); return; }
-        if (isListDrawerOpen) { setIsListDrawerOpen(false); return; }
-      }
-
-      if (isTyping) return;
-
-      if (e.key === 'ArrowDown' || e.key.toLowerCase() === 'j') {
-        e.preventDefault();
-        const idx = displayTransactions.findIndex(t => t._id === currentTxId);
-        if (idx < displayTransactions.length - 1) setSelectedTxId(displayTransactions[idx + 1]._id);
-      }
-      if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        const idx = displayTransactions.findIndex(t => t._id === currentTxId);
-        if (idx > 0) setSelectedTxId(displayTransactions[idx - 1]._id);
-      }
-
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        handleVerifyAndNext();
-      }
-
-      if (e.key.toLowerCase() === 'a') {
-        e.preventDefault();
-        setIsListDrawerOpen(prev => !prev);
-      }
-
-      if (e.key.toLowerCase() === 'l' && !ledgerModalMode) {
-        e.preventDefault();
-        setLedgerModalMode('INDIVIDUAL');
-      }
-
-      if (e.key.toLowerCase() === 'd' && !activePickerId) {
-        e.preventDefault();
-        handleOpenPickerContext();
-      }
-
-      if (e.key.toLowerCase() === 'c' && activeTx) {
-        e.preventDefault();
-        handleUpdateTax('CGST');
-      }
-      if (e.key.toLowerCase() === 's' && activeTx) {
-        e.preventDefault();
-        handleUpdateTax('SGST');
-      }
-      if (e.key.toLowerCase() === 'i' && activeTx) {
-        e.preventDefault();
-        handleUpdateTax('IGST');
-      }
-
-      if (e.key === '?') {
-        e.preventDefault();
-        setShowShortcuts(prev => !prev);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
-    activePickerId, ledgerModalMode, showShortcuts, isListDrawerOpen,
-    displayTransactions, currentTxId, activeTx, handleVerifyAndNext,
-    handleOpenPickerContext, handleUpdateTax
-  ]);
-
   const isAllDisplayedChecked = displayTransactions.length > 0 && displayTransactions.every(tx => isTrue(tx.isSalesApproved));
 
   // 1. EMPTY SALES SCREEN
   if (salesTransactions.length === 0) {
     return (
       <div className="h-full w-full flex flex-col items-center justify-center p-6 text-center space-y-4 font-sans select-none">
-        <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/20 shadow-xs">
-          <ShieldCheck size={36} />
-        </div>
         <div className="space-y-1 max-w-md">
           <h3 className="text-base font-black uppercase tracking-wider text-slate-900 dark:text-white">
             No Sales Vouchers Found
@@ -486,15 +449,12 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
   }
 
   // 2. MANDATORY GLOBAL LEDGER SELECTION GATE
-  if (!selection.salesIncomeLedger) {
+  if (!globalSalesLedger) {
     return (
       <div className="h-full w-full flex flex-col items-center justify-center p-6 bg-slate-50/50 dark:bg-slate-900/30 font-sans">
         <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl p-6 lg:p-8 border border-slate-200 dark:border-white/10 shadow-xl space-y-6 animate-in zoom-in-95 duration-200">
           
           <div className="space-y-2 text-center">
-            <div className="w-12 h-12 mx-auto rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/20">
-              <Landmark size={24} />
-            </div>
             <h2 className="text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white">
               Configure Global Sales Ledger
             </h2>
@@ -509,7 +469,7 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
             </label>
             <div className="relative">
               <select
-                value={selection.salesIncomeLedger || ""}
+                value={globalSalesLedger || ""}
                 onChange={(e) => {
                   if (e.target.value) handleLedgerSelect(e.target.value);
                 }}
@@ -520,19 +480,8 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
                   <option key={l._id} value={l.name}>{l.name}</option>
                 ))}
               </select>
-              <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             </div>
           </div>
-
-          <button
-            type="button"
-            disabled={!selection.salesIncomeLedger}
-            onClick={() => handleLedgerSelect(selection.salesIncomeLedger)}
-            className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white rounded-xl text-xs font-black uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer"
-          >
-            <span>Lock & Enter Sales Review</span>
-            <ArrowRight size={16} />
-          </button>
         </div>
       </div>
     );
@@ -548,7 +497,6 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
 
       <div className="flex flex-col h-full w-full overflow-hidden absolute inset-0 min-w-0 font-sans">
         
-        {/* TOP COMMAND STRIP */}
         <header className="flex flex-col shrink-0 z-20 bg-white dark:bg-[#0B0F19] border-b border-slate-200/80 dark:border-white/10 shadow-xs">
           <div className="px-4 lg:px-6 py-2.5 flex items-center justify-between gap-3 min-w-0">
             
@@ -575,7 +523,7 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
                 <div className="flex flex-col min-w-0">
                   <span className="text-[7px] font-bold text-slate-400 uppercase tracking-wider">Global Sales Fallback</span>
                   <span className="text-[11px] font-black uppercase text-indigo-600 dark:text-indigo-400 truncate max-w-44">
-                    {selection.salesIncomeLedger || "Choose Ledger..."}
+                    {globalSalesLedger || "Choose Ledger..."}
                   </span>
                 </div>
                 <Edit3 size={12} className="text-indigo-500 opacity-70" />
@@ -621,7 +569,6 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
 
           <section className="flex-1 flex flex-col bg-white dark:bg-[#07090E] relative min-w-0 overflow-hidden">
             
-            {/* Accordion List Header */}
             <div className="px-4 py-2 border-b border-slate-200/80 dark:border-white/10 bg-slate-50/60 dark:bg-slate-800/40 flex items-center justify-between shrink-0">
               <button 
                 type="button"
@@ -660,7 +607,6 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
               />
             )}
 
-            {/* Zero-Scroll HUD Container */}
             <div className="flex-1 overflow-y-auto no-scrollbar p-3 sm:p-4 min-w-0">
               <SalesHudEditor
                 activeTx={activeTx}
@@ -681,7 +627,7 @@ const SalesStep = ({ selection, setSelection, masterLedgers = [], arns = [] }) =
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           filteredLedgers={filteredLedgers}
-          selection={selection}
+          selection={{ ...selection, salesIncomeLedger: globalSalesLedger }}
           activeTx={activeTx}
           showAllLedgers={showAllLedgers}
           onToggleShowAll={() => setShowAllLedgers(prev => !prev)}
