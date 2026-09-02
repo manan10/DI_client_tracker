@@ -33,13 +33,55 @@ exports.syncWealthElite = async (req, res) => {
 
     console.log(`Extracted ${clients.length} valid clients. Committing to Database...`);
 
-    const bulkOps = clients.map((client) => ({
-      updateOne: {
-        filter: { pan: client.pan },
-        update: { $set: client },
-        upsert: true,
-      },
-    }));
+    const bulkOps = clients.map((client) => {
+      const setFields = {
+        name: client.name,
+        aum: client.aum,
+        category: client.category,
+        wealthEliteId: client.wealthEliteId,
+        updatedAt: new Date()
+      };
+
+      // Only update contact info if WE provided real values (don't overwrite manual inputs with 'N/A')
+      if (client.contactDetails?.phoneNo && client.contactDetails.phoneNo !== "N/A") {
+        setFields["contactDetails.phoneNo"] = client.contactDetails.phoneNo;
+      }
+      if (client.contactDetails?.email && client.contactDetails.email !== "N/A") {
+        setFields["contactDetails.email"] = client.contactDetails.email;
+      }
+      if (client.contactDetails?.address && client.contactDetails.address !== "N/A") {
+        setFields["contactDetails.address"] = client.contactDetails.address;
+      }
+
+      // If WE explicitly provided a family mapping, allow updating it
+      if (client.hasExplicitFamily) {
+        setFields.familyId = client.familyId;
+        setFields.isFamilyHead = client.isFamilyHead;
+      }
+
+      const setOnInsertFields = {
+        pan: client.pan,
+        riskProfile: client.riskProfile || "Moderate",
+        createdAt: new Date()
+      };
+
+      // If client didn't exist and WE didn't have explicit family, assign the fallback familyId on creation only
+      if (!client.hasExplicitFamily) {
+        setOnInsertFields.familyId = client.familyId;
+        setOnInsertFields.isFamilyHead = client.isFamilyHead;
+      }
+
+      return {
+        updateOne: {
+          filter: { pan: client.pan },
+          update: {
+            $set: setFields,
+            $setOnInsert: setOnInsertFields
+          },
+          upsert: true,
+        },
+      };
+    });
 
     const result = await Client.bulkWrite(bulkOps);
 

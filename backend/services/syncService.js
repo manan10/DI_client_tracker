@@ -20,8 +20,7 @@ const extractClientId = (str) => {
 
 /**
  * Helper to convert exceljs worksheet to JSON-like array
- * UPGRADE: Now features intelligent header detection, strict Uppercase Normalization,
- * AND merged-cell immunity using a Set to count unique keywords.
+ * Features intelligent header detection, uppercase normalization, and merged-cell immunity.
  */
 const worksheetToJson = (worksheet, options = {}, sheetName = "Unknown") => {
   const data = [];
@@ -29,15 +28,13 @@ const worksheetToJson = (worksheet, options = {}, sheetName = "Unknown") => {
 
   let startRow = options.startRow;
 
-  // Auto-detect the header row if not strictly provided
   if (!startRow) {
     let maxMatches = 0;
     const keywords = ['PAN', 'CLIENT', 'NAME', 'AUM', 'VALUATION', 'VALUE', 'INVESTOR', 'MARKET', 'FOLIO'];
     
-    // Scan the first 15 rows to find where the actual table begins
     for (let i = 1; i <= 15; i++) {
       const row = worksheet.getRow(i);
-      let matchedKeywords = new Set(); // Using a Set prevents merged-cell inflation
+      let matchedKeywords = new Set();
       
       row.eachCell((cell) => {
         const val = String((cell.value?.result ?? cell.value) || '').toUpperCase();
@@ -48,26 +45,21 @@ const worksheetToJson = (worksheet, options = {}, sheetName = "Unknown") => {
         });
       });
       
-      // We grade the row by how many *unique* keywords it contains
       if (matchedKeywords.size > maxMatches) {
         maxMatches = matchedKeywords.size;
         startRow = i;
       }
     }
-    // Fallback if detection somehow fails
     if (!startRow) startRow = 1;
   }
 
-  // Map the headers and force them to UPPERCASE to avoid case-sensitivity bugs
   const headerRow = worksheet.getRow(startRow);
   headerRow.eachCell((cell, colNumber) => {
     headers[colNumber] = String((cell.value?.result ?? cell.value) || '').trim().toUpperCase();
   });
 
-  // DIAGNOSTIC LOG: Print the detected headers so we can see what WE changed them to
   console.log(`[SyncService] ${sheetName} Sheet - Detected Headers on row ${startRow}:`, headers.filter(Boolean));
 
-  // Extract the row data
   worksheet.eachRow((row, rowNumber) => {
     if (rowNumber <= startRow) return;
 
@@ -79,7 +71,6 @@ const worksheetToJson = (worksheet, options = {}, sheetName = "Unknown") => {
       if (header) {
         const val = cell.value?.result ?? cell.value;
         rowData[header] = val;
-        // Check if the row actually has tangible data
         if (val !== null && val !== undefined && val !== '') hasContent = true;
       }
     });
@@ -99,7 +90,6 @@ exports.processWealthEliteFiles = async (files) => {
   const famWb = new ExcelJS.Workbook();
   const nfWb = new ExcelJS.Workbook();
 
-  // Load buffers asynchronously
   await Promise.all([
     aumWb.xlsx.load(aumFile[0].buffer),
     famWb.xlsx.load(familyFile[0].buffer),
@@ -110,13 +100,13 @@ exports.processWealthEliteFiles = async (files) => {
   const famSheet = famWb.getWorksheet(1);
   const nfSheet = nfWb.getWorksheet(1);
 
-  // 1. Process Family Data (Manual iteration for hierarchical structure)
+  // 1. Process Family Data
   const familyMap = {};
   const panRegex = /PAN\s*:\s*([A-Z]{5}[0-9]{4}[A-Z]{1})/;
   let currentFamilyId = null;
 
-  famSheet.eachRow((row, rowNumber) => {
-    const rowType = row.getCell(1).value?.toString().trim(); // "Family Head" or "Family Member"
+  famSheet.eachRow((row) => {
+    const rowType = row.getCell(1).value?.toString().trim();
     const content = String(row.getCell(2).value || "");
 
     const panMatch = content.match(panRegex);
@@ -134,6 +124,7 @@ exports.processWealthEliteFiles = async (files) => {
         mobile: row.getCell(3).value?.toString().trim(),
         email: row.getCell(4).value?.toString().trim(),
         address: row.getCell(5).value?.toString().trim(),
+        hasExplicitFamily: true,
       };
 
       if (pan) familyMap[`PAN_${pan}`] = data;
@@ -142,15 +133,11 @@ exports.processWealthEliteFiles = async (files) => {
   });
 
   // 2. Process Non-Family contact info
-  // Passing sheetName for console logging
   const nfData = worksheetToJson(nfSheet, { startRow: 2 }, "Non-Family");
   const nfMap = {};
   
   nfData.forEach((row) => {
-    // Keys are now guaranteed to be UPPERCASE
-    const pan = String(row["PAN"] || "")
-      .trim()
-      .toUpperCase();
+    const pan = String(row["PAN"] || "").trim().toUpperCase();
     if (pan) {
       nfMap[pan] = {
         mobile: row["MOBILE"] || row["MOBILE NO"] || row["MOBILE NUMBER"],
@@ -160,12 +147,11 @@ exports.processWealthEliteFiles = async (files) => {
     }
   });
 
-  // 3. Process AUM Data with Smart Auto-Header & Alias Logic
+  // 3. Process AUM Data
   const aumDataRaw = worksheetToJson(aumSheet, {}, "AUM Master"); 
 
   return aumDataRaw
     .map((row) => {
-      // Extensive UPPERCASE alias checking
       const clientNameRaw = String(
         row["CLIENT NAME"] || 
         row["CLIENT"] || 
@@ -177,7 +163,6 @@ exports.processWealthEliteFiles = async (files) => {
       );
       const clientName = cleanName(clientNameRaw);
 
-      // --- SKIP LOGIC: Ignore summary/total rows ---
       if (
         !clientNameRaw ||
         clientName.toUpperCase() === "TOTAL" ||
@@ -187,19 +172,15 @@ exports.processWealthEliteFiles = async (files) => {
         return null;
       }
 
-      // Extensive UPPERCASE alias checking for PAN
       const rawPan = row["PAN"] || row["PAN NO."] || row["PAN NO"] || row["PAN NUMBER"] || "";
       let pan = String(rawPan).trim().toUpperCase();
-
       const clientId = extractClientId(clientNameRaw);
 
-      // Handle Missing/Invalid PANs (Stable temp ID)
       const isTempPan = !pan || pan.length !== 10;
       if (isTempPan) {
         pan = `TEMP_${clientId || clientName.replace(/\s+/g, "_")}`;
       }
 
-      // Extensive UPPERCASE alias checking for Valuation
       const rawAum = row["AUM"] || row["VALUATION"] || row["CURRENT VALUE"] || row["TOTAL VALUE"] || row["MARKET VALUE"] || row["AMOUNT"] || 0;
       
       const numericAum =
@@ -207,7 +188,6 @@ exports.processWealthEliteFiles = async (files) => {
           ? rawAum
           : parseFloat(String(rawAum).replace(/,/g, "")) || 0;
 
-      // Lookup family/contact info
       const famInfo =
         (clientId && familyMap[`ID_${clientId}`]) ||
         (pan && familyMap[`PAN_${pan}`]) ||
@@ -221,17 +201,14 @@ exports.processWealthEliteFiles = async (files) => {
         aum: numericAum,
         category: getCategoryByAum(numericAum),
         contactDetails: {
-          phoneNo:
-            String(famInfo.mobile || nfInfo.mobile || "").trim() || "N/A",
-          email:
-            String(famInfo.email || nfInfo.email || "")
-              .toLowerCase()
-              .trim() || "N/A",
+          phoneNo: String(famInfo.mobile || nfInfo.mobile || "").trim() || "N/A",
+          email: String(famInfo.email || nfInfo.email || "").toLowerCase().trim() || "N/A",
           address: famInfo.address || nfInfo.address || "N/A",
         },
         riskProfile: "Moderate",
         familyId: famInfo.familyId || uuidv4(),
         isFamilyHead: famInfo.isFamilyHead ?? true,
+        hasExplicitFamily: !!famInfo.hasExplicitFamily,
       };
     })
     .filter((c) => c !== null);
