@@ -131,26 +131,49 @@ const BankSidebar = ({
         ? ledgerRes 
         : ledgerRes?.data || ledgerRes?.xml || '';
 
-      const ledgerMatches = [...rawLedgerXml.matchAll(/<LEDGER NAME="([^"]*)"[^>]*>([\s\S]*?)<\/LEDGER>/g)];
+      const ledgerMatches = [...rawLedgerXml.matchAll(/<LEDGER NAME="([^"]*)"[^>]*>([\s\S]*?)<\/LEDGER>/gi)];
 
       const mapped = ledgerMatches.map(m => {
         const name = tallyTemplates.unescapeXml(m[1]);
         const block = m[2];
 
         const parentMatch = block.match(/<PARENT[^>]*>(.*?)<\/PARENT>/i);
-        const stateMatch = block.match(/<(?:LED)?STATENAME[^>]*>(.*?)<\/(?:LED)?STATENAME>/i);
-        const gstinMatch = block.match(/<PARTYGSTIN[^>]*>(.*?)<\/PARTYGSTIN>/i);
+        const stateMatch = block.match(/<(?:LED)?STATENAME[^>]*>(.*?)<\/(?:LED)?STATENAME>/i) ||
+                           block.match(/<PRIORSTATENAME[^>]*>(.*?)<\/PRIORSTATENAME>/i);
         const countryMatch = block.match(/<COUNTRY(?:NAME|OFRESIDENCE)[^>]*>(.*?)<\/COUNTRY(?:NAME|OFRESIDENCE)>/i);
 
+        // 1. Root-level GSTIN extraction
+        const rootGstinMatch = block.match(/<PARTYGSTIN[^>]*>(.*?)<\/PARTYGSTIN>/i) ||
+                               block.match(/<GSTIN[^>]*>(.*?)<\/GSTIN>/i);
+        let gstin = rootGstinMatch ? tallyTemplates.unescapeXml(rootGstinMatch[1]).trim() : '';
+
+        // 2. Sub-collection fallback (TallyPrime 3.0+ multi-GST effective registrations)
+        if (!gstin) {
+          const nestedGstinMatch = block.match(/<GSTREGISTRATIONDETAILS[^>]*>[\s\S]*?<GSTIN[^>]*>(.*?)<\/GSTIN>[\s\S]*?<\/GSTREGISTRATIONDETAILS>/i) ||
+                                   block.match(/<LEDGSTREGDETAILS\.LIST[^>]*>[\s\S]*?<PARTYGSTIN[^>]*>(.*?)<\/PARTYGSTIN>[\s\S]*?<\/LEDGSTREGDETAILS\.LIST>/i) ||
+                                   block.match(/<GSTDETAILS\.LIST[^>]*>[\s\S]*?<GSTIN[^>]*>(.*?)<\/GSTIN>[\s\S]*?<\/GSTDETAILS\.LIST>/i);
+          if (nestedGstinMatch && nestedGstinMatch[1].trim()) {
+            gstin = tallyTemplates.unescapeXml(nestedGstinMatch[1]).trim();
+          }
+        }
+
+        // 3. GST Registration Type
+        const regTypeMatch = block.match(/<GSTREGISTRATIONTYPE[^>]*>(.*?)<\/GSTREGISTRATIONTYPE>/i) ||
+                             block.match(/<REGISTRATIONTYPE[^>]*>(.*?)<\/REGISTRATIONTYPE>/i);
+        const gstRegistrationType = regTypeMatch 
+          ? tallyTemplates.unescapeXml(regTypeMatch[1]).trim() 
+          : (gstin ? 'Regular' : 'Unregistered');
+
         const addressMatches = [...block.matchAll(/<ADDRESS[^>]*>(.*?)<\/ADDRESS>/gi)];
-        const addressList = addressMatches.map(a => tallyTemplates.unescapeXml(a[1]));
+        const addressList = addressMatches.map(a => tallyTemplates.unescapeXml(a[1]).trim()).filter(Boolean);
 
         return {
           name: name,
-          parent: parentMatch ? tallyTemplates.unescapeXml(parentMatch[1]) : '',
-          stateName: stateMatch ? tallyTemplates.unescapeXml(stateMatch[1]) : '',
-          country: countryMatch ? tallyTemplates.unescapeXml(countryMatch[1]) : '',
-          gstin: gstinMatch ? tallyTemplates.unescapeXml(gstinMatch[1]) : '',
+          parent: parentMatch ? tallyTemplates.unescapeXml(parentMatch[1]).trim() : '',
+          stateName: stateMatch ? tallyTemplates.unescapeXml(stateMatch[1]).trim() : '',
+          country: countryMatch ? tallyTemplates.unescapeXml(countryMatch[1]).trim() : 'India',
+          gstin: gstin,
+          gstRegistrationType: gstRegistrationType,
           address: addressList
         };
       });

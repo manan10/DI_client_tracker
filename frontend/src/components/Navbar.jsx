@@ -42,6 +42,7 @@ const Navbar = () => {
     // { name: 'Docs', path: '/documents', icon: Files, isLocked: true },
     ...(user?.isAdmin ? [{ name: 'Accounts', path: '/accounts', icon: BarChart3 }] : []),
     { name: 'Settings', path: '/settings', icon: SettingsIcon },
+    // { name: 'Tally Test', path: '/tally-debtor-test', icon: TestTubeIcon },
   ];
 
   const mainMobileItems = navItems.slice(0, 5);

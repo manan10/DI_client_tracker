@@ -1,10 +1,22 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  ArrowUpRight, ShieldCheck, ArrowRightLeft, 
-  Coins, Activity, FileText, Banknote, Layers,
-  Wallet, TrendingUp, TrendingDown, Landmark, 
-  ArrowRight, CheckCircle2,
-  Building2
+  ArrowUpRight, 
+  ShieldCheck, 
+  ArrowRightLeft, 
+  Coins, 
+  Activity, 
+  FileText, 
+  Banknote, 
+  Layers,
+  Wallet, 
+  TrendingUp, 
+  TrendingDown, 
+  Landmark, 
+  ArrowRight, 
+  CheckCircle2,
+  Building2,
+  Sparkles,
+  AlertCircle
 } from 'lucide-react';
 import CommissionMapperModal from './SummaryStep/CommissionMapperModal';
 
@@ -76,21 +88,21 @@ const SummaryStep = ({ selection, arns = [] }) => {
     const groupsMap = new Map();
     let manualCounter = 0;
 
-    // STEP A: Group transactions strictly by Party Ledger
     activeBankTransactions.forEach(tx => {
-      const isManual = isTrue(tx?.isMarkedForManualEntry) || !(tx?.suggestedLedger || tx?.ledgerName);
+      const party = tx?.suggestedLedger || tx?.partyLedger || tx?.ledgerName || tx?.partyName;
+      const isManual = isTrue(tx?.isMarkedForManualEntry) || !party;
       
       let groupKey;
       if (isManual) {
         groupKey = `MANUAL_${manualCounter++}`;
       } else {
-        groupKey = `${tx.type}_${tx.suggestedLedger || tx.ledgerName}`;
+        groupKey = `${tx.type}_${party}`;
       }
 
       if (!groupsMap.has(groupKey)) {
         groupsMap.set(groupKey, {
           id: groupKey,
-          partyLedger: isManual ? 'Manual Exception' : (tx.suggestedLedger || tx.ledgerName),
+          partyLedger: isManual ? 'Manual Exception' : party,
           type: isManual ? 'MANUAL' : tx.type,
           transactions: [],
           vouchers: [],
@@ -106,7 +118,6 @@ const SummaryStep = ({ selection, arns = [] }) => {
 
     const groups = Array.from(groupsMap.values());
 
-    // STEP B: Generate Exact Vouchers via Forward-Math
     groups.forEach(group => {
       if (group.isManual) {
         group.vouchers.push({ type: 'MANUAL', amount: group.totalBankAmount, data: group.transactions[0] });
@@ -114,22 +125,19 @@ const SummaryStep = ({ selection, arns = [] }) => {
       }
 
       if (group.type === 'RECEIPT') {
-        
-        // 1. Generate 1 Sales Voucher for EVERY transaction flagged as a sale
         const salesTxs = group.transactions.filter(t => isTrue(t.isSales));
         
         salesTxs.forEach(tx => {
+          let partyName = tx.suggestedLedger || tx.partyLedger || tx.ledgerName || tx.partyName || group.partyLedger;
           let activeSalesLedger = tx.individualSalesLedger || selection?.salesIncomeLedger || "SUSPENSE SALES LEDGER";
           let invoiceDate = tx.invoiceBillingDate || tx.date || "";
 
-          // STRICT RULE: Base is the bank amount UNLESS user explicitly overwrote it
           let baseAmount = (tx.baseAmount !== undefined && tx.baseAmount !== null && tx.baseAmount !== "") 
             ? Number(tx.baseAmount) 
             : Math.abs(tx.amount || 0);
 
           let cgst = 0, sgst = 0, igst = 0;
 
-          // STRICT RULE: Only calculate GST if the ARN is GST Compliant
           if (isGstCompliant) {
             const applyCG = isTrue(tx.applyCGST);
             const applySG = isTrue(tx.applySGST);
@@ -149,12 +157,13 @@ const SummaryStep = ({ selection, arns = [] }) => {
             cgst,
             sgst,
             igst,
+            partyName,
             activeSalesLedger,
-            invoiceBillingDate: invoiceDate
+            invoiceBillingDate: invoiceDate,
+            data: tx
           });
         });
 
-        // 2. Generate 1 Receipt Voucher for EVERY transaction
         group.transactions.forEach(tx => {
           group.vouchers.push({ type: 'RECEIPT', amount: Math.abs(tx.amount || 0), data: tx });
         });
@@ -195,9 +204,9 @@ const SummaryStep = ({ selection, arns = [] }) => {
   const globalCounts = useMemo(() => {
     return {
       sales: allTransactions.filter(t => isTrue(t.isSales) && t.type === 'RECEIPT' && !isTrue(t.isMarkedForManualEntry)).length,
-      receipts: allTransactions.filter(t => t.type === 'RECEIPT' && !isTrue(t.isMarkedForManualEntry) && !!(t.suggestedLedger || t.ledgerName)).length,
-      payments: allTransactions.filter(t => t.type === 'PAYMENT' && !isTrue(t.isMarkedForManualEntry) && !!(t.suggestedLedger || t.ledgerName)).length,
-      manual: allTransactions.filter(t => isTrue(t.isMarkedForManualEntry) || !(t.suggestedLedger || t.ledgerName)).length
+      receipts: allTransactions.filter(t => t.type === 'RECEIPT' && !isTrue(t.isMarkedForManualEntry) && !!(t.suggestedLedger || t.partyLedger || t.ledgerName || t.partyName)).length,
+      payments: allTransactions.filter(t => t.type === 'PAYMENT' && !isTrue(t.isMarkedForManualEntry) && !!(t.suggestedLedger || t.partyLedger || t.ledgerName || t.partyName)).length,
+      manual: allTransactions.filter(t => isTrue(t.isMarkedForManualEntry) || !(t.suggestedLedger || t.partyLedger || t.ledgerName || t.partyName)).length
     };
   }, [allTransactions]);
 
@@ -207,18 +216,37 @@ const SummaryStep = ({ selection, arns = [] }) => {
 
   if (!selection?.stagedData?.transactions || !activeBank) {
     return (
-      <div className="h-full w-full bg-white flex flex-col items-center justify-center gap-4 text-gray-500">
-        <Activity size={24} className="animate-spin text-blue-600" />
-        <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Parsing Ledger Data...</span>
+      <div className="h-full w-full bg-white dark:bg-[#07090E] flex flex-col items-center justify-center gap-4 text-slate-500 py-32">
+        <Activity size={24} className="animate-spin text-emerald-600 dark:text-emerald-400" />
+        <span className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400">Loading Voucher Manifesto...</span>
       </div>
     );
   }
 
-  // Minimalist Color Palette mapping for headers and borders
+  // Pure status color accents (no neon headers, pure clean text & subtle tags)
   const getGroupTheme = (type) => {
-    if (type === 'RECEIPT') return { text: 'text-emerald-600', border: 'border-emerald-500', icon: <ArrowRightLeft size={18} /> };
-    if (type === 'PAYMENT') return { text: 'text-rose-600', border: 'border-rose-500', icon: <Coins size={18} /> };
-    return { text: 'text-amber-600', border: 'border-amber-500', icon: <Activity size={18} /> };
+    if (type === 'RECEIPT') {
+      return { 
+        text: 'text-emerald-600 dark:text-emerald-400',
+        border: 'border-b-2 border-emerald-500',
+        badge: 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20',
+        icon: <ArrowRightLeft size={14} strokeWidth={2.5} /> 
+      };
+    }
+    if (type === 'PAYMENT') {
+      return { 
+        text: 'text-rose-600 dark:text-rose-400',
+        border: 'border-b-2 border-rose-500',
+        badge: 'text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20',
+        icon: <Coins size={14} strokeWidth={2.5} /> 
+      };
+    }
+    return { 
+      text: 'text-amber-600 dark:text-amber-400',
+      border: 'border-b-2 border-amber-500',
+      badge: 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20',
+      icon: <AlertCircle size={14} strokeWidth={2.5} /> 
+    };
   };
 
   return (
@@ -226,84 +254,118 @@ const SummaryStep = ({ selection, arns = [] }) => {
       <style dangerouslySetInnerHTML={{__html: `
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
       `}} />
       
-      {/* PERFECT WHITE BACKGROUND - NO SLATE ALLOWED */}
-      <div className="h-full w-full bg-white overflow-y-auto custom-scroll text-gray-900 font-sans pb-32">
+      {/* Scrollable Container with guaranteed clearance for the fixed bottom bar */}
+      <div className="w-full min-h-screen bg-white dark:bg-[#07090E] overflow-y-auto custom-scroll text-slate-900 dark:text-slate-100 pb-48 select-none font-sans">
         
-        {/* ===================== HERO HEADER (UNTOUCHED) ===================== */}
-        <div className="bg-[#0f172a] w-full px-6 lg:px-12 pt-8 pb-14 text-white relative">
-          <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6 w-full relative z-10">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shrink-0">
-                <Building2 size={28} strokeWidth={2} />
+        {/* ===================== EXECUTIVE HEADER ===================== */}
+        <div className="bg-[#0B1120] text-white w-full px-6 lg:px-12 pt-7 pb-10 relative border-b border-slate-800">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 w-full">
+            
+            {/* Left: Entity Identification */}
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-md bg-slate-800 border border-slate-700 text-emerald-400 flex items-center justify-center shrink-0">
+                <Building2 size={20} strokeWidth={2} />
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-1 flex items-center gap-1">Company</span>
-                <h2 className="text-[24px] font-black leading-none tracking-tight text-white mb-2">
-                  {selection?.tallyCompany || "Not Specified"}
-                </h2>
-                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  <span>Voucher Manifesto</span>
-                  <span className="w-1 h-1 rounded-full bg-slate-600" /> 
-                  <span className="text-slate-300">{monthName} {selection?.year}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-1">
+                    <ShieldCheck size={12} /> {selection?.tallyCompany || "Company"}
+                  </span>
+                  <span className="text-slate-600">•</span>
+                  <span className="text-xs font-mono font-bold text-slate-300">
+                    {monthName} {selection?.year}
+                  </span>
                 </div>
+                <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white leading-tight">
+                  Voucher Manifesto Review
+                </h2>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-4 bg-white/5 border border-white/10 px-5 py-2.5 rounded-xl backdrop-blur-md">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-r border-white/10 pr-4">Total Vouchers</div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-blue-400">{globalCounts.sales} Sales</span>
-                  <span className="text-xs font-bold text-emerald-400">{globalCounts.receipts} Rec</span>
-                  <span className="text-xs font-bold text-rose-400">{globalCounts.payments} Pay</span>
-                  {globalCounts.manual > 0 && <span className="text-xs font-bold text-amber-400">{globalCounts.manual} Holds</span>}
-                </div>
+
+            {/* Right: Auto-Log Action Card + Global Counts */}
+            <div className="flex flex-wrap items-center gap-3">
+              
+              {/* Global Voucher Batch Metrics */}
+              <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-md">
+                <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest border-r border-slate-800 pr-2.5 mr-0.5 hidden sm:inline">
+                  Batch
+                </span>
+                <span className="px-1.5 py-0.5 rounded-sm text-[11px] font-mono font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20">
+                  {globalCounts.sales} Sales
+                </span>
+                <span className="px-1.5 py-0.5 rounded-sm text-[11px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+                  {globalCounts.receipts} Rec
+                </span>
+                <span className="px-1.5 py-0.5 rounded-sm text-[11px] font-mono font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20">
+                  {globalCounts.payments} Pay
+                </span>
+                {globalCounts.manual > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-sm text-[11px] font-mono font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20">
+                    {globalCounts.manual} Holds
+                  </span>
+                )}
               </div>
+
+              {/* HIGH-PROMINENCE AUTO-LOG COMMISSION ACTION */}
               {globalCommissionLines.length > 0 && (
-                <div className="flex items-center gap-4 bg-slate-800/50 border border-slate-700 px-5 py-2.5 rounded-xl backdrop-blur-md">
-                  <div className="flex flex-col text-right">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Auto-Log Commissions</span>
-                    <span className="text-xs font-bold text-slate-200">{globalCommissionLines.length} entries detected</span>
-                  </div>
-                  <div className="w-px h-8 bg-slate-700" />
-                  <div>
-                    {isCommissionCommitted ? (
-                      <span className="flex items-center gap-1.5 text-emerald-400 text-xs font-black uppercase tracking-widest">
-                        <CheckCircle2 size={16} /> Mapped
+                <div className="flex items-center gap-3 bg-slate-900 border border-emerald-500/40 px-3.5 py-1.5 rounded-md">
+                  <div className="flex flex-col text-left">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-wider">
+                        Auto-Log Commissions
                       </span>
-                    ) : (
-                      <button 
-                        onClick={() => setIsMapperOpen(true)} 
-                        className="flex cursor-pointer items-center gap-2 px-4 py-1.5 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all hover:bg-emerald-500 active:scale-95"
-                      >
-                        Open<ArrowUpRight size={14} />
-                      </button>
-                    )}
+                    </div>
+                    <span className="text-xs font-mono font-bold text-slate-200">
+                      {globalCommissionLines.length} Entries Ready
+                    </span>
                   </div>
+
+                  {isCommissionCommitted ? (
+                    <div className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-sm text-[11px] font-mono font-bold uppercase tracking-wider">
+                      <CheckCircle2 size={13} />
+                      <span>Mapped</span>
+                    </div>
+                  ) : (
+                    <button 
+                      type="button"
+                      onClick={() => setIsMapperOpen(true)}
+                      className="cursor-pointer flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-sm text-[11px] font-mono font-bold uppercase tracking-wider transition-colors active:scale-95 shadow-sm"
+                    >
+                      <span>Open</span>
+                      <ArrowUpRight size={13} strokeWidth={2.5} />
+                    </button>
+                  )}
                 </div>
               )}
+
             </div>
+
           </div>
+
+          {/* BANK ACCOUNT TABS */}
           {bankSummaries.length > 0 && (
-            <div className="w-full mt-10 border-b border-white/10 flex gap-8 overflow-x-auto no-scrollbar relative z-10">
+            <div className="w-full mt-6 border-b border-slate-800 flex gap-4 overflow-x-auto no-scrollbar">
               {bankSummaries.map((bank) => {
                 const isActive = activeBank === bank.tallyLedgerName;
                 return (
                   <button 
                     key={bank.tallyLedgerName}
                     onClick={() => setUserSelectedBank(bank.tallyLedgerName)}
-                    className={`py-3 text-[11px] font-black uppercase tracking-widest transition-colors relative whitespace-nowrap ${
-                      isActive ? 'text-white' : 'text-slate-500 hover:text-slate-300'
+                    className={`pb-2.5 px-1 text-xs font-mono font-bold uppercase tracking-wider transition-colors relative whitespace-nowrap cursor-pointer flex items-center gap-2 ${
+                      isActive ? 'text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
-                    {bank.tallyLedgerName}
+                    <Landmark size={13} className={isActive ? 'text-emerald-400' : 'text-slate-500'} />
+                    <span>{bank.tallyLedgerName}</span>
                     {isActive && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.75 bg-blue-500 rounded-t-md" />
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500" />
                     )}
                   </button>
                 );
@@ -312,191 +374,229 @@ const SummaryStep = ({ selection, arns = [] }) => {
           )}
         </div>
 
-        {/* ===================== FLOATING METRICS (UNTOUCHED) ===================== */}
-        <div className="w-full px-6 lg:px-12 -mt-6 relative z-10">
-          <div className="bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 px-8 py-5 flex flex-wrap items-center justify-between gap-6">
-            <div className="flex items-center gap-6 lg:gap-12">
+        {/* ===================== FINANCIAL METRICS STRIP ===================== */}
+        <div className="w-full px-6 lg:px-12 py-3 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-white/10">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            
+            <div className="flex flex-wrap items-center gap-6 lg:gap-10">
               <div className="flex flex-col">
-                <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-0.5">
-                  <Wallet size={12}/> Opening
+                <span className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold">
+                  <Wallet size={12} className="text-slate-400" /> Opening Balance
                 </span>
-                <span className="font-mono text-lg font-bold text-slate-800">{formatINR(activeBankMetrics.openingBalance)}</span>
+                <span className="font-mono text-sm font-bold text-slate-900 dark:text-white">
+                  {formatINR(activeBankMetrics.openingBalance)}
+                </span>
               </div>
-              <div className="w-px h-8 bg-slate-200" />
+
+              <div className="hidden sm:block w-px h-6 bg-slate-200 dark:bg-slate-800" />
+
               <div className="flex flex-col">
-                <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-emerald-600 font-bold mb-0.5">
-                  <TrendingUp size={12}/> Receipts
+                <span className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-bold">
+                  <TrendingUp size={12} /> Receipts Inflow
                 </span>
-                <span className="font-mono text-lg font-bold text-emerald-600">+{formatINR(activeBankVoucherStats.receiptTotal)}</span>
+                <span className="font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                  +{formatINR(activeBankVoucherStats.receiptTotal)}
+                </span>
               </div>
-              <div className="w-px h-8 bg-slate-200" />
+
+              <div className="hidden sm:block w-px h-6 bg-slate-200 dark:bg-slate-800" />
+
               <div className="flex flex-col">
-                <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-rose-600 font-bold mb-0.5">
-                  <TrendingDown size={12}/> Payments
+                <span className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-rose-600 dark:text-rose-400 font-bold">
+                  <TrendingDown size={12} /> Payments Outflow
                 </span>
-                <span className="font-mono text-lg font-bold text-rose-600">-{formatINR(activeBankVoucherStats.paymentTotal)}</span>
+                <span className="font-mono text-sm font-bold text-rose-600 dark:text-rose-400">
+                  -{formatINR(activeBankVoucherStats.paymentTotal)}
+                </span>
               </div>
             </div>
-            <div className="flex items-center gap-6 lg:gap-12">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 bg-blue-50/80 border border-blue-100/50 text-blue-700 text-[10px] font-bold rounded-lg tracking-wide">
-                  {activeBankVoucherStats.counts.sales} Sales
-                </span>
-                <span className="px-2.5 py-1 bg-emerald-50/80 border border-emerald-100/50 text-emerald-700 text-[10px] font-bold rounded-lg tracking-wide">
-                  {activeBankVoucherStats.counts.receipt} Rec
-                </span>
-                <span className="px-2.5 py-1 bg-rose-50/80 border border-rose-100/50 text-rose-700 text-[10px] font-bold rounded-lg tracking-wide">
-                  {activeBankVoucherStats.counts.payment} Pay
-                </span>
-              </div>
-              <div className="w-px h-8 bg-slate-200" />
-              <div className="flex flex-col text-right">
-                <span className="flex items-center justify-end gap-1.5 text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-0.5">
-                  <Landmark size={12}/> Closing
-                </span>
-                <span className="font-mono text-xl font-black text-slate-900 leading-none">{formatINR(activeBankMetrics.closingBalance)}</span>
-              </div>
+
+            <div className="flex flex-col text-left sm:text-right">
+              <span className="flex items-center sm:justify-end gap-1.5 text-[10px] font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400 font-bold">
+                <Landmark size={12} className="text-slate-400" /> Closing Balance
+              </span>
+              <span className="font-mono text-base font-black text-slate-900 dark:text-white leading-none">
+                {formatINR(activeBankMetrics.closingBalance)}
+              </span>
             </div>
+
           </div>
         </div>
 
-        {/* ===================== PURE FLAT SPREADSHEET LEDGER ===================== */}
-        <div className="w-full px-6 lg:px-12 mt-12">
+        {/* ===================== FLAT DOCUMENT LEDGER PIPELINE ===================== */}
+        <div className="w-full px-6 lg:px-12 mt-8">
+          
+          <div className="flex items-center justify-between pb-2 mb-6 border-b border-slate-300 dark:border-white/10">
+            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Bank Statement Lines vs Generated Tally Vouchers
+            </h3>
+            <span className="text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400">
+              {transactionGroups.length} Ledger Groups
+            </span>
+          </div>
+
           {transactionGroups.length === 0 ? (
-            <div className="py-24 flex flex-col items-center justify-center text-gray-400 border-t border-b border-gray-200">
-              <Layers size={36} className="mb-4 text-gray-300" />
-              <span className="text-sm font-bold uppercase tracking-widest">No Actionable Groups</span>
-              <span className="text-sm mt-1">This statement period is fully resolved or empty.</span>
+            <div className="py-20 flex flex-col items-center justify-center text-center p-6 border border-dashed border-slate-200 dark:border-white/10 rounded-sm">
+              <Layers size={32} className="mb-2 text-slate-300 dark:text-slate-700" />
+              <span className="text-xs font-mono font-bold uppercase tracking-widest text-slate-700 dark:text-slate-300">
+                No Transactions Found
+              </span>
+              <span className="text-xs text-slate-500 mt-0.5">
+                This bank statement period has no actionable entries.
+              </span>
             </div>
           ) : (
-            <div className="flex flex-col gap-16">
+            <div className="flex flex-col gap-10">
               {transactionGroups.map((group, idx) => {
                 const theme = getGroupTheme(group.type);
                 
                 return (
                   <div key={group.id || idx} className="w-full">
                     
-                    {/* --- CLEAN GROUP HEADER --- */}
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-3 border-b-2 border-gray-900">
-                      <div className="flex items-end gap-3">
-                        <span className={`${theme.text} mb-1`}>{theme.icon}</span>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-0.5">
-                            {group.type === 'RECEIPT' ? 'Receipt Group' : group.type === 'PAYMENT' ? 'Payment Group' : 'Exception Group'} 
-                            <span className="ml-2 text-gray-400">({group.transactions.length} entries)</span>
-                          </span>
-                          <span className={`text-[20px] font-black leading-none tracking-tight ${theme.text}`}>
-                            {group.partyLedger}
-                          </span>
-                        </div>
+                    {/* FLAT GROUP HEADER (NO COLORED BACKGROUND) */}
+                    <div className={`flex flex-col sm:flex-row sm:items-end justify-between gap-2 pb-2 mb-3 ${theme.border}`}>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className={`px-2 py-0.5 rounded-sm text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1 ${theme.badge}`}>
+                          {theme.icon}
+                          {group.type}
+                        </span>
+                        <h4 className={`text-base font-black uppercase tracking-tight ${theme.text} truncate`}>
+                          {group.partyLedger}
+                        </h4>
+                        <span className="text-slate-400 text-xs font-mono font-bold">
+                          ({group.transactions.length})
+                        </span>
                       </div>
-                      <div className="flex flex-col items-end shrink-0">
-                        <span className={`font-mono font-black text-xl leading-none ${theme.text}`}>
+
+                      <div className="flex sm:flex-col sm:items-end justify-between items-center shrink-0">
+                        <span className={`font-mono text-base font-black ${theme.text}`}>
                           {group.type === 'RECEIPT' ? '+' : '-'}{formatINR(group.totalBankAmount)}
                         </span>
                       </div>
                     </div>
 
-                    {/* --- THE PIPELINE GRID --- */}
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_60px_1fr] w-full pt-2">
+                    {/* DUAL PANE LEDGER TABLE */}
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_36px_1fr] w-full gap-4 items-start">
                       
-                      {/* LEFT: Raw Bank Statements */}
-                      <div className="py-2 pr-0 lg:pr-8 flex flex-col">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4 mt-2 flex items-center gap-1.5">
-                          <Banknote size={14}/> Bank Statement Source
+                      {/* LEFT: Raw Bank Statement Lines */}
+                      <div className="space-y-1.5">
+                        <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1">
+                          <Banknote size={12} /> Source Statement
                         </div>
+                        
                         {group.transactions.map((tx, tIdx) => (
-                          <div key={tIdx} className="group flex justify-between items-start gap-4 py-4 border-b border-gray-200 last:border-b-0 hover:bg-gray-50/80 transition-colors">
-                            <div className="flex flex-col gap-1 pr-4">
-                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                          <div 
+                            key={tIdx} 
+                            className="p-2.5 bg-slate-50/80 dark:bg-white/2 border border-slate-200 dark:border-white/10 rounded-sm flex justify-between items-start gap-3 hover:bg-slate-100/80 dark:hover:bg-white/[0.04] transition-colors"
+                          >
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                              <span className="text-[10px] font-mono text-slate-500 uppercase">
                                 {tx.date ? new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'No Date'}
                               </span>
-                              <span className="text-[13px] font-medium text-gray-800 leading-snug">
-                                {tx.narration}
+                              <span className="text-xs font-medium text-slate-800 dark:text-slate-200 break-words leading-tight">
+                                {tx.narration || tx.description || tx.particulars || "No Narration"}
                               </span>
                             </div>
-                            <span className="font-mono text-[14px] font-bold text-gray-900 shrink-0">
+                            <span className="font-mono text-xs font-bold text-slate-900 dark:text-white shrink-0">
                               {formatINR(tx.amount)}
                             </span>
                           </div>
                         ))}
                       </div>
 
-                      {/* MIDDLE: Visual Connector Arrow */}
-                      <div className="hidden lg:flex flex-col items-center relative">
-                        <div className="absolute top-0 bottom-0 left-1/2 w-px border-l-2 border-dashed border-gray-200 -translate-x-1/2" />
-                        <div className="relative z-10 mt-12 w-16 h-16 bg-white flex items-center justify-center text-blue-300">
-                          <ArrowRight size={30} strokeWidth={2}/>
-                        </div>
+                      {/* MIDDLE: Visual Flow Indicator */}
+                      <div className="hidden lg:flex flex-col items-center justify-center pt-8 text-slate-300 dark:text-slate-700">
+                        <ArrowRight size={16} strokeWidth={2} />
                       </div>
 
                       {/* RIGHT: Generated Tally Vouchers */}
-                      <div className="py-2 pl-0 lg:pl-8 flex flex-col border-t lg:border-t-0 border-gray-200 mt-6 lg:mt-0">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-4 mt-2 flex items-center gap-1.5">
-                          <FileText size={14}/> Tally Vouchers Preview
+                      <div className="space-y-1.5 border-t lg:border-t-0 border-slate-200 dark:border-white/10 pt-3 lg:pt-0">
+                        <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1">
+                          <FileText size={12} /> Generated Tally Vouchers
                         </div>
                         
                         {group.vouchers.map((v, vIdx) => {
 
-                          // RECEIPT VOUCHER ROW
+                          // 1. RECEIPT VOUCHER
                           if (v.type === 'RECEIPT') {
+                            const party = v.data.suggestedLedger || v.data.partyLedger || v.data.ledgerName || v.data.partyName || group.partyLedger;
                             return (
-                              <div key={vIdx} className="group relative flex justify-between items-center py-4 pl-5 border-b border-gray-200 last:border-b-0 hover:bg-emerald-50/40 transition-colors">
-                                <div className="absolute left-0 top-4 bottom-4 w-0.75 bg-emerald-500 rounded-full" />
-                                <div className="flex flex-col gap-1 pr-4">
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">
-                                    Receipt
+                              <div 
+                                key={vIdx} 
+                                className="p-2.5 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 border-l-3 border-l-emerald-500 rounded-sm flex justify-between items-center gap-3"
+                              >
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                                    Receipt Voucher
                                   </span>
-                                  <span className="text-[13px] font-bold text-gray-800 leading-snug">
-                                    {v.data.suggestedLedger || v.data.ledgerName}
+                                  <span className="text-xs font-bold text-slate-900 dark:text-white uppercase truncate">
+                                    {party}
                                   </span>
                                 </div>
-                                <span className="font-mono text-[14px] font-black text-emerald-600 shrink-0">
+                                <span className="font-mono text-xs font-black text-emerald-600 dark:text-emerald-400 shrink-0">
                                   {formatINR(v.amount)}
                                 </span>
                               </div>
                             );
                           }
 
-                          // SALES VOUCHER ROW
+                          // 2. SALES VOUCHER INVOICE
                           if (v.type === 'SALES') {
                             return (
-                              <div key={vIdx} className="group relative flex flex-col gap-2.5 py-4 pl-5 border-b border-gray-200 last:border-b-0 hover:bg-blue-50/40 transition-colors">
-                                <div className="absolute left-0 top-4 bottom-4 w-0.75 bg-blue-500 rounded-full" />
-                                
-                                <div className="flex justify-between items-start gap-4">
-                                  <div className="flex flex-col gap-1">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-600">
-                                      Sales Invoice
-                                    </span>
-                                    <span className="text-[14px] font-bold text-gray-900 leading-snug">
-                                      {v.activeSalesLedger}
+                              <div 
+                                key={vIdx} 
+                                className="p-2.5 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 border-l-3 border-l-blue-500 rounded-sm flex flex-col gap-1.5"
+                              >
+                                <div className="flex justify-between items-start gap-3">
+                                  <div className="flex flex-col min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">
+                                        Sales Invoice
+                                      </span>
+                                      {v.invoiceBillingDate && (
+                                        <span className="text-[9px] font-mono text-slate-400">
+                                          Doc: {new Date(v.invoiceBillingDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                                        </span>
+                                      )}
+                                    </div>
+                                    
+                                    {/* PARTY NAME & SALES LEDGER BREAKDOWN */}
+                                    <div className="flex flex-col mt-0.5">
+                                      <span className="text-xs font-black text-slate-900 dark:text-white uppercase truncate">
+                                        Party: {v.partyName}
+                                      </span>
+                                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase truncate">
+                                        Income A/C: {v.activeSalesLedger}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex flex-col items-end shrink-0">
+                                    <span className="font-mono text-xs font-black text-blue-600 dark:text-blue-400">
+                                      {formatINR(v.grossTotal)}
                                     </span>
                                   </div>
-                                  <span className="font-mono text-[15px] font-black text-blue-600 shrink-0">
-                                    {formatINR(v.grossTotal)}
-                                  </span>
                                 </div>
-                                
-                                {/* INLINE GST TEXT (No bulky pills) */}
-                                <div className="flex flex-wrap items-center gap-2.5 text-[11px] font-semibold text-gray-500 tracking-wide mt-1">
-                                  <span>Base: <span className="text-gray-900">{formatINR(v.baseAmount).replace('₹', '')}</span></span>
+
+                                {/* GST Tax Breakdown */}
+                                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                                  <span>Base: <strong className="text-slate-900 dark:text-white">{formatINR(v.baseAmount).replace('₹', '')}</strong></span>
                                   {v.cgst > 0 && (
                                     <>
-                                      <span className="w-1 h-1 rounded-full bg-gray-300" />
-                                      <span>CG: <span className="text-gray-900">{formatINR(v.cgst).replace('₹', '')}</span></span>
+                                      <span>•</span>
+                                      <span>CGST: <strong className="text-slate-900 dark:text-white">{formatINR(v.cgst).replace('₹', '')}</strong></span>
                                     </>
                                   )}
                                   {v.sgst > 0 && (
                                     <>
-                                      <span className="w-1 h-1 rounded-full bg-gray-300" />
-                                      <span>SG: <span className="text-gray-900">{formatINR(v.sgst).replace('₹', '')}</span></span>
+                                      <span>•</span>
+                                      <span>SGST: <strong className="text-slate-900 dark:text-white">{formatINR(v.sgst).replace('₹', '')}</strong></span>
                                     </>
                                   )}
                                   {v.igst > 0 && (
                                     <>
-                                      <span className="w-1 h-1 rounded-full bg-blue-300" />
-                                      <span className="text-blue-600">IGST: <span className="font-bold">{formatINR(v.igst).replace('₹', '')}</span></span>
+                                      <span>•</span>
+                                      <span>IGST: <strong className="text-blue-600 dark:text-blue-400">{formatINR(v.igst).replace('₹', '')}</strong></span>
                                     </>
                                   )}
                                 </div>
@@ -504,41 +604,45 @@ const SummaryStep = ({ selection, arns = [] }) => {
                             );
                           }
 
-
-                          // PAYMENT VOUCHER ROW
+                          // 3. PAYMENT VOUCHER
                           if (v.type === 'PAYMENT') {
+                            const party = v.data.suggestedLedger || v.data.partyLedger || v.data.ledgerName || v.data.partyName || group.partyLedger;
                             return (
-                              <div key={vIdx} className="group relative flex justify-between items-center py-4 pl-5 border-b border-gray-200 last:border-b-0 hover:bg-rose-50/40 transition-colors">
-                                <div className="absolute left-0 top-4 bottom-4 w-0.75 bg-rose-500 rounded-full" />
-                                <div className="flex flex-col gap-1 pr-4">
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-rose-600">
-                                    Payment
+                              <div 
+                                key={vIdx} 
+                                className="p-2.5 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 border-l-3 border-l-rose-500 rounded-sm flex justify-between items-center gap-3"
+                              >
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-rose-600 dark:text-rose-400">
+                                    Payment Voucher
                                   </span>
-                                  <span className="text-[13px] font-bold text-gray-800 leading-snug">
-                                    {v.data.suggestedLedger || v.data.ledgerName}
+                                  <span className="text-xs font-bold text-slate-900 dark:text-white uppercase truncate">
+                                    {party}
                                   </span>
                                 </div>
-                                <span className="font-mono text-[14px] font-black text-rose-600 shrink-0">
+                                <span className="font-mono text-xs font-black text-rose-600 dark:text-rose-400 shrink-0">
                                   {formatINR(v.amount)}
                                 </span>
                               </div>
                             );
                           }
 
-                          // MANUAL HOLD ROW
+                          // 4. MANUAL HOLD VOUCHER
                           if (v.type === 'MANUAL') {
                             return (
-                              <div key={vIdx} className="group relative flex justify-between items-center py-4 pl-5 border-b border-gray-200 last:border-b-0 hover:bg-amber-50/40 transition-colors">
-                                <div className="absolute left-0 top-4 bottom-4 w-0.75 bg-amber-500 rounded-full" />
-                                <div className="flex flex-col gap-1 pr-4">
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">
+                              <div 
+                                key={vIdx} 
+                                className="p-2.5 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 border-l-3 border-l-amber-500 rounded-sm flex justify-between items-center gap-3"
+                              >
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
                                     Hold / Manual Review
                                   </span>
-                                  <span className="text-[13px] font-bold text-amber-900 italic leading-snug">
+                                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300 italic truncate">
                                     Missing Ledger Mapping
                                   </span>
                                 </div>
-                                <span className="font-mono text-[14px] font-black text-amber-600 shrink-0">
+                                <span className="font-mono text-xs font-black text-amber-600 dark:text-amber-400 shrink-0">
                                   {formatINR(v.amount)}
                                 </span>
                               </div>
@@ -548,15 +652,19 @@ const SummaryStep = ({ selection, arns = [] }) => {
                           return null;
                         })}
                       </div>
+
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
+
+          {/* Spacer block guaranteeing scroll room above bottom bar */}
+          <div className="h-20 w-full" />
         </div>
 
-        {/* MODAL TRIGGER */}
+        {/* COMMISSION MAPPER MODAL */}
         {isMapperOpen && (
           <CommissionMapperModal 
             isOpen={isMapperOpen} 

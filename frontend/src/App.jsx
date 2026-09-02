@@ -22,6 +22,7 @@ const Accounts = lazy(() => import("./pages/ClientTracker/Accounts"));
 const ClientDetail = lazy(() => import("./pages/ClientTracker/ClientDetail"));
 const Operations = lazy(() => import("./pages/ClientTracker/Operations"));
 const MaintenanceView = lazy(() => import("./pages/ClientTracker/MaintenanceView"));
+const TallyDebtorTest = lazy(() => import("./pages/TallyDebtorTest"));
 
 // Home Expense Tracker App Components
 const ExpenseDashboard = lazy(() => import("./pages/ExpenseTracker/ExpenseDashboard"));
@@ -162,6 +163,15 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ClientDetail />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/tally-debtor-test"
+                element={
+                  <ProtectedRoute>
+                    <TallyDebtorTest />
                   </ProtectedRoute>
                 }
               />

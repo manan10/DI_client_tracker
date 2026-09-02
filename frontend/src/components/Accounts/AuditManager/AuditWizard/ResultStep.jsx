@@ -2,7 +2,8 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   CheckCircle2, AlertCircle, Loader2, Play, ShieldCheck, 
   Landmark, Banknote, Zap, Send, ArrowRight, Building2, 
-  Wallet, ArrowRightLeft, Coins, Hash, MapPin, Layers, FileText
+  Wallet, ArrowRightLeft, Coins, Hash, MapPin, Layers, FileText,
+  AlertTriangle, RefreshCw, CheckCheck, Check, Undo2
 } from 'lucide-react';
 import { useApi } from '../../../../hooks/useApi';
 import { tallyTemplates } from '../../../../utils/tallyTemplates';
@@ -48,20 +49,21 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     const finalUiGroups = {};
     let vIdCounter = 0;
 
-    // 2. Process grouping rules strictly by Party Ledger (Like SummaryStep)
+    // 2. Process grouping rules strictly by Party Ledger
     Object.entries(bankMap).forEach(([bank, txs]) => {
       const groupsMap = new Map();
       let manualCounter = 0;
 
       txs.forEach(tx => {
-        const isManual = isTrue(tx?.isMarkedForManualEntry) || !(tx?.suggestedLedger || tx?.ledgerName);
-        let groupKey = isManual ? `MANUAL_${manualCounter++}` : `${tx.type}_${tx.suggestedLedger || tx.ledgerName}`;
+        const partyLedger = tx?.suggestedLedger || tx?.partyLedger || tx?.ledgerName || tx?.partyName;
+        const isManual = isTrue(tx?.isMarkedForManualEntry) || !partyLedger;
+        let groupKey = isManual ? `MANUAL_${manualCounter++}` : `${tx.type}_${partyLedger}`;
 
         if (!groupsMap.has(groupKey)) {
           groupsMap.set(groupKey, {
             id: groupKey,
             bank,
-            partyLedger: isManual ? 'Manual Exception' : (tx.suggestedLedger || tx.ledgerName),
+            partyLedger: isManual ? 'Manual Exception' : partyLedger,
             type: isManual ? 'MANUAL' : tx.type,
             transactions: [],
             vouchersList: [], 
@@ -89,7 +91,14 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
           // Sales Vouchers (1 per eligible transaction)
           const salesTxs = group.transactions.filter(t => isTrue(t.isSales) && isTrue(t.isSalesApproved));
           salesTxs.forEach(tx => {
-            let activeSalesLedger = tx.individualSalesLedger || salesIncomeLedger || "SUSPENSE SALES LEDGER";
+            // FIX: Robust resolution of sales income account chosen in SalesStep
+            let activeSalesLedger = 
+              tx.individualSalesLedger || 
+              tx.activeSalesLedger || 
+              salesIncomeLedger || 
+              (masterLedgers.find(l => l.name?.toLowerCase().includes("mf com"))?.name) ||
+              "MF COMMISSION INCOME";
+
             let baseAmount = (tx.baseAmount !== undefined && tx.baseAmount !== null && tx.baseAmount !== "") ? Number(tx.baseAmount) : Math.abs(tx.amount || 0);
             let cgst = 0, sgst = 0, igst = 0;
 
@@ -104,10 +113,18 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
 
             const vId = `v_${vIdCounter++}`;
             generatedVouchers.push({ 
-              id: vId, bank, groupId: group.id, vType: 'SALES', 
+              id: vId, 
+              bank, 
+              groupId: group.id, 
+              vType: 'SALES', 
               grossTotal: baseAmount + cgst + sgst + igst, 
-              baseAmount, cgst, sgst, igst, activeSalesLedger, 
-              rawTx: tx, status: 'PENDING' 
+              baseAmount, 
+              cgst, 
+              sgst, 
+              igst, 
+              activeSalesLedger, 
+              rawTx: tx, 
+              status: 'PENDING' 
             });
             group.vouchersList.push(vId);
           });
@@ -149,42 +166,189 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
     
     const banks = Object.keys(finalUiGroups);
     if (banks.length > 0) setActiveBankTab(banks[0]);
-  }, [safeTransactions, isGstCompliant, salesIncomeLedger]); 
+  }, [safeTransactions, isGstCompliant, salesIncomeLedger, masterLedgers]); 
 
   // =========================================================================
-  // METRICS & STYLING HELPERS
+  // METRICS & COUNTERS
   // =========================================================================
-  const getGroupTheme = (type) => {
-    if (type === 'RECEIPT') return { text: 'text-emerald-700', border: 'border-emerald-600', bg: 'bg-emerald-50', icon: <ArrowRightLeft size={18} /> };
-    if (type === 'PAYMENT') return { text: 'text-rose-700', border: 'border-rose-600', bg: 'bg-rose-50', icon: <Coins size={18} /> };
-    return { text: 'text-amber-700', border: 'border-amber-600', bg: 'bg-amber-50', icon: <AlertCircle size={18} /> };
-  };
+  const totals = useMemo(() => {
+    let sales = 0;
+    let receipts = 0;
+    let payments = 0;
+    let manual = 0;
+
+    vouchers.forEach(v => {
+      if (v.vType === 'SALES') sales++;
+      if (v.vType === 'RECEIPT') receipts++;
+      if (v.vType === 'PAYMENT') payments++;
+      if (v.vType === 'MANUAL') manual++;
+    });
+
+    return {
+      sales,
+      receipts,
+      payments,
+      manual,
+      totalActionable: sales + receipts + payments
+    };
+  }, [vouchers]);
 
   const stats = useMemo(() => {
-    const s = { sales: 0, receipts: 0, payments: 0, pending: 0, success: 0, failed: 0 };
+    const s = { 
+      salesPending: 0,
+      salesSuccess: 0,
+      receiptsPending: 0,
+      receiptsSuccess: 0,
+      paymentsPending: 0,
+      paymentsSuccess: 0,
+      pending: 0, 
+      success: 0, 
+      failed: 0 
+    };
+
     vouchers.forEach(v => {
       if (v.vType === 'MANUAL') return;
-      if (v.status === 'PENDING') s.pending++;
-      if (v.status === 'SUCCESS') s.success++;
+      if (v.status === 'PENDING') {
+        s.pending++;
+        if (v.vType === 'SALES') s.salesPending++;
+        if (v.vType === 'RECEIPT') s.receiptsPending++;
+        if (v.vType === 'PAYMENT') s.paymentsPending++;
+      }
+      if (v.status === 'SUCCESS') {
+        s.success++;
+        if (v.vType === 'SALES') s.salesSuccess++;
+        if (v.vType === 'RECEIPT') s.receiptsSuccess++;
+        if (v.vType === 'PAYMENT') s.paymentsSuccess++;
+      }
       if (v.status === 'FAILED') s.failed++;
-      if (v.status === 'PENDING' && v.vType === 'SALES') s.sales++;
-      if (v.status === 'PENDING' && v.vType === 'RECEIPT') s.receipts++;
-      if (v.status === 'PENDING' && v.vType === 'PAYMENT') s.payments++;
     });
+
     return s;
+  }, [vouchers]);
+
+  const failedVouchers = useMemo(() => {
+    return vouchers.filter(v => v.status === 'FAILED');
+  }, [vouchers]);
+
+  const unpushedCount = useMemo(() => {
+    return vouchers.filter(v => v.vType !== 'MANUAL' && v.status !== 'SUCCESS').length;
   }, [vouchers]);
 
   // =========================================================================
   // AUTO-UNLOCK WIZARD PARENT WHEN SYNC COMPLETES
   // =========================================================================
   useEffect(() => {
-    // If all generated valid vouchers have been fully processed, unlock the AuditWizard footer
-    if (vouchers.length > 0 && stats.pending === 0 && !isProcessing) {
+    if (vouchers.length > 0 && stats.pending === 0 && failedVouchers.length === 0 && !isProcessing) {
       if (onCompleteRef.current) {
         onCompleteRef.current();
       }
     }
-  }, [stats.pending, vouchers.length, isProcessing]);
+  }, [stats.pending, failedVouchers.length, vouchers.length, isProcessing]);
+
+  // =========================================================================
+  // MARK / UNMARK HANDLERS
+  // =========================================================================
+  const handleMarkSingleAsPushed = (id) => {
+    setVouchers(prev => prev.map(v => v.id === id ? { 
+      ...v, 
+      status: 'SUCCESS', 
+      errorMsg: null, 
+      voucherNo: v.voucherNo || 'Manual' 
+    } : v));
+    toast.success("Voucher marked as pushed");
+  };
+
+  const handleUnmarkSingleAsPushed = (id) => {
+    setVouchers(prev => prev.map(v => v.id === id ? { 
+      ...v, 
+      status: 'PENDING', 
+      errorMsg: null, 
+      voucherNo: null 
+    } : v));
+    toast.info("Voucher marked as pending");
+  };
+
+  const handleMarkAllAsPushed = () => {
+    setVouchers(prev => prev.map(v => {
+      if (v.vType === 'MANUAL') return v;
+      if (v.status !== 'SUCCESS') {
+        return { ...v, status: 'SUCCESS', errorMsg: null, voucherNo: v.voucherNo || 'Manual' };
+      }
+      return v;
+    }));
+    toast.success("All non-manual vouchers marked as pushed");
+  };
+
+  const handleUnmarkAllPushed = () => {
+    setVouchers(prev => prev.map(v => {
+      if (v.vType === 'MANUAL') return v;
+      if (v.status === 'SUCCESS') {
+        return { ...v, status: 'PENDING', errorMsg: null, voucherNo: null };
+      }
+      return v;
+    }));
+    toast.info("All synced vouchers reset to pending");
+  };
+
+  const handleMarkCategoryAsPushed = (types) => {
+    const typeArray = Array.isArray(types) ? types : [types];
+    let count = 0;
+    setVouchers(prev => prev.map(v => {
+      if (typeArray.includes(v.vType) && v.status !== 'SUCCESS') {
+        count++;
+        return { ...v, status: 'SUCCESS', errorMsg: null, voucherNo: v.voucherNo || 'Manual' };
+      }
+      return v;
+    }));
+    if (count > 0) toast.success(`Marked ${count} voucher(s) as pushed`);
+  };
+
+  const handleUnmarkCategoryAsPushed = (types) => {
+    const typeArray = Array.isArray(types) ? types : [types];
+    let count = 0;
+    setVouchers(prev => prev.map(v => {
+      if (typeArray.includes(v.vType) && v.status === 'SUCCESS') {
+        count++;
+        return { ...v, status: 'PENDING', errorMsg: null, voucherNo: null };
+      }
+      return v;
+    }));
+    if (count > 0) toast.info(`Reset ${count} voucher(s) to pending`);
+  };
+
+  const handleMarkFailedAsPushed = () => {
+    setVouchers(prev => prev.map(v => {
+      if (v.status === 'FAILED') {
+        return { ...v, status: 'SUCCESS', errorMsg: null, voucherNo: v.voucherNo || 'Manual' };
+      }
+      return v;
+    }));
+    toast.success("Failed vouchers marked as pushed");
+  };
+
+  const handleMarkGroupAsPushed = (groupId) => {
+    let count = 0;
+    setVouchers(prev => prev.map(v => {
+      if (v.groupId === groupId && v.vType !== 'MANUAL' && v.status !== 'SUCCESS') {
+        count++;
+        return { ...v, status: 'SUCCESS', errorMsg: null, voucherNo: v.voucherNo || 'Manual' };
+      }
+      return v;
+    }));
+    if (count > 0) toast.success(`Marked ${count} voucher(s) as pushed`);
+  };
+
+  const handleUnmarkGroupAsPushed = (groupId) => {
+    let count = 0;
+    setVouchers(prev => prev.map(v => {
+      if (v.groupId === groupId && v.vType !== 'MANUAL' && v.status === 'SUCCESS') {
+        count++;
+        return { ...v, status: 'PENDING', errorMsg: null, voucherNo: null };
+      }
+      return v;
+    }));
+    if (count > 0) toast.info(`Reset ${count} voucher(s) to pending`);
+  };
 
   // =========================================================================
   // EXECUTION ENGINE (TALLY SYNC)
@@ -218,19 +382,27 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
         safeDate = new Date().toISOString().split('T')[0];
       }
 
-      const finalLedger = tx.suggestedLedger || tx.ledgerName || 'UNKNOWN LEDGER';
+      // Party Ledger resolution (Debtor / Client / AMC)
+      const finalPartyLedger = tx.suggestedLedger || tx.partyLedger || tx.ledgerName || tx.partyName || 'UNKNOWN LEDGER';
       const finalNarration = tx.customNarration || "";
 
       if (targetVoucher.vType === 'SALES') {
-        const normalizedTargetLedger = finalLedger.toUpperCase().trim();
+        const normalizedTargetLedger = finalPartyLedger.toUpperCase().trim();
         const ledgerObj = masterLedgers.find(l => (l.name || "").toUpperCase().trim() === normalizedTargetLedger);
+
+        // Resolved Income Account (e.g. MF COMMISSION IGST / LOCAL)
+        const finalSalesIncomeLedger = 
+          targetVoucher.activeSalesLedger || 
+          tx.individualSalesLedger || 
+          salesIncomeLedger || 
+          "MF COMMISSION INCOME";
 
         const salesData = {
           company: companyName,
           date: safeDate,
           invoiceNumber: tx.invoiceNumber || `INV-${tx._id.slice(-5).toUpperCase()}`,
-          ledgerName: finalLedger,
-          incomeLedger: targetVoucher.activeSalesLedger,
+          ledgerName: finalPartyLedger,
+          incomeLedger: finalSalesIncomeLedger,
           amount: targetVoucher.baseAmount,
           gstType: (targetVoucher.cgst > 0 || targetVoucher.sgst > 0) ? "LOCAL" : (targetVoucher.igst > 0 ? "INTERSTATE" : "NONE"),
           cgstLedger: "CGST", sgstLedger: "SGST", igstLedger: "IGST",
@@ -249,7 +421,7 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
           company: companyName,
           type: targetVoucher.vType === 'RECEIPT' ? 'Receipt' : 'Payment',
           date: safeDate,
-          ledgerName: finalLedger,
+          ledgerName: finalPartyLedger,
           bankAccount: bankLedgerName || targetVoucher.bank,
           amount: targetVoucher.amount,
           narration: finalNarration
@@ -277,8 +449,13 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
 
     setIsProcessing(false);
     setVouchers(current => {
-      if (current.filter(v => v.status === 'PENDING' && v.vType !== 'MANUAL').length === 0 && idsToProcess.length > 0) {
+      const remainingPending = current.filter(v => v.status === 'PENDING' && v.vType !== 'MANUAL').length;
+      const totalFailedNow = current.filter(v => v.status === 'FAILED').length;
+      
+      if (remainingPending === 0 && totalFailedNow === 0 && idsToProcess.length > 0) {
         toast.success("All pending vouchers pushed successfully!");
+      } else if (totalFailedNow > 0) {
+        toast.error(`${totalFailedNow} voucher(s) failed to post. See alert banner.`);
       }
       return current;
     });
@@ -287,97 +464,311 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
   const handleSyncType = (type) => processBatch(vouchers.filter(v => v.status === 'PENDING' && v.vType === type).map(v => v.id));
   const handleSyncGroup = (groupId) => processBatch(vouchers.filter(v => v.status === 'PENDING' && v.groupId === groupId && v.vType !== 'MANUAL').map(v => v.id));
   const handleSyncAll = () => processBatch(vouchers.filter(v => v.status === 'PENDING' && v.vType !== 'MANUAL').map(v => v.id));
+  const handleRetryFailed = () => processBatch(vouchers.filter(v => v.status === 'FAILED').map(v => v.id));
   const handleSyncSingle = (id) => processBatch([id]);
 
-  // =========================================================================
-  // RENDER UI
-  // =========================================================================
+  const getGroupTheme = (type) => {
+    if (type === 'RECEIPT') return { text: 'text-emerald-700 dark:text-emerald-400', border: 'border-b-2 border-emerald-500', badge: 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border-emerald-500/20', icon: <ArrowRightLeft size={16} strokeWidth={2.5} /> };
+    if (type === 'PAYMENT') return { text: 'text-rose-700 dark:text-rose-400', border: 'border-b-2 border-rose-500', badge: 'text-rose-700 dark:text-rose-300 bg-rose-500/10 border-rose-500/20', icon: <Coins size={16} strokeWidth={2.5} /> };
+    return { text: 'text-amber-700 dark:text-amber-400', border: 'border-b-2 border-amber-500', badge: 'text-amber-700 dark:text-amber-300 bg-amber-500/10 border-amber-500/20', icon: <AlertCircle size={16} strokeWidth={2.5} /> };
+  };
+
   return (
-    <div className="h-full w-full bg-slate-50 overflow-y-auto font-sans pb-32">
+    <div className="h-full w-full bg-slate-50 dark:bg-[#07090E] overflow-y-auto font-sans pb-48 select-none">
       
-      {/* 1. HERO HEADER */}
-      <div className="bg-[#0f172a] w-full px-6 lg:px-12 pt-8 pb-14 text-white relative">
+      {/* 1. EXECUTIVE HEADER */}
+      <div className="bg-[#0B1120] w-full px-6 lg:px-12 pt-7 pb-10 text-white relative border-b border-slate-800 shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shrink-0">
-              <Zap size={24} strokeWidth={2.5} />
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-md bg-slate-800 border border-slate-700 text-emerald-400 flex items-center justify-center shrink-0">
+              <Building2 size={22} strokeWidth={2} />
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1 flex items-center gap-1.5">
-                <ShieldCheck size={14} /> Link Active
-              </span>
-              <h2 className="text-2xl font-black leading-none tracking-tight text-white">{companyName}</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-1">
+                  <ShieldCheck size={12} /> Tally Link Active
+                </span>
+                <span className="text-slate-600">•</span>
+                <span className="text-xs font-mono font-bold text-slate-300">
+                  Execution Workspace
+                </span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white leading-tight">
+                {companyName || "Target Company"}
+              </h2>
             </div>
           </div>
-          
-          {/* Top Status Indicators */}
-          <div className="flex items-center gap-4 bg-white/10 border border-white/20 px-5 py-3 rounded-xl backdrop-blur-md">
-            <div className="flex flex-col text-right">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Queue Status</span>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-bold text-slate-200">{stats.success} Synced</span>
-                <span className="text-sm font-bold text-amber-400">{stats.pending} Pending</span>
-                {stats.failed > 0 && <span className="text-sm font-bold text-rose-400">{stats.failed} Failed</span>}
-              </div>
-            </div>
+
+          <div className="text-left md:text-right">
+            <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest block mb-0.5">
+              Target Batch Total
+            </span>
+            <span className="text-xl font-mono font-black text-white">
+              {totals.totalActionable} Vouchers
+            </span>
           </div>
         </div>
       </div>
 
-      {/* 2. REAL TACTILE ACTION TOOLBAR */}
-      <div className="w-full px-6 lg:px-12 -mt-6 relative z-10 mb-8">
-        <div className="bg-white rounded-xl shadow-md border border-slate-200 p-4 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-          
-          <div className="flex items-center gap-4 text-xs font-bold text-slate-600">
-            <span className="flex items-center gap-1.5"><Layers size={16} className="text-blue-600"/> Sales: {stats.sales}</span>
-            <div className="w-px h-5 bg-slate-200" />
-            <span className="flex items-center gap-1.5"><ArrowRightLeft size={16} className="text-emerald-600"/> Receipts: {stats.receipts}</span>
-            <div className="w-px h-5 bg-slate-200" />
-            <span className="flex items-center gap-1.5"><Coins size={16} className="text-rose-600"/> Payments: {stats.payments}</span>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex flex-wrap items-center gap-3">
-            <button disabled={isProcessing || stats.sales === 0} onClick={() => handleSyncType('SALES')}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-black uppercase tracking-widest transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-              <Layers size={14} /> Push Sales
-            </button>
-            
-            <button disabled={isProcessing || (stats.receipts === 0 && stats.payments === 0)} onClick={() => { handleSyncType('RECEIPT'); setTimeout(() => handleSyncType('PAYMENT'), 500); }}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-800 hover:text-white rounded-lg text-xs font-black uppercase tracking-widest transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-              <Banknote size={14} /> Push Banking
-            </button>
+      {/* 2. PROMINENT FAILED VOUCHERS BANNER */}
+      {failedVouchers.length > 0 && (
+        <div className="w-full px-6 lg:px-12 mt-4">
+          <div className="bg-rose-50 dark:bg-rose-950/30 border-2 border-rose-500/50 rounded-md p-4 sm:p-5 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 shrink-0">
+                <AlertTriangle size={20} strokeWidth={2.5} />
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-rose-700 dark:text-rose-300">
+                    Transmission Alert
+                  </span>
+                  <span className="text-slate-400">•</span>
+                  <span className="px-2 py-0.2 rounded-sm bg-rose-200/60 dark:bg-rose-900/60 text-rose-900 dark:text-rose-200 text-[10px] font-mono font-black">
+                    {failedVouchers.length} Failed
+                  </span>
+                </div>
+                <h3 className="text-sm font-black text-rose-950 dark:text-rose-100 mt-0.5">
+                  Some vouchers could not be created in Tally
+                </h3>
+                <p className="text-xs text-rose-800/80 dark:text-rose-300/80 mt-0.5 max-w-2xl">
+                  {failedVouchers[0]?.errorMsg || "Tally rejected the entry."} Verify ledger master entries in Tally.
+                </p>
+              </div>
+            </div>
 
-            <button disabled={isProcessing || stats.pending === 0} onClick={handleSyncAll}
-              className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed border-b-2 border-emerald-800">
-              {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
-              Push All Pending ({stats.pending})
-            </button>
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end md:self-center">
+              <button
+                type="button"
+                disabled={isProcessing}
+                onClick={handleMarkFailedAsPushed}
+                className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-white hover:bg-transparent hover:text-slate-800 dark:hover:text-white border border-transparent hover:border-slate-800 dark:hover:border-white rounded-md text-[11px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+              >
+                <CheckCheck size={13} strokeWidth={2.5} />
+                <span>Mark Failed as Pushed</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={isProcessing}
+                onClick={handleRetryFailed}
+                className="cursor-pointer flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 text-white hover:bg-transparent hover:text-rose-600 dark:hover:text-rose-400 border border-transparent hover:border-rose-600 dark:hover:border-rose-500 rounded-md text-[11px] font-mono font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+              >
+                {isProcessing ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} strokeWidth={2.5} />}
+                <span>Retry Failed ({failedVouchers.length})</span>
+              </button>
+            </div>
           </div>
+        </div>
+      )}
+
+      {/* 3. COMMAND DECK WITH CATEGORY MARK/UNMARK CONTROLS */}
+      <div className="w-full px-6 lg:px-12 -mt-5 relative z-10 mb-6">
+        <div className="bg-white dark:bg-[#0E131F] rounded-md border-2 border-slate-200 dark:border-white/10 p-4 shadow-sm flex flex-col gap-4">
+          
+          {/* Top Row: Permanent Target Counts + Category Mark/Unmark Controls + Sync Health */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-slate-100 dark:border-white/5">
+            
+            <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                Category Batches:
+              </span>
+
+              {/* Sales Category Pill with Mark/Unmark */}
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10">
+                <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold">
+                  <Layers size={13} />
+                  <span>Sales:</span>
+                  <strong className="font-black text-sm">{totals.sales}</strong>
+                  <span className="text-[10px] opacity-70 font-normal">({stats.salesPending} P | {stats.salesSuccess} S)</span>
+                </span>
+                <div className="w-px h-3.5 bg-slate-200 dark:bg-slate-700 mx-0.5" />
+                <button
+                  type="button"
+                  disabled={isProcessing || stats.salesPending === 0}
+                  onClick={() => handleMarkCategoryAsPushed('SALES')}
+                  className="cursor-pointer text-[10px] font-bold text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 uppercase tracking-tight disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Mark all pending sales vouchers as pushed"
+                >
+                  Mark
+                </button>
+                <span className="text-slate-300 dark:text-slate-700">•</span>
+                <button
+                  type="button"
+                  disabled={isProcessing || stats.salesSuccess === 0}
+                  onClick={() => handleUnmarkCategoryAsPushed('SALES')}
+                  className="cursor-pointer text-[10px] font-bold text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 uppercase tracking-tight disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Reset all pushed sales vouchers to pending"
+                >
+                  Unmark
+                </button>
+              </div>
+
+              {/* Banking Category Pill with Mark/Unmark */}
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10">
+                <div className="flex items-center gap-2 font-bold">
+                  <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                    <ArrowRightLeft size={13} />
+                    <span>Rec:</span>
+                    <strong className="font-black text-sm">{totals.receipts}</strong>
+                  </span>
+                  <span className="text-slate-300 dark:text-slate-700">|</span>
+                  <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400">
+                    <Coins size={13} />
+                    <span>Pay:</span>
+                    <strong className="font-black text-sm">{totals.payments}</strong>
+                  </span>
+                </div>
+                <div className="w-px h-3.5 bg-slate-200 dark:bg-slate-700 mx-0.5" />
+                <button
+                  type="button"
+                  disabled={isProcessing || (stats.receiptsPending === 0 && stats.paymentsPending === 0)}
+                  onClick={() => handleMarkCategoryAsPushed(['RECEIPT', 'PAYMENT'])}
+                  className="cursor-pointer text-[10px] font-bold text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 uppercase tracking-tight disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Mark all pending banking vouchers as pushed"
+                >
+                  Mark
+                </button>
+                <span className="text-slate-300 dark:text-slate-700">•</span>
+                <button
+                  type="button"
+                  disabled={isProcessing || (stats.receiptsSuccess === 0 && stats.paymentsSuccess === 0)}
+                  onClick={() => handleUnmarkCategoryAsPushed(['RECEIPT', 'PAYMENT'])}
+                  className="cursor-pointer text-[10px] font-bold text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 uppercase tracking-tight disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Reset all pushed banking vouchers to pending"
+                >
+                  Unmark
+                </button>
+              </div>
+            </div>
+
+            {/* Live Queue Status */}
+            <div className="flex items-center gap-2 text-xs font-mono">
+              <span className="px-2.5 py-1 rounded-sm text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+                {stats.success} Synced
+              </span>
+              <span className="px-2.5 py-1 rounded-sm text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20">
+                {stats.pending} Pending
+              </span>
+              {stats.failed > 0 && (
+                <span className="px-2.5 py-1 rounded-sm text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20">
+                  {stats.failed} Failed
+                </span>
+              )}
+            </div>
+
+          </div>
+
+          {/* Bottom Row: Actions (Solid Default -> Outlined on Hover) */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            
+            {/* Left: Push Actions to Tally */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider mr-1">
+                Push to Tally:
+              </span>
+              
+              <button 
+                type="button"
+                disabled={isProcessing || stats.salesPending === 0} 
+                onClick={() => handleSyncType('SALES')}
+                className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white hover:bg-transparent hover:text-blue-600 dark:hover:text-blue-400 border border-transparent hover:border-blue-600 dark:hover:border-blue-400 rounded-md text-[11px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+              >
+                <Layers size={13} /> Push Sales ({stats.salesPending})
+              </button>
+              
+              <button 
+                type="button"
+                disabled={isProcessing || (stats.receiptsPending === 0 && stats.paymentsPending === 0)} 
+                onClick={() => { handleSyncType('RECEIPT'); setTimeout(() => handleSyncType('PAYMENT'), 500); }}
+                className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 text-white hover:bg-transparent hover:text-slate-700 dark:hover:text-slate-200 border border-transparent hover:border-slate-700 dark:hover:border-slate-400 rounded-md text-[11px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+              >
+                <Banknote size={13} /> Push Banking ({stats.receiptsPending + stats.paymentsPending})
+              </button>
+
+              <button 
+                type="button"
+                disabled={isProcessing || stats.pending === 0} 
+                onClick={handleSyncAll}
+                className="cursor-pointer flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 text-white hover:bg-transparent hover:text-emerald-600 dark:hover:text-emerald-400 border-2 border-transparent hover:border-emerald-600 dark:hover:border-emerald-400 rounded-md text-[11px] font-mono font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+              >
+                {isProcessing ? <Loader2 size={13} className="animate-spin" /> : <Zap size={13} />}
+                Push All Pending ({stats.pending})
+              </button>
+            </div>
+
+            {/* Right: Manual Verification Overrides */}
+            <div className="flex flex-wrap items-center gap-2 border-t lg:border-t-0 border-slate-100 dark:border-white/5 pt-2 lg:pt-0">
+              <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider mr-1">
+                Manual Overrides:
+              </span>
+
+              {stats.success > 0 && (
+                <button 
+                  type="button"
+                  disabled={isProcessing} 
+                  onClick={handleUnmarkAllPushed}
+                  className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white hover:bg-transparent hover:text-amber-600 dark:hover:text-amber-400 border border-transparent hover:border-amber-600 dark:hover:border-amber-400 rounded-md text-[11px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                  title="Reset all pushed vouchers back to pending state"
+                >
+                  <Undo2 size={13} strokeWidth={2.5} /> Unmark All ({stats.success})
+                </button>
+              )}
+
+              <button 
+                type="button"
+                disabled={isProcessing || unpushedCount === 0} 
+                onClick={handleMarkAllAsPushed}
+                className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 dark:bg-slate-700 text-white hover:bg-transparent hover:text-slate-800 dark:hover:text-white border border-transparent hover:border-slate-800 dark:hover:border-slate-400 rounded-md text-[11px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                title="Mark all pending and failed vouchers as manually created in Tally"
+              >
+                <CheckCheck size={13} strokeWidth={2.5} /> Mark All Pushed ({unpushedCount})
+              </button>
+            </div>
+
+          </div>
+
         </div>
         
         {/* Progress Bar */}
         {isProcessing && (
-          <div className="w-full mt-4 bg-slate-200 rounded-full h-2 overflow-hidden shadow-inner">
-            <div className="bg-blue-600 h-full transition-all duration-300 ease-out" style={{ width: `${globalProgress}%` }} />
+          <div className="w-full mt-2 bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+            <div className="bg-emerald-500 h-full transition-all duration-300 ease-out" style={{ width: `${globalProgress}%` }} />
           </div>
         )}
       </div>
 
-      {/* 3. MAIN WORKSPACE (BANK TABS & GRID) */}
+      {/* 4. MAIN WORKSPACE (BANK TABS & DUAL-PANE PIPELINE) */}
       <div className="w-full px-6 lg:px-12">
         {/* Bank Tabs */}
         {Object.keys(uiGroups).length > 0 && (
-          <div className="flex border-b-2 border-slate-200 mb-8 overflow-x-auto gap-1">
+          <div className="flex border-b border-slate-300 dark:border-white/10 mb-6 overflow-x-auto no-scrollbar gap-2">
             {Object.keys(uiGroups).map(bank => {
               const isActive = activeBankTab === bank;
               const bankPending = uiGroups[bank].reduce((acc, g) => acc + g.vouchersList.filter(vId => vouchers.find(x => x.id === vId)?.status === 'PENDING' && vouchers.find(x => x.id === vId)?.vType !== 'MANUAL').length, 0);
+              const bankFailed = uiGroups[bank].reduce((acc, g) => acc + g.vouchersList.filter(vId => vouchers.find(x => x.id === vId)?.status === 'FAILED').length, 0);
 
               return (
-                <button key={bank} onClick={() => setActiveBankTab(bank)}
-                  className={`px-6 py-3 flex items-center gap-3 border-b-2 transition-all ${isActive ? 'border-slate-900 bg-white font-black text-slate-900' : 'border-transparent text-slate-500 font-bold hover:bg-slate-100'} text-xs uppercase tracking-widest`}>
-                  {bank}
-                  {bankPending > 0 && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">{bankPending}</span>}
+                <button 
+                  key={bank} 
+                  type="button"
+                  onClick={() => setActiveBankTab(bank)}
+                  className={`cursor-pointer pb-2.5 px-3 flex items-center gap-2 border-b-2 text-xs font-mono uppercase tracking-wider transition-all whitespace-nowrap ${
+                    isActive ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <Landmark size={13} className={isActive ? 'text-emerald-500' : 'text-slate-400'} />
+                  <span>{bank}</span>
+                  {bankPending > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-sm text-[10px] font-mono font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+                      {bankPending}
+                    </span>
+                  )}
+                  {bankFailed > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-sm text-[10px] font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                      {bankFailed} err
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -386,60 +777,92 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
 
         {/* The Pipeline List */}
         {activeBankTab && uiGroups[activeBankTab] && (
-          <div className="flex flex-col gap-10">
+          <div className="flex flex-col gap-8">
             {uiGroups[activeBankTab].map((group, gIdx) => {
               const theme = getGroupTheme(group.type);
               const groupVouchers = group.vouchersList.map(vId => vouchers.find(v => v.id === vId)).filter(Boolean);
               const groupPending = groupVouchers.filter(v => v.status === 'PENDING' && v.vType !== 'MANUAL').length;
+              const groupSuccess = groupVouchers.filter(v => v.status === 'SUCCESS' && v.vType !== 'MANUAL').length;
 
               return (
                 <div key={group.id || gIdx} className="w-full">
                   
-                  {/* GROUP HEADER */}
-                  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-3 border-b-2 border-slate-900">
-                    <div className="flex items-end gap-3">
-                      <span className={`${theme.text} mb-1`}>{theme.icon}</span>
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-0.5">
-                          {group.type === 'RECEIPT' ? 'Receipt Group' : group.type === 'PAYMENT' ? 'Payment Group' : 'Exception'} ({group.transactions.length} entries)
-                        </span>
-                        <span className={`text-[20px] font-black leading-none tracking-tight ${theme.text}`}>
-                          {group.partyLedger}
-                        </span>
-                      </div>
+                  {/* Flat Clean Group Header */}
+                  <div className={`flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-2 mb-3 ${theme.border}`}>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className={`px-2 py-0.5 rounded-sm border text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1 ${theme.badge}`}>
+                        {theme.icon}
+                        {group.type}
+                      </span>
+                      <h4 className="text-base font-black uppercase tracking-tight text-slate-900 dark:text-white truncate">
+                        {group.partyLedger}
+                      </h4>
+                      <span className="text-slate-400 text-xs font-mono font-bold">
+                        ({group.transactions.length})
+                      </span>
                     </div>
-                    <div className="flex items-center gap-6">
-                      <span className={`font-mono font-black text-xl leading-none ${theme.text}`}>
+
+                    <div className="flex items-center gap-3">
+                      <span className={`font-mono text-base font-black mr-2 ${theme.text}`}>
                         {group.type === 'RECEIPT' ? '+' : group.type === 'PAYMENT' ? '-' : ''}{formatINR(group.totalBankAmount)}
                       </span>
+                      
                       {!group.isManual && (
-                        <button disabled={isProcessing || groupPending === 0} onClick={() => handleSyncGroup(group.id)}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 text-white hover:bg-slate-900 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95 disabled:opacity-50 cursor-pointer">
-                          <Play size={12} className="fill-current"/> Sync Group ({groupPending})
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          {groupPending > 0 && (
+                            <button 
+                              type="button"
+                              disabled={isProcessing}
+                              onClick={() => handleMarkGroupAsPushed(group.id)}
+                              className="cursor-pointer flex items-center gap-1 px-2.5 py-1 bg-slate-700 text-white hover:bg-transparent hover:text-slate-800 dark:hover:text-white border border-transparent hover:border-slate-700 dark:hover:border-slate-300 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+                            >
+                              <Check size={11} strokeWidth={2.5} /> Mark Group
+                            </button>
+                          )}
+
+                          {groupSuccess > 0 && (
+                            <button 
+                              type="button"
+                              disabled={isProcessing}
+                              onClick={() => handleUnmarkGroupAsPushed(group.id)}
+                              className="cursor-pointer flex items-center gap-1 px-2.5 py-1 bg-amber-600 text-white hover:bg-transparent hover:text-amber-600 dark:hover:text-amber-400 border border-transparent hover:border-amber-600 dark:hover:border-amber-400 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+                            >
+                              <Undo2 size={11} strokeWidth={2.5} /> Unmark Group
+                            </button>
+                          )}
+
+                          <button 
+                            type="button"
+                            disabled={isProcessing || groupPending === 0} 
+                            onClick={() => handleSyncGroup(group.id)}
+                            className="cursor-pointer flex items-center gap-1 px-2.5 py-1 bg-slate-900 text-white hover:bg-transparent hover:text-slate-900 dark:hover:text-white border border-transparent hover:border-slate-900 dark:hover:border-white rounded-md text-[10px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+                          >
+                            <Play size={11} className="fill-current" /> Sync ({groupPending})
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
 
-                  {/* SPLIT GRID (RAW vs VOUCHERS) */}
-                  <div className="grid grid-cols-1 lg:grid-cols-[1fr_60px_1fr] w-full pt-4">
+                  {/* Dual Pane Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-[1fr_36px_1fr] w-full gap-4 items-start">
                     
                     {/* LEFT: Raw Transactions */}
-                    <div className="lg:pr-8 flex flex-col gap-3">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
-                        <Banknote size={14}/> Raw Bank Entries
+                    <div className="space-y-1.5">
+                      <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1">
+                        <Banknote size={12} /> Source Statement Lines
                       </div>
                       {group.transactions.map((tx, tIdx) => (
-                        <div key={tIdx} className="flex justify-between items-start gap-4 p-4 border border-slate-200 bg-white shadow-sm rounded-lg">
-                          <div className="flex flex-col gap-1 pr-4">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        <div key={tIdx} className="p-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-sm flex justify-between items-start gap-3">
+                          <div className="flex flex-col gap-0.5 min-w-0">
+                            <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">
                               {tx.date ? new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'No Date'}
                             </span>
-                            <span className="text-[13px] font-medium text-slate-800 leading-relaxed">
+                            <span className="text-xs font-medium text-slate-800 dark:text-slate-200 wrap-break-word leading-tight">
                               {tx.narration}
                             </span>
                           </div>
-                          <span className="font-mono text-sm font-bold text-slate-900 shrink-0">
+                          <span className="font-mono text-xs font-bold text-slate-900 dark:text-white shrink-0">
                             {formatINR(tx.amount)}
                           </span>
                         </div>
@@ -447,86 +870,123 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
                     </div>
 
                     {/* MIDDLE: Visual Connector */}
-                    <div className="hidden lg:flex flex-col items-center relative">
-                      <div className="absolute top-0 bottom-0 left-1/2 w-px border-l-2 border-dashed border-slate-300 -translate-x-1/2" />
-                      <div className="relative z-10 mt-12 w-10 h-10 bg-white rounded-full border-2 border-slate-200 flex items-center justify-center text-slate-400">
-                        <ArrowRight size={18} strokeWidth={2.5}/>
-                      </div>
+                    <div className="hidden lg:flex flex-col items-center justify-center pt-8 text-slate-300 dark:text-slate-700">
+                      <ArrowRight size={16} strokeWidth={2} />
                     </div>
 
-                    {/* RIGHT: Tally Vouchers */}
-                    <div className="lg:pl-8 flex flex-col gap-4 mt-8 lg:mt-0">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-2 flex items-center gap-1.5">
-                        <FileText size={14}/> Resulting Tally Vouchers
+                    {/* RIGHT: Resulting Tally Vouchers */}
+                    <div className="space-y-2 border-t lg:border-t-0 border-slate-200 dark:border-white/10 pt-3 lg:pt-0">
+                      <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1">
+                        <FileText size={12} /> Target Tally Vouchers
                       </div>
                       
                       {groupVouchers.map((v) => {
-                        // SALES INVOICE (Data Rich Layout)
+                        // SALES INVOICE CARD
                         if (v.vType === 'SALES') {
-                          const ledgerObj = masterLedgers.find(l => (l.name || "").toUpperCase().trim() === (v.rawTx.suggestedLedger || v.rawTx.ledgerName || "").toUpperCase().trim());
+                          const resolvedPartyLedger = v.rawTx.suggestedLedger || v.rawTx.partyLedger || v.rawTx.ledgerName || v.rawTx.partyName || group.partyLedger;
+                          const ledgerObj = masterLedgers.find(l => (l.name || "").toUpperCase().trim() === resolvedPartyLedger.toUpperCase().trim());
+                          const isFailed = v.status === 'FAILED';
                           return (
-                            <div key={v.id} className="relative flex flex-col bg-white border border-blue-200 shadow-md rounded-xl overflow-hidden transition-all hover:border-blue-400">
-                              <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500" />
-                              
-                              <div className="p-4 pl-6 flex justify-between items-start border-b border-slate-100 bg-slate-50/50">
-                                <div className="flex flex-col">
-                                  <div className="flex items-center gap-2 mb-1.5">
-                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[9px] font-black uppercase tracking-widest rounded">Sales Invoice</span>
-                                    <span className="text-[10px] font-bold text-slate-500">{v.rawTx.invoiceNumber || `INV-${v.rawTx._id.slice(-5).toUpperCase()}`}</span>
+                            <div key={v.id} className={`bg-white dark:bg-[#0E131F] border ${isFailed ? 'border-rose-400 dark:border-rose-500/50 border-l-4 border-l-rose-500' : 'border-slate-200 dark:border-white/10 border-l-3 border-l-blue-500'} rounded-sm overflow-hidden shadow-xs`}>
+                              <div className="p-3 border-b border-slate-100 dark:border-white/5 flex justify-between items-start gap-3">
+                                <div className="flex flex-col gap-0.5 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">
+                                      Sales Invoice
+                                    </span>
+                                    <span className="text-[10px] font-mono text-slate-400">
+                                      {v.rawTx.invoiceNumber || `INV-${v.rawTx._id.slice(-5).toUpperCase()}`}
+                                    </span>
                                   </div>
-                                  <span className="text-sm font-black text-slate-900 leading-snug">{v.activeSalesLedger}</span>
+                                  <span className="text-xs font-black uppercase text-slate-900 dark:text-white truncate">
+                                    {v.activeSalesLedger}
+                                  </span>
                                 </div>
-                                <span className="font-mono text-lg font-black text-blue-600 shrink-0">{formatINR(v.grossTotal)}</span>
+                                <span className="font-mono text-xs font-black text-blue-600 dark:text-blue-400 shrink-0">
+                                  {formatINR(v.grossTotal)}
+                                </span>
                               </div>
 
-                              <div className="p-4 pl-6 flex flex-col gap-4 text-xs bg-white">
-                                {/* Accounting Routing */}
-                                <div className="grid grid-cols-[30px_1fr] gap-x-2 gap-y-1">
-                                  <span className="font-mono text-slate-400 font-bold text-right">Dr</span>
-                                  <span className="font-bold text-slate-800">{v.rawTx.suggestedLedger || v.rawTx.ledgerName} <span className="text-slate-400 font-normal">({formatINR(v.grossTotal)})</span></span>
+                              <div className="p-3 flex flex-col gap-2.5 text-xs bg-slate-50/50 dark:bg-white/1">
+                                <div className="grid grid-cols-[24px_1fr] gap-x-2 gap-y-0.5 text-[11px]">
+                                  <span className="font-mono text-slate-400 font-bold">Dr</span>
+                                  <span className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                                    {resolvedPartyLedger} <span className="text-slate-400 font-normal">({formatINR(v.grossTotal)})</span>
+                                  </span>
                                   
-                                  <span className="font-mono text-slate-400 font-bold text-right">Cr</span>
-                                  <span className="font-bold text-slate-800">{v.activeSalesLedger} <span className="text-slate-400 font-normal">({formatINR(v.baseAmount)})</span></span>
+                                  <span className="font-mono text-slate-400 font-bold">Cr</span>
+                                  <span className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                                    {v.activeSalesLedger} <span className="text-slate-400 font-normal">({formatINR(v.baseAmount)})</span>
+                                  </span>
                                 </div>
 
-                                {/* Master Data Block */}
                                 {ledgerObj && (
-                                  <div className="flex flex-wrap gap-x-4 gap-y-2 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-600">
-                                    {ledgerObj.gstin && <div className="flex items-center gap-1.5"><Hash size={12} className="text-slate-400"/><span className="font-bold text-slate-700">GSTIN:</span><span className="font-mono uppercase">{ledgerObj.gstin}</span></div>}
-                                    {ledgerObj.stateName && <div className="flex items-center gap-1.5"><MapPin size={12} className="text-slate-400"/><span className="font-bold text-slate-700">State:</span><span>{ledgerObj.stateName}</span></div>}
-                                    {ledgerObj.gstRegistrationType && <div className="flex items-center gap-1.5"><Building2 size={12} className="text-slate-400"/><span className="font-bold text-slate-700">Reg:</span><span>{ledgerObj.gstRegistrationType}</span></div>}
+                                  <div className="flex flex-wrap gap-x-3 gap-y-1 p-2 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-white/5 rounded-sm text-[10px] font-mono text-slate-600 dark:text-slate-300">
+                                    {ledgerObj.gstin && (
+                                      <div className="flex items-center gap-1">
+                                        <Hash size={11} className="text-slate-400" />
+                                        <span>{ledgerObj.gstin}</span>
+                                      </div>
+                                    )}
+                                    {ledgerObj.stateName && (
+                                      <div className="flex items-center gap-1">
+                                        <MapPin size={11} className="text-slate-400" />
+                                        <span>{ledgerObj.stateName}</span>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
 
-                                {/* Tax Math */}
-                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold text-slate-600 bg-blue-50/50 p-2 rounded">
-                                  <span>Base: {formatINR(v.baseAmount).replace('₹', '')}</span>
-                                  {v.cgst > 0 && <><span className="text-slate-300">|</span><span>CGST: {formatINR(v.cgst).replace('₹', '')}</span></>}
-                                  {v.sgst > 0 && <><span className="text-slate-300">|</span><span>SGST: {formatINR(v.sgst).replace('₹', '')}</span></>}
-                                  {v.igst > 0 && <><span className="text-slate-300">|</span><span className="text-blue-700">IGST: {formatINR(v.igst).replace('₹', '')}</span></>}
+                                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200/60 dark:border-white/5 text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                                  <span>Base: <strong className="text-slate-900 dark:text-white">{formatINR(v.baseAmount).replace('₹', '')}</strong></span>
+                                  {v.cgst > 0 && <span>• CGST: <strong className="text-slate-900 dark:text-white">{formatINR(v.cgst).replace('₹', '')}</strong></span>}
+                                  {v.sgst > 0 && <span>• SGST: <strong className="text-slate-900 dark:text-white">{formatINR(v.sgst).replace('₹', '')}</strong></span>}
+                                  {v.igst > 0 && <span>• IGST: <strong className="text-blue-600 dark:text-blue-400">{formatINR(v.igst).replace('₹', '')}</strong></span>}
                                 </div>
                               </div>
 
-                              <VoucherStatusFooter v={v} onPush={() => handleSyncSingle(v.id)} isProcessing={isProcessing} />
+                              <VoucherStatusFooter 
+                                v={v} 
+                                onPush={() => handleSyncSingle(v.id)} 
+                                onMarkPushed={() => handleMarkSingleAsPushed(v.id)}
+                                onUnmarkPushed={() => handleUnmarkSingleAsPushed(v.id)}
+                                isProcessing={isProcessing} 
+                              />
                             </div>
                           );
                         }
 
                         // STANDARD RECEIPT / PAYMENT
                         if (v.vType === 'RECEIPT' || v.vType === 'PAYMENT') {
-                          const config = v.vType === 'RECEIPT' ? { color: 'emerald', label: 'Receipt' } : { color: 'rose', label: 'Payment' };
+                          const isFailed = v.status === 'FAILED';
+                          const config = v.vType === 'RECEIPT' 
+                            ? { color: 'emerald', border: isFailed ? 'border-l-rose-500' : 'border-l-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', label: 'Receipt Voucher' } 
+                            : { color: 'rose', border: 'border-l-rose-500', text: 'text-rose-600 dark:text-rose-400', label: 'Payment Voucher' };
+                          
+                          const resolvedPartyLedger = v.rawTx.suggestedLedger || v.rawTx.partyLedger || v.rawTx.ledgerName || v.rawTx.partyName || group.partyLedger;
+
                           return (
-                            <div key={v.id} className={`relative flex flex-col bg-white border border-${config.color}-200 shadow-sm rounded-xl overflow-hidden transition-all hover:border-${config.color}-400`}>
-                              <div className={`absolute left-0 top-0 bottom-0 w-1.5 bg-${config.color}-500`} />
-                              
-                              <div className="p-4 pl-6 flex justify-between items-center">
-                                <div className="flex flex-col">
-                                  <span className={`text-[9px] font-black uppercase tracking-widest text-${config.color}-600 mb-1`}>{config.label} Voucher</span>
-                                  <span className="text-[13px] font-bold text-slate-900 leading-snug">{v.rawTx.suggestedLedger || v.rawTx.ledgerName}</span>
+                            <div key={v.id} className={`bg-white dark:bg-[#0E131F] border ${isFailed ? 'border-rose-400 dark:border-rose-500/50' : 'border-slate-200 dark:border-white/10'} border-l-4 ${config.border} rounded-sm overflow-hidden shadow-xs`}>
+                              <div className="p-3 flex justify-between items-center gap-3">
+                                <div className="flex flex-col min-w-0">
+                                  <span className={`text-[9px] font-mono font-bold uppercase tracking-widest ${config.text}`}>
+                                    {config.label}
+                                  </span>
+                                  <span className="text-xs font-bold uppercase text-slate-900 dark:text-white truncate">
+                                    {resolvedPartyLedger}
+                                  </span>
                                 </div>
-                                <span className={`font-mono text-base font-black text-${config.color}-600 shrink-0`}>{formatINR(v.amount)}</span>
+                                <span className={`font-mono text-xs font-black ${config.text} shrink-0`}>
+                                  {formatINR(v.amount)}
+                                </span>
                               </div>
-                              <VoucherStatusFooter v={v} onPush={() => handleSyncSingle(v.id)} isProcessing={isProcessing} />
+                              <VoucherStatusFooter 
+                                v={v} 
+                                onPush={() => handleSyncSingle(v.id)} 
+                                onMarkPushed={() => handleMarkSingleAsPushed(v.id)}
+                                onUnmarkPushed={() => handleUnmarkSingleAsPushed(v.id)}
+                                isProcessing={isProcessing} 
+                              />
                             </div>
                           );
                         }
@@ -534,19 +994,25 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
                         // MANUAL ROW
                         if (v.vType === 'MANUAL') {
                           return (
-                            <div key={v.id} className="relative flex justify-between items-center p-4 pl-6 rounded-xl border border-amber-200 bg-amber-50">
-                              <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-amber-500" />
-                              <div className="flex flex-col">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1">Manual Resolution Required</span>
-                                <span className="text-xs font-bold text-amber-900 italic leading-snug">Missing Ledger Mapping</span>
+                            <div key={v.id} className="p-3 rounded-sm border border-slate-200 dark:border-white/10 border-l-3 border-l-amber-500 bg-white dark:bg-slate-900/60 flex justify-between items-center gap-3">
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                                  Manual Review Required
+                                </span>
+                                <span className="text-xs font-bold text-slate-600 dark:text-slate-300 italic truncate">
+                                  Missing Ledger Mapping
+                                </span>
                               </div>
-                              <span className="font-mono text-sm font-black text-amber-700 shrink-0">{formatINR(v.amount)}</span>
+                              <span className="font-mono text-xs font-black text-amber-600 dark:text-amber-400 shrink-0">
+                                {formatINR(v.amount)}
+                              </span>
                             </div>
                           );
                         }
                         return null;
                       })}
                     </div>
+
                   </div>
                 </div>
               );
@@ -558,29 +1024,78 @@ const ResultStep = ({ transactions, companyName, bankLedgerName, salesIncomeLedg
   );
 };
 
-// Reusable Footer Component for Vouchers
-const VoucherStatusFooter = ({ v, onPush, isProcessing }) => {
+// Reusable Sub-Component for Individual Voucher Execution
+const VoucherStatusFooter = ({ v, onPush, onMarkPushed, onUnmarkPushed, isProcessing }) => {
   return (
-    <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-2.5 pl-6">
+    <div className="flex items-center justify-between border-t border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/2 px-3 py-2">
       <div className="flex items-center">
-        {v.status === 'PROCESSING' && <span className="flex items-center gap-1.5 text-blue-600 text-[10px] font-black uppercase tracking-widest"><Loader2 size={12} className="animate-spin" /> Pushing</span>}
-        {v.status === 'SUCCESS' && <span className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-black uppercase tracking-widest"><CheckCircle2 size={14} strokeWidth={2.5}/> Synced {v.voucherNo && `(${v.voucherNo})`}</span>}
+        {v.status === 'PROCESSING' && (
+          <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 text-[10px] font-mono font-bold uppercase tracking-wider">
+            <Loader2 size={11} className="animate-spin" /> Pushing
+          </span>
+        )}
+        {v.status === 'SUCCESS' && (
+          <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-[10px] font-mono font-bold uppercase tracking-wider">
+            <CheckCircle2 size={13} strokeWidth={2.5} /> Synced {v.voucherNo && `(${v.voucherNo})`}
+          </span>
+        )}
         {v.status === 'FAILED' && (
-          <div className="flex items-center gap-1.5 text-rose-600 text-[10px] font-black uppercase tracking-widest cursor-help relative group">
-            <AlertCircle size={14} strokeWidth={2.5}/> Failed
-            <div className="absolute left-0 bottom-full mb-2 w-56 bg-slate-900 text-white text-[11px] p-3 rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 normal-case tracking-normal font-normal">
+          <div className="flex items-center gap-1 text-rose-600 dark:text-rose-400 text-[10px] font-mono font-bold uppercase tracking-wider cursor-help relative group">
+            <AlertCircle size={13} strokeWidth={2.5} /> Failed: {v.errorMsg || "Rejected"}
+            <div className="absolute left-0 bottom-full mb-2 w-56 bg-slate-900 text-white text-[11px] p-2.5 rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 normal-case font-normal border border-slate-800">
               {v.errorMsg}
             </div>
           </div>
         )}
-        {v.status === 'PENDING' && <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-200/50 px-2 py-0.5 rounded border border-slate-300">Ready</span>}
+        {v.status === 'PENDING' && (
+          <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest bg-slate-200/50 dark:bg-white/5 px-1.5 py-0.5 rounded border border-slate-300 dark:border-white/10">
+            Ready
+          </span>
+        )}
       </div>
       
-      {(v.status === 'PENDING' || v.status === 'FAILED') && !isProcessing && (
-        <button onClick={onPush}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-white border border-slate-300 hover:border-slate-800 hover:bg-slate-800 hover:text-white text-slate-700 transition-all shadow-sm active:scale-95 cursor-pointer text-[9px] font-black uppercase tracking-widest">
-          Push <Send size={12} strokeWidth={2.5} />
-        </button>
+      {!isProcessing && (
+        <div className="flex items-center gap-2">
+          {v.status === 'SUCCESS' && (
+            <button 
+              type="button"
+              onClick={onUnmarkPushed}
+              className="cursor-pointer flex items-center gap-1 px-2.5 py-1 bg-amber-600 text-white hover:bg-transparent hover:text-amber-600 dark:hover:text-amber-400 border border-transparent hover:border-amber-600 dark:hover:border-amber-400 rounded text-[10px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 shadow-2xs"
+              title="Reset this voucher back to pending"
+            >
+              <Undo2 size={11} strokeWidth={2.5} /> Unmark
+            </button>
+          )}
+
+          {(v.status === 'PENDING' || v.status === 'FAILED') && (
+            <button 
+              type="button"
+              onClick={onMarkPushed}
+              className="cursor-pointer flex items-center gap-1 px-2.5 py-1 bg-slate-700 text-white hover:bg-transparent hover:text-slate-700 dark:hover:text-slate-200 border border-transparent hover:border-slate-700 dark:hover:border-slate-400 rounded text-[10px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 shadow-2xs"
+              title="Mark as pushed manually without pinging Tally bridge"
+            >
+              <Check size={11} strokeWidth={2.5} /> Mark Pushed
+            </button>
+          )}
+
+          {(v.status === 'PENDING' || v.status === 'FAILED') && (
+            <button 
+              type="button"
+              onClick={onPush}
+              className={`cursor-pointer flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 shadow-2xs border border-transparent ${
+                v.status === 'FAILED'
+                  ? 'bg-rose-600 text-white hover:bg-transparent hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-600 dark:hover:border-rose-400'
+                  : 'bg-emerald-600 text-white hover:bg-transparent hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-600 dark:hover:border-emerald-400'
+              }`}
+            >
+              {v.status === 'FAILED' ? (
+                <>Retry <RefreshCw size={11} strokeWidth={2.5} /></>
+              ) : (
+                <>Push <Send size={11} strokeWidth={2} /></>
+              )}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

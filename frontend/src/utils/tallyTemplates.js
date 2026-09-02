@@ -44,6 +44,7 @@ export const tallyTemplates = {
     </BODY>
 </ENVELOPE>`.trim(),
 
+    // Upgraded to fetch both root fields and TallyPrime 3.0+ statutory sub-lists
     getLedgers: (companyName) => `
 <ENVELOPE>
     <HEADER>
@@ -54,18 +55,23 @@ export const tallyTemplates = {
     </HEADER>
     <BODY>
         <DESC>
-            <TDL>
-                <TDLMESSAGE>
-                    <COLLECTION NAME="Ledger" ISMODIFY="No">
-                        <TYPE>Ledger</TYPE>
-                        <FETCH>Name, Parent, LedStateName, StateName, CountryName, CountryOfResidence, PartyGSTIN, Address</FETCH>
-                    </COLLECTION>
-                </TDLMESSAGE>
-            </TDL>
             <STATICVARIABLES>
                 <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
                 <SVCURRENTCOMPANY>${escapeXml(companyName)}</SVCURRENTCOMPANY>
             </STATICVARIABLES>
+            <TDL>
+                <TDLMESSAGE>
+                    <COLLECTION NAME="Ledger" ISMODIFY="No">
+                        <TYPE>Ledger</TYPE>
+                        <FETCH>
+                            Name, Parent, LedStateName, StateName, CountryName, CountryOfResidence, 
+                            PartyGSTIN, GSTIN, GSTRegistrationType, RegistrationType, Address,
+                            PINCode, Email, IncomeTaxNumber, PANNumber, IsBillWiseOn,
+                            LEDGSTREGDETAILS.LIST, GSTDETAILS.LIST, FULLMAILINGDETAILS.LIST
+                        </FETCH>
+                    </COLLECTION>
+                </TDLMESSAGE>
+            </TDL>
         </DESC>
     </BODY>
 </ENVELOPE>`.trim(),
@@ -179,7 +185,6 @@ export const tallyTemplates = {
                     </BASICBUYERADDRESS.LIST>`;
         }
 
-        // Removed Consignee tags so Tally keeps the view clean and single-column
         const stateTag = partyState ? `
                     <STATENAME>${escapeXml(partyState)}</STATENAME>
                     <PLACEOFSUPPLY>${escapeXml(partyState)}</PLACEOFSUPPLY>` : '';
@@ -232,11 +237,6 @@ export const tallyTemplates = {
                         <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
                         <ISPARTYLEDGER>Yes</ISPARTYLEDGER>
                         <AMOUNT>-${totalAmt}</AMOUNT>
-                        <BILLALLOCATIONS.LIST>
-                            <NAME>${escapeXml(invoiceNumber)}</NAME>
-                            <BILLTYPE>New Ref</BILLTYPE>
-                            <AMOUNT>-${totalAmt}</AMOUNT>
-                        </BILLALLOCATIONS.LIST>
                     </LEDGERENTRIES.LIST>
                     
                     <LEDGERENTRIES.LIST>
