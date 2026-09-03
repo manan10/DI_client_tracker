@@ -1,74 +1,21 @@
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const morgan = require("morgan");
-const admin = require("firebase-admin");
-require("dotenv").config();
-const cron = require("node-cron");
-const axios = require("axios");
+
+const initializeFirebase = require("./config/firebase");
+const deleteBodyParser = require("./config/deleteBodyParser");
+const initHeartbeat = require("./config/heartbeat");
+const apiRoutes = require("./routes");
 
 const app = express();
 
-// 1. Firebase Initialization
-try {
-  const firebaseConfig = process.env.FIREBASE_CONFIG_JSON;
+// 1. External Services & Background Jobs
+initializeFirebase();
+initHeartbeat();
 
-  if (!firebaseConfig) {
-    throw new Error(
-      "FIREBASE_CONFIG_JSON is missing from environment variables.",
-    );
-  }
-
-  const serviceAccount = JSON.parse(firebaseConfig);
-
-  if (serviceAccount.private_key) {
-    serviceAccount.private_key = serviceAccount.private_key.replace(
-      /\\n/g,
-      "\n",
-    );
-  }
-
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  });
-
-  console.log("✅ Firebase: Initialized via Environment Variable");
-} catch (error) {
-  console.error("❌ Firebase Initialization Error:", error.message);
-}
-
-// 2. Route Imports
-const clientRoutes = require("./routes/clientRoutes");
-const interactionRoutes = require("./routes/interactionRoutes");
-const uploadRoutes = require("./routes/uploadRoutes");
-const statsRoutes = require("./routes/statsRoutes");
-const authRoutes = require("./routes/authRoutes");
-const settingsRoutes = require("./routes/settingsRoutes");
-const vaultRoutes = require("./routes/vaultRoutes");
-const accountRoutes = require("./routes/accountRoutes");
-const commissionRoutes = require("./routes/commissionRoutes");
-const amcRoutes = require("./routes/amcRoutes");
-const arnRoutes = require("./routes/arnRoutes");
-const analyticsRoutes = require("./routes/analyticsRoutes");
-const aiRoutes = require("./routes/aiRoutes");
-// const accountingRoutes = require('./routes/accountingRoutes');
-const ledgerRoutes = require("./routes/ledgerRoutes");
-const userRoutes = require("./routes/userRoutes");
-const spendingRoutes = require("./routes/spendingRoutes");
-const walletRoutes = require("./routes/walletRoutes");
-const categoryRoutes = require("./routes/categoryRoutes");
-const taskRoutes = require("./routes/taskRoutes");
-const submissionRoutes = require("./routes/submissionRoutes");
-const workflowRoutes = require("./routes/workflowRoutes");
-const auditRoutes = require("./routes/auditRoutes");
-const tallyRoutes = require("./routes/tallyRoutes");
-const clientDataRoutes = require("./routes/clientDataRoutes");
-const brokerageRoutes = require("./routes/brokerageRoutes");
-const insuranceRoutes = require("./routes/insuranceRoutes");
-
-// 3. Global Middleware (CRITICAL ORDER)
-
+// 2. Global Pipeline Middlewares
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:5173",
@@ -77,113 +24,16 @@ app.use(
 );
 
 app.use(morgan("dev"));
-
-/**
- * FIXED DELETE MIDDLEWARE
- * Must be placed BEFORE express.json() to intercept "null" bodies
- */
-app.use((req, res, next) => {
-  if (req.method === "DELETE") {
-    // If it's a zero-length body, skip stream reading
-    const contentLength = req.headers["content-length"];
-    if (contentLength === "0" || contentLength === undefined) {
-      req.body = {};
-      return next();
-    }
-
-    let data = "";
-    req.on("data", (chunk) => {
-      data += chunk;
-    });
-    req.on("end", () => {
-      const trimmedData = data.trim();
-      if (trimmedData === "null" || trimmedData === "") {
-        req.body = {};
-        // Flag to express.json that the body is already parsed/handled
-        req._body = true;
-      } else {
-        // If it's actual JSON, we parse it here manually since we've already
-        // "drained" the request data stream
-        try {
-          if (req.headers["content-type"] === "application/json") {
-            req.body = JSON.parse(trimmedData);
-            req._body = true;
-          }
-        } catch (e) {
-          // If JSON parse fails here, let the error handler catch it later
-          console.warn("⚠️  Manual JSON parse failed in DELETE middleware");
-        }
-      }
-      next();
-    });
-  } else {
-    next();
-  }
-});
-
-if (process.env.NODE_ENV === "production") {
-  const SERVER_URL = process.env.BASE_URL;
-
-  // Ping every 10 minutes (*/10 * * * *)
-  // This provides a 5-minute safety buffer before Render's 15-minute timeout.
-  cron.schedule("*/10 * * * *", async () => {
-    try {
-      if (!SERVER_URL) {
-        console.error(
-          "Heartbeat Error: BASE_URL is not defined in environment.",
-        );
-        return;
-      }
-
-      const response = await axios.get(`${SERVER_URL}/health`);
-      console.log(
-        `[${new Date().toISOString()}] Heartbeat Success: Status ${response.status}`,
-      );
-    } catch (err) {
-      console.error(
-        `[${new Date().toISOString()}] Heartbeat Failed:`,
-        err.message,
-      );
-    }
-  });
-}
-
-// Standard JSON parser for all other methods (POST, PUT, etc.)
+app.use(deleteBodyParser);
 app.use(express.json());
 
-// 4. API Routes
-app.use("/api/clients", clientRoutes);
-app.use("/api/interactions", interactionRoutes);
-app.use("/api/upload", uploadRoutes);
-app.use("/api/stats", statsRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/settings", settingsRoutes);
-app.use("/api/vault", vaultRoutes);
-app.use("/api/accounts", accountRoutes);
-app.use("/api/commissions", commissionRoutes);
-app.use("/api/amcs", amcRoutes);
-app.use("/api/arns", arnRoutes);
-app.use("/api/analytics", analyticsRoutes);
-app.use("/api/ai", aiRoutes);
-// app.use('/api/accounting', accountingRoutes);
-app.use("/api/ledgers", ledgerRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/spending", spendingRoutes);
-app.use("/api/wallets", walletRoutes);
-app.use("/api/categories", categoryRoutes);
-app.use("/api/tasks", taskRoutes);
-app.use("/api/submissions", submissionRoutes);
-app.use("/api/workflows", workflowRoutes);
-app.use("/api/audit", auditRoutes);
-app.use("/api/tally", tallyRoutes);
-app.use("/api/utilities", clientDataRoutes);
-app.use('/api/folios', require('./routes/folioReconRoutes'));
-app.use('/api/brokerage', brokerageRoutes);
-app.use('/api/insurance', insuranceRoutes);
-// This sends 0 bytes of body data, only the headers.
+// 3. Health Endpoint
 app.get("/health", (req, res) => res.sendStatus(200));
 
-// 5. Global Error Handler
+// 4. API Routes Mounting
+app.use("/api", apiRoutes);
+
+// 5. Centralized Error Handler
 app.use((err, req, res, next) => {
   console.error("❌ SERVER ERROR:", err.stack);
   const statusCode = err.statusCode || 500;
@@ -194,7 +44,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 6. Database & Server Start
+// 6. Database Connection & Server Boot
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
