@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useApi } from "../../../shared/hooks/useApi";
-import Navbar from "../components/Navbar";
+import Navbar from "../components/Shared/Navbar";
 import {
   Activity,
   RefreshCw,
