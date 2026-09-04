@@ -7,35 +7,35 @@ import {
 } from "react-router-dom";
 import { Toaster } from "sonner";
 
-import { AuthProvider, useAuth } from "./hooks/useAuth";
+import { AuthProvider, useAuth } from "./shared/hooks/useAuth";
 
 // --- Layouts ---
-import ExpenseTrackerLayout from "./layouts/ExpenseTrackerLayout";
-import TallyTest from "./pages/ClientTracker/TallyTest";
+import ExpenseTrackerLayout from "./apps/expense-tracker/layouts/ExpenseTrackerLayout";
+import TallyTest from "./apps/client-tracker/pages/TallyTest";
 
 // --- Lazy Loaded Pages ---
 // Client Tracker App Components
-const Home = lazy(() => import("./pages/ClientTracker/Home"));
-const ClientDirectory = lazy(() => import("./pages/ClientTracker/ClientDirectory"));
-const Settings = lazy(() => import("./pages/ClientTracker/Settings"));
-const Accounts = lazy(() => import("./pages/ClientTracker/Accounts"));
-const ClientDetail = lazy(() => import("./pages/ClientTracker/ClientDetail"));
-const Operations = lazy(() => import("./pages/ClientTracker/Operations"));
-const MaintenanceView = lazy(() => import("./pages/ClientTracker/MaintenanceView"));
-const TallyDebtorTest = lazy(() => import("./pages/TallyDebtorTest"));
+const Home = lazy(() => import("./apps/client-tracker/pages/Home"));
+const ClientDirectory = lazy(() => import("./apps/client-tracker/pages/ClientDirectory"));
+const Settings = lazy(() => import("./apps/client-tracker/pages/Settings"));
+const Accounts = lazy(() => import("./apps/client-tracker/pages/Accounts"));
+const ClientDetail = lazy(() => import("./apps/client-tracker/pages/ClientDetail"));
+const Operations = lazy(() => import("./apps/client-tracker/pages/Operations"));
+const MaintenanceView = lazy(() => import("./apps/client-tracker/pages/MaintenanceView"));
+const TallyDebtorTest = lazy(() => import("./apps/client-tracker/pages/TallyDebtorTest"));
 
 // Home Expense Tracker App Components
-const ExpenseDashboard = lazy(() => import("./pages/ExpenseTracker/ExpenseDashboard"));
-const ExpenseDashboardNew = lazy(() => import("./pages/ExpenseTracker/ExpenseDashboardNew"));
-const MaintenanceViewExpenses = lazy(() => import("./pages/ExpenseTracker/MaintenanceViewExpenses"));
-const ExpenseSettings = lazy(() => import("./pages/ExpenseTracker/ExpenseSettings"));
-const ExpenseAnalytics = lazy(() => import("./pages/ExpenseTracker/ExpenseAnalytics"));
-const ExpenseHistory = lazy(() => import("./pages/ExpenseTracker/ExpenseHistory"));
-const ExpenseHistoryNew = lazy(() => import("./pages/ExpenseTracker/ExpenseHistoryNew"));
+const ExpenseDashboard = lazy(() => import("./apps/expense-tracker/pages/ExpenseDashboard"));
+const ExpenseDashboardNew = lazy(() => import("./apps/expense-tracker/pages/ExpenseDashboardNew"));
+const MaintenanceViewExpenses = lazy(() => import("./apps/expense-tracker/pages/MaintenanceViewExpenses"));
+const ExpenseSettings = lazy(() => import("./apps/expense-tracker/pages/ExpenseSettings"));
+const ExpenseAnalytics = lazy(() => import("./apps/expense-tracker/pages/ExpenseAnalytics"));
+const ExpenseHistory = lazy(() => import("./apps/expense-tracker/pages/ExpenseHistory"));
+const ExpenseHistoryNew = lazy(() => import("./apps/expense-tracker/pages/ExpenseHistoryNew"));
 
 // Shared Components
-const Auth = lazy(() => import("./pages/Auth"));
-const AppPicker = lazy(() => import("./pages/AppPicker"));
+const Auth = lazy(() => import("./shared/pages/Auth"));
+const AppPicker = lazy(() => import("./shared/pages/AppPicker"));
 
 // Loading fallback component
 const PageLoader = () => (
