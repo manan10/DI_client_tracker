@@ -82,7 +82,7 @@ const allApps = [
     description:
       "Track, score out of 10, log rating revisions over time, and import your curated lists.",
     features: ["Rating Timeline", "Notes Importer", "Watchlist"],
-    path: "/shows",
+    path: "/tv-rater",
     icon: Clapperboard,
     badge: "Leisure App",
     theme: {
