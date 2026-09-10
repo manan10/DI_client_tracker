@@ -12,6 +12,7 @@ import {
   ArrowUpRight,
   Sun,
   Moon,
+  Clapperboard,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import Logo from "../../assets/logo_nobrand.png";
@@ -73,6 +74,34 @@ const allApps = [
       btn: "bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white shadow-indigo-600/20 dark:shadow-indigo-500/30",
     },
   },
+  {
+    id: "SHOW_RATER",
+    title: "Show Rater",
+    subtitle: "Personal Film & Series Vault",
+    category: "Leisure",
+    description:
+      "Track, score out of 10, log rating revisions over time, and import your curated lists.",
+    features: ["Rating Timeline", "Notes Importer", "Watchlist"],
+    path: "/shows",
+    icon: Clapperboard,
+    badge: "Leisure App",
+    theme: {
+      primary: "bg-rose-600 dark:bg-rose-500",
+      text: "text-rose-700 dark:text-rose-400",
+      accentBg:
+        "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200/80 dark:border-rose-500/20",
+      border:
+        "border-rose-200/80 dark:border-rose-500/20 hover:border-rose-500/60 dark:hover:border-rose-500/50",
+      cardHover:
+        "hover:shadow-[0_20px_40px_rgba(244,63,94,0.12)] dark:hover:shadow-[0_20px_40px_rgba(244,63,94,0.08)]",
+      badgeBg:
+        "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-200/80 dark:border-rose-500/30",
+      pillBg:
+        "bg-rose-50/80 dark:bg-rose-500/10 text-rose-800 dark:text-rose-300 border-rose-100 dark:border-rose-500/20",
+      glow: "from-rose-500/15 dark:from-rose-500/20 via-orange-500/5 to-transparent",
+      btn: "bg-rose-600 hover:bg-rose-700 dark:bg-rose-500 dark:hover:bg-rose-600 text-white shadow-rose-600/20 dark:shadow-rose-500/30",
+    },
+  },
 ];
 
 const AppPicker = () => {
@@ -106,6 +135,7 @@ const AppPicker = () => {
 
   const toggleTheme = () => setIsDark((prev) => !prev);
 
+  // Filter apps strictly according to the user's assigned permissions
   const authorizedApps = useMemo(() => {
     const userPermissions = user?.allowedApps || [];
     return allApps.filter((app) => userPermissions.includes(app.id));
@@ -123,10 +153,8 @@ const AppPicker = () => {
     <div className="h-dvh w-screen bg-[#F8FAFC] dark:bg-[#060A14] text-slate-900 dark:text-slate-100 flex flex-col font-sans overflow-hidden relative selection:bg-emerald-600 selection:text-white transition-colors duration-300">
       {/* --- AMBIENT LUXURY LIGHTING EFFECTS --- */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {/* Soft Radial Ambient Lights */}
         <div className="absolute -top-[25%] left-1/4 w-[55vw] h-[55vw] max-w-150 max-h-150 rounded-full bg-emerald-400/15 dark:bg-emerald-500/10 blur-[120px] pointer-events-none" />
         <div className="absolute -bottom-[25%] right-1/4 w-[55vw] h-[55vw] max-w-150 max-h-150 rounded-full bg-indigo-400/15 dark:bg-indigo-500/10 blur-[120px] pointer-events-none" />
-        {/* Micro-dot SaaS Grid */}
         <div className="absolute inset-0 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] dark:bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] bg-size-[24px_24px] opacity-35 dark:opacity-30 mask-[radial-gradient(ellipse_70%_60%_at_50%_50%,#000_70%,transparent_100%)]" />
       </div>
 
@@ -185,7 +213,7 @@ const AppPicker = () => {
                 {user?.name || "User"}
               </p>
               <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                {user?.role || "Admin"}
+                {user?.isAdmin ? "Superuser" : user?.role || "Standard"}
               </p>
             </div>
           </div>
@@ -205,10 +233,10 @@ const AppPicker = () => {
         </div>
       </header>
 
-      {/* --- CENTRAL PORTAL WORKSPACE (Strict Zero Scroll) --- */}
+      {/* --- CENTRAL PORTAL WORKSPACE --- */}
       <main className="flex-1 flex flex-col items-center justify-center w-full max-w-6xl mx-auto px-4 sm:px-6 relative z-10 min-h-0 py-2 sm:py-6">
         {/* Header Hero Capsule */}
-        <div className="text-center space-y-1 sm:space-y-2 mb-4 sm:mb-8 shrink-0">
+        <div className="text-center space-y-1 sm:space-y-2 mb-4 sm:mb-6 shrink-0">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/90 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] shadow-2xs backdrop-blur-md">
             <Sparkles
               size={12}
@@ -228,141 +256,163 @@ const AppPicker = () => {
           </p>
         </div>
 
-        {/* ======================================================== */}
-        {/* 📱 MOBILE VIEW: COMPACT ACTION PODS (< lg)              */}
-        {/* ======================================================== */}
-        <div className="flex lg:hidden flex-col gap-3 w-full max-w-md mx-auto overflow-y-auto no-scrollbar shrink">
-          {authorizedApps.map((app) => (
-            <div
-              key={`mob-${app.id}`}
-              onClick={() => navigate(app.path)}
-              className={`group relative flex items-center justify-between p-4 rounded-xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border ${app.theme.border} transition-all duration-200 active:scale-[0.98] shadow-sm hover:shadow-md cursor-pointer overflow-hidden`}
-            >
-              <div className="flex items-center gap-3.5 min-w-0">
+        {/* Empty State Fallback */}
+        {authorizedApps.length === 0 ? (
+          <div className="p-8 text-center bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 rounded-2xl backdrop-blur-md shadow-xs max-w-md mx-auto">
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+              No Assigned Applications
+            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+              Contact an administrator to grant access permissions for your profile.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* ======================================================== */}
+            {/* 📱 MOBILE VIEW: COMPACT ACTION PODS (< lg)              */}
+            {/* ======================================================== */}
+            <div className="flex lg:hidden flex-col gap-3 w-full max-w-md mx-auto overflow-y-auto no-scrollbar shrink">
+              {authorizedApps.map((app) => (
                 <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${app.theme.accentBg}`}
+                  key={`mob-${app.id}`}
+                  onClick={() => navigate(app.path)}
+                  className={`group relative flex items-center justify-between p-4 rounded-xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border ${app.theme.border} transition-all duration-200 active:scale-[0.98] shadow-sm hover:shadow-md cursor-pointer overflow-hidden`}
                 >
-                  <app.icon size={22} strokeWidth={2.5} />
-                </div>
-                <div className="min-w-0 text-left">
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <span
-                      className={`text-[8px] font-black uppercase tracking-widest ${app.theme.text}`}
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${app.theme.accentBg}`}
                     >
-                      {app.category}
-                    </span>
-                    <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                    <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                      {app.badge}
-                    </span>
+                      <app.icon size={22} strokeWidth={2.5} />
+                    </div>
+                    <div className="min-w-0 text-left">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span
+                          className={`text-[8px] font-black uppercase tracking-widest ${app.theme.text}`}
+                        >
+                          {app.category}
+                        </span>
+                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                        <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                          {app.badge}
+                        </span>
+                      </div>
+                      <h3 className="text-base font-[1000] text-slate-900 dark:text-white uppercase tracking-tight truncate leading-tight">
+                        {app.title}
+                      </h3>
+                      <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate mt-0.5">
+                        {app.subtitle}
+                      </p>
+                    </div>
                   </div>
-                  <h3 className="text-base font-[1000] text-slate-900 dark:text-white uppercase tracking-tight truncate leading-tight">
-                    {app.title}
-                  </h3>
-                  <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate mt-0.5">
-                    {app.subtitle}
-                  </p>
-                </div>
-              </div>
 
-              <div
-                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${app.theme.accentBg} group-hover:translate-x-0.5 transition-transform`}
-              >
-                <ArrowRight size={15} strokeWidth={2.5} />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* ======================================================== */}
-        {/* 💻 DESKTOP VIEW: LUXURY FINTECH HUBS (>= lg)             */}
-        {/* ======================================================== */}
-        <div className="hidden lg:grid grid-cols-2 gap-7 w-full max-w-5xl">
-          {authorizedApps.map((app, idx) => (
-            <div
-              key={`desk-${app.id}`}
-              onMouseEnter={() => setActiveId(app.id)}
-              onMouseLeave={() => setActiveId(null)}
-              onClick={() => navigate(app.path)}
-              className={`group relative flex flex-col justify-between p-8 rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border ${app.theme.border} transition-all duration-300 ${app.theme.cardHover} cursor-pointer min-h-80 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none`}
-            >
-              {/* Internal Accent Glow */}
-              <div
-                className={`absolute top-0 right-0 w-48 h-48 bg-linear-to-bl ${app.theme.glow} rounded-bl-full pointer-events-none transition-opacity duration-500 opacity-60 group-hover:opacity-100`}
-              />
-
-              {/* Background Index Marker */}
-              <div className="absolute top-4 right-6 text-6xl font-[1000] italic leading-none pointer-events-none select-none text-slate-100 dark:text-slate-800/60 group-hover:text-slate-200/80 dark:group-hover:text-slate-700/60 transition-colors">
-                0{idx + 1}
-              </div>
-
-              {/* Card Top & Details */}
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-5">
                   <div
-                    className={`w-14 h-14 rounded-xl flex items-center justify-center border ${app.theme.accentBg} group-hover:scale-105 transition-transform duration-300 shadow-2xs`}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${app.theme.accentBg} group-hover:translate-x-0.5 transition-transform`}
                   >
-                    <app.icon size={26} strokeWidth={2.5} />
+                    <ArrowRight size={15} strokeWidth={2.5} />
                   </div>
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-wider border shadow-2xs ${app.theme.badgeBg}`}
-                  >
-                    <Zap size={11} />
-                    {app.badge}
-                  </span>
                 </div>
-
-                <div className="text-left space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${app.theme.primary} animate-pulse`}
-                    />
-                    <p
-                      className={`text-[10px] font-black uppercase tracking-[0.2em] ${app.theme.text}`}
-                    >
-                      {app.category} • {app.subtitle}
-                    </p>
-                  </div>
-                  <h3 className="text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-slate-950 dark:group-hover:text-emerald-300 transition-colors">
-                    {app.title}
-                  </h3>
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm pt-1">
-                    {app.description}
-                  </p>
-                </div>
-
-                {/* Feature Micro-Pills */}
-                <div className="flex flex-wrap gap-1.5 pt-4">
-                  {app.features.map((feat) => (
-                    <span
-                      key={feat}
-                      className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${app.theme.pillBg}`}
-                    >
-                      {feat}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Card Footer CTA Bar */}
-              <div className="relative z-10 pt-5 mt-4 border-t border-slate-100 dark:border-white/10 flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
-                  Open Application
-                </span>
-                <div
-                  className={`px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-[1000] uppercase tracking-wider transition-all duration-200 ${app.theme.btn} shadow-sm group-hover:shadow-md`}
-                >
-                  <span>Open App</span>
-                  <ArrowUpRight
-                    size={14}
-                    strokeWidth={3}
-                    className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                  />
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+
+            {/* ======================================================== */}
+            {/* 💻 DESKTOP VIEW: DYNAMIC RESPONSIVE GRID (>= lg)         */}
+            {/* ======================================================== */}
+            <div
+              className={`hidden lg:grid gap-6 w-full max-w-6xl ${
+                authorizedApps.length >= 3
+                  ? "grid-cols-3"
+                  : authorizedApps.length === 2
+                  ? "grid-cols-2 max-w-5xl"
+                  : "grid-cols-1 max-w-xl"
+              }`}
+            >
+              {authorizedApps.map((app, idx) => (
+                <div
+                  key={`desk-${app.id}`}
+                  onMouseEnter={() => setActiveId(app.id)}
+                  onMouseLeave={() => setActiveId(null)}
+                  onClick={() => navigate(app.path)}
+                  className={`group relative flex flex-col justify-between p-7 rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border ${app.theme.border} transition-all duration-300 ${app.theme.cardHover} cursor-pointer min-h-76 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none`}
+                >
+                  {/* Internal Accent Glow */}
+                  <div
+                    className={`absolute top-0 right-0 w-48 h-48 bg-linear-to-bl ${app.theme.glow} rounded-bl-full pointer-events-none transition-opacity duration-500 opacity-60 group-hover:opacity-100`}
+                  />
+
+                  {/* Background Index Marker */}
+                  <div className="absolute top-4 right-6 text-6xl font-[1000] italic leading-none pointer-events-none select-none text-slate-100 dark:text-slate-800/60 group-hover:text-slate-200/80 dark:group-hover:text-slate-700/60 transition-colors">
+                    0{idx + 1}
+                  </div>
+
+                  {/* Card Top & Details */}
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-5">
+                      <div
+                        className={`w-13 h-13 rounded-xl flex items-center justify-center border ${app.theme.accentBg} group-hover:scale-105 transition-transform duration-300 shadow-2xs`}
+                      >
+                        <app.icon size={24} strokeWidth={2.5} />
+                      </div>
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-wider border shadow-2xs ${app.theme.badgeBg}`}
+                      >
+                        <Zap size={11} />
+                        {app.badge}
+                      </span>
+                    </div>
+
+                    <div className="text-left space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${app.theme.primary} animate-pulse`}
+                        />
+                        <p
+                          className={`text-[10px] font-black uppercase tracking-[0.2em] ${app.theme.text}`}
+                        >
+                          {app.category} • {app.subtitle}
+                        </p>
+                      </div>
+                      <h3 className="text-xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-slate-950 dark:group-hover:text-rose-300 transition-colors">
+                        {app.title}
+                      </h3>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm pt-1 line-clamp-2">
+                        {app.description}
+                      </p>
+                    </div>
+
+                    {/* Feature Micro-Pills */}
+                    <div className="flex flex-wrap gap-1.5 pt-4">
+                      {app.features.map((feat) => (
+                        <span
+                          key={feat}
+                          className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${app.theme.pillBg}`}
+                        >
+                          {feat}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Card Footer CTA Bar */}
+                  <div className="relative z-10 pt-5 mt-4 border-t border-slate-100 dark:border-white/10 flex items-center justify-between">
+                    <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
+                      Open Application
+                    </span>
+                    <div
+                      className={`px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-[1000] uppercase tracking-wider transition-all duration-200 ${app.theme.btn} shadow-sm group-hover:shadow-md`}
+                    >
+                      <span>Open App</span>
+                      <ArrowUpRight
+                        size={14}
+                        strokeWidth={3}
+                        className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </main>
 
       {/* --- SYSTEM FOOTER --- */}

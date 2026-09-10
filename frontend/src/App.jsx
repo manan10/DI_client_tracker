@@ -33,6 +33,9 @@ const ExpenseAnalytics = lazy(() => import("./apps/expense-tracker/pages/Expense
 const ExpenseHistory = lazy(() => import("./apps/expense-tracker/pages/ExpenseHistory"));
 const ExpenseHistoryNew = lazy(() => import("./apps/expense-tracker/pages/ExpenseHistoryNew"));
 
+// TV Rater App Components
+const ShowRaterHome = lazy(() => import("./apps/tv-ranker/pages/ShowRaterHome"));
+
 // Shared Components
 const Auth = lazy(() => import("./shared/pages/Auth"));
 const AppPicker = lazy(() => import("./shared/pages/AppPicker"));
@@ -172,6 +175,15 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <TallyDebtorTest />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/tv-rater"
+                element={
+                  <ProtectedRoute>
+                    <ShowRaterHome />
                   </ProtectedRoute>
                 }
               />

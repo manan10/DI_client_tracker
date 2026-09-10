@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { Kanban, Send, Lock, Mail } from "lucide-react";
+import { Kanban, Send, Lock, FileText, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
 import Navbar from "../components/Shared/Navbar";
 import OperationsDashboard from "../components/Operations/TaskBoard";
 import Submissions from "../components/Operations/Submissions";
+import FormsVault from "../components/Operations/FormsVault";
 // import FolioReconciler from "../components/Operations/FolioReconciler";
 // import ArnTransferReconciler from "../components/Operations/ArnTransferReconciler";
 // import BrokerageAuditor from "../components/Operations/BrokerageAuditor";
@@ -15,6 +16,7 @@ const Operations = () => {
   const tabs = [
     { id: "submissions", name: "Submissions", icon: Send, isLocked: false },
     { id: "dashboard", name: "Task Board", icon: Kanban, isLocked: false },
+    { id: "forms", name: "Forms Vault", icon: FileText, isLocked: false },
     // { id: "folio", name: "Folio Reconciler", icon: Send, isLocked: false },
     // { id: "arn", name: "ARN Reconciler", icon: Mail, isLocked: false },
     // { id: "brokerage", name: "Brokerage Auditor", icon: Mail, isLocked: false },
@@ -50,17 +52,15 @@ const Operations = () => {
               </span>
               <span className="text-slate-300 dark:text-slate-700">•</span>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Submission Fulfillment & Task Registry
+                Submission Fulfillment, Operations Board & Regulatory Forms
               </p>
             </div>
           </div>
 
-          {/* ========================================== */}
-          {/* CONTINUOUS ENTERPRISE NAVIGATION          */}
-          {/* ========================================== */}
+          {/* CONTINUOUS ENTERPRISE NAVIGATION */}
           <div className="w-full lg:w-auto">
             
-            {/* Desktop & Tablet: Clean Underline-Border Tabs (Zero Widget Box) */}
+            {/* Desktop & Tablet: Clean Underline-Border Tabs */}
             <nav className="hidden sm:flex items-center gap-8">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
@@ -95,46 +95,38 @@ const Operations = () => {
               })}
             </nav>
 
-            {/* Mobile View: High-Visibility Equal-Width Grid (Zero Hidden Tabs, Zero Dropdowns) */}
-            <div className="sm:hidden grid grid-cols-3 gap-1 bg-slate-100 dark:bg-white/3 p-1 rounded-xl border border-slate-200 dark:border-white/10 w-full">
-              {tabs.map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => handleTabClick(tab)}
-                    className={`
-                      flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all outline-none cursor-pointer
-                      ${
-                        isActive
-                          ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs font-black"
-                          : tab.isLocked
-                            ? "text-slate-400 dark:text-slate-600 cursor-not-allowed opacity-50"
-                            : "text-slate-600 dark:text-slate-400 font-bold"
-                      }
-                    `}
-                  >
-                    {tab.isLocked ? (
-                      <Lock size={14} strokeWidth={2.5} />
-                    ) : (
-                      <tab.icon size={15} strokeWidth={isActive ? 2.5 : 2} className={isActive ? "text-emerald-400 dark:text-emerald-600" : "text-slate-400"} />
-                    )}
-                    <span className="text-[9px] uppercase tracking-wider text-center leading-tight truncate w-full">
-                      {tab.name}
-                    </span>
-                  </button>
-                );
-              })}
+            {/* Mobile View: High-End Native Select Command Bar */}
+            <div className="sm:hidden w-full relative">
+              <div className="relative w-full">
+                <select
+                  value={activeTab}
+                  onChange={(e) => {
+                    const selected = tabs.find(t => t.id === e.target.value);
+                    if (selected) handleTabClick(selected);
+                  }}
+                  className="w-full appearance-none bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3.5 pr-10 text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white outline-none focus:border-emerald-500 shadow-xs cursor-pointer"
+                >
+                  {tabs.map((tab) => (
+                    <option key={tab.id} value={tab.id} disabled={tab.isLocked}>
+                      {tab.name} {tab.isLocked ? "(Locked)" : ""}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                  <ChevronDown size={16} strokeWidth={2.5} />
+                </div>
+              </div>
             </div>
 
           </div>
         </div>
 
-        {/* CONTENT AREA (Continuous Document Flow) */}
+        {/* CONTENT AREA */}
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out w-full min-w-0">
           {activeTab === "submissions" && <Submissions />}
           {activeTab === "dashboard" && <OperationsDashboard />}
-          {activeTab === "brokerage" && <BrokerageAuditor />}
+          {activeTab === "forms" && <FormsVault />}
+          {/* {activeTab === "brokerage" && <BrokerageAuditor />} */}
         </div>
 
       </main>

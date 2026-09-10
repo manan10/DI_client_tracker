@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema({
   },
   allowedApps: { 
     type: [String], 
-    enum: ['EXPENSE_TRACKER', 'CLIENT_TRACKER'], 
+    enum: ['EXPENSE_TRACKER', 'CLIENT_TRACKER', 'SHOW_RATER'],
     default: [] 
   },
   preferences: {

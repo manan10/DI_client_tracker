@@ -28,10 +28,13 @@ router.use("/utilities", require("../app-client-tracker/routes/clientDataRoutes"
 router.use("/folios", require("../app-client-tracker/routes/folioReconRoutes"));
 router.use("/brokerage", require("../app-client-tracker/routes/brokerageRoutes"));
 router.use("/insurance", require("../app-client-tracker/routes/insuranceRoutes"));
+router.use("/forms-vault", require("../app-client-tracker/routes/formsVaultRoutes"));
 
 // Expense Tracker Routes
 router.use("/spending", require("../app-expense-tracker/routes/spendingRoutes"));
 router.use("/wallets", require("../app-expense-tracker/routes/walletRoutes"));
 router.use("/categories", require("../app-expense-tracker/routes/categoryRoutes"));
 
+// Show Rater Routes
+router.use('/shows', require('../app-tv-ranker/routes/showRaterRoutes'));
 module.exports = router;

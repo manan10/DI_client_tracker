@@ -1,60 +1,46 @@
-import React, { useState, useEffect, useRef } from "react";
-import {
-  Lock,
-  Loader2,
-  ChevronRight,
-  Eye,
-  EyeOff,
-  User,
-  Check,
-  Fingerprint,
-  Monitor,
-  Wallet,
-  ArrowRight,
-  ShieldCheck,
-  Sun,
-  Moon,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
-import { useApi } from "../hooks/useApi";
-import Logo from "../../assets/logo_nobrand.png";
-import {
-  startAuthentication,
-  browserSupportsWebAuthn,
-} from "@simplewebauthn/browser";
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Lock, Loader2, ChevronDown, Eye, EyeOff, User, 
+  Check, Fingerprint, ArrowRight, Sun, Moon, 
+  PieChart, Wallet, ShieldCheck 
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../shared/hooks/useAuth';
+import { useApi } from '../../shared/hooks/useApi';
+import Logo from '../../assets/logo_nobrand.png';
+import { startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser';
 
 const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
-  const [formData, setFormData] = useState({ username: "", password: "" });
+  const [formData, setFormData] = useState({ username: '', password: '' });
 
   const [isOpen, setIsOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const dropdownRef = useRef(null);
 
-  // Theme Management with Persistent Storage
+  // Theme Management
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("app-theme") || "dark";
+    return localStorage.getItem('app-theme') || 'dark';
   });
 
   const toggleTheme = () => {
-    const nextTheme = theme === "dark" ? "light" : "dark";
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
-    localStorage.setItem("app-theme", nextTheme);
+    localStorage.setItem('app-theme', nextTheme);
   };
 
   useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
     } else {
-      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.remove('dark');
     }
   }, [theme]);
 
-  // Biometrics States
+  // Biometrics
   const [isBiometricSupported, setIsBiometricSupported] = useState(false);
   const [isBiometricLoading, setIsBiometricLoading] = useState(false);
 
@@ -67,7 +53,7 @@ const Auth = () => {
 
     const fetchUsers = async () => {
       try {
-        const data = await request("/users", "GET");
+        const data = await request('/users', 'GET');
         if (data) setUsers(data);
       } catch (err) {
         console.error("User list error:", err);
@@ -99,12 +85,12 @@ const Auth = () => {
   };
 
   const handleNavigation = (apps) => {
-    if (apps.length === 1 && apps.includes("EXPENSE_TRACKER")) {
-      navigate("/expenses");
-    } else if (apps.length === 1 && apps.includes("CLIENT_TRACKER")) {
-      navigate("/dashboard");
+    if (apps.length === 1 && apps.includes('EXPENSE_TRACKER')) {
+      navigate('/expenses');
+    } else if (apps.length === 1 && apps.includes('CLIENT_TRACKER')) {
+      navigate('/dashboard');
     } else {
-      navigate("/");
+      navigate('/');
     }
   };
 
@@ -113,9 +99,9 @@ const Auth = () => {
     if (!formData.username) return;
     setIsSubmitting(true);
     try {
-      const data = await request("/auth/login", "POST", {
+      const data = await request('/auth/login', 'POST', {
         username: formData.username,
-        password: formData.password,
+        password: formData.password
       });
 
       if (data && data.token) {
@@ -133,18 +119,14 @@ const Auth = () => {
     if (!selectedUser) return;
     setIsBiometricLoading(true);
     try {
-      const options = await request("/auth/webauthn/login-options", "POST", {
-        username: selectedUser.username,
+      const options = await request('/auth/webauthn/login-options', 'POST', { 
+        username: selectedUser.username 
       });
       const authResp = await startAuthentication(options);
-      const verificationRes = await request(
-        "/auth/webauthn/login-verify",
-        "POST",
-        {
-          username: selectedUser.username,
-          response: authResp,
-        },
-      );
+      const verificationRes = await request('/auth/webauthn/login-verify', 'POST', {
+        username: selectedUser.username,
+        response: authResp
+      });
 
       if (verificationRes && verificationRes.token) {
         login(verificationRes.user, verificationRes.token);
@@ -157,442 +139,279 @@ const Auth = () => {
     }
   };
 
-  const isDark = theme === "dark";
-  const hasBiometrics =
-    isBiometricSupported && selectedUser?.credentials?.length > 0;
+  const isDark = theme === 'dark';
 
   return (
-    <div
-      className={`h-dvh w-full font-sans select-none overflow-hidden relative transition-colors duration-300 flex flex-col justify-between ${
-        isDark
-          ? "bg-[#060A14] text-slate-100 selection:bg-emerald-500/30 selection:text-emerald-300"
-          : "bg-[#F1F5F9] text-slate-900 selection:bg-emerald-500/20 selection:text-emerald-900"
-      }`}
-    >
-      {/* Atmospheric Background Ambient Grid & Soft Blooms */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div
-          className={`absolute inset-0 ${
-            isDark
-              ? "bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] bg-size-[24px_24px] opacity-40"
-              : "bg-[radial-gradient(#94a3b8_1px,transparent_1px)] bg-size-[24px_24px] opacity-30"
-          }`}
-        />
-        <div
-          className={`absolute -top-20 -left-20 w-100 lg:w-225 xl:w-275 h-100 lg:h-225 xl:h-275 rounded-full blur-[130px] lg:blur-[180px] ${
-            isDark ? "bg-emerald-500/20" : "bg-emerald-400/25"
-          }`}
-        />
-        <div
-          className={`absolute -bottom-20 -right-20 w-87.5 lg:w-212.5 xl:w-250 h-87.5 lg:h-212.5 xl:h-250 rounded-full blur-[130px] lg:blur-[180px] ${
-            isDark ? "bg-teal-600/15" : "bg-teal-300/25"
-          }`}
-        />
+    <div className={`h-[100dvh] lg:h-auto lg:min-h-screen w-full flex flex-col items-center justify-center overflow-hidden lg:overflow-x-hidden lg:overflow-y-auto py-0 lg:py-10 transition-colors duration-500 relative ${
+      isDark ? 'bg-[#050505]' : 'bg-slate-50'
+    }`}>
+      
+      {/* ========================================================================= */}
+      {/* VIBRANT & COLORFUL BACKGROUND MESH                                        */}
+      {/* ========================================================================= */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        {/* Light Mode Blobs */}
+        {!isDark && (
+          <>
+            <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-emerald-300/40 mix-blend-multiply blur-[120px] rounded-full animate-[pulse_6s_infinite]" />
+            <div className="absolute top-[20%] right-[-10%] w-[45vw] h-[45vw] bg-teal-300/40 mix-blend-multiply blur-[100px] rounded-full animate-[pulse_8s_infinite_alternate]" />
+            <div className="absolute bottom-[-10%] left-[20%] w-[60vw] h-[60vw] bg-indigo-300/30 mix-blend-multiply blur-[130px] rounded-full animate-[pulse_10s_infinite]" />
+          </>
+        )}
+
+        {/* Dark Mode Blobs */}
+        {isDark && (
+          <>
+            <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-violet-600/40 mix-blend-screen blur-[130px] rounded-full animate-[pulse_6s_infinite]" />
+            <div className="absolute top-[20%] right-[-10%] w-[45vw] h-[45vw] bg-emerald-500/30 mix-blend-screen blur-[120px] rounded-full animate-[pulse_8s_infinite_alternate]" />
+            <div className="absolute bottom-[-10%] left-[20%] w-[60vw] h-[60vw] bg-blue-600/40 mix-blend-screen blur-[150px] rounded-full animate-[pulse_10s_infinite]" />
+          </>
+        )}
+
+        <div className={`absolute inset-0 ${isDark ? 'bg-[radial-gradient(#ffffff_1px,transparent_1px)] opacity-5' : 'bg-[radial-gradient(#000000_1px,transparent_1px)] opacity-[0.04]'} bg-[size:24px_24px]`} />
       </div>
 
-      {/* Floating Theme Switcher */}
-      <div className="absolute top-4 right-4 sm:top-5 sm:right-6 lg:top-8 lg:right-12 z-50">
+      {/* THEME TOGGLE BUTTON */}
+      <div className="absolute top-4 right-4 lg:top-8 lg:right-8 z-50">
         <button
-          type="button"
           onClick={toggleTheme}
-          className={`flex items-center gap-2 px-3.5 py-2 lg:px-4 lg:py-2 rounded-full border text-xs lg:text-sm font-bold transition-all duration-200 cursor-pointer shadow-xs active:scale-95 backdrop-blur-xl ${
-            isDark
-              ? "bg-slate-900/80 border-slate-700/80 text-slate-300 hover:text-white hover:border-slate-600"
-              : "bg-white/90 border-slate-300 text-slate-700 hover:text-slate-900 hover:border-slate-400"
+          className={`p-3.5 rounded-full shadow-xl transition-all duration-300 hover:scale-110 active:scale-95 ${
+            isDark ? 'bg-white text-black' : 'bg-slate-900 text-white'
           }`}
           aria-label="Toggle Theme"
         >
-          {isDark ? (
-            <>
-              <Sun size={14} className="text-amber-400 lg:w-4 lg:h-4" />
-              <span className="text-[10px] lg:text-xs font-mono uppercase tracking-wider hidden sm:inline">
-                Light
-              </span>
-            </>
-          ) : (
-            <>
-              <Moon size={14} className="text-emerald-600 lg:w-4 lg:h-4" />
-              <span className="text-[10px] lg:text-xs font-mono uppercase tracking-wider hidden sm:inline">
-                Dark
-              </span>
-            </>
-          )}
+          {isDark ? <Sun size={20} strokeWidth={2.5} /> : <Moon size={20} strokeWidth={2.5} />}
         </button>
       </div>
 
-      {/* Main Workspace Stage */}
-      <main className="relative z-10 h-full w-full max-w-7xl 2xl:max-w-375 mx-auto flex flex-col justify-between lg:grid lg:grid-cols-12 lg:gap-14 xl:gap-20 lg:items-center px-4 sm:px-8 lg:px-12 xl:px-16 pt-8 sm:pt-10 lg:py-8 pb-0 sm:pb-6 min-h-0 overflow-y-auto lg:overflow-visible">
-        {/* Brand Showcase Area */}
-        <div className="w-full lg:col-span-6 flex flex-col items-center lg:items-start text-center lg:text-left shrink-0 my-auto lg:my-0 pb-6 lg:pb-0">
-          <div className="relative mb-3.5 sm:mb-4 lg:mb-6 xl:mb-8 select-none">
-            <div className="absolute -inset-6 lg:-inset-8 bg-linear-to-tr from-emerald-500/25 to-teal-400/20 blur-2xl lg:blur-3xl rounded-full scale-95 pointer-events-none" />
-            <img
-              src={Logo}
-              alt="Dalal Investment"
-              className="relative z-10 h-24 sm:h-28 lg:h-52 xl:h-64 2xl:h-72 w-auto object-contain drop-shadow-[0_16px_32px_rgba(16,185,129,0.25)]"
+      {/* ========================================================================= */}
+      {/* MAIN CONTAINER: Increased Width & Optimized Mobile Fit                    */}
+      {/* ========================================================================= */}
+      <div className="w-full max-w-[1400px] 2xl:max-w-[1600px] h-full lg:h-auto mx-auto flex flex-col lg:flex-row items-center justify-between lg:justify-center gap-6 lg:gap-20 relative z-10 px-4 sm:px-6 py-6 lg:py-0">
+        
+        {/* LEFT COLUMN: BRANDING */}
+        <div className="w-full lg:w-[55%] flex flex-col items-center lg:items-start text-center lg:text-left mt-4 sm:mt-8 lg:mt-0 shrink-0">
+          <div className="mb-4 lg:mb-10">
+            <img 
+              src={Logo} 
+              alt="Dalal Investment" 
+              className="h-20 sm:h-24 lg:h-44 w-auto object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-105" 
             />
           </div>
 
-          <h1
-            className={`text-3xl sm:text-4xl lg:text-6xl xl:text-7xl 2xl:text-8xl font-[1000] tracking-tight leading-[0.98] uppercase mb-1.5 sm:mb-2 lg:mb-3 ${
-              isDark ? "text-white" : "text-slate-950"
-            }`}
-          >
-            Dalal <br className="hidden lg:inline" />
-            <span className="bg-linear-to-r from-emerald-500 via-teal-400 to-emerald-400 bg-clip-text text-transparent">
-              Investment
-            </span>
+          <h1 className={`text-4xl sm:text-5xl lg:text-7xl font-[1000] uppercase tracking-tighter leading-[0.9] mb-3 lg:mb-6 ${
+            isDark ? 'text-white' : 'text-slate-900'
+          }`}>
+            Dalal <br className="hidden lg:block" />
+            Investment
           </h1>
 
-          <div className="flex items-center gap-2.5 lg:gap-3 mb-1 lg:mb-6 xl:mb-8">
-            <div className="h-1 lg:h-1.5 w-6 sm:w-8 lg:w-12 bg-linear-to-r from-emerald-500 to-teal-500 rounded-full" />
-            <p className="text-xs sm:text-sm lg:text-sm xl:text-base font-mono font-bold uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">
-              Wealth • Heritage • Growth
-            </p>
-          </div>
+          <p className={`text-sm lg:text-xl font-bold max-w-md mb-2 lg:mb-10 leading-relaxed ${
+            isDark ? 'text-white' : 'text-slate-700'
+          }`}>
+            Welcome to the family portal. Track your investments, manage daily expenses, and watch your portfolio grow all in one place.
+          </p>
 
-          {/* Desktop App Indicators */}
-          <div className="hidden lg:grid grid-cols-2 gap-4 xl:gap-5 w-full max-w-lg xl:max-w-xl mt-4 xl:mt-6">
-            <div
-              className={`flex items-center gap-3.5 xl:gap-4 p-4 xl:p-5 rounded-2xl border transition-all ${
-                isDark
-                  ? "bg-slate-900/60 border-slate-800"
-                  : "bg-white border-slate-200 shadow-xs"
-              }`}
-            >
-              <div className="p-2.5 xl:p-3 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0">
-                <Monitor
-                  size={20}
-                  className="xl:w-6 xl:h-6"
-                  strokeWidth={2.4}
-                />
+          <div className="hidden lg:flex flex-col gap-6 w-full">
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-2xl shadow-sm ${isDark ? 'bg-white text-black' : 'bg-slate-900 text-white'}`}>
+                <PieChart size={24} strokeWidth={2.5} />
               </div>
-              <div className="text-left min-w-0">
-                <h4
-                  className={`text-xs xl:text-sm font-bold uppercase tracking-wider truncate ${isDark ? "text-white" : "text-slate-900"}`}
-                >
-                  Client Tracker
-                </h4>
-                <p className="text-[11px] xl:text-xs text-slate-400 truncate">
-                  Portfolios & Analytics
-                </p>
-              </div>
+              <h3 className={`font-black text-xl uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                View Portfolios
+              </h3>
             </div>
 
-            <div
-              className={`flex items-center gap-3.5 xl:gap-4 p-4 xl:p-5 rounded-2xl border transition-all ${
-                isDark
-                  ? "bg-slate-900/60 border-slate-800"
-                  : "bg-white border-slate-200 shadow-xs"
-              }`}
-            >
-              <div className="p-2.5 xl:p-3 rounded-xl bg-teal-500/10 text-teal-500 border border-teal-500/20 shrink-0">
-                <Wallet size={20} className="xl:w-6 xl:h-6" strokeWidth={2.4} />
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-2xl shadow-sm ${isDark ? 'bg-white text-black' : 'bg-slate-900 text-white'}`}>
+                <Wallet size={24} strokeWidth={2.5} />
               </div>
-              <div className="text-left min-w-0">
-                <h4
-                  className={`text-xs xl:text-sm font-bold uppercase tracking-wider truncate ${isDark ? "text-white" : "text-slate-900"}`}
-                >
-                  Expense Tracker
-                </h4>
-                <p className="text-[11px] xl:text-xs text-slate-400 truncate">
-                  Treasury Ledger
-                </p>
+              <h3 className={`font-black text-xl uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Track Expenses
+              </h3>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-2xl shadow-sm ${isDark ? 'bg-white text-black' : 'bg-slate-900 text-white'}`}>
+                <ShieldCheck size={24} strokeWidth={2.5} />
               </div>
+              <h3 className={`font-black text-xl uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Safe & Secure
+              </h3>
             </div>
           </div>
         </div>
 
-        {/* Distinct Form Card / Mobile Bottom Sheet */}
-        <div className="w-full lg:col-span-6 max-w-lg lg:max-w-xl xl:max-w-2xl mx-auto shrink-0 mt-auto lg:mt-0">
-          <div
-            className={`w-full rounded-t-3xl sm:rounded-2xl lg:rounded-3xl border-t-2 border-x-2 sm:border-2 lg:border-2 transition-all duration-300 shadow-2xl p-6 sm:p-8 lg:p-9 xl:p-11 ${
-              isDark
-                ? "bg-[#0E1626] border-emerald-500/30 text-white shadow-black/80"
-                : "bg-white border-slate-300 text-slate-900 shadow-slate-900/15"
-            }`}
-          >
-            {/* Form Top Header */}
-            <div className="flex items-center justify-between pb-3.5 sm:pb-4 lg:pb-5 mb-4 sm:mb-5 lg:mb-6 border-b border-slate-200/80 dark:border-slate-800">
-              <div className="text-left">
-                <h2
-                  className={`text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-[1000] uppercase tracking-tight ${isDark ? "text-white" : "text-slate-950"}`}
-                >
-                  Sign In
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-400 font-medium mt-0.5">
-                  Choose your account to sign in
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs font-mono text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                <ShieldCheck
-                  size={14}
-                  className="lg:w-4 lg:h-4"
-                  strokeWidth={2.4}
-                />
-                <span>Secure</span>
-              </div>
+        {/* RIGHT COLUMN: LOGIN FORM (Stuck to bottom on mobile) */}
+        <div className="w-full max-w-[480px] xl:max-w-[520px] shrink-0 mt-auto lg:mt-0 mb-2 sm:mb-4 lg:mb-0">
+          <div className={`w-full p-6 lg:p-12 rounded-[2.5rem] shadow-2xl backdrop-blur-2xl transition-all border ${
+            isDark ? 'bg-black/60 shadow-black/80 border-white/20' : 'bg-white shadow-slate-300/60 border-slate-200'
+          }`}>
+            
+            <div className="mb-6 lg:mb-10 text-center lg:text-left">
+              <h2 className={`text-2xl lg:text-4xl font-[1000] uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Sign In
+              </h2>
+              <p className={`text-xs lg:text-base font-bold mt-1.5 lg:mt-2 ${isDark ? 'text-white/70' : 'text-slate-500'}`}>
+                Select your name to continue.
+              </p>
             </div>
 
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-4 sm:space-y-5 lg:space-y-6 text-left w-full"
-            >
-              {/* Profile Selector */}
+            <form onSubmit={handleSubmit} className="space-y-4 lg:space-y-6">
+              
+              {/* PROFILE SELECTOR */}
               <div className="relative" ref={dropdownRef}>
-                <div className="flex items-center justify-between mb-1.5 lg:mb-2 px-0.5">
-                  <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Profile
-                  </label>
-                  {hasBiometrics && (
-                    <button
-                      type="button"
-                      onClick={handleBiometricLogin}
-                      disabled={isBiometricLoading || isSubmitting}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-500 hover:text-emerald-400 transition-colors cursor-pointer"
-                    >
-                      {isBiometricLoading ? (
-                        <Loader2 size={13} className="animate-spin" />
-                      ) : (
-                        <Fingerprint
-                          size={15}
-                          className="lg:w-4 lg:h-4"
-                          strokeWidth={2.4}
-                        />
-                      )}
-                      <span>Use Passkey</span>
-                    </button>
-                  )}
-                </div>
+                <label className={`block text-[10px] lg:text-xs font-black uppercase tracking-widest mb-1.5 lg:mb-2 ml-1 ${isDark ? 'text-white/60' : 'text-slate-500'}`}>
+                  Your Name
+                </label>
 
                 <button
                   type="button"
                   onClick={() => !loadingUsers && setIsOpen(!isOpen)}
-                  className={`w-full flex items-center justify-between p-3.5 sm:p-4 rounded-xl lg:rounded-2xl border text-left transition-all duration-150 outline-none cursor-pointer ${
-                    isOpen
-                      ? "border-emerald-500 ring-2 ring-emerald-500/20 " +
-                        (isDark ? "bg-slate-900" : "bg-emerald-50/20")
-                      : isDark
-                        ? "border-slate-700 bg-slate-900/90 hover:border-slate-600"
-                        : "border-slate-300 bg-slate-50 hover:border-slate-400"
+                  className={`w-full flex items-center justify-between p-3.5 lg:p-4 rounded-2xl transition-all outline-none border-2 ${
+                    isOpen 
+                      ? (isDark ? 'border-white ring-4 ring-white/20 bg-white/10' : 'border-emerald-500 ring-4 ring-emerald-500/20 bg-emerald-50') 
+                      : (isDark ? 'border-white/20 bg-black/40 hover:border-white/40' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white')
                   }`}
                 >
-                  <div className="flex items-center gap-3 sm:gap-3.5 lg:gap-4 min-w-0">
-                    <div
-                      className={`h-10 w-10 sm:h-11 sm:w-11 lg:h-11 lg:w-11 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                        selectedUser
-                          ? "bg-emerald-600 text-white shadow-xs"
-                          : isDark
-                            ? "bg-slate-800 text-slate-400 border border-slate-700"
-                            : "bg-slate-200 text-slate-600 border border-slate-300"
-                      }`}
-                    >
-                      <User
-                        size={18}
-                        className="lg:w-5 lg:h-5"
-                        strokeWidth={2.4}
-                      />
+                  <div className="flex items-center gap-3 lg:gap-4">
+                    <div className={`p-2 lg:p-3 rounded-xl transition-colors ${
+                      selectedUser 
+                        ? (isDark ? 'bg-white text-black' : 'bg-emerald-600 text-white shadow-md') 
+                        : (isDark ? 'bg-white/10 text-white/50' : 'bg-slate-200 text-slate-500')
+                    }`}>
+                      <User size={20} className="lg:w-6 lg:h-6" strokeWidth={2.5} />
                     </div>
-                    <div className="flex flex-col items-start truncate">
+                    
+                    <div className="flex flex-col text-left truncate">
                       {loadingUsers ? (
-                        <span className="text-sm text-slate-400 font-medium">
-                          Loading...
-                        </span>
+                        <span className={`text-xs lg:text-sm font-bold ${isDark ? 'text-white/50' : 'text-slate-400'}`}>Loading...</span>
                       ) : selectedUser ? (
-                        <>
-                          <span
-                            className={`text-sm sm:text-base font-bold uppercase tracking-tight truncate ${isDark ? "text-white" : "text-slate-900"}`}
-                          >
-                            {selectedUser.name}
-                          </span>
-                          <span className="text-[11px] sm:text-xs font-mono text-emerald-500 uppercase tracking-wider">
-                            @{selectedUser.username}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-sm sm:text-base font-bold text-slate-400">
-                          Select Profile
+                        <span className={`text-base lg:text-xl font-[1000] uppercase tracking-tight truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                          {selectedUser.name}
                         </span>
+                      ) : (
+                        <span className={`text-xs lg:text-sm font-bold ${isDark ? 'text-white/60' : 'text-slate-500'}`}>Click to choose</span>
                       )}
                     </div>
                   </div>
-                  <ChevronRight
-                    size={18}
-                    className={`text-slate-400 lg:w-5 lg:h-5 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-90 text-emerald-500" : ""}`}
-                  />
+                  <ChevronDown size={20} className={`lg:w-6 lg:h-6 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} ${isDark ? 'text-white' : 'text-slate-400'}`} />
                 </button>
 
-                {/* Dropdown Menu List: In-flow expansion on mobile */}
+                {/* DROPDOWN MENU */}
                 {isOpen && (
-                  <div
-                    className={`mt-2 rounded-xl lg:rounded-2xl border shadow-2xl p-2 max-h-48 sm:max-h-56 lg:max-h-64 overflow-y-auto backdrop-blur-xl ${
-                      isDark
-                        ? "bg-slate-900/95 border-slate-700 text-white"
-                        : "bg-white border-slate-200 text-slate-900"
-                    } lg:absolute lg:top-[calc(100%+6px)] lg:left-0 lg:right-0 lg:z-50 lg:mt-0`}
-                  >
+                  <div className={`absolute left-0 w-full rounded-2xl border shadow-2xl p-2 max-h-48 lg:max-h-56 overflow-y-auto z-50 bottom-[calc(100%+12px)] lg:bottom-auto lg:top-[calc(100%+12px)] backdrop-blur-3xl ${
+                    isDark ? 'bg-black/90 border-white/20' : 'bg-white border-slate-200'
+                  }`}>
                     {users.map((u) => (
                       <button
                         key={u._id}
                         type="button"
                         onClick={() => handleSelect(u)}
-                        className={`w-full flex items-center justify-between p-2.5 sm:p-3 rounded-lg lg:rounded-xl transition-all mb-1 last:mb-0 cursor-pointer ${
-                          selectedUser?._id === u._id
-                            ? "bg-emerald-500/20 text-emerald-500 border border-emerald-500/30"
-                            : isDark
-                              ? "hover:bg-slate-800 text-slate-200 border border-transparent"
-                              : "hover:bg-slate-100 text-slate-800 border border-transparent"
+                        className={`w-full flex items-center justify-between p-3 lg:p-4 rounded-xl transition-all ${
+                          selectedUser?._id === u._id 
+                            ? (isDark ? 'bg-white text-black font-black' : 'bg-emerald-50 text-emerald-800 font-black')
+                            : (isDark ? 'hover:bg-white/10 text-white font-bold' : 'hover:bg-slate-100 text-slate-800 font-bold')
                         }`}
                       >
-                        <div className="flex flex-col items-start text-left truncate min-w-0 pr-2">
-                          <span className="text-sm font-bold uppercase tracking-tight truncate">
-                            {u.name}
-                          </span>
-                          <span className="text-[10px] sm:text-xs font-mono text-slate-400">
-                            @{u.username}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <div className="flex gap-1.5 text-slate-400 mr-0.5">
-                            {u.allowedApps?.includes("CLIENT_TRACKER") && (
-                              <Monitor
-                                size={13}
-                                className="lg:w-3.5 lg:h-3.5"
-                                title="Client Tracker"
-                              />
-                            )}
-                            {u.allowedApps?.includes("EXPENSE_TRACKER") && (
-                              <Wallet
-                                size={13}
-                                className="lg:w-3.5 lg:h-3.5"
-                                title="Expense Tracker"
-                              />
-                            )}
-                          </div>
-                          {selectedUser?._id === u._id && (
-                            <Check
-                              size={16}
-                              className="lg:w-4 lg:h-4 text-emerald-500"
-                              strokeWidth={3}
-                            />
-                          )}
-                        </div>
+                        <span className="text-sm lg:text-lg uppercase tracking-tight">{u.name}</span>
+                        {selectedUser?._id === u._id && <Check size={18} className="lg:w-6 lg:h-6" strokeWidth={3} />}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Password Field with Integrated Biometric Quick Action */}
-              <div className="space-y-1.5 lg:space-y-2">
-                <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-0.5 block">
+              {/* PASSWORD INPUT */}
+              <div>
+                <label className={`block text-[10px] lg:text-xs font-black uppercase tracking-widest mb-1.5 lg:mb-2 ml-1 ${isDark ? 'text-white/60' : 'text-slate-500'}`}>
                   Password
                 </label>
 
-                <div className="relative flex items-center">
-                  <div
-                    className={`absolute left-3.5 sm:left-4 transition-colors ${formData.password ? "text-emerald-500" : "text-slate-400"}`}
-                  >
-                    <Lock
-                      size={16}
-                      className="lg:w-5 lg:h-5"
-                      strokeWidth={2.4}
-                    />
+                <div className="relative flex items-center group">
+                  <div className={`absolute left-4 transition-colors ${formData.password ? (isDark ? 'text-white' : 'text-emerald-600') : (isDark ? 'text-white/40' : 'text-slate-400')}`}>
+                    <Lock size={20} className="lg:w-6 lg:h-6" strokeWidth={2.5} />
                   </div>
 
                   <input
                     type={showPassword ? "text" : "password"}
                     required
-                    placeholder="••••••••••••"
-                    className={`w-full border rounded-xl lg:rounded-2xl py-3 sm:py-3.5 pl-10 sm:pl-12 pr-18 lg:pr-20 text-sm sm:text-base font-mono outline-none transition-all tracking-wider placeholder:font-sans placeholder:tracking-normal focus:ring-2 focus:ring-emerald-500/20 ${
-                      isDark
-                        ? "bg-slate-900/90 border-slate-700 text-white placeholder:text-slate-600 focus:border-emerald-500"
-                        : "bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-emerald-600"
+                    placeholder="Enter your password"
+                    className={`w-full border-2 rounded-2xl py-4 lg:py-5 pl-12 lg:pl-14 pr-12 lg:pr-14 text-base lg:text-lg font-bold outline-none transition-all ${
+                      isDark 
+                        ? 'bg-black/40 border-white/20 placeholder:text-white/40 text-white focus:border-white focus:bg-white/10 focus:ring-4 focus:ring-white/20' 
+                        : 'bg-slate-50 border-slate-200 placeholder:text-slate-400 text-slate-900 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/20'
                     }`}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        password: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
                   />
 
-                  {/* Actions inside password bar: Passkey (if supported) + Eye toggle */}
-                  <div className="absolute right-3 sm:right-3.5 flex items-center gap-2">
-                    {hasBiometrics && (
-                      <button
-                        type="button"
-                        onClick={handleBiometricLogin}
-                        disabled={isBiometricLoading || isSubmitting}
-                        title="Sign in with Passkey / Face ID"
-                        className="p-1.5 text-emerald-500 hover:text-emerald-400 transition-colors focus:outline-none cursor-pointer"
-                        aria-label="Use Passkey"
-                      >
-                        {isBiometricLoading ? (
-                          <Loader2
-                            size={15}
-                            className="lg:w-5 lg:h-5 animate-spin text-emerald-500"
-                          />
-                        ) : (
-                          <Fingerprint
-                            size={16}
-                            className="lg:w-5 lg:h-5"
-                            strokeWidth={2.4}
-                          />
-                        )}
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="p-1.5 text-slate-400 hover:text-emerald-500 transition-colors focus:outline-none cursor-pointer"
-                      aria-label={
-                        showPassword ? "Hide password" : "Show password"
-                      }
-                    >
-                      {showPassword ? (
-                        <EyeOff size={16} className="lg:w-5 lg:h-5" />
-                      ) : (
-                        <Eye size={16} className="lg:w-5 lg:h-5" />
-                      )}
-                    </button>
-                  </div>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)} 
+                    className={`absolute right-3 lg:right-4 p-2 transition-colors rounded-xl focus:outline-none ${
+                      isDark ? 'text-white/40 hover:text-white hover:bg-white/10' : 'text-slate-400 hover:text-emerald-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    {showPassword ? <EyeOff size={20} className="lg:w-6 lg:h-6" /> : <Eye size={20} className="lg:w-6 lg:h-6" />}
+                  </button>
                 </div>
               </div>
 
-              {/* Login CTA */}
+              {/* LOGIN BUTTON */}
               <button
                 type="submit"
                 disabled={isSubmitting || !formData.username}
-                className="w-full mt-2 lg:mt-3 bg-linear-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl lg:rounded-2xl py-3.5 sm:py-4 font-bold text-sm sm:text-base uppercase tracking-wider shadow-md shadow-emerald-600/20 active:scale-[0.99] disabled:opacity-40 transition-all duration-150 flex items-center justify-center gap-2.5 lg:gap-3 cursor-pointer"
+                className={`w-full rounded-2xl py-4 lg:py-5 font-[1000] text-sm lg:text-base uppercase tracking-widest transition-all flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed mt-4 lg:mt-8 shadow-2xl active:scale-[0.98] ${
+                  isDark 
+                    ? 'bg-white hover:bg-gray-200 text-black shadow-white/20' 
+                    : 'bg-slate-900 hover:bg-slate-800 text-white shadow-slate-900/20'
+                }`}
               >
                 {isSubmitting ? (
-                  <Loader2
-                    size={16}
-                    className="lg:w-5 lg:h-5 animate-spin text-white"
-                  />
+                  <Loader2 size={22} className="lg:w-6 lg:h-6 animate-spin" />
                 ) : (
                   <>
-                    <span>Sign In</span>
-                    <ArrowRight
-                      size={16}
-                      className="lg:w-5 lg:h-5"
-                      strokeWidth={2.4}
-                    />
+                    <span>Login Now</span>
+                    <ArrowRight size={20} className="lg:w-6 lg:h-6" strokeWidth={3} />
                   </>
                 )}
               </button>
+
+              {/* BIOMETRIC FAST PASS */}
+              {isBiometricSupported && selectedUser?.credentials?.length > 0 && (
+                <div className="pt-2 lg:pt-4">
+                  <div className="flex items-center gap-3 lg:gap-4 mb-4 lg:mb-6 opacity-60">
+                    <div className={`h-1 flex-1 rounded-full ${isDark ? 'bg-white/20' : 'bg-slate-300'}`} />
+                    <span className={`text-[9px] lg:text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-slate-500'}`}>Or</span>
+                    <div className={`h-1 flex-1 rounded-full ${isDark ? 'bg-white/20' : 'bg-slate-300'}`} />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleBiometricLogin}
+                    disabled={isBiometricLoading || isSubmitting}
+                    className={`w-full flex items-center justify-center gap-3 border-2 rounded-2xl py-3.5 lg:py-4.5 transition-all text-xs lg:text-sm font-black uppercase tracking-wider active:scale-[0.98] disabled:opacity-30 ${
+                      isDark 
+                        ? 'bg-black/50 hover:bg-white/10 text-white border-white/30 hover:border-white' 
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    {isBiometricLoading ? (
+                      <Loader2 size={20} className="lg:w-6 lg:h-6 animate-spin" />
+                    ) : (
+                      <>
+                        <Fingerprint size={20} className={`lg:w-6 lg:h-6 ${isDark ? "text-white" : "text-emerald-600"}`} strokeWidth={2.5} />
+                        <span>Use Face ID / Fingerprint</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </form>
           </div>
         </div>
-      </main>
 
-      {/* Desktop-Only Footer */}
-      <footer className="hidden lg:flex w-full max-w-7xl 2xl:max-w-375 mx-auto shrink-0 items-center justify-between text-xs lg:text-sm font-mono text-slate-400 dark:text-slate-500 px-4 sm:px-8 lg:px-12 xl:px-16 pb-3 lg:pb-4">
-        <p>© 2026 Dalal Investment</p>
-        <span className="text-emerald-500 font-bold">Gateway v2.6</span>
-      </footer>
+      </div>
     </div>
   );
 };
