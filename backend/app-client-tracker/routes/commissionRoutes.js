@@ -8,7 +8,8 @@ const {
     getDashboardSummary,
     getWorkspaceAnalytics,
     deleteCommissionRecord,
-    extractCommissionsFromStatement
+    extractCommissionsFromStatement,
+    getReconciliationMatrix
 } = require('../controllers/commissionController');
 
 const multer = require('multer');
@@ -40,5 +41,7 @@ router.post(
     upload.array('files', 10), 
     extractCommissionsFromStatement
 );
+
+router.get('/reconciliation-matrix', getReconciliationMatrix);
 
 module.exports = router;

@@ -1,9 +1,11 @@
 const mongoose = require('mongoose');
-const Commission = require('../models/Commission');
-const Amc = require('../models/Amc'); 
-
-const csv = require('csv-parser');
 const { Readable } = require('stream');
+const csv = require('csv-parser');
+const xlsx = require('xlsx');
+
+const Commission = require('../models/Commission');
+const ARN = require('../models/Arn');
+const Amc = require('../models/Amc');
 
 const HEADER_VARIANTS = {
     date: ['date', 'txn date', 'transaction date', 'value dat', 'vch date'],
@@ -74,6 +76,74 @@ const parseRobust = (buffer) => {
     });
 };
 
+const parseExcel = async (buffer, password = null) => {
+    let workbook;
+    try {
+        workbook = xlsx.read(buffer, { type: 'buffer', cellDates: true, password });
+    } catch (error) {
+        if (error.message.toLowerCase().includes('password') || error.message.toLowerCase().includes('encrypted') || error.message.includes('CFB')) {
+            throw new Error("LOCKED_FILE");
+        }
+        throw new Error("Failed to read Excel file format.");
+    }
+
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rows = xlsx.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+
+    let headerIndex = -1;
+    for (let i = 0; i < rows.length; i++) {
+        const rowStr = rows[i].map(c => String(c).toLowerCase()).join(' ');
+        if (
+            (rowStr.includes('date') || rowStr.includes('txn date')) &&
+            (rowStr.includes('description') || rowStr.includes('narration') || rowStr.includes('particulars') || rowStr.includes('details'))
+        ) {
+            headerIndex = i;
+            break;
+        }
+    }
+
+    if (headerIndex === -1) throw new Error("Header row not found in Excel file.");
+
+    const rawHeaders = rows[headerIndex].map(String);
+    const columnMap = mapHeadersToStandard(rawHeaders);
+    const results = [];
+
+    for (let i = headerIndex + 1; i < rows.length; i++) {
+        const row = rows[i];
+        const rowObj = {};
+        rawHeaders.forEach((h, idx) => {
+            rowObj[h] = row[idx];
+        });
+
+        const cleanNum = (val) => val ? parseFloat(String(val).replace(/,/g, '').trim()) || 0 : 0;
+        const dr = cleanNum(rowObj[columnMap.debit]);
+        const cr = cleanNum(rowObj[columnMap.credit]);
+
+        if (dr === 0 && cr === 0) continue;
+
+        let rawDate = rowObj[columnMap.date];
+        let finalDateStr = "N/A";
+        if (rawDate instanceof Date && !isNaN(rawDate)) {
+            const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+            finalDateStr = `${String(rawDate.getDate()).padStart(2, '0')}-${months[rawDate.getMonth()]}-${rawDate.getFullYear()}`;
+        } else if (rawDate) {
+            finalDateStr = standardizeDate(String(rawDate));
+        }
+
+        results.push({
+            date: finalDateStr,
+            narration: String(rowObj[columnMap.narration] || "N/A").replace(/\s+/g, ' ').trim(),
+            refNo: String(rowObj[columnMap.refNo] || "N/A").trim(),
+            amount: dr > 0 ? dr : cr,
+            type: dr > 0 ? 'PAYMENT' : 'RECEIPT',
+            balance: cleanNum(rowObj[columnMap.balance])
+        });
+    }
+
+    return results;
+};
+
 /**
  * @desc    Save or Update a monthly commission record
  * @route   POST /api/commissions/save
@@ -82,7 +152,6 @@ exports.saveMonthlyCommission = async (req, res) => {
     try {
         const { arnId, accountingMonth, data } = req.body;
 
-        // Map entries and calculate total gross for data integrity
         const entries = Object.entries(data).map(([name, details]) => ({
             amcName: name,
             amount: Number(details.amount) || 0,
@@ -129,8 +198,6 @@ exports.getDashboardSummary = async (req, res) => {
     try {
         const { fiscalYear } = req.query;
 
-        // 1. Calculate the start and end month strings for the requested FY
-        // Logic: If FY is 2024-25, range is "2024-04" to "2025-03"
         let fyStartString;
         let fyEndString;
 
@@ -140,7 +207,6 @@ exports.getDashboardSummary = async (req, res) => {
             fyStartString = `${startYear}-04`;
             fyEndString = `${endYear}-03`;
         } else {
-            // Fallback to real-time current FY if no param provided
             const now = new Date();
             const currentMonth = now.getMonth();
             const currentYear = now.getFullYear();
@@ -150,21 +216,17 @@ exports.getDashboardSummary = async (req, res) => {
         }
 
         const summary = await Commission.aggregate([
-            // 2. Filter early to only include months within the selected Fiscal Year
             {
                 $match: {
                     accountingMonth: { $gte: fyStartString, $lte: fyEndString }
                 }
             },
-            // 3. Sort so that we can grab the "Latest" payout within that specific year
             { $sort: { accountingMonth: -1 } },
             {
                 $group: {
                     _id: "$arnId",
-                    // The latest entry found WITHIN the selected FY range
                     lastPayout: { $first: "$totalGross" },
                     lastMonthName: { $first: "$accountingMonth" },
-                    // Sum of all entries for that specific year
                     totalFY: { $sum: "$totalGross" }
                 }
             }
@@ -189,7 +251,6 @@ exports.getWorkspaceAnalytics = async (req, res) => {
             return res.status(400).json({ success: false, error: "Invalid ARN ID" });
         }
 
-        // 1. Determine FY Range Strings
         let fyStartString, fyEndString;
         if (fiscalYear) {
             const [startYear, endYearShort] = fiscalYear.split('-');
@@ -197,7 +258,6 @@ exports.getWorkspaceAnalytics = async (req, res) => {
             fyStartString = `${startYear}-04`;
             fyEndString = `${endYear}-03`;
         } else {
-            // Default to current FY logic if no param provided
             const now = new Date();
             const startYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
             fyStartString = `${startYear}-04`;
@@ -205,7 +265,6 @@ exports.getWorkspaceAnalytics = async (req, res) => {
         }
 
         const analytics = await Commission.aggregate([
-            // 2. Filter by ARN AND selected Fiscal Year
             { 
                 $match: { 
                     arnId: new mongoose.Types.ObjectId(arnId),
@@ -215,7 +274,7 @@ exports.getWorkspaceAnalytics = async (req, res) => {
             {
                 $facet: {
                     trend: [
-                        { $sort: { accountingMonth: 1 } }, // Chronological for trend line
+                        { $sort: { accountingMonth: 1 } },
                         { $project: { month: "$accountingMonth", amount: "$totalGross" } }
                     ],
                     amcBreakdown: [
@@ -271,10 +330,8 @@ exports.getArnHistory = async (req, res) => {
             return res.status(200).json({ success: true, count: 0, data: [] });
         }
 
-        // 1. Build Query Object
         const query = { arnId };
 
-        // 2. Add FY Filtering if provided
         if (fiscalYear) {
             const [startYear, endYearShort] = fiscalYear.split('-');
             const endYear = `20${endYearShort}`;
@@ -340,8 +397,10 @@ exports.getArnStats = async (req, res) => {
     }
 };
 
-// @desc    Delete a specific monthly record
-// @route   DELETE /api/commissions/:id
+/**
+ * @desc    Delete a specific monthly record
+ * @route   DELETE /api/commissions/:id
+ */
 exports.deleteCommissionRecord = async (req, res) => {
     try {
         const record = await Commission.findById(req.params.id);
@@ -357,10 +416,8 @@ exports.deleteCommissionRecord = async (req, res) => {
 };
 
 /**
- * ============================================================================
  * @desc    Extract and map AMC commissions from raw bank statements
  * @route   POST /api/commissions/extract-statements
- * ============================================================================
  */
 exports.extractCommissionsFromStatement = async (req, res) => {
     try {
@@ -375,10 +432,8 @@ exports.extractCommissionsFromStatement = async (req, res) => {
             return res.status(200).json({ success: true, data: [], message: "No files were uploaded." });
         }
 
-        // 1. Fetch AMC Master Registry
         const amcList = await Amc.find().lean();
         
-        // 2. Parse All Uploaded Files
         let allParsedRows = [];
         for (const file of req.files) {
             const fileName = file.originalname.toLowerCase();
@@ -395,15 +450,11 @@ exports.extractCommissionsFromStatement = async (req, res) => {
             }
         }
 
-        // 3. Filter for ALL Receipts
         const receipts = allParsedRows
             .filter(row => row.type === 'RECEIPT')
             .sort((a, b) => new Date(a.date) - new Date(b.date));
 
         console.log(`📊 [AUTO-LOG] Processing ${receipts.length} total receipt transactions.`);
-
-        // 4. Grouping & Auto-Matching Engine
-        const extractedData = {}; 
 
         const commKeywords = ['comm', 'broker', 'trail', 'incentive', 'upfront', 'brk', 'mutual fund'];
         const results = []; 
@@ -418,7 +469,6 @@ exports.extractCommissionsFromStatement = async (req, res) => {
             if (isComm) {
                 let matchedAmcName = "";
 
-                // Fuzzy Match against Master AMC List
                 amcList.forEach(amc => {
                     const cleanAmcName = amc.name.toLowerCase();
                     const amcPrimaryKeyword = cleanAmcName.split(' ')[0]; 
@@ -434,7 +484,7 @@ exports.extractCommissionsFromStatement = async (req, res) => {
                     amcName: matchedAmcName, 
                     rawNarration: t.narration,
                     amount: txAmount,
-                    date: t.date, // FULL DATE STRING
+                    date: t.date,
                     isExcluded: false 
                 });
 
@@ -450,5 +500,301 @@ exports.extractCommissionsFromStatement = async (req, res) => {
     } catch (error) { 
         console.error("🔥 [AUTO-LOG] FATAL EXTRACTION ERROR:", error);
         return res.status(200).json({ success: true, data: [], message: "Processing encountered an error." }); 
+    }
+};
+
+/**
+ * @desc    Global Ledger Analytics + Month-Wise AMC Reconciliation Matrix Feed
+ * @route   GET /api/analytics/global-summary
+ */
+exports.getGlobalAnalytics = async (req, res) => {
+    try {
+        const report = await Commission.aggregate([
+            {
+                $facet: {
+                    // 1. Overall monthly sums with ARN breakdowns
+                    "monthlyTotals": [
+                        { 
+                            $group: { 
+                                _id: { month: "$accountingMonth", arnId: "$arnId" }, 
+                                totalGross: { $sum: "$totalGross" } 
+                            } 
+                        },
+                        { 
+                            $group: { 
+                                _id: "$_id.month", 
+                                total: { $sum: "$totalGross" },
+                                arnBreakdown: { $push: { arnId: "$_id.arnId", amount: "$totalGross" } }
+                            } 
+                        },
+                        { $sort: { "_id": -1 } }
+                    ],
+
+                    // 2. Unwound month + AMC + ARN breakdown for the Reconciliation Matrix
+                    "monthlyAmcBreakdown": [
+                        { $unwind: "$entries" },
+                        {
+                            $group: {
+                                _id: {
+                                    month: "$accountingMonth",
+                                    amcName: "$entries.amcName",
+                                    arnId: "$arnId"
+                                },
+                                amount: { $sum: "$entries.amount" }
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: {
+                                    month: "$_id.month",
+                                    amcName: "$_id.amcName"
+                                },
+                                amount: { $sum: "$amount" },
+                                arnSplits: {
+                                    $push: {
+                                        arnId: "$_id.arnId",
+                                        amount: "$amount"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: "$_id.month",
+                                amcBreakdown: {
+                                    $push: {
+                                        amcName: "$_id.amcName",
+                                        amount: "$amount",
+                                        arnSplits: "$arnSplits"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+
+                    // 3. ARN Distribution with Lookup
+                    "arnDistribution": [
+                        { $group: { _id: "$arnId", value: { $sum: "$totalGross" } } },
+                        { 
+                            $lookup: {
+                                from: "arns", 
+                                localField: "_id", 
+                                foreignField: "_id", 
+                                as: "arnDetails"
+                            }
+                        },
+                        { $unwind: { path: "$arnDetails", preserveNullAndEmptyArrays: true } },
+                        { 
+                            $project: { 
+                                _id: 1, 
+                                value: 1, 
+                                nickname: { $ifNull: ["$arnDetails.nickname", "$_id"] },
+                                arnCode: "$arnDetails.arnCode",
+                                isDummy: "$arnDetails.isDummy"
+                            }
+                        },
+                        { $sort: { value: -1 } }
+                    ],
+
+                    // 4. Firmwide AMC Concentration
+                    "amcDistribution": [
+                        { $unwind: "$entries" },
+                        { 
+                            $group: { 
+                                _id: { $ifNull: ["$entries.amcId", "$entries.amcName"] }, 
+                                value: { $sum: "$entries.amount" } 
+                            } 
+                        },
+                        {
+                            $lookup: {
+                                from: "amcs",
+                                localField: "_id",
+                                foreignField: "_id",
+                                as: "amcInfo"
+                            }
+                        },
+                        { $unwind: { path: "$amcInfo", preserveNullAndEmptyArrays: true } },
+                        {
+                            $project: {
+                                name: { $ifNull: ["$amcInfo.name", { $ifNull: ["$_id", "Unknown AMC"] }] },
+                                value: 1
+                            }
+                        },
+                        { $sort: { value: -1 } },
+                        { $limit: 10 }
+                    ],
+
+                    // 5. Seasonality
+                    "seasonalityRaw": [
+                        { $group: { _id: "$accountingMonth", monthlySum: { $sum: "$totalGross" } } },
+                        { 
+                            $project: {
+                                monthNum: { $arrayElemAt: [{ $split: ["$_id", "-"] }, 1] },
+                                monthlySum: 1
+                            }
+                        },
+                        { $group: { _id: "$monthNum", avgRevenue: { $avg: "$monthlySum" } } },
+                        { $sort: { "_id": 1 } }
+                    ]
+                }
+            }
+        ]);
+
+        const data = report[0] || {};
+
+        const arnMap = {};
+        (data.arnDistribution || []).forEach(a => {
+            arnMap[a._id.toString()] = a.nickname || a.arnCode || a._id.toString();
+        });
+
+        // Merge the amcBreakdown directly into monthlyTotals for the frontend matrix
+        const amcByMonthMap = {};
+        (data.monthlyAmcBreakdown || []).forEach(m => {
+            amcByMonthMap[m._id] = m.amcBreakdown;
+        });
+
+        const monthlyWithDeltas = (data.monthlyTotals || []).map((curr, idx, arr) => {
+            const prev = arr[idx + 1];
+            const delta = prev && prev.total > 0 ? ((curr.total - prev.total) / prev.total) * 100 : 0;
+            return { 
+                ...curr, 
+                delta: parseFloat(delta.toFixed(2)), 
+                arnBreakdown: (curr.arnBreakdown || []).map(b => ({ ...b, arnId: b.arnId.toString() })),
+                amcBreakdown: amcByMonthMap[curr._id] || []
+            };
+        });
+
+        // Calculate FY totals
+        const fyTotals = {};
+        (data.monthlyTotals || []).forEach(item => {
+            const parts = item._id.split('-');
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const fy = month >= 4 ? `${year}-${(year + 1).toString().slice(-2)}` : `${year - 1}-${year.toString().slice(-2)}`;
+            fyTotals[fy] = (fyTotals[fy] || 0) + item.total;
+        });
+
+        const fySortedKeys = Object.keys(fyTotals).sort().reverse();
+        const fiscalYears = fySortedKeys.map((fy, idx) => {
+            const currentVal = fyTotals[fy];
+            const prevVal = fyTotals[fySortedKeys[idx + 1]];
+            const growth = prevVal && prevVal > 0 ? ((currentVal - prevVal) / prevVal) * 100 : 0;
+            return { fiscalYear: fy, total: currentVal, yoyGrowth: parseFloat(growth.toFixed(2)) };
+        });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                summary: {
+                    totalEnterpriseRevenue: (data.arnDistribution || []).reduce((acc, curr) => acc + curr.value, 0),
+                    activeARNsCount: (data.arnDistribution || []).length,
+                    lastMonthTotal: monthlyWithDeltas[0]?.total || 0,
+                    lastMonthDelta: monthlyWithDeltas[0]?.delta || 0,
+                    topPerformingARN: data.arnDistribution?.[0]?.nickname || 'N/A'
+                },
+                monthlyAggregates: monthlyWithDeltas,
+                fiscalYearTotals: fiscalYears,
+                arnConcentration: data.arnDistribution || [],
+                amcConcentration: data.amcDistribution || [], 
+                seasonality: (data.seasonalityRaw || []).map(s => ({ month: s._id, avgRevenue: s.avgRevenue })),
+                uniqueARNs: (data.arnDistribution || []).map(arn => arn._id.toString()),
+                arnNicknameMap: arnMap 
+            }
+        });
+    } catch (err) {
+        console.error("Aggregation Error:", err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+/**
+ * @desc    Consolidated Month-Wise AMC Reconciliation Matrix with ARN Sub-Breakdowns
+ * @route   GET /api/commissions/reconciliation-matrix?fiscalYear=2024-25
+ */
+exports.getReconciliationMatrix = async (req, res) => {
+    try {
+        const { fiscalYear } = req.query;
+
+        let fyStartString, fyEndString;
+        if (fiscalYear) {
+            const [startYear, endYearShort] = fiscalYear.split('-');
+            const endYear = `20${endYearShort}`;
+            fyStartString = `${startYear}-04`;
+            fyEndString = `${endYear}-03`;
+        } else {
+            const now = new Date();
+            const startYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+            fyStartString = `${startYear}-04`;
+            fyEndString = `${startYear + 1}-03`;
+        }
+
+        const data = await Commission.aggregate([
+            {
+                $match: {
+                    accountingMonth: { $gte: fyStartString, $lte: fyEndString }
+                }
+            },
+            { $unwind: "$entries" },
+            {
+                $lookup: {
+                    from: "arns",
+                    localField: "arnId",
+                    foreignField: "_id",
+                    as: "arnInfo"
+                }
+            },
+            { $unwind: { path: "$arnInfo", preserveNullAndEmptyArrays: true } },
+            // Group per AMC, month, and ARN
+            {
+                $group: {
+                    _id: {
+                        amcName: "$entries.amcName",
+                        month: "$accountingMonth",
+                        arnId: "$arnId"
+                    },
+                    arnCode: { $first: { $ifNull: ["$arnInfo.arnCode", "N/A"] } },
+                    arnNickname: { $first: { $ifNull: ["$arnInfo.nickname", "$arnInfo.arnCode"] } },
+                    amount: { $sum: "$entries.amount" }
+                }
+            },
+            // Group per AMC and month to aggregate ARN splits
+            {
+                $group: {
+                    _id: {
+                        amcName: "$_id.amcName",
+                        month: "$_id.month"
+                    },
+                    totalAmount: { $sum: "$amount" },
+                    arnBreakdown: {
+                        $push: {
+                            arnId: "$_id.arnId",
+                            arnCode: "$arnCode",
+                            arnNickname: "$arnNickname",
+                            amount: "$amount"
+                        }
+                    }
+                }
+            },
+            // Group per AMC to form the 12-month row
+            {
+                $group: {
+                    _id: "$_id.amcName",
+                    monthlyData: {
+                        $push: {
+                            month: "$_id.month",
+                            amount: "$totalAmount",
+                            arnBreakdown: "$arnBreakdown"
+                        }
+                    },
+                    fyTotal: { $sum: "$totalAmount" }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        res.status(200).json({ success: true, data });
+    } catch (err) {
+        console.error("Reconciliation Matrix Error:", err);
+        res.status(500).json({ success: false, error: err.message });
     }
 };
