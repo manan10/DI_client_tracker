@@ -178,7 +178,7 @@ const DocumentLedger = ({
                   No forms indexed in {entityName}
                 </h4>
                 <p className="text-xs text-slate-400 mt-1 max-w-sm">
-                  Click "Upload Document" in the header above to register official links for this folder[cite: 10].
+                  Click "Upload Document" in the header above to register official links for this folder.
                 </p>
               </div>
             )}

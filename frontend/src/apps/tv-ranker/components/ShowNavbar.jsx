@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Tv, 
   Grid, 
@@ -11,12 +11,15 @@ import {
   Ticket,
   MoreVertical,
   X,
-  Sparkles
+  Sparkles,
+  Home,
+  List
 } from 'lucide-react';
 import { useAuth } from '../../../shared/hooks/useAuth';
 
 const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -60,6 +63,11 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
         .toUpperCase()
     : 'TV';
 
+  const navLinks = [
+    { name: 'Home', path: '/tv-rater', icon: Home },
+    { name: 'Lists', path: '/tv-rater/lists', icon: List }
+  ];
+
   return (
     <>
       <header className="sticky top-0 z-50 w-full transition-all duration-300 bg-linear-to-r from-rose-950 via-slate-900 to-[#0F1424] border-b border-rose-500/30 shadow-[0_4px_30px_rgba(0,0,0,0.4)] select-none font-sans">
@@ -102,7 +110,7 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
                   </div>
                 </div>
 
-                {/* Typography (Never collapses into nothing on mobile) */}
+                {/* Typography */}
                 <div className="flex flex-col text-left min-w-0">
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     <h1 className="text-sm sm:text-lg font-serif font-bold tracking-[0.14em] uppercase leading-none text-white drop-shadow-sm truncate">
@@ -127,19 +135,33 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
             </div>
 
             {/* ========================================================================= */}
+            {/* CENTER: DESKTOP NAVIGATION LINKS                                          */}
+            {/* ========================================================================= */}
+            <nav className="hidden md:flex items-center gap-1 p-1 rounded-lg bg-white/5 border border-white/10 backdrop-blur-md">
+              {navLinks.map((link) => {
+                const Icon = link.icon;
+                const isActive = location.pathname === link.path;
+                return (
+                  <Link
+                    key={link.name}
+                    to={link.path}
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] font-serif font-bold uppercase tracking-[0.12em] transition-all duration-200 outline-none select-none ${
+                      isActive
+                        ? 'bg-rose-500/20 text-rose-200 border border-rose-500/40 shadow-xs shadow-rose-950/40'
+                        : 'text-slate-300 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon size={13} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-rose-400' : 'text-slate-400'} />
+                    <span>{link.name}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* ========================================================================= */}
             {/* RIGHT: DESKTOP ACTIONS (Hidden on mobile)                                 */}
             {/* ========================================================================= */}
             <div className="hidden sm:flex items-center gap-2.5 lg:gap-3 shrink-0">
-              {/* Import Archive Button */}
-              <button
-                type="button"
-                onClick={onOpenImport}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-white/5 hover:bg-white/10 border border-white/15 hover:border-amber-400/40 text-slate-200 hover:text-white text-[11px] font-serif font-bold uppercase tracking-[0.12em] transition-all active:scale-95 cursor-pointer backdrop-blur-md shadow-xs outline-none"
-              >
-                <Ticket size={13} strokeWidth={2.4} className="text-amber-300 -rotate-12" />
-                <span>Import Notes</span>
-              </button>
-
               {/* Rate New Show Hero Button */}
               <button
                 type="button"
@@ -265,6 +287,36 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
 
             {/* Menu Action List */}
             <div className="space-y-2">
+              {/* Primary Navigation Links */}
+              {navLinks.map((link) => {
+                const Icon = link.icon;
+                const isActive = location.pathname === link.path;
+                return (
+                  <button
+                    key={link.name}
+                    type="button"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      navigate(link.path);
+                    }}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg border text-left text-xs font-serif font-bold uppercase tracking-wider transition-colors ${
+                      isActive
+                        ? 'bg-rose-500/15 border-rose-500/40 text-rose-200'
+                        : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-200'
+                    }`}
+                  >
+                    <div className={`p-1.5 rounded-md border ${
+                      isActive 
+                        ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' 
+                        : 'bg-white/10 text-slate-300 border-white/10'
+                    }`}>
+                      <Icon size={16} />
+                    </div>
+                    <span>{link.name}</span>
+                  </button>
+                );
+              })}
+
               <button
                 type="button"
                 onClick={() => {

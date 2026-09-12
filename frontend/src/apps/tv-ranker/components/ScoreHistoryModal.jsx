@@ -1,10 +1,24 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
-  X, History, Star, Save, Clock, ChevronDown, Check,
-  CheckCircle2, PlayCircle, Layers, Ban, Minus, Plus, Loader2
+  X, History, Star, Save, Clock, ChevronDown, 
+  CheckCircle2, PlayCircle, Layers, Ban, Minus, Plus, Loader2,
+  Tv, Film, Sparkles, Clapperboard, Heart, Check, Tag
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApi } from '../../../shared/hooks/useApi';
+
+const GENRE_PRESETS = [
+  'Drama', 'Crime', 'Comedy', 'Thriller', 'Sci-Fi', 
+  'Action', 'Romance', 'Mystery', 'Animation', 'Indian'
+];
+
+const FORMAT_OPTIONS = [
+  { value: 'TV_SERIES', label: 'TV Series', icon: Tv, desc: 'Multi-season episodic series' },
+  { value: 'MINISERIES', label: 'Miniseries', icon: Layers, desc: 'Single season limited run' },
+  { value: 'MOVIE', label: 'Feature Film', icon: Film, desc: 'Stand-alone cinema release' },
+  { value: 'ANIME', label: 'Anime', icon: Sparkles, desc: 'Animated Japanese production' },
+  { value: 'DOCUMENTARY', label: 'Documentary', icon: Clapperboard, desc: 'Factual or docuseries' }
+];
 
 const STATUS_OPTIONS = [
   { value: 'COMPLETED', label: 'Completed', icon: CheckCircle2, color: 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border-emerald-500/30' },
@@ -16,26 +30,52 @@ const STATUS_OPTIONS = [
 
 const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
   const { request } = useApi();
-  const [newRating, setNewRating] = useState(item?.rating ?? 8.5);
+
+  // Rating & Review States
+  const [newRating, setNewRating] = useState(8.5);
   const [reason, setReason] = useState('');
-  const [review, setReview] = useState(item?.review || '');
-  const [status, setStatus] = useState(item?.status || 'COMPLETED');
+  const [review, setReview] = useState('');
+  const [status, setStatus] = useState('COMPLETED');
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [seasonsWatched, setSeasonsWatched] = useState(1);
+
+  // Show Core Metadata States
+  const [title, setTitle] = useState('');
+  const [type, setType] = useState('TV_SERIES');
+  const [releaseYear, setReleaseYear] = useState('');
+  const [genres, setGenres] = useState([]);
+  const [customGenre, setCustomGenre] = useState('');
+  const [posterUrl, setPosterUrl] = useState('');
+
   const [isLoading, setIsLoading] = useState(false);
 
-  // Custom Dropdown Open State
+  // Custom Dropdown Open States
   const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const [isTypeOpen, setIsTypeOpen] = useState(false);
+
   const statusDropdownRef = useRef(null);
+  const typeDropdownRef = useRef(null);
 
   // Rotary Dial Interaction Refs
   const dialRef = useRef(null);
   const isDraggingDial = useRef(false);
 
+  // Populate state whenever modal opens or item changes
   useEffect(() => {
     if (item) {
       setNewRating(item.rating ?? 8.5);
       setReview(item.review || '');
       setStatus(item.status || 'COMPLETED');
+      setIsFavorite(Boolean(item.isFavorite));
+      setSeasonsWatched(item.seasonsWatched || item.show?.totalSeasons || 1);
       setReason('');
+
+      // Show level details
+      setTitle(item.show?.title || '');
+      setType(item.show?.type || 'TV_SERIES');
+      setReleaseYear(item.show?.releaseYear || '');
+      setGenres(Array.isArray(item.show?.genres) ? item.show.genres : []);
+      setPosterUrl(item.show?.posterUrl || '');
     }
   }, [item]);
 
@@ -43,6 +83,9 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
     const handleClickOutside = (e) => {
       if (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target)) {
         setIsStatusOpen(false);
+      }
+      if (typeDropdownRef.current && !typeDropdownRef.current.contains(e.target)) {
+        setIsTypeOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -90,6 +133,23 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
 
   if (!isOpen || !item) return null;
 
+  const handleToggleGenre = (g) => {
+    setGenres((prev) => 
+      prev.includes(g) ? prev.filter((item) => item !== g) : [...prev, g]
+    );
+  };
+
+  const handleAddCustomGenre = (e) => {
+    if (e.key === 'Enter' && customGenre.trim()) {
+      e.preventDefault();
+      const clean = customGenre.trim();
+      if (!genres.includes(clean)) {
+        setGenres([...genres, clean]);
+      }
+      setCustomGenre('');
+    }
+  };
+
   const adjustScore = (delta) => {
     setNewRating((prev) => {
       const updated = Math.min(10, Math.max(0, parseFloat((prev + delta).toFixed(1))));
@@ -129,38 +189,58 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
 
   const tier = getTierDetails();
   const currentStatusObj = STATUS_OPTIONS.find((s) => s.value === status) || STATUS_OPTIONS[0];
+  const currentTypeObj = FORMAT_OPTIONS.find((f) => f.value === type) || FORMAT_OPTIONS[0];
 
   const handleSave = async () => {
+    if (!title || !title.trim()) {
+      toast.error('Title cannot be blank');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const showId = item.show?._id || item.show;
-      const res = await request(`/shows/${showId}/rating`, 'POST', {
+
+      // 1. Update Core Show Metadata
+      await request(`/shows/${showId}`, 'PUT', {
+        title: title.trim(),
+        type,
+        releaseYear: releaseYear ? parseInt(releaseYear, 10) : undefined,
+        totalSeasons: seasonsWatched ? parseInt(seasonsWatched, 10) : 1,
+        genres,
+        posterUrl: posterUrl.trim() || undefined
+      });
+
+      // 2. Update Rating, History, and Status
+      const ratingRes = await request(`/shows/${showId}/rating`, 'POST', {
         rating: parseFloat(newRating),
         reason: reason.trim() || undefined,
         review: review.trim(),
-        status
+        status,
+        isFavorite: Boolean(isFavorite),
+        seasonsWatched: parseInt(seasonsWatched, 10) || 1
       });
 
-      if (res?.success || res?.data) {
-        toast.success('Rating Adjusted', { 
-          description: `${item.show?.title} is now ${parseFloat(newRating).toFixed(1)}/10` 
+      if (ratingRes?.success || ratingRes?.data) {
+        toast.success('Dossier Updated', { 
+          description: `${title} updated to ${parseFloat(newRating).toFixed(1)}/10` 
         });
         if (typeof onUpdated === 'function') onUpdated();
         if (typeof onClose === 'function') onClose();
       } else {
-        toast.error(res?.message || 'Could not update score');
+        toast.error(ratingRes?.message || 'Could not update score');
       }
-    } catch {
-      toast.error('Failed to update rating timeline');
+    } catch (err) {
+      console.error('Update failure:', err);
+      toast.error(err.message || 'Failed to update show record');
     } finally {
       setIsLoading(false);
     }
   };
 
   const history = item.ratingHistory || [];
-  const showTitle = item.show?.title || 'Unknown Title';
 
-  // Circular gauge math (compact 44px radius)
+  // Circular gauge math
   const radius = 44;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (circumference * (newRating / 10));
@@ -170,28 +250,27 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
       onClick={onClose}
     >
-      {/* Container: Less Rounded Shell */}
       <div 
         className="w-full sm:max-w-xl md:max-w-2xl bg-white dark:bg-[#070A12] border-t sm:border border-slate-200/90 dark:border-white/10 rounded-t-xl sm:rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-slate-900 dark:text-slate-100 transition-all relative font-sans"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mobile Pull Handle */}
-        <div className="w-full flex sm:hidden items-center justify-center pt-2 pb-1 bg-linear-to-r from-rose-950 via-slate-900 to-slate-950">
+        <div className="w-full flex sm:hidden items-center justify-center pt-2 pb-1 bg-gradient-to-r from-rose-950 via-slate-900 to-slate-950">
           <div className="w-8 h-1 bg-rose-400/40 rounded-full" />
         </div>
 
         {/* ===================== COLORED HEADER BAR ===================== */}
-        <div className="px-5 sm:px-6 py-3.5 bg-linear-to-r from-rose-950 via-slate-900 to-[#0F1424] border-b border-rose-500/30 flex items-center justify-between text-white shrink-0 relative overflow-hidden">
+        <div className="px-5 sm:px-6 py-3.5 bg-gradient-to-r from-rose-950 via-slate-900 to-[#0F1424] border-b border-rose-500/30 flex items-center justify-between text-white shrink-0 relative overflow-hidden">
           <div className="flex items-center gap-3 relative z-10 min-w-0 pr-2">
-            <div className="w-8 h-8 rounded-md bg-linear-to-tr from-rose-600 to-amber-500 text-white flex items-center justify-center shadow-md shrink-0">
+            <div className="w-8 h-8 rounded-md bg-gradient-to-tr from-rose-600 to-amber-500 text-white flex items-center justify-center shadow-md shrink-0">
               <History size={17} strokeWidth={2.4} />
             </div>
             <div className="min-w-0">
               <h2 className="text-base sm:text-lg font-serif font-bold tracking-[0.14em] uppercase leading-none text-white truncate">
-                {showTitle}
+                {title || 'Edit Show Details'}
               </h2>
               <p className="text-[10px] font-mono tracking-wider uppercase text-rose-300/80 mt-0.5">
-                Score Timeline & Revision Ledger
+                Full Metadata, Vault Score & Revision Ledger
               </p>
             </div>
           </div>
@@ -208,8 +287,182 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
         {/* ===================== BODY CONTENT ===================== */}
         <div className="p-4 sm:p-5 overflow-y-auto space-y-4 no-scrollbar flex-1 text-left">
           
+          {/* Section 1: Title, Format & Favorite Pin */}
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
+            
+            {/* Title Input */}
+            <div className="sm:col-span-7 space-y-1">
+              <label className="text-[11px] font-serif font-bold tracking-[0.12em] uppercase text-slate-600 dark:text-slate-300">
+                Show Title *
+              </label>
+              <input
+                type="text"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Show name..."
+                className="w-full h-10 px-3 rounded-md bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/20 transition-all font-sans"
+              />
+            </div>
+
+            {/* Custom Format Dropdown */}
+            <div className="sm:col-span-5 space-y-1 relative" ref={typeDropdownRef}>
+              <label className="text-[11px] font-serif font-bold tracking-[0.12em] uppercase text-slate-600 dark:text-slate-300">
+                Format
+              </label>
+
+              <button
+                type="button"
+                onClick={() => setIsTypeOpen(!isTypeOpen)}
+                className={`w-full h-10 px-3 flex items-center justify-between rounded-md bg-slate-50 dark:bg-white/5 border text-left transition-all cursor-pointer outline-none ${
+                  isTypeOpen
+                    ? 'border-rose-500 ring-2 ring-rose-500/20'
+                    : 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
+                }`}
+              >
+                <div className="flex items-center gap-2 truncate min-w-0">
+                  <currentTypeObj.icon size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
+                  <span className="text-xs font-serif tracking-wider font-bold uppercase text-slate-900 dark:text-white truncate">
+                    {currentTypeObj.label}
+                  </span>
+                </div>
+                <ChevronDown
+                  size={14}
+                  className={`text-slate-400 shrink-0 transition-transform duration-200 ${isTypeOpen ? 'rotate-180 text-rose-500' : ''}`}
+                />
+              </button>
+
+              {isTypeOpen && (
+                <div className="absolute top-[calc(100%+4px)] left-0 right-0 z-50 bg-white dark:bg-[#0B101E] border border-slate-200 dark:border-white/15 rounded-md shadow-xl p-1 space-y-0.5 animate-in fade-in duration-150">
+                  {FORMAT_OPTIONS.map((f) => {
+                    const isSelected = f.value === type;
+                    const Icon = f.icon;
+                    return (
+                      <button
+                        key={f.value}
+                        type="button"
+                        onClick={() => {
+                          setType(f.value);
+                          setIsTypeOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between p-1.5 rounded-sm text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 font-bold border border-rose-200 dark:border-rose-500/30'
+                            : 'hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <Icon size={14} className={isSelected ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'} />
+                          <span className="text-xs font-serif tracking-wider font-bold uppercase">{f.label}</span>
+                        </div>
+                        {isSelected && <Check size={12} className="text-rose-600 dark:text-rose-400 shrink-0" strokeWidth={3} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Section 2: Release Year, Seasons Watched & Poster URL */}
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+            
+            <div className="sm:col-span-3 space-y-1">
+              <label className="text-[11px] font-serif font-bold tracking-[0.12em] uppercase text-slate-600 dark:text-slate-300">
+                Release Year
+              </label>
+              <input
+                type="number"
+                min="1900"
+                max="2099"
+                value={releaseYear}
+                onChange={(e) => setReleaseYear(e.target.value)}
+                placeholder="YYYY"
+                className="w-full h-10 px-3 rounded-md bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-rose-500 transition-colors"
+              />
+            </div>
+
+            <div className="sm:col-span-3 space-y-1">
+              <label className="text-[11px] font-serif font-bold tracking-[0.12em] uppercase text-slate-600 dark:text-slate-300">
+                Seasons Seen
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={seasonsWatched}
+                onChange={(e) => setSeasonsWatched(e.target.value)}
+                className="w-full h-10 px-3 rounded-md bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-rose-500 transition-colors"
+              />
+            </div>
+
+            <div className="sm:col-span-6 space-y-1">
+              <label className="text-[11px] font-serif font-bold tracking-[0.12em] uppercase text-slate-600 dark:text-slate-300">
+                Poster Image URL
+              </label>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="url"
+                  value={posterUrl}
+                  onChange={(e) => setPosterUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="flex-1 h-10 px-3 rounded-md bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs text-slate-900 dark:text-white outline-none focus:border-rose-500 transition-colors"
+                />
+                {posterUrl && (
+                  <div className="w-8 h-10 rounded-sm border border-slate-200 dark:border-white/10 overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-800">
+                    <img
+                      src={posterUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Section 3: Genres & Tags */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-serif font-bold tracking-[0.12em] uppercase text-slate-600 dark:text-slate-300">
+                Genres & Tags
+              </label>
+              <span className="text-[9px] font-mono text-slate-400">Press enter for custom tag</span>
+            </div>
+
+            <div className="flex flex-wrap gap-1">
+              {GENRE_PRESETS.map((g) => {
+                const active = genres.includes(g);
+                return (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => handleToggleGenre(g)}
+                    className={`px-2 py-0.5 rounded-sm text-[10px] font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border ${
+                      active
+                        ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40 shadow-2xs'
+                        : 'bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/10 hover:border-slate-300'
+                    }`}
+                  >
+                    {g}
+                  </button>
+                );
+              })}
+            </div>
+
+            <input
+              type="text"
+              value={customGenre}
+              onChange={(e) => setCustomGenre(e.target.value)}
+              onKeyDown={handleAddCustomGenre}
+              placeholder="+ Add custom genre or regional tag..."
+              className="w-full h-8 px-2.5 rounded-md bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs text-slate-900 dark:text-white outline-none focus:border-rose-500 transition-colors placeholder:text-slate-400"
+            />
+          </div>
+
           {/* ===================== COMPACT HYBRID RATINGS PANE ===================== */}
-          <div className="p-3.5 rounded-md bg-linear-to-r from-indigo-950 via-slate-900 to-purple-950 border border-indigo-500/40 shadow-md text-white relative overflow-hidden space-y-3">
+          <div className="p-3.5 rounded-md bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 border border-indigo-500/40 shadow-md text-white relative overflow-hidden space-y-3">
             
             {/* Top Row: Mini Header + Tier Capsule */}
             <div className="flex items-center justify-between border-b border-white/10 pb-2 relative z-10">
@@ -228,7 +481,7 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
             {/* Middle Row: Compact Radial Gauge + Steppers & Snaps */}
             <div className="flex items-center justify-between gap-4 relative z-10">
               
-              {/* Compact Rotary Dial (Scrub/Drag supported) */}
+              {/* Compact Rotary Dial */}
               <div 
                 ref={dialRef}
                 onMouseDown={handleDialMouseDown}
@@ -344,22 +597,9 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
 
           </div>
 
-          {/* Reason Input */}
-          <div className="space-y-1">
-            <label className="text-[11px] font-serif font-bold tracking-[0.12em] uppercase text-slate-600 dark:text-slate-300">
-              Reason for Adjustment
-            </label>
-            <input
-              type="text"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g. Rewatched S2, ending was rushed, held up well..."
-              className="w-full h-10 px-3 rounded-md bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/20 transition-all font-sans"
-            />
-          </div>
-
-          {/* Status & Review Row */}
+          {/* Section 4: Viewing Status, Adjustment Reason & Favorites Toggle */}
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
+            
             {/* Custom Status Dropdown */}
             <div className="sm:col-span-5 space-y-1 relative" ref={statusDropdownRef}>
               <label className="text-[11px] font-serif font-bold tracking-[0.12em] uppercase text-slate-600 dark:text-slate-300">
@@ -417,20 +657,48 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
               )}
             </div>
 
-            {/* Review Input */}
+            {/* Reason for Adjustment */}
             <div className="sm:col-span-7 space-y-1">
               <label className="text-[11px] font-serif font-bold tracking-[0.12em] uppercase text-slate-600 dark:text-slate-300">
-                Personal Critique
+                Reason for Revision
               </label>
               <input
                 type="text"
-                value={review}
-                onChange={(e) => setReview(e.target.value)}
-                placeholder="Key takeaways, highlights..."
-                className="w-full h-10 px-3 rounded-md bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-rose-500 transition-colors font-sans"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="e.g. Rewatched S2, rushed ending, holds up..."
+                className="w-full h-10 px-3 rounded-md bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-rose-500 transition-colors font-sans"
               />
             </div>
           </div>
+
+          {/* Section 5: Review Notes */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-serif font-bold tracking-[0.12em] uppercase text-slate-600 dark:text-slate-300">
+              Personal Review & Critique
+            </label>
+            <textarea
+              rows={2}
+              value={review}
+              onChange={(e) => setReview(e.target.value)}
+              placeholder="Key strengths, pacing, memorable episodes..."
+              className="w-full p-2.5 rounded-md bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-rose-500 transition-colors font-sans resize-none placeholder:text-slate-400"
+            />
+          </div>
+
+          {/* Section 6: Favorite Pin Toggle */}
+          <label className="flex items-center gap-2.5 p-3 rounded-md bg-slate-50/70 dark:bg-white/2 border border-slate-200 dark:border-white/10 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isFavorite}
+              onChange={(e) => setIsFavorite(e.target.checked)}
+              className="w-4 h-4 accent-rose-600 rounded-xs cursor-pointer"
+            />
+            <span className="text-xs font-serif font-bold tracking-wider uppercase text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+              <Heart size={13} className={isFavorite ? "fill-rose-500 text-rose-500" : "text-slate-400"} />
+              Pin to All-Time Favorites
+            </span>
+          </label>
 
           {/* Revision Timeline Ledger */}
           <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-white/5">
@@ -442,16 +710,16 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
               <span className="text-[9px] font-mono text-slate-400">Chronological</span>
             </div>
 
-            <div className="space-y-1.5 max-h-36 overflow-y-auto no-scrollbar">
+            <div className="space-y-1.5 max-h-32 overflow-y-auto no-scrollbar">
               {history.length === 0 ? (
-                <div className="p-3 rounded-md bg-slate-50 dark:bg-white/2 border border-slate-100 dark:border-white/5 text-center">
+                <div className="p-2.5 rounded-md bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-center">
                   <p className="text-xs text-slate-400 italic">Initial score logged without revisions yet.</p>
                 </div>
               ) : (
                 history.map((entry, idx) => (
                   <div
                     key={idx}
-                    className="p-2.5 rounded-md bg-slate-50 dark:bg-white/2 border border-slate-200/80 dark:border-white/5 flex items-center justify-between gap-3 text-xs"
+                    className="p-2 rounded-md bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/5 flex items-center justify-between gap-3 text-xs"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-xs shrink-0">
@@ -486,18 +754,18 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
           <button
             type="button"
             onClick={handleSave}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-5 py-2 rounded-md bg-linear-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-serif font-bold uppercase tracking-wider shadow-md shadow-rose-600/20 disabled:opacity-50 transition-all active:scale-95 cursor-pointer"
+            disabled={isLoading || !title.trim()}
+            className="flex items-center gap-2 px-5 py-2 rounded-md bg-gradient-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-serif font-bold uppercase tracking-wider shadow-md shadow-rose-600/20 disabled:opacity-50 transition-all active:scale-95 cursor-pointer"
           >
             {isLoading ? (
               <>
                 <Loader2 size={13} className="animate-spin text-white" />
-                <span>Adjusting...</span>
+                <span>Saving Dossier...</span>
               </>
             ) : (
               <>
                 <Save size={13} strokeWidth={2.5} />
-                <span>Apply Score Change</span>
+                <span>Save Changes</span>
               </>
             )}
           </button>

@@ -69,7 +69,7 @@ const ShowRaterHome = () => {
           )
         );
       }
-    } catch (err) {
+    } catch {
       toast.error('Could not toggle favorite');
     }
   };
@@ -160,7 +160,7 @@ const ShowRaterHome = () => {
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#060A14] text-slate-900 dark:text-slate-100 font-sans selection:bg-rose-500/20 transition-colors duration-300 pb-28 lg:pb-16 relative overflow-x-hidden">
       
       {/* Background Atmosphere */}
-      <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-rose-500/10 via-amber-500/5 to-transparent pointer-events-none dark:from-rose-500/5 dark:via-transparent" />
+      <div className="absolute top-0 inset-x-0 h-96 bg-linear-to-b from-rose-500/10 via-amber-500/5 to-transparent pointer-events-none dark:from-rose-500/5 dark:via-transparent" />
 
       {/* Top Navbar */}
       <ShowNavbar
@@ -168,7 +168,7 @@ const ShowRaterHome = () => {
         onOpenAddShow={() => setIsCreateOpen(true)}
       />
 
-      <main className="relative z-10 w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 pt-5 sm:pt-7 flex flex-col gap-6">
+      <main className="relative z-10 w-full max-w-425 mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 pt-5 sm:pt-7 flex flex-col gap-6">
         
         {/* 1. Hero Telemetry Banner (Kept exactly as requested) */}
         <HomeHeroBanner stats={stats} />

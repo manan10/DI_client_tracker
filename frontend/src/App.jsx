@@ -35,6 +35,7 @@ const ExpenseHistoryNew = lazy(() => import("./apps/expense-tracker/pages/Expens
 
 // TV Rater App Components
 const ShowRaterHome = lazy(() => import("./apps/tv-ranker/pages/ShowRaterHome"));
+const Lists = lazy(() => import("./apps/tv-ranker/pages/Lists"));
 
 // Shared Components
 const Auth = lazy(() => import("./shared/pages/Auth"));
@@ -184,6 +185,15 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ShowRaterHome />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/tv-rater/lists"
+                element={
+                  <ProtectedRoute>
+                    <Lists />
                   </ProtectedRoute>
                 }
               />

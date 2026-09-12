@@ -103,7 +103,7 @@ const HomeShowCatalog = ({
           <p className="text-xs font-medium text-slate-300 font-mono tracking-wide">
             Showing <span className="font-bold text-amber-300">{totalRecords > 0 ? indexOfFirstRecord + 1 : 0}</span> to{' '}
             <span className="font-bold text-amber-300">{Math.min(indexOfLastRecord, totalRecords)}</span> of{' '}
-            <span className="font-bold text-white">{totalRecords}</span> entries[cite: 1]
+            <span className="font-bold text-white">{totalRecords}</span> entries
           </p>
 
           <div className="relative" ref={ref}>
