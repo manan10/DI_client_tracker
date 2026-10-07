@@ -20,6 +20,18 @@ const formatINR = (amount) => {
   );
 };
 
+// Formats text into proper case: 1st letter capitalized, rest lowercase per word
+const toProperCase = (str = "") => {
+  if (!str) return "";
+  return String(str)
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 const IconRenderer = ({ iconName, className = "" }) => {
   const IconComponent = LucideIcons[iconName] || CreditCard;
   return <IconComponent size={16} className={className} />;
@@ -46,11 +58,16 @@ const DesktopLedgerTable = ({
         {recentHistory.map((item) => {
           const isExpanded = expandedId === item._id;
           const isPopulated = item.category && typeof item.category === "object";
-          const categoryLabel = isPopulated
+          const rawCategory = isPopulated
             ? item.category.label
             : item.category || "General";
+          const rawSubCategory = item.subCategory || "General Expense";
+
+          // Proper casing applied
+          const categoryLabel = toProperCase(rawCategory);
+          const subCategoryLabel = toProperCase(rawSubCategory);
+
           const categoryIcon = isPopulated ? item.category.icon : "CreditCard";
-          const subCategoryLabel = item.subCategory || "General Expense";
 
           const sourceWalletIndex = wallets?.findIndex(
             (w) => w._id === (item.sourceWallet?._id || item.sourceWallet)

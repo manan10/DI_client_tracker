@@ -6,18 +6,29 @@ import {
   TrendingDown,
   TrendingUp,
   Tag,
-  Clock,
-  Wallet,
   ChevronDown,
   ChevronUp,
+  Wallet,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
-// import { getWalletColor } from "../walletUtils";
+import { getWalletColor } from "../walletUtils";
 
 const formatINR = (amount) => {
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(
     Math.abs(amount || 0)
   );
+};
+
+// Formats text into proper case: 1st letter capitalized, rest lowercase per word
+const toProperCase = (str = "") => {
+  if (!str) return "";
+  return String(str)
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 };
 
 const IconRenderer = ({ iconName, className = "" }) => {
@@ -51,30 +62,35 @@ const MobileLedgerFeed = ({
             {group.items.map((item) => {
               const isExpanded = expandedId === item._id;
               const isPopulated = item.category && typeof item.category === "object";
-              const categoryLabel = isPopulated
+              const rawCategory = isPopulated
                 ? item.category.label
                 : item.category || "General";
+              const rawSubCategory = item.subCategory || "General Expense";
+
+              // Proper Casing applied: 1st letter capital, rest small
+              const categoryLabel = toProperCase(rawCategory);
+              const subCategoryLabel = toProperCase(rawSubCategory);
+
               const categoryIcon = isPopulated ? item.category.icon : "CreditCard";
-              const subCategoryLabel = item.subCategory || "General Expense";
 
               const sourceWalletIndex = wallets?.findIndex(
                 (w) => w._id === (item.sourceWallet?._id || item.sourceWallet)
               );
               const sourceWallet = wallets?.[sourceWalletIndex];
               const sourceName = sourceWallet?.walletName || "Direct Spend";
-            //   const sourcePalette = getWalletColor(
-            //     sourceWallet?._id || sourceName,
-            //     sourceWalletIndex >= 0 ? sourceWalletIndex : null
-            //   );
+              const sourcePalette = getWalletColor(
+                sourceWallet?._id || sourceName,
+                sourceWalletIndex >= 0 ? sourceWalletIndex : null
+              );
 
               const targetWalletIndex = wallets?.findIndex(
                 (w) => w._id === (item.targetWallet?._id || item.targetWallet)
               );
               const targetWallet = wallets?.[targetWalletIndex];
               const targetName = targetWallet?.walletName;
-            //   const targetPalette = targetWallet
-            //     ? getWalletColor(targetWallet._id, targetWalletIndex)
-            //     : null;
+              const targetPalette = targetWallet
+                ? getWalletColor(targetWallet._id, targetWalletIndex)
+                : null;
 
               const isDebit = item.type === "DEBIT" || (!item.type && !item.isTopUp);
               const txDate = new Date(item.date);
@@ -131,14 +147,16 @@ const MobileLedgerFeed = ({
 
                       <div className="flex flex-col min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 truncate">
+                          {/* Sub Category: Prominent & Title-Cased */}
                           <span className="text-xs font-black text-slate-900 dark:text-white truncate">
                             {subCategoryLabel}
                           </span>
                         </div>
 
                         <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                          {/* Category Badge: Title-Cased */}
                           <span
-                            className={`font-bold px-1.5 py-0.2 rounded-xs uppercase tracking-wider text-[9px] border ${
+                            className={`font-bold px-1.5 py-0.2 rounded-xs tracking-normal text-[9.5px] border ${
                               isDebit
                                 ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/20"
                                 : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20"
@@ -152,7 +170,7 @@ const MobileLedgerFeed = ({
                       </div>
                     </div>
 
-                    {/* Right: Net Amount & Account Channel */}
+                    {/* Right: Net Amount & Highly Visible Wallet Badges */}
                     <div className="flex flex-col items-end shrink-0 pl-1">
                       <span
                         className={`font-mono font-[1000] text-sm tabular-nums tracking-tight px-1.5 py-0.5 rounded-xs border ${
@@ -164,15 +182,23 @@ const MobileLedgerFeed = ({
                         {isDebit ? "- " : "+ "}₹{formatINR(item.amount)}
                       </span>
 
-                      <div className="flex items-center gap-1 text-[9px] font-mono mt-1 text-slate-500 dark:text-slate-400">
-                        <span className="font-bold text-slate-700 dark:text-slate-300 truncate max-w-20">
-                          {sourceName}
+                      {/* Prominent High-Visibility Wallet Badge Chip */}
+                      <div className="flex items-center gap-1 mt-1.5">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xs text-[10px] font-mono font-bold uppercase tracking-wider border shadow-2xs ${sourcePalette.badge}`}
+                        >
+                          <Wallet size={10} className="shrink-0" />
+                          <span className="truncate max-w-[90px]">{sourceName}</span>
                         </span>
-                        {targetName && (
+
+                        {targetName && targetPalette && (
                           <>
-                            <ArrowRight size={8} className="text-slate-400 shrink-0" />
-                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate max-w-20">
-                              {targetName}
+                            <ArrowRight size={9} className="text-slate-400 shrink-0" />
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xs text-[10px] font-mono font-bold uppercase tracking-wider border shadow-2xs ${targetPalette.badge}`}
+                            >
+                              <Wallet size={10} className="shrink-0" />
+                              <span className="truncate max-w-[90px]">{targetName}</span>
                             </span>
                           </>
                         )}
@@ -194,9 +220,25 @@ const MobileLedgerFeed = ({
                             <Tag size={10} className={isDebit ? "text-rose-500" : "text-emerald-500"} />
                             Payment Route
                           </span>
-                          <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-[10px]">
-                            {sourceName} {targetName ? `→ ${targetName}` : ""}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xs text-[9.5px] font-mono font-bold uppercase tracking-wider border ${sourcePalette.badge}`}
+                            >
+                              <Wallet size={9} className="shrink-0" />
+                              <span>{sourceName}</span>
+                            </span>
+                            {targetName && targetPalette && (
+                              <>
+                                <ArrowRight size={9} className="text-slate-400 shrink-0" />
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xs text-[9.5px] font-mono font-bold uppercase tracking-wider border ${targetPalette.badge}`}
+                                >
+                                  <Wallet size={9} className="shrink-0" />
+                                  <span>{targetName}</span>
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
 
                         {/* Balance Trajectory */}
@@ -243,7 +285,7 @@ const MobileLedgerFeed = ({
                         <div className="flex items-center justify-between pt-1 text-[9px] font-mono text-slate-400">
                           <span>REF: #{item._id?.slice(-8).toUpperCase()}</span>
                           <span
-                            className={`font-bold px-1.5 py-0.2 rounded-xs uppercase ${
+                            className={`font-bold px-1.5 py-0.2 rounded-xs ${
                               isDebit
                                 ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
                                 : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
