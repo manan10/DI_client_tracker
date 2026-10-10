@@ -219,7 +219,7 @@ const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
                 {/* View Details Action */}
                 <td className="py-3.5 px-5 text-right">
                   <div className="inline-flex items-center gap-1 text-[11px] font-black uppercase text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform">
-                    <span>Ledger</span>
+                    <span>View Details</span>
                     <ArrowRight size={13} strokeWidth={2.5} />
                   </div>
                 </td>
