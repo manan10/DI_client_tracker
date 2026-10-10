@@ -1,13 +1,11 @@
 import React from "react";
 import {
   User,
-  Shield,
-  TrendingUp,
   Clock,
   ArrowRight,
   ShieldCheck,
 } from "lucide-react";
-import { formatCurrency } from "./insuranceUtils";
+import { formatCurrency, getNormalizedPersonName } from "./insuranceUtils";
 
 const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
   if (peopleList.length === 0) {
@@ -27,10 +25,12 @@ const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
     );
   }
 
-  // Pre-calculate aggregate metrics per member
+  // Pre-calculate aggregate metrics per normalized person name
   const memberSummaries = peopleList.map((person) => {
     const memberPolicies = policies.filter(
-      (p) => p.policyHolder?.trim().toLowerCase() === person.toLowerCase()
+      (p) =>
+        getNormalizedPersonName(p.policyHolder).toLowerCase() ===
+        person.toLowerCase()
     );
 
     const totalAnnualPremium = memberPolicies.reduce(
@@ -103,7 +103,7 @@ const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
                 onClick={() => onSelectPerson(m.person)}
                 className="hover:bg-emerald-50/40 dark:hover:bg-emerald-500/[0.03] transition-colors cursor-pointer group"
               >
-                {/* Member Identity */}
+                {/* Member Identity (First and Last Name Only) */}
                 <td className="py-3.5 px-5">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-sm bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">

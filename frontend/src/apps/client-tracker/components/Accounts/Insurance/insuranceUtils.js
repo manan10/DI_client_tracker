@@ -53,6 +53,19 @@ export const SUB_TYPE_GROUPS = [
   },
 ];
 
+/**
+ * Normalizes any person's name to use only First and Last Name, ignoring middle names.
+ * Example: "MANAN UDAY DALAL" -> "MANAN DALAL"
+ * Example: "JBHGI YGUGUG U UFU" -> "JBHGI UFU"
+ * Example: "PRIYA" -> "PRIYA"
+ */
+export const getNormalizedPersonName = (rawName) => {
+  if (!rawName || typeof rawName !== "string") return "";
+  const parts = rawName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return parts[0] || "";
+  return `${parts[0]} ${parts[parts.length - 1]}`;
+};
+
 export const formatCurrency = (val) => {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",

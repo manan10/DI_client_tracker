@@ -1,5 +1,6 @@
 import React from "react";
 import { Users, User, ChevronDown, Search, Plus, Umbrella } from "lucide-react";
+import { getNormalizedPersonName } from "./insuranceUtils";
 
 const InsurancePersonTabs = ({
   peopleList,
@@ -16,7 +17,7 @@ const InsurancePersonTabs = ({
       {/* 1. TOP HEADER & SEARCH CONTROLS                                           */}
       {/* ========================================================================= */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Section Header with Crisp Sharp Icon */}
+        {/* Section Header */}
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-9 h-9 rounded-md bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
             <Umbrella size={18} strokeWidth={2.2} />
@@ -73,7 +74,9 @@ const InsurancePersonTabs = ({
               <option value="ALL">All Members ({policies.length})</option>
               {peopleList.map((person) => {
                 const count = policies.filter(
-                  (p) => p.policyHolder?.trim().toLowerCase() === person.toLowerCase()
+                  (p) =>
+                    getNormalizedPersonName(p.policyHolder).toLowerCase() ===
+                    person.toLowerCase()
                 ).length;
                 return (
                   <option key={person} value={person}>
@@ -88,7 +91,7 @@ const InsurancePersonTabs = ({
           </div>
         </div>
 
-        {/* Desktop View (sm & up): Crisp Tab Rail */}
+        {/* Desktop View (sm & up): Tab Rail */}
         <nav className="hidden sm:flex items-center gap-7 overflow-x-auto no-scrollbar w-full">
           <button
             type="button"
@@ -108,7 +111,9 @@ const InsurancePersonTabs = ({
 
           {peopleList.map((person) => {
             const count = policies.filter(
-              (p) => p.policyHolder?.trim().toLowerCase() === person.toLowerCase()
+              (p) =>
+                getNormalizedPersonName(p.policyHolder).toLowerCase() ===
+                person.toLowerCase()
             ).length;
             const isActive = selectedPerson === person;
 

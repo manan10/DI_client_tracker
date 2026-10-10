@@ -7,6 +7,7 @@ import InsuranceExecutiveKPIs from "./Insurance/InsuranceExecutiveKPIs";
 import InsurancePersonTabs from "./Insurance/InsurancePersonTabs";
 import MemberSummaryGrid from "./Insurance/MemberSummaryGrid";
 import NestedPolicyLedger from "./Insurance/NestedPolicyLedger";
+import { getNormalizedPersonName } from "./Insurance/insuranceUtils";
 
 const Insurance = () => {
   const { request } = useApi();
@@ -54,23 +55,25 @@ const Insurance = () => {
     return () => clearTimeout(debounce);
   }, [fetchPolicies]);
 
-  // Extract distinct list of members
+  // Extract distinct list of members using FIRST and LAST name only
   const peopleList = useMemo(() => {
     const set = new Set();
     policies.forEach((p) => {
-      if (p.policyHolder && p.policyHolder.trim()) {
-        set.add(p.policyHolder.trim());
+      const normalized = getNormalizedPersonName(p.policyHolder);
+      if (normalized) {
+        set.add(normalized);
       }
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [policies]);
 
-  // Filter policies by the selected individual
+  // Filter policies by normalized first + last name
   const personFilteredPolicies = useMemo(() => {
     if (selectedPerson === "ALL") return policies;
     return policies.filter(
       (p) =>
-        p.policyHolder?.trim().toLowerCase() === selectedPerson.toLowerCase()
+        getNormalizedPersonName(p.policyHolder).toLowerCase() ===
+        selectedPerson.toLowerCase()
     );
   }, [policies, selectedPerson]);
 
@@ -145,7 +148,7 @@ const Insurance = () => {
 
       {/* 3. CONDITIONAL MAIN VIEW */}
       {loading ? (
-        <div className="py-20 text-center bg-white dark:bg-[#0F172A] rounded-2xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-500">
+        <div className="py-20 text-center bg-white dark:bg-[#0F172A] rounded-md border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-500">
           Loading insurance portfolio...
         </div>
       ) : selectedPerson === "ALL" ? (
