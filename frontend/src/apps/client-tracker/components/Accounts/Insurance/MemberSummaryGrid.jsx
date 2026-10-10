@@ -12,9 +12,9 @@ import { formatCurrency } from "./insuranceUtils";
 const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
   if (peopleList.length === 0) {
     return (
-      <div className="py-20 text-center bg-white dark:bg-[#0F172A] rounded-2xl border border-slate-200 dark:border-white/10 shadow-xs">
+      <div className="py-16 text-center bg-white dark:bg-[#0F172A] rounded-md border border-slate-200 dark:border-white/10 shadow-xs">
         <ShieldCheck
-          size={36}
+          size={32}
           className="mx-auto text-slate-300 dark:text-slate-600 mb-2"
         />
         <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
@@ -78,7 +78,7 @@ const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
   });
 
   return (
-    <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xs overflow-hidden">
+    <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-white/10 rounded-md shadow-xs overflow-hidden">
       
       {/* ========================================================= */}
       {/* DESKTOP VIEW: High-Density Comparative Summary Table      */}
@@ -87,13 +87,13 @@ const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
         <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
             <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              <th className="py-3.5 px-6">Family Member</th>
-              <th className="py-3.5 px-4">Coverage Mix</th>
-              <th className="py-3.5 px-4 text-right">Pure Risk Cover</th>
-              <th className="py-3.5 px-4 text-right">Fund Value</th>
-              <th className="py-3.5 px-4 text-right">Annual Premium</th>
-              <th className="py-3.5 px-4">Next Renewal</th>
-              <th className="py-3.5 px-6 text-right">Action</th>
+              <th className="py-3 px-5">Family Member</th>
+              <th className="py-3 px-4">Coverage Mix</th>
+              <th className="py-3 px-4 text-right">Pure Risk Cover</th>
+              <th className="py-3 px-4 text-right">Fund Valuation</th>
+              <th className="py-3 px-4 text-right">Annual Outflow</th>
+              <th className="py-3 px-4">Next Renewal</th>
+              <th className="py-3 px-5 text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-xs font-medium">
@@ -104,9 +104,9 @@ const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
                 className="hover:bg-emerald-50/40 dark:hover:bg-emerald-500/[0.03] transition-colors cursor-pointer group"
               >
                 {/* Member Identity */}
-                <td className="py-4 px-6">
+                <td className="py-3.5 px-5">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-sm bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
                       <User size={15} />
                     </div>
                     <div>
@@ -121,25 +121,25 @@ const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
                 </td>
 
                 {/* Coverage Mix Badges */}
-                <td className="py-4 px-4">
+                <td className="py-3.5 px-4">
                   <div className="flex flex-wrap gap-1 max-w-[220px]">
                     {m.breakdown.termCount > 0 && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
                         {m.breakdown.termCount} Term
                       </span>
                     )}
                     {m.breakdown.healthCount > 0 && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">
                         {m.breakdown.healthCount} Health
                       </span>
                     )}
                     {m.breakdown.ulipCount > 0 && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
                         {m.breakdown.ulipCount} ULIP/NPS
                       </span>
                     )}
                     {m.breakdown.motorCount > 0 && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
                         {m.breakdown.motorCount} Motor
                       </span>
                     )}
@@ -147,7 +147,7 @@ const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
                 </td>
 
                 {/* Pure Risk Cover */}
-                <td className="py-4 px-4 text-right">
+                <td className="py-3.5 px-4 text-right">
                   <div className="flex flex-col items-end">
                     <span className="font-bold font-mono text-slate-900 dark:text-white">
                       {formatCurrency(m.totalRiskCover)}
@@ -159,7 +159,7 @@ const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
                 </td>
 
                 {/* ULIP & NPS Valuation */}
-                <td className="py-4 px-4 text-right">
+                <td className="py-3.5 px-4 text-right">
                   <div className="flex flex-col items-end">
                     <span className="font-bold font-mono text-indigo-600 dark:text-indigo-400">
                       {formatCurrency(m.totalInvestmentValuation)}
@@ -171,7 +171,7 @@ const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
                 </td>
 
                 {/* Annual Outflow */}
-                <td className="py-4 px-4 text-right">
+                <td className="py-3.5 px-4 text-right">
                   <div className="flex flex-col items-end">
                     <span className="font-extrabold font-mono text-slate-900 dark:text-white">
                       {formatCurrency(m.totalAnnualPremium)}
@@ -183,7 +183,7 @@ const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
                 </td>
 
                 {/* Next Renewal */}
-                <td className="py-4 px-4">
+                <td className="py-3.5 px-4">
                   {m.earliestDue ? (
                     <div className="flex items-center gap-1.5">
                       <Clock
@@ -217,9 +217,9 @@ const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
                 </td>
 
                 {/* View Details Action */}
-                <td className="py-4 px-6 text-right">
+                <td className="py-3.5 px-5 text-right">
                   <div className="inline-flex items-center gap-1 text-[11px] font-black uppercase text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform">
-                    <span>View Details</span>
+                    <span>Ledger</span>
                     <ArrowRight size={13} strokeWidth={2.5} />
                   </div>
                 </td>
@@ -237,12 +237,12 @@ const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
           <div
             key={m.person}
             onClick={() => onSelectPerson(m.person)}
-            className="p-4 flex flex-col gap-3 hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
+            className="p-3.5 flex flex-col gap-2.5 hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
           >
             {/* Top row: Name, count and navigation */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-sm bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
                   <User size={13} />
                 </div>
                 <div>
@@ -262,7 +262,7 @@ const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
             </div>
 
             {/* Metrics Row */}
-            <div className="grid grid-cols-3 gap-2 py-2 px-3 bg-slate-50 dark:bg-white/[0.02] rounded-xl border border-slate-100 dark:border-white/5">
+            <div className="grid grid-cols-3 gap-2 py-2 px-3 bg-slate-50 dark:bg-white/[0.02] rounded-sm border border-slate-100 dark:border-white/5">
               <div>
                 <span className="text-[9px] font-mono font-bold uppercase text-slate-400 block truncate">
                   Risk Cover
@@ -281,7 +281,7 @@ const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
               </div>
               <div className="text-right">
                 <span className="text-[9px] font-mono font-bold uppercase text-slate-400 block truncate">
-                  Annual Premium
+                  Annual Outflow
                 </span>
                 <span className="text-xs font-black font-mono text-slate-900 dark:text-white">
                   {formatCurrency(m.totalAnnualPremium)}
@@ -311,12 +311,12 @@ const MemberSummaryGrid = ({ peopleList, policies, onSelectPerson }) => {
 
               <div className="flex gap-1">
                 {m.breakdown.termCount > 0 && (
-                  <span className="px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold text-[8px]">
+                  <span className="px-1.5 py-0.2 rounded-sm bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold text-[8px]">
                     {m.breakdown.termCount} Term
                   </span>
                 )}
                 {m.breakdown.healthCount > 0 && (
-                  <span className="px-1.5 py-0.2 rounded bg-teal-500/10 text-teal-700 dark:text-teal-300 font-bold text-[8px]">
+                  <span className="px-1.5 py-0.2 rounded-sm bg-teal-500/10 text-teal-700 dark:text-teal-300 font-bold text-[8px]">
                     {m.breakdown.healthCount} Health
                   </span>
                 )}

@@ -22,7 +22,6 @@ const Insurance = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedPerson, setSelectedPerson] = useState("ALL");
-  const [statusFilter, setStatusFilter] = useState("ALL");
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,7 +32,6 @@ const Insurance = () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (statusFilter !== "ALL") params.append("status", statusFilter);
       if (search.trim()) params.append("search", search.trim());
 
       const res = await request(`/insurance?${params.toString()}`);
@@ -47,7 +45,7 @@ const Insurance = () => {
     } finally {
       setLoading(false);
     }
-  }, [request, statusFilter, search]);
+  }, [request, search]);
 
   useEffect(() => {
     const debounce = setTimeout(() => {
@@ -71,7 +69,8 @@ const Insurance = () => {
   const personFilteredPolicies = useMemo(() => {
     if (selectedPerson === "ALL") return policies;
     return policies.filter(
-      (p) => p.policyHolder?.trim().toLowerCase() === selectedPerson.toLowerCase()
+      (p) =>
+        p.policyHolder?.trim().toLowerCase() === selectedPerson.toLowerCase()
     );
   }, [policies, selectedPerson]);
 
@@ -79,7 +78,11 @@ const Insurance = () => {
     try {
       setSaving(true);
       if (editingPolicy) {
-        const res = await request(`/insurance/${editingPolicy._id}`, "PUT", payload);
+        const res = await request(
+          `/insurance/${editingPolicy._id}`,
+          "PUT",
+          payload
+        );
         if (res?.success) {
           toast.success("Policy updated successfully");
           setIsModalOpen(false);
@@ -126,7 +129,7 @@ const Insurance = () => {
       {/* 1. EXECUTIVE KPIS */}
       <InsuranceExecutiveKPIs stats={stats} />
 
-      {/* 2. PERSON TABS & CONTROLS */}
+      {/* 2. PERSON TABS & SEARCH COMMAND STRIP */}
       <InsurancePersonTabs
         peopleList={peopleList}
         policies={policies}
@@ -134,8 +137,6 @@ const Insurance = () => {
         onSelectPerson={setSelectedPerson}
         search={search}
         onSearchChange={setSearch}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
         onOpenAddModal={() => {
           setEditingPolicy(null);
           setIsModalOpen(true);
@@ -148,7 +149,7 @@ const Insurance = () => {
           Loading insurance portfolio...
         </div>
       ) : selectedPerson === "ALL" ? (
-        /* All Members View: Portfolio summary cards per member */
+        /* All Members View: High-density comparative ledger table */
         <MemberSummaryGrid
           peopleList={peopleList}
           policies={policies}
