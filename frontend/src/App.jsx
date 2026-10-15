@@ -25,12 +25,10 @@ const MaintenanceView = lazy(() => import("./apps/client-tracker/pages/Maintenan
 const TallyDebtorTest = lazy(() => import("./apps/client-tracker/pages/TallyDebtorTest"));
 
 // Home Expense Tracker App Components
-const ExpenseDashboard = lazy(() => import("./apps/expense-tracker/pages/ExpenseDashboard"));
 const ExpenseDashboardNew = lazy(() => import("./apps/expense-tracker/pages/ExpenseDashboardNew"));
 const MaintenanceViewExpenses = lazy(() => import("./apps/expense-tracker/pages/MaintenanceViewExpenses"));
 const ExpenseSettings = lazy(() => import("./apps/expense-tracker/pages/ExpenseSettings"));
 const ExpenseAnalytics = lazy(() => import("./apps/expense-tracker/pages/ExpenseAnalytics"));
-const ExpenseHistory = lazy(() => import("./apps/expense-tracker/pages/ExpenseHistory"));
 const ExpenseHistoryNew = lazy(() => import("./apps/expense-tracker/pages/ExpenseHistoryNew"));
 
 // TV Rater App Components
