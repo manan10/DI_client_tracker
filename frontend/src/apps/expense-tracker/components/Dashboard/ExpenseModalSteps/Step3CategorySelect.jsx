@@ -10,6 +10,20 @@ import {
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 
+// Robust Title-Casing Formatter for Categories & Subcategories
+const toTitleCase = (str) => {
+  if (!str) return "";
+  return str
+    .toString()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 const IconRenderer = ({ iconName, size = 16, className = "" }) => {
   const IconComponent = LucideIcons[iconName] || Folder;
   return <IconComponent size={size} className={className} />;
@@ -51,7 +65,7 @@ export const Step3CategorySelect = ({
     return parentWithCategory?._id || null;
   });
 
-  // Extract the top 6 subcategories across all groups as quick chips
+  // Extract top subcategories across groups as quick picks
   const quickCategories = useMemo(() => {
     if (!categoryTree?.length) return [];
     const flat = [];
@@ -74,7 +88,7 @@ export const Step3CategorySelect = ({
 
   return (
     <div className="flex flex-col h-full text-left space-y-3.5 animate-in fade-in slide-in-from-right-4 duration-150">
-      {/* Header */}
+      {/* Step Header */}
       <div className="flex items-center justify-between gap-2 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <button
@@ -90,7 +104,7 @@ export const Step3CategorySelect = ({
               Select Category
             </h2>
             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">
-              Categorize this expense
+              Categorize This Expense
             </p>
           </div>
         </div>
@@ -106,7 +120,7 @@ export const Step3CategorySelect = ({
         </span>
       </div>
 
-      {/* Sticky Search Bar */}
+      {/* Sticky Search Input */}
       <div className="sticky top-0 z-10 bg-white dark:bg-[#0B1120] pb-1 shrink-0">
         <div className="relative">
           <Search
@@ -115,7 +129,7 @@ export const Step3CategorySelect = ({
           />
           <input
             type="text"
-            placeholder="Search all categories (e.g., Groceries, Fuel)..."
+            placeholder="Search categories (e.g., Groceries, Fuel)..."
             className="w-full bg-slate-50 dark:bg-slate-900/50 p-2.5 pl-9 rounded-lg text-xs font-semibold text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 outline-none focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-slate-400"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -123,7 +137,7 @@ export const Step3CategorySelect = ({
         </div>
       </div>
 
-      {/* Content Workspace */}
+      {/* Scrollable Category Area */}
       <div className="flex-1 overflow-y-auto no-scrollbar space-y-3.5 pb-2">
         {/* MODE 1: SEARCH FILTER RESULTS */}
         {searchQuery ? (
@@ -143,9 +157,9 @@ export const Step3CategorySelect = ({
                 }`}
               >
                 <div className="flex flex-col min-w-0 pr-2">
-                  <p className="text-sm font-semibold truncate">{res.label}</p>
+                  <p className="text-sm font-semibold truncate">{toTitleCase(res.label)}</p>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-0.5 truncate">
-                    In {res.parentLabel}
+                    In {toTitleCase(res.parentLabel)}
                   </p>
                 </div>
                 <Check
@@ -160,7 +174,7 @@ export const Step3CategorySelect = ({
             ))}
             {filteredResults.length === 0 && (
               <div className="p-6 text-center text-slate-400 text-xs font-bold uppercase tracking-widest border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
-                No matching categories found
+                No Matching Categories Found
               </div>
             )}
           </div>
@@ -189,7 +203,7 @@ export const Step3CategorySelect = ({
                           : "bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-600"
                       }`}
                     >
-                      <span>{quick.label}</span>
+                      <span>{toTitleCase(quick.label)}</span>
                     </button>
                   ))}
                 </div>
@@ -239,7 +253,7 @@ export const Step3CategorySelect = ({
 
                           <div className="flex flex-col min-w-0 text-left">
                             <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
-                              {parent.label}
+                              {toTitleCase(parent.label)}
                             </span>
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
                               {parent.subCategories?.length || 0} Subcategories
@@ -247,7 +261,7 @@ export const Step3CategorySelect = ({
                           </div>
                         </div>
 
-                        {/* Visible Right-side Indicator Area */}
+                        {/* Right-side Indicator */}
                         <div className="flex items-center gap-2 shrink-0">
                           {hasSelectedChild && (
                             <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
@@ -291,7 +305,7 @@ export const Step3CategorySelect = ({
                                   }`}
                                 >
                                   <span className="truncate pr-1">
-                                    {sub.label}
+                                    {toTitleCase(sub.label)}
                                   </span>
                                   {isSubActive && (
                                     <Check
