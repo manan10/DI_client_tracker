@@ -44,8 +44,8 @@ const ExpenseNavbar = () => {
 
   const navItems = [
     { name: "Home", path: "/expenses", icon: HomeIcon },
-    { name: "Analytics", path: "/expenses/analytics", icon: PieChart },
     { name: "History", path: "/expenses/history", icon: History },
+    { name: "Analytics", path: "/expenses/analytics", icon: PieChart },
     { name: "Settings", path: "/expenses/settings", icon: SettingsIcon },
   ];
 
