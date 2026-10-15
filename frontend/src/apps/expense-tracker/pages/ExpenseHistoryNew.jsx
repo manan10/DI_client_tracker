@@ -301,10 +301,7 @@ const ExpenseHistoryNew = () => {
   }, [transactions]);
 
   return (
-    <div className="min-h-screen bg-[#F6F8FC] dark:bg-[#060913] text-slate-900 dark:text-slate-100 font-sans selection:bg-emerald-500/20 overflow-x-hidden pb-28 relative">
-      {/* Background Glow */}
-      <div className="absolute top-0 inset-x-0 h-96 bg-linear-to-b from-emerald-500/10 via-indigo-500/5 to-transparent pointer-events-none dark:from-emerald-500/5 dark:via-transparent" />
-
+    <div className="min-h-screen bg-white dark:bg-[#060913] text-slate-900 dark:text-slate-100 font-sans selection:bg-emerald-500/20 overflow-x-hidden pb-28 relative">
       <main className="relative z-10 w-full max-w-440 mx-auto px-3 sm:px-6 lg:px-10 xl:px-14 pt-6 sm:pt-10 flex flex-col gap-5 sm:gap-6">
         {/* 1. Header with Period Picker & Month Totals */}
         <HistoryHeader
