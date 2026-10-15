@@ -8,6 +8,28 @@ import TopUpModal from "../components/Dashboard/TopUpModal";
 import TransferModal from "../components/Dashboard/TransferModal";
 import FloatingActions from "../components/Dashboard/FloatingActions";
 
+const initialExpenseState = {
+  amount: "",
+  category: "",
+  description: "",
+  sourceWallet: "",
+  type: "DEBIT",
+};
+
+const initialTopUpState = {
+  amount: "",
+  description: "",
+  targetWallet: "",
+  isExternal: false,
+};
+
+const initialTransferState = {
+  amount: "",
+  description: "",
+  sourceWallet: "",
+  targetWallet: "",
+};
+
 const ExpenseTrackerLayout = () => {
   const { request, loading } = useApi();
   const { user } = useAuth();
@@ -19,50 +41,21 @@ const ExpenseTrackerLayout = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const initializationTriggered = useRef(false);
 
-  const [expenseData, setExpenseData] = useState({
-    amount: "",
-    category: "",
-    description: "",
-    sourceWallet: "",
-    type: "DEBIT",
-  });
+  const [expenseData, setExpenseData] = useState(initialExpenseState);
+  const [topUpData, setTopUpData] = useState(initialTopUpState);
+  const [transferData, setTransferData] = useState(initialTransferState);
 
-  const [topUpData, setTopUpData] = useState({
-    amount: "",
-    description: "",
-    targetWallet: "",
-    isExternal: false,
-  });
-
-  const [transferData, setTransferData] = useState({
-    amount: "",
-    description: "",
-    sourceWallet: "",
-    targetWallet: "",
-  });
-
+  // Sync wallets from server without auto-injecting a default wallet into expenseData
   const fetchWallets = useCallback(async () => {
     try {
       const data = await request("/spending/summary");
       if (data?.wallets) {
         setWallets(data.wallets);
-        const userWallet = data.wallets.find(
-          (w) =>
-            w.walletName.toLowerCase().includes(user?.name?.toLowerCase()) ||
-            (!w.isGeneralPool && !w.isVirtual),
-        );
-        const activeWallet = userWallet || data.wallets.find((w) => !w.isGeneralPool);
-        if (activeWallet) {
-          setExpenseData((prev) => ({
-            ...prev,
-            sourceWallet: prev.sourceWallet || activeWallet._id,
-          }));
-        }
       }
     } catch (err) {
       console.error("Wallet Sync Failure", err);
     }
-  }, [request, user?.name]);
+  }, [request]);
 
   useEffect(() => {
     if (!initializationTriggered.current) {
@@ -73,6 +66,22 @@ const ExpenseTrackerLayout = () => {
     }
   }, [fetchWallets]);
 
+  // Clean open handlers for Floating Actions that guarantee empty initial states
+  const handleOpenExpenseFromFab = () => {
+    setExpenseData(initialExpenseState);
+    setIsExpenseModalOpen(true);
+  };
+
+  const handleOpenTopUpFromFab = () => {
+    setTopUpData(initialTopUpState);
+    setIsTopUpModalOpen(true);
+  };
+
+  const handleOpenTransferFromFab = () => {
+    setTransferData(initialTransferState);
+    setIsTransferModalOpen(true);
+  };
+
   const handleExpenseSubmit = async (e) => {
     if (e) e.preventDefault();
     const res = await request("/spending", "POST", {
@@ -81,12 +90,7 @@ const ExpenseTrackerLayout = () => {
     });
     if (res) {
       setIsExpenseModalOpen(false);
-      setExpenseData((prev) => ({
-        ...prev,
-        amount: "",
-        description: "",
-        category: "",
-      }));
+      setExpenseData(initialExpenseState);
       await fetchWallets();
       setRefreshKey((prev) => prev + 1);
     }
@@ -94,19 +98,18 @@ const ExpenseTrackerLayout = () => {
 
   const handleTopUpSubmit = async (e) => {
     if (e) e.preventDefault();
-    const res = await request(`/wallets/${topUpData.targetWallet}/topup`, "POST", {
-      amount: Number(topUpData.amount),
-      description: topUpData.description,
-      isExternal: topUpData.isExternal || false,
-    });
+    const res = await request(
+      `/wallets/${topUpData.targetWallet}/topup`,
+      "POST",
+      {
+        amount: Number(topUpData.amount),
+        description: topUpData.description,
+        isExternal: topUpData.isExternal || false,
+      },
+    );
     if (res) {
       setIsTopUpModalOpen(false);
-      setTopUpData({
-        amount: "",
-        description: "",
-        targetWallet: "",
-        isExternal: false,
-      });
+      setTopUpData(initialTopUpState);
       await fetchWallets();
       setRefreshKey((prev) => prev + 1);
     }
@@ -122,12 +125,7 @@ const ExpenseTrackerLayout = () => {
     });
     if (res) {
       setIsTransferModalOpen(false);
-      setTransferData({
-        amount: "",
-        description: "",
-        sourceWallet: "",
-        targetWallet: "",
-      });
+      setTransferData(initialTransferState);
       await fetchWallets();
       setRefreshKey((prev) => prev + 1);
     }
@@ -155,9 +153,9 @@ const ExpenseTrackerLayout = () => {
 
       <div className="fixed bottom-24 md:bottom-10 right-5 md:right-10 z-40">
         <FloatingActions
-          onOpenExpense={() => setIsExpenseModalOpen(true)}
-          onOpenTopUp={() => setIsTopUpModalOpen(true)}
-          onOpenTransfer={() => setIsTransferModalOpen(true)}
+          onOpenExpense={handleOpenExpenseFromFab}
+          onOpenTopUp={handleOpenTopUpFromFab}
+          onOpenTransfer={handleOpenTransferFromFab}
         />
       </div>
 

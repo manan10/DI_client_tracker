@@ -156,6 +156,7 @@ const ExpenseHistoryNew = () => {
     setEditData({
       _id: t._id,
       amount: String(t.amount || ""),
+      _originalAmount: t.amount,
       category: t.category?._id || t.category,
       description: t.description || "",
       sourceWallet: t.sourceWallet?._id || t.sourceWallet,
