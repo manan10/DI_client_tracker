@@ -144,13 +144,13 @@ const AppPicker = () => {
   }, [user]);
 
   return (
-    <div className="h-dvh w-screen bg-[#F8FAFC] dark:bg-[#060A14] text-slate-900 dark:text-slate-100 flex flex-col font-serif overflow-hidden relative selection:bg-emerald-800 selection:text-white transition-colors duration-300">
-      {/* --- FLOATING CONTROLS --- */}
+    <div className="h-dvh w-screen bg-[#F8FAFC] dark:bg-[#060A14] text-slate-900 dark:text-slate-100 flex flex-col font-sans overflow-hidden relative selection:bg-emerald-800 selection:text-white transition-colors duration-300">
+      {/* --- TOP FLOATING CONTROLS --- */}
       <div className="absolute top-4 sm:top-6 lg:top-7 right-4 sm:right-8 lg:right-10 z-50 flex items-center gap-2.5 sm:gap-3">
         <button
           type="button"
           onClick={toggleTheme}
-          className="flex items-center justify-center w-10 h-10 rounded-xl border border-slate-300/80 dark:border-white/15 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-400 hover:border-emerald-400/80 dark:hover:border-emerald-500/50 transition-all duration-200 shadow-xs active:scale-95 cursor-pointer outline-none"
+          className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg border-2 border-emerald-400/80 dark:border-emerald-500/50 bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all duration-200 shadow-xs active:scale-95 cursor-pointer outline-none"
           aria-label="Toggle Theme"
         >
           {isDark ? (
@@ -162,81 +162,74 @@ const AppPicker = () => {
 
         <button
           onClick={logout}
-          className="group flex items-center gap-2 px-4 py-2 sm:py-2.5 bg-white/90 dark:bg-slate-900/90 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-slate-300/80 dark:border-white/15 hover:border-rose-400/80 dark:hover:border-rose-500/50 text-slate-700 dark:text-slate-200 hover:text-rose-700 dark:hover:text-rose-400 rounded-xl text-xs sm:text-sm font-sans tracking-wide transition-all duration-200 shadow-xs backdrop-blur-md outline-none active:scale-95 cursor-pointer"
+          className="group flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white dark:bg-slate-900 hover:bg-rose-50 dark:hover:bg-rose-500/10 border-2 border-rose-400/80 dark:border-rose-500/50 text-rose-700 dark:text-rose-300 rounded-lg text-xs sm:text-sm font-semibold tracking-wide transition-all duration-200 shadow-xs outline-none active:scale-95 cursor-pointer"
           title="Sign Out"
         >
           <LogOut
-            size={15}
-            className="transition-transform group-hover:-translate-x-0.5 text-slate-400 dark:text-slate-400 group-hover:text-rose-600 dark:group-hover:text-rose-400"
+            size={14}
+            className="transition-transform group-hover:-translate-x-0.5 text-rose-600 dark:text-rose-400"
           />
-          <span className="font-semibold">Sign Out</span>
+          <span>Sign Out</span>
         </button>
       </div>
 
-      {/* --- CENTRAL PORTAL WORKSPACE --- */}
-      <main className="flex-1 flex flex-col items-center justify-center w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 relative z-10 min-h-0 py-4 sm:py-6 lg:py-8">
-        {/* --- CLASSY BRANDING & WELCOME --- */}
-        <div className="flex flex-col items-center text-center mb-5 sm:mb-7 lg:mb-9 shrink-0">
-          <div className="mb-2.5 sm:mb-3 select-none transition-transform duration-300 hover:scale-105">
+      {/* --- CENTRAL MAIN WORKSPACE --- */}
+      <main className="flex-1 flex flex-col items-center justify-center w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 relative z-10 min-h-0 py-3 sm:py-6 lg:py-8">
+        
+        {/* --- BRANDING & GREETING HERO --- */}
+        <div className="flex flex-col items-center text-center mb-4 sm:mb-6 lg:mb-8 shrink-0">
+          <div className="mb-2 sm:mb-3 select-none transition-transform duration-300 hover:scale-105">
             <img
               src={Logo}
               alt="Dalal Central Logo"
-              className="h-16 sm:h-22 lg:h-28 xl:h-32 w-auto object-contain drop-shadow-[0_8px_20px_rgba(16,185,129,0.22)] dark:drop-shadow-[0_10px_24px_rgba(16,185,129,0.3)]"
+              className="h-20 sm:h-28 lg:h-36 xl:h-44 w-auto object-contain drop-shadow-[0_8px_20px_rgba(16,185,129,0.22)] dark:drop-shadow-[0_10px_24px_rgba(16,185,129,0.3)]"
             />
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-7xl font-serif tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-serif tracking-tight text-slate-900 dark:text-slate-100 leading-tight">
             Dalal{" "}
             <span className="italic font-normal text-emerald-800 dark:text-emerald-400">
               Central
             </span>
           </h1>
 
-          <p className="font-serif text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 mt-2 sm:mt-3 max-w-xl leading-relaxed">
-            Hello,{" "}
-            <span className="font-semibold text-slate-900 dark:text-slate-100">
-              {firstName}
-            </span>
-            , welcome to{" "}
-            <span className="italic font-normal text-emerald-800 dark:text-emerald-400">
-              Dalal Central
-            </span>
-            . Choose your application.
+          <p className="font-serif text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 mt-1.5 sm:mt-2.5 max-w-xl leading-relaxed">
+            Hello, <span className="font-semibold text-slate-900 dark:text-white">{firstName}</span>. Welcome to <span className="italic font-normal text-emerald-800 dark:text-emerald-400">Dalal Central</span>. Choose your application below.
           </p>
         </div>
 
         {/* Empty State Fallback */}
         {authorizedApps.length === 0 ? (
-          <div className="p-8 text-center bg-white/90 dark:bg-slate-900/90 border-2 border-slate-300 dark:border-white/20 rounded-2xl backdrop-blur-md shadow-sm max-w-md mx-auto">
+          <div className="p-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-white/20 rounded-xl shadow-sm max-w-md mx-auto">
             <p className="text-base font-serif font-semibold text-slate-800 dark:text-slate-200">
               No Assigned Applications
             </p>
-            <p className="font-sans text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">
+            <p className="font-sans text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1.5 leading-relaxed">
               Please contact an administrator to grant access permissions for your profile.
             </p>
           </div>
         ) : (
           <>
             {/* ======================================================== */}
-            {/* 📱 MOBILE VIEW: COMPACT ACTION PODS (< lg)              */}
+            {/* 📱 MOBILE VIEW: ROBUST, PROPORTIONAL CARDS (< lg)        */}
             {/* ======================================================== */}
-            <div className="flex lg:hidden flex-col gap-3 w-full max-w-md mx-auto overflow-y-auto no-scrollbar shrink">
+            <div className="flex lg:hidden flex-col gap-2.5 sm:gap-3 w-full max-w-md mx-auto overflow-y-auto no-scrollbar shrink px-1">
               {authorizedApps.map((app) => (
                 <div
                   key={`mob-${app.id}`}
                   onClick={() => navigate(app.path)}
-                  className={`group relative flex items-center justify-between p-4 rounded-xl bg-white dark:bg-slate-900/90 ${app.theme.border} transition-all duration-200 active:scale-[0.98] shadow-sm hover:shadow-md cursor-pointer overflow-hidden`}
+                  className={`group relative flex items-center justify-between p-3.5 sm:p-4 rounded-xl bg-white dark:bg-slate-900 ${app.theme.border} transition-all duration-200 active:scale-[0.98] shadow-sm hover:shadow-md cursor-pointer overflow-hidden`}
                 >
-                  {/* Subtle Corner Glow */}
+                  {/* Subtle Corner Radial Glow */}
                   <div
-                    className={`absolute top-0 right-0 w-32 h-32 bg-linear-to-bl ${app.theme.glow} rounded-bl-full pointer-events-none opacity-80`}
+                    className={`absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl ${app.theme.glow} rounded-bl-full pointer-events-none opacity-90`}
                   />
 
-                  <div className="flex items-center gap-3.5 min-w-0 relative z-10">
+                  <div className="flex items-center gap-3 min-w-0 relative z-10">
                     <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${app.theme.accentBg}`}
+                      className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${app.theme.accentBg}`}
                     >
-                      <app.icon size={22} strokeWidth={2.2} />
+                      <app.icon size={20} strokeWidth={2.2} />
                     </div>
                     <div className="min-w-0 text-left">
                       <div className="flex items-center gap-1.5 mb-0.5">
@@ -246,23 +239,23 @@ const AppPicker = () => {
                           {app.category}
                         </span>
                         <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                        <span className="font-sans text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                        <span className="font-sans text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           {app.badge}
                         </span>
                       </div>
-                      <h3 className="text-lg font-serif font-bold text-slate-900 dark:text-white tracking-tight truncate leading-tight">
+                      <h3 className="text-base font-serif font-bold text-slate-900 dark:text-white tracking-tight truncate leading-tight">
                         {app.title}
                       </h3>
-                      <p className="font-sans text-xs font-normal text-slate-600 dark:text-slate-300 truncate mt-0.5">
+                      <p className="font-sans text-[11px] font-normal text-slate-500 dark:text-slate-400 truncate mt-0.5">
                         {app.subtitle}
                       </p>
                     </div>
                   </div>
 
                   <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${app.theme.accentBg} group-hover:translate-x-0.5 transition-transform relative z-10`}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${app.theme.accentBg} group-hover:translate-x-0.5 transition-transform relative z-10 ml-2`}
                   >
-                    <ArrowRight size={15} strokeWidth={2.2} />
+                    <ArrowRight size={15} strokeWidth={2.4} />
                   </div>
                 </div>
               ))}
@@ -290,7 +283,7 @@ const AppPicker = () => {
                 >
                   {/* Internal Accent Glow */}
                   <div
-                    className={`absolute top-0 right-0 w-48 h-48 bg-linear-to-bl ${app.theme.glow} rounded-bl-full pointer-events-none transition-opacity duration-500 opacity-60 group-hover:opacity-100`}
+                    className={`absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl ${app.theme.glow} rounded-bl-full pointer-events-none transition-opacity duration-500 opacity-60 group-hover:opacity-100`}
                   />
 
                   {/* Background Index Marker */}
