@@ -145,12 +145,13 @@ const AppPicker = () => {
 
   return (
     <div className="h-dvh w-screen bg-[#F8FAFC] dark:bg-[#060A14] text-slate-900 dark:text-slate-100 flex flex-col font-serif overflow-hidden relative selection:bg-emerald-800 selection:text-white transition-colors duration-300">
-      {/* --- FLOATING CONTROLS --- */}
-      <div className="absolute top-4 sm:top-6 lg:top-7 right-4 sm:right-8 lg:right-10 z-50 flex items-center gap-2.5 sm:gap-3">
+ {/* --- TOP FLOATING CONTROLS (SOFT TINTED GRADIENTS) --- */}
+      <div className="absolute top-4 sm:top-6 lg:top-7 right-4 sm:right-8 lg:right-10 z-50 flex items-center gap-2 sm:gap-2.5">
+        {/* Theme Toggle Button */}
         <button
           type="button"
           onClick={toggleTheme}
-          className="flex items-center justify-center w-10 h-10 rounded-xl border border-slate-300/80 dark:border-white/15 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-400 hover:border-emerald-400/80 dark:hover:border-emerald-500/50 transition-all duration-200 shadow-xs active:scale-95 cursor-pointer outline-none"
+          className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500/15 via-teal-500/10 to-emerald-500/5 dark:from-emerald-400/20 dark:via-teal-400/10 dark:to-emerald-500/5 hover:from-emerald-500/25 hover:to-teal-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-500/30 shadow-xs active:scale-95 transition-all duration-200 cursor-pointer outline-none shrink-0 backdrop-blur-sm"
           aria-label="Toggle Theme"
         >
           {isDark ? (
@@ -160,16 +161,20 @@ const AppPicker = () => {
           )}
         </button>
 
+        {/* Sign Out Button */}
         <button
           onClick={logout}
-          className="group flex items-center gap-2 px-4 py-2 sm:py-2.5 bg-white/90 dark:bg-slate-900/90 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-slate-300/80 dark:border-white/15 hover:border-rose-400/80 dark:hover:border-rose-500/50 text-slate-700 dark:text-slate-200 hover:text-rose-700 dark:hover:text-rose-400 rounded-xl text-xs sm:text-sm font-sans tracking-wide transition-all duration-200 shadow-xs backdrop-blur-md outline-none active:scale-95 cursor-pointer"
+          className="group h-9 sm:h-10 px-2.5 sm:px-3.5 flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg bg-gradient-to-br from-rose-500/15 via-pink-500/10 to-rose-500/5 dark:from-rose-400/20 dark:via-pink-400/10 dark:to-rose-500/5 hover:from-rose-500/25 hover:to-pink-500/15 text-rose-800 dark:text-rose-300 border border-rose-300/60 dark:border-rose-500/30 shadow-xs active:scale-95 transition-all duration-200 outline-none cursor-pointer shrink-0 backdrop-blur-sm"
           title="Sign Out"
+          aria-label="Sign Out"
         >
           <LogOut
             size={15}
-            className="transition-transform group-hover:-translate-x-0.5 text-slate-400 dark:text-slate-400 group-hover:text-rose-600 dark:group-hover:text-rose-400"
+            className="transition-transform group-hover:-translate-x-0.5 text-rose-600 dark:text-rose-400"
           />
-          <span className="font-semibold">Sign Out</span>
+          <span className="hidden sm:inline font-sans text-xs sm:text-sm font-semibold tracking-wide">
+            Sign Out
+          </span>
         </button>
       </div>
 
@@ -181,11 +186,11 @@ const AppPicker = () => {
             <img
               src={Logo}
               alt="Dalal Central Logo"
-              className="h-16 sm:h-22 lg:h-28 xl:h-32 w-auto object-contain drop-shadow-[0_8px_20px_rgba(16,185,129,0.22)] dark:drop-shadow-[0_10px_24px_rgba(16,185,129,0.3)]"
+              className="h-20 sm:h-22 lg:h-28 xl:h-32 w-auto object-contain drop-shadow-[0_8px_20px_rgba(16,185,129,0.22)] dark:drop-shadow-[0_10px_24px_rgba(16,185,129,0.3)]"
             />
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-7xl font-serif tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-5xl sm:text-4xl lg:text-7xl font-serif tracking-tight text-slate-900 dark:text-slate-100">
             Dalal{" "}
             <span className="italic font-normal text-emerald-800 dark:text-emerald-400">
               Central
@@ -197,11 +202,11 @@ const AppPicker = () => {
             <span className="font-semibold text-slate-900 dark:text-slate-100">
               {firstName}
             </span>
-            , welcome to{" "}
+            . Welcome to{" "}
             <span className="italic font-normal text-emerald-800 dark:text-emerald-400">
               Dalal Central
             </span>
-            . Choose your application.
+            . Choose your application below.
           </p>
         </div>
 
