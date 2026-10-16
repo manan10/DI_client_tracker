@@ -29,7 +29,7 @@ const ExpenseDashboard = lazy(() => import("./apps/expense-tracker/pages/Expense
 const MaintenanceViewExpenses = lazy(() => import("./apps/expense-tracker/pages/MaintenanceViewExpenses"));
 const ExpenseSettings = lazy(() => import("./apps/expense-tracker/pages/ExpenseSettings"));
 const ExpenseAnalytics = lazy(() => import("./apps/expense-tracker/pages/ExpenseAnalytics"));
-const ExpenseHistoryNew = lazy(() => import("./apps/expense-tracker/pages/ExpenseHistoryNew"));
+const ExpenseHistory = lazy(() => import("./apps/expense-tracker/pages/ExpenseHistory"));
 
 // TV Rater App Components
 const ShowRaterHome = lazy(() => import("./apps/tv-ranker/pages/ShowRaterHome"));
@@ -93,8 +93,7 @@ function App() {
               >
                 <Route path="/expenses" element={<ExpenseDashboard />} />
                 <Route path="/expenses/analytics" element={<ExpenseAnalytics />} />
-                {/* <Route path="/expenses/history" element={<ExpenseHistory />} /> */}
-                <Route path="/expenses/history" element={<ExpenseHistoryNew />} />
+                <Route path="/expenses/history" element={<ExpenseHistory />} />
               </Route>
 
               {/* Expense Settings (Excluded from Global Floating Actions) */}

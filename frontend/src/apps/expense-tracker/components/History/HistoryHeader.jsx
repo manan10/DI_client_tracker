@@ -37,7 +37,7 @@ const HistoryHeader = ({
   }, []);
 
   return (
-    <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 pb-6 border-b border-slate-200/90 dark:border-white/10 shrink-0">
+    <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 pb-6 border-b border-slate-200/90 dark:border-white/10 shrink-0 font-sans">
       {/* Title & Context */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
@@ -46,16 +46,17 @@ const HistoryHeader = ({
             <span>Audit & Statement Center</span>
           </span>
           <span className="text-slate-300 dark:text-slate-700">•</span>
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 font-sans">
             Treasury Engine
           </span>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-[1000] uppercase tracking-tight bg-linear-to-r from-slate-900 via-slate-800 to-emerald-700 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent leading-none">
-          Expense History
+        {/* Dalal System: font-serif tracking-tight with italic accent */}
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif tracking-tight font-bold bg-linear-to-r from-slate-900 via-slate-800 to-emerald-700 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent leading-none">
+          Expense <span className="italic font-normal">History</span>
         </h1>
 
-        <p className="text-sm sm:text-base font-medium text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
+        <p className="text-sm sm:text-base font-normal text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed font-sans">
           Track treasury reserves, monitor daily spending channels, and reconcile physical cash balances from one centralized command hub.
         </p>
       </div>
@@ -89,18 +90,18 @@ const HistoryHeader = ({
         </div>
 
         {/* Month Picker Dropdown Trigger */}
-        <div className="relative shrink-0" ref={dateDropdownRef}>
+        <div className="relative shrink-0 font-sans" ref={dateDropdownRef}>
           <button
             type="button"
             onClick={() => setIsDateOpen(!isDateOpen)}
-            className={`h-11 px-3.5 flex items-center gap-2.5 bg-white dark:bg-[#0B1120] border-2 rounded-xl shadow-xs transition-all cursor-pointer outline-none ${
+            className={`h-11 px-3.5 flex items-center gap-2.5 bg-white dark:bg-[#0B1120] border-2 rounded-xl shadow-xs transition-all cursor-pointer outline-none font-sans ${
               isDateOpen
                 ? "border-indigo-600 ring-2 ring-indigo-500/20 text-indigo-600 dark:text-indigo-400"
                 : "border-slate-300 hover:border-slate-400 dark:border-slate-700 dark:hover:border-slate-600 text-slate-900 dark:text-white"
             }`}
           >
             <Calendar size={15} className="text-indigo-600 dark:text-indigo-400" />
-            <span className="text-xs sm:text-sm font-black tracking-tight">
+            <span className="text-xs sm:text-sm font-semibold tracking-normal font-sans">
               {months[selectedMonth]} {selectedYear}
             </span>
             <ChevronDown
@@ -113,9 +114,9 @@ const HistoryHeader = ({
 
           {/* Month/Year Popover Modal */}
           {isDateOpen && (
-            <div className="absolute top-[calc(100%+6px)] left-0 sm:left-auto sm:right-0 z-50 w-72 bg-white dark:bg-[#0B1120] border-2 border-indigo-500/30 rounded-xl shadow-2xl overflow-hidden p-3 animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute top-[calc(100%+6px)] left-0 sm:left-auto sm:right-0 z-50 w-72 bg-white dark:bg-[#0B1120] border-2 border-indigo-500/30 rounded-xl shadow-2xl overflow-hidden p-3 animate-in fade-in zoom-in-95 duration-150 font-sans">
               {/* Year Selector Tabs */}
-              <div className="flex gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-lg mb-2.5 border border-slate-200/80 dark:border-white/10">
+              <div className="flex gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-lg mb-2.5 border border-slate-200/80 dark:border-white/10 font-sans">
                 {years.map((y) => (
                   <button
                     key={y}
@@ -133,7 +134,7 @@ const HistoryHeader = ({
               </div>
 
               {/* 12-Month Grid */}
-              <div className="grid grid-cols-4 gap-1">
+              <div className="grid grid-cols-4 gap-1 font-sans">
                 {months.map((m, idx) => (
                   <button
                     key={m}
@@ -142,9 +143,9 @@ const HistoryHeader = ({
                       setSelectedMonth(idx);
                       setIsDateOpen(false);
                     }}
-                    className={`py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer font-sans ${
                       selectedMonth === idx
-                        ? "bg-emerald-600 text-white font-black shadow-xs"
+                        ? "bg-emerald-600 text-white font-bold shadow-xs"
                         : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
                     }`}
                   >

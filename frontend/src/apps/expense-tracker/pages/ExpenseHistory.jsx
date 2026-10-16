@@ -45,7 +45,7 @@ const getRelativeDateHeader = (dateStr) => {
   };
 };
 
-const ExpenseHistoryNew = () => {
+const ExpenseHistory = () => {
   const { request, loading } = useApi();
   const { wallets = [], refreshKey, fetchWallets } = useOutletContext() || {};
 
@@ -373,4 +373,4 @@ const ExpenseHistoryNew = () => {
   );
 };
 
-export default ExpenseHistoryNew;
+export default ExpenseHistory;
