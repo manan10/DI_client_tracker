@@ -46,7 +46,7 @@ const MobileLedgerFeed = ({
   toggleRow,
 }) => {
   return (
-    <div className="lg:hidden flex flex-col space-y-6 w-full min-w-0 max-w-full">
+    <div className="lg:hidden flex flex-col space-y-6 w-full min-w-0 max-w-full font-sans">
       {groupedMobileTransactions.map((group, groupIdx) => {
         // Derive clean date attributes from the first transaction in the group
         const sampleDate = group.items?.[0]?.date ? new Date(group.items[0].date) : new Date();
@@ -62,20 +62,20 @@ const MobileLedgerFeed = ({
               <div className="flex items-center gap-2">
                 {/* Two-tone Date Block */}
                 <div className="inline-flex items-stretch rounded-sm bg-slate-900 text-white dark:bg-white dark:text-slate-900 border border-slate-200/90 dark:border-white/10 shadow-2xs overflow-hidden shrink-0">
-                  <span className="px-2 py-0.5 text-xs font-mono font-black leading-none flex items-center">
+                  <span className="px-2 py-0.5 text-xs font-mono font-bold leading-none flex items-center">
                     {dayStr}
                   </span>
-                  <span className="px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider bg-emerald-600 text-white dark:bg-emerald-500 dark:text-slate-950 flex items-center">
+                  <span className="px-1.5 py-0.5 text-[9px] font-mono font-semibold uppercase tracking-wider bg-emerald-600 text-white dark:bg-emerald-500 dark:text-slate-950 flex items-center">
                     {monthStr}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400">
-                  <span className="text-emerald-600 dark:text-emerald-400 font-black">{weekdayStr}</span>
+                <div className="flex items-center gap-1.5 text-[11px] font-mono font-medium text-slate-500 dark:text-slate-400">
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">{weekdayStr}</span>
                   <span className="text-slate-300 dark:text-slate-700">•</span>
                   <span>{yearStr}</span>
                   {group.header === "Today" || group.header === "Yesterday" ? (
-                    <span className="ml-1 px-1.5 py-0.2 text-[9px] uppercase font-bold tracking-wider rounded-xs bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300">
+                    <span className="ml-1 px-1.5 py-0.2 text-[9px] uppercase font-semibold tracking-wider rounded-xs bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-sans">
                       {group.header}
                     </span>
                   ) : null}
@@ -178,12 +178,12 @@ const MobileLedgerFeed = ({
                         </div>
 
                         <div className="flex flex-col min-w-0 flex-1">
-                          <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight break-words">
+                          <span className="font-serif tracking-tight text-xs text-slate-900 dark:text-white leading-tight break-words">
                             {subCategoryLabel}
                           </span>
 
                           <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                            <span className="font-mono font-semibold uppercase tracking-wider px-1.5 py-0.2 rounded-xs bg-slate-100 dark:bg-white/5 border border-slate-200/70 dark:border-white/10 text-[9px] text-slate-600 dark:text-slate-300">
+                            <span className="font-mono font-medium uppercase tracking-wider px-1.5 py-0.2 rounded-xs bg-slate-100 dark:bg-white/5 border border-slate-200/70 dark:border-white/10 text-[9px] text-slate-600 dark:text-slate-300">
                               {categoryLabel}
                             </span>
 
@@ -211,7 +211,7 @@ const MobileLedgerFeed = ({
 
                       {/* Right: Net Amount & Timestamp */}
                       <div className="flex flex-col items-end shrink-0 pl-1 text-right">
-                        <div className="flex items-center gap-1 font-mono font-black text-xs sm:text-sm tabular-nums tracking-tight">
+                        <div className="flex items-center gap-1 font-mono font-bold text-xs sm:text-sm tabular-nums tracking-tight">
                           {isDebit ? (
                             <ArrowUpRight
                               size={13}
@@ -249,7 +249,7 @@ const MobileLedgerFeed = ({
                         <div className="p-3 rounded-xs bg-slate-50 dark:bg-[#070B14] border border-slate-200/80 dark:border-white/10 flex flex-col gap-2.5 w-full min-w-0">
                           {/* Note / Description */}
                           {item.description ? (
-                            <div className="text-slate-700 dark:text-slate-300 italic text-[11px] bg-white dark:bg-[#0B1120] p-2 rounded-xs border border-slate-200/70 dark:border-white/5 break-words">
+                            <div className="text-slate-700 dark:text-slate-300 font-sans text-[11px] bg-white dark:bg-[#0B1120] p-2 rounded-xs border border-slate-200/70 dark:border-white/5 break-words">
                               "{item.description}"
                             </div>
                           ) : (
@@ -260,7 +260,7 @@ const MobileLedgerFeed = ({
 
                           {/* Wallet Balance Movement */}
                           <div className="flex flex-col gap-1 pt-1 border-t border-slate-200/60 dark:border-white/5 w-full min-w-0">
-                            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                            <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
                               {isDebit ? (
                                 <TrendingDown size={11} className="text-rose-500" />
                               ) : (
@@ -270,7 +270,7 @@ const MobileLedgerFeed = ({
                             </span>
 
                             <div className="flex items-center justify-between text-xs font-mono font-bold bg-white dark:bg-[#0B1120] p-2 rounded-xs border border-slate-200/70 dark:border-white/5 w-full min-w-0">
-                              <span className="truncate text-slate-600 dark:text-slate-300 max-w-[45%]">
+                              <span className="truncate text-slate-600 dark:text-slate-300 max-w-[45%] font-serif tracking-tight">
                                 {sourceName}
                               </span>
                               <div className="flex items-center gap-1.5 shrink-0">
@@ -285,8 +285,8 @@ const MobileLedgerFeed = ({
                                 <span
                                   className={`tabular-nums ${
                                     isDebit
-                                      ? "text-rose-600 dark:text-rose-400 font-black"
-                                      : "text-emerald-600 dark:text-emerald-400 font-black"
+                                      ? "text-rose-600 dark:text-rose-400 font-bold"
+                                      : "text-emerald-600 dark:text-emerald-400 font-bold"
                                   }`}
                                 >
                                   ₹{formatINR(afterSource ?? item.amount)}
@@ -301,7 +301,7 @@ const MobileLedgerFeed = ({
                               <Clock size={11} className="text-indigo-500 shrink-0" />
                               <span>{timeStr}</span>
                             </div>
-                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                            <span className="font-sans font-medium text-slate-700 dark:text-slate-300">
                               {isTransfer
                                 ? "Transfer"
                                 : isDebit
@@ -313,7 +313,7 @@ const MobileLedgerFeed = ({
                           {/* Ref ID & Status */}
                           <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-0.5 w-full min-w-0">
                             <span>ID: #{item._id?.slice(-8).toUpperCase()}</span>
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-500/20 text-[9px]">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-500/20 text-[9px] font-sans">
                               <CheckCircle2 size={10} />
                               Checked
                             </span>

@@ -46,9 +46,9 @@ const DesktopLedgerTable = ({
   toggleRow,
 }) => {
   return (
-    <div className="hidden lg:flex flex-col w-full overflow-hidden rounded-sm border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1120] shadow-2xs">
-      {/* ── Table Header Strip (Larger & Tinted) ── */}
-      <div className="grid grid-cols-12 gap-3 px-6 py-3.5 border-b border-slate-200 dark:border-white/10 select-none text-xs font-mono font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-200 bg-slate-100/80 dark:bg-white/[0.04]">
+    <div className="hidden lg:flex flex-col w-full overflow-hidden rounded-sm border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1120] shadow-2xs font-sans">
+      {/* ── Table Header Strip ── */}
+      <div className="grid grid-cols-12 gap-3 px-6 py-3.5 border-b border-slate-200 dark:border-white/10 select-none text-xs font-mono font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-200 bg-slate-100/80 dark:bg-white/[0.04]">
         <div className="col-span-2 flex items-center gap-1.5">
           <span>Date</span>
           <span className="text-slate-300 dark:text-slate-600">•</span>
@@ -147,10 +147,10 @@ const DesktopLedgerTable = ({
                 {/* 1. Date & Time Column */}
                 <div className="col-span-2 flex flex-col min-w-0 pr-2 border-r border-slate-100 dark:border-white/5">
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-xs font-mono font-black text-slate-900 dark:text-white tracking-tight">
+                    <span className="text-xs font-mono font-bold text-slate-900 dark:text-white tracking-tight">
                       {dayStr} {monthStr}
                     </span>
-                    <span className="text-[10px] font-mono text-slate-400 font-semibold">
+                    <span className="text-[10px] font-mono text-slate-400 font-medium">
                       {yearStr}
                     </span>
                   </div>
@@ -176,16 +176,16 @@ const DesktopLedgerTable = ({
 
                   <div className="flex flex-col min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                      <span className="font-serif tracking-tight text-xs text-slate-900 dark:text-white truncate">
                         {subCategoryLabel}
                       </span>
-                      <span className="text-[9px] font-mono font-semibold uppercase tracking-wider px-1.5 py-0.2 rounded-xs bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 border border-slate-200/70 dark:border-white/10 truncate max-w-28">
+                      <span className="text-[9px] font-mono font-medium uppercase tracking-wider px-1.5 py-0.2 rounded-xs bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 border border-slate-200/70 dark:border-white/10 truncate max-w-28">
                         {categoryLabel}
                       </span>
                     </div>
 
                     {item.description ? (
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5 italic">
+                      <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 truncate mt-0.5">
                         "{item.description}"
                       </span>
                     ) : (
@@ -235,7 +235,7 @@ const DesktopLedgerTable = ({
                       />
                     )}
                     <span
-                      className={`font-mono font-black text-sm tabular-nums tracking-tight ${
+                      className={`font-mono font-bold text-sm tabular-nums tracking-tight ${
                         isDebit
                           ? "text-rose-600 dark:text-rose-400"
                           : "text-emerald-600 dark:text-emerald-400"
@@ -251,26 +251,26 @@ const DesktopLedgerTable = ({
                 </div>
               </div>
 
-              {/* ── Expanded Detail Drawer (Plain Words & Clean Alignment) ── */}
+              {/* ── Expanded Detail Drawer ── */}
               {isExpanded && (
                 <div className="px-6 pb-4 pt-1 border-t border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.015] animate-in fade-in duration-100">
                   <div className="grid grid-cols-3 gap-4 p-3.5 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xs shadow-2xs mt-1.5">
                     
                     {/* Section 1: Details */}
                     <div className="flex flex-col gap-1.5 border-r border-slate-100 dark:border-white/5 pr-4">
-                      <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                      <span className="text-[11px] font-sans font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                         <Tag size={12} className="text-emerald-600 dark:text-emerald-400" /> Details
                       </span>
                       <div className="flex flex-col mt-0.5">
-                        <span className="text-xs font-bold text-slate-900 dark:text-white">
+                        <span className="text-xs font-serif tracking-tight text-slate-900 dark:text-white">
                           {subCategoryLabel}
                         </span>
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 mt-0.5">
                           Category: <strong className="text-slate-800 dark:text-slate-200 font-semibold">{categoryLabel}</strong>
                         </span>
                       </div>
-                      <div className="mt-1 p-2 rounded-xs bg-slate-50 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/5 text-[11px] text-slate-600 dark:text-slate-300">
-                        <span className="font-semibold text-slate-400 block text-[9px] uppercase tracking-wider mb-0.5">
+                      <div className="mt-1 p-2 rounded-xs bg-slate-50 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/5 text-[11px] font-sans text-slate-600 dark:text-slate-300">
+                        <span className="font-semibold text-slate-400 block text-[9px] uppercase tracking-wider mb-0.5 font-sans">
                           Note:
                         </span>
                         {item.description ? `"${item.description}"` : "No note attached."}
@@ -279,7 +279,7 @@ const DesktopLedgerTable = ({
 
                     {/* Section 2: Wallet Balance */}
                     <div className="flex flex-col gap-1.5 border-r border-slate-100 dark:border-white/5 px-4">
-                      <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                      <span className="text-[11px] font-sans font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                         {isDebit ? (
                           <TrendingDown size={12} className="text-rose-500" />
                         ) : (
@@ -289,7 +289,7 @@ const DesktopLedgerTable = ({
                       </span>
 
                       <div className="flex flex-col gap-1 mt-0.5">
-                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                        <span className="text-xs font-serif tracking-tight text-slate-800 dark:text-slate-200 truncate">
                           {sourceName}
                         </span>
                         <div className="flex items-center gap-2 text-xs font-mono font-bold bg-slate-50 dark:bg-white/[0.02] p-2 rounded-xs border border-slate-200/70 dark:border-white/5">
@@ -304,14 +304,14 @@ const DesktopLedgerTable = ({
                           <span
                             className={`tabular-nums ${
                               isDebit
-                                ? "text-rose-600 dark:text-rose-400 font-black"
-                                : "text-emerald-600 dark:text-emerald-400 font-black"
+                                ? "text-rose-600 dark:text-rose-400 font-bold"
+                                : "text-emerald-600 dark:text-emerald-400 font-bold"
                             }`}
                           >
                             ₹{formatINR(afterSource ?? item.amount)}
                           </span>
                         </div>
-                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        <span className="text-[11px] font-sans font-normal text-slate-500 dark:text-slate-400">
                           {isDebit
                             ? `Amount spent: ₹${formatINR(item.amount)}`
                             : `Amount added: ₹${formatINR(item.amount)}`}
@@ -322,13 +322,13 @@ const DesktopLedgerTable = ({
                     {/* Section 3: Summary & Date */}
                     <div className="flex flex-col justify-between pl-4">
                       <div className="flex flex-col gap-1">
-                        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                        <span className="text-[11px] font-sans font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                           <Clock size={12} className="text-indigo-500" /> Date & Time
                         </span>
-                        <span className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                        <span className="text-xs font-mono font-medium text-slate-800 dark:text-slate-200 mt-0.5">
                           {dayStr} {monthStr} {yearStr} at {timeStr}
                         </span>
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                        <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 mt-1">
                           Payment Type:{" "}
                           <strong className="text-slate-800 dark:text-slate-200 font-semibold">
                             {isTransfer
@@ -342,7 +342,7 @@ const DesktopLedgerTable = ({
 
                       <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
                         <span>ID: #{item._id?.slice(-8).toUpperCase()}</span>
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-500/20 text-[10px]">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-500/20 text-[10px] font-sans">
                           <CheckCircle2 size={11} />
                           Checked
                         </span>

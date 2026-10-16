@@ -13,7 +13,7 @@ const formatINR = (amount) => {
   );
 };
 
-const ExpenseDashboardNew = () => {
+const ExpenseDashboard = () => {
   const { request, loading } = useApi();
   const {
     fetchWallets,
@@ -129,12 +129,12 @@ const ExpenseDashboardNew = () => {
             <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-gradient-to-r from-white to-slate-50 dark:from-[#0B1120] dark:to-[#0F172A] border border-slate-300 dark:border-white/20 ring-1 ring-slate-200 dark:ring-white/5 shadow-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <span className="text-[11px] font-mono font-bold tracking-wider uppercase text-slate-700 dark:text-slate-300">
-                  Dalal Book
+                <span className="text-[11px] font-sans font-semibold tracking-wider uppercase text-slate-700 dark:text-slate-300">
+                  Dalal <span className="font-serif italic font-normal text-emerald-800 dark:text-emerald-400 capitalize">Book</span>
                 </span>
               </div>
 
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gradient-to-r from-slate-100 to-slate-50 dark:from-white/[0.04] dark:to-white/[0.02] border border-slate-300/80 dark:border-white/15 ring-1 ring-slate-200/70 dark:ring-white/5 text-slate-600 dark:text-slate-400 text-xs font-medium">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gradient-to-r from-slate-100 to-slate-50 dark:from-white/[0.04] dark:to-white/[0.02] border border-slate-300/80 dark:border-white/15 ring-1 ring-slate-200/70 dark:ring-white/5 text-slate-600 dark:text-slate-400 text-xs font-sans font-medium">
                 <CalendarDays size={13} className="text-emerald-600 dark:text-emerald-400" />
                 <span>{currentMonthName}</span>
               </div>
@@ -142,16 +142,16 @@ const ExpenseDashboardNew = () => {
 
             {/* Title & Explainer */}
             <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl 2xl:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
-                Expense Overview
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl 2xl:text-5xl font-serif tracking-tight text-slate-900 dark:text-slate-100 leading-tight">
+                Expense <span className="italic font-normal text-emerald-800 dark:text-emerald-400">Overview</span>
               </h1>
-              <p className="mt-1.5 text-xs sm:text-sm lg:text-base font-normal text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
+              <p className="mt-1.5 text-xs sm:text-sm lg:text-base font-sans font-normal text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl">
                 See all your cash balances, track daily expenses, and check what's been spent this month in one place.
               </p>
             </div>
 
             {/* Micro Balance Note */}
-            <div className="flex items-center gap-3 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-3 text-xs font-sans font-medium text-slate-500 dark:text-slate-400">
               <div className="flex items-center gap-1.5">
                 <Wallet size={13} className="text-slate-400 dark:text-slate-500" />
                 <span>{wallets.length} active wallets</span>
@@ -166,35 +166,35 @@ const ExpenseDashboardNew = () => {
             </div>
           </div>
 
-          {/* Right: TOTAL SPENT CARD (Double-Bordered & Gradient-Filled) */}
+          {/* Right: TOTAL SPENT CARD */}
           <div className="relative w-full lg:w-auto lg:min-w-[420px] 2xl:min-w-[480px] rounded-2xl p-5 sm:p-6 lg:p-7 overflow-hidden transition-all duration-300 border border-slate-300 dark:border-indigo-500/40 ring-1 ring-slate-400/50 dark:ring-indigo-400/20 bg-gradient-to-br from-indigo-50/80 via-white to-violet-100/50 dark:from-[#0E1326] dark:via-[#0B1020] dark:to-[#17142E] shadow-sm">
             {/* Top Row: Crisp Contrast Tag */}
             <div className="relative z-10 flex items-center justify-between gap-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-indigo-500/10 dark:bg-indigo-400/15 border border-indigo-500/20 text-indigo-900 dark:text-indigo-300 text-[10px] font-mono font-bold tracking-widest uppercase">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-indigo-500/10 dark:bg-indigo-400/15 border border-indigo-500/20 text-indigo-900 dark:text-indigo-300 text-[10px] font-sans font-semibold tracking-wider uppercase">
                 <ArrowUpRight size={13} strokeWidth={2.5} />
                 <span>Spent This Month</span>
               </div>
 
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-1 text-[11px] font-sans font-semibold text-slate-500 dark:text-slate-400">
                 <Sparkles size={11} className="text-indigo-600 dark:text-indigo-400" />
-                <span className="text-[10px] font-mono uppercase tracking-wider">Live Total</span>
+                <span className="text-[10px] uppercase tracking-wider">Live Total</span>
               </div>
             </div>
 
-            {/* Middle Row: Massive Standout Currency Display */}
+            {/* Middle Row: Standout Currency Display */}
             <div className="relative z-10 mt-3 sm:mt-5 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl lg:text-4xl font-light text-slate-400 dark:text-slate-500 select-none">
+              <span className="text-2xl sm:text-3xl lg:text-4xl font-serif italic text-slate-400 dark:text-slate-500 select-none">
                 ₹
               </span>
-              <span className="text-4xl sm:text-5xl lg:text-6xl 2xl:text-7xl font-mono font-black text-slate-950 dark:text-white tracking-tight leading-none tabular-nums truncate">
+              <span className="text-4xl sm:text-5xl lg:text-6xl 2xl:text-7xl font-mono font-bold text-slate-950 dark:text-white tracking-tight leading-none tabular-nums truncate">
                 {formatINR(summary.monthlyTotal)}
               </span>
             </div>
 
             {/* Bottom Row: Context Footer */}
-            <div className="relative z-10 mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400">
+            <div className="relative z-10 mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-between text-[11px] font-sans text-slate-600 dark:text-slate-400">
               <span>Card, Bank Transfers & Cash</span>
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
                 Auto-Calculated
               </span>
             </div>
@@ -241,4 +241,4 @@ const ExpenseDashboardNew = () => {
   );
 };
 
-export default ExpenseDashboardNew;
+export default ExpenseDashboard;
