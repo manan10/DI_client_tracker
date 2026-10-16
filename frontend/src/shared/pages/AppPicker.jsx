@@ -4,10 +4,8 @@ import { useNavigate } from "react-router-dom";
 import {
   LogOut,
   ArrowRight,
-  ShieldCheck,
   Users,
   ReceiptIndianRupee,
-  Sparkles,
   Zap,
   ArrowUpRight,
   Sun,
@@ -31,19 +29,19 @@ const allApps = [
     badge: "Business App",
     theme: {
       primary: "bg-emerald-600 dark:bg-emerald-500",
-      text: "text-emerald-700 dark:text-emerald-400",
+      text: "text-emerald-800 dark:text-emerald-300",
       accentBg:
-        "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200/80 dark:border-emerald-500/20",
+        "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200/90 dark:border-emerald-500/30",
       border:
-        "border-emerald-200/80 dark:border-emerald-500/20 hover:border-emerald-500/60 dark:hover:border-emerald-500/50",
+        "border-2 border-emerald-300/80 dark:border-emerald-500/40 hover:border-emerald-600 dark:hover:border-emerald-400",
       cardHover:
-        "hover:shadow-[0_20px_40px_rgba(16,185,129,0.12)] dark:hover:shadow-[0_20px_40px_rgba(16,185,129,0.08)]",
+        "hover:shadow-[0_22px_45px_rgba(16,185,129,0.16)] dark:hover:shadow-[0_22px_45px_rgba(16,185,129,0.12)]",
       badgeBg:
-        "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-500/30",
+        "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-300/90 dark:border-emerald-500/30",
       pillBg:
-        "bg-emerald-50/80 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-100 dark:border-emerald-500/20",
-      glow: "from-emerald-500/15 dark:from-emerald-500/20 via-teal-500/5 to-transparent",
-      btn: "bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white shadow-emerald-600/20 dark:shadow-emerald-500/30",
+        "bg-emerald-50/90 dark:bg-emerald-500/10 text-emerald-900 dark:text-emerald-200 border border-emerald-200/90 dark:border-emerald-500/25",
+      glow: "from-emerald-500/20 via-teal-500/10 to-transparent",
+      btn: "bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white shadow-emerald-700/20 dark:shadow-emerald-500/30",
     },
   },
   {
@@ -59,19 +57,19 @@ const allApps = [
     badge: "Personal App",
     theme: {
       primary: "bg-indigo-600 dark:bg-indigo-500",
-      text: "text-indigo-700 dark:text-indigo-400",
+      text: "text-indigo-800 dark:text-indigo-300",
       accentBg:
-        "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-200/80 dark:border-indigo-500/20",
+        "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200/90 dark:border-indigo-500/30",
       border:
-        "border-indigo-200/80 dark:border-indigo-500/20 hover:border-indigo-500/60 dark:hover:border-indigo-500/50",
+        "border-2 border-indigo-300/80 dark:border-indigo-500/40 hover:border-indigo-600 dark:hover:border-indigo-400",
       cardHover:
-        "hover:shadow-[0_20px_40px_rgba(99,102,241,0.12)] dark:hover:shadow-[0_20px_40px_rgba(99,102,241,0.08)]",
+        "hover:shadow-[0_22px_45px_rgba(99,102,241,0.16)] dark:hover:shadow-[0_22px_45px_rgba(99,102,241,0.12)]",
       badgeBg:
-        "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-500/30",
+        "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border border-indigo-300/90 dark:border-indigo-500/30",
       pillBg:
-        "bg-indigo-50/80 dark:bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border-indigo-100 dark:border-indigo-500/20",
-      glow: "from-indigo-500/15 dark:from-indigo-500/20 via-blue-500/5 to-transparent",
-      btn: "bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white shadow-indigo-600/20 dark:shadow-indigo-500/30",
+        "bg-indigo-50/90 dark:bg-indigo-500/10 text-indigo-900 dark:text-indigo-200 border border-indigo-200/90 dark:border-indigo-500/25",
+      glow: "from-indigo-500/20 via-blue-500/10 to-transparent",
+      btn: "bg-indigo-700 hover:bg-indigo-800 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white shadow-indigo-700/20 dark:shadow-indigo-500/30",
     },
   },
   {
@@ -82,24 +80,24 @@ const allApps = [
     description:
       "Track, score out of 10, log rating revisions over time, and import your curated lists.",
     features: ["Rating Timeline", "Notes Importer", "Watchlist"],
-    path: "/tv-rater",
+    path: "/shows",
     icon: Clapperboard,
     badge: "Leisure App",
     theme: {
       primary: "bg-rose-600 dark:bg-rose-500",
-      text: "text-rose-700 dark:text-rose-400",
+      text: "text-rose-800 dark:text-rose-300",
       accentBg:
-        "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200/80 dark:border-rose-500/20",
+        "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-200/90 dark:border-rose-500/30",
       border:
-        "border-rose-200/80 dark:border-rose-500/20 hover:border-rose-500/60 dark:hover:border-rose-500/50",
+        "border-2 border-rose-300/80 dark:border-rose-500/40 hover:border-rose-600 dark:hover:border-rose-400",
       cardHover:
-        "hover:shadow-[0_20px_40px_rgba(244,63,94,0.12)] dark:hover:shadow-[0_20px_40px_rgba(244,63,94,0.08)]",
+        "hover:shadow-[0_22px_45px_rgba(244,63,94,0.16)] dark:hover:shadow-[0_22px_45px_rgba(244,63,94,0.12)]",
       badgeBg:
-        "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-200/80 dark:border-rose-500/30",
+        "bg-rose-50 dark:bg-rose-500/10 text-rose-800 dark:text-rose-300 border border-rose-300/90 dark:border-rose-500/30",
       pillBg:
-        "bg-rose-50/80 dark:bg-rose-500/10 text-rose-800 dark:text-rose-300 border-rose-100 dark:border-rose-500/20",
-      glow: "from-rose-500/15 dark:from-rose-500/20 via-orange-500/5 to-transparent",
-      btn: "bg-rose-600 hover:bg-rose-700 dark:bg-rose-500 dark:hover:bg-rose-600 text-white shadow-rose-600/20 dark:shadow-rose-500/30",
+        "bg-rose-50/90 dark:bg-rose-500/10 text-rose-900 dark:text-rose-200 border border-rose-200/90 dark:border-rose-500/25",
+      glow: "from-rose-500/20 via-orange-500/10 to-transparent",
+      btn: "bg-rose-700 hover:bg-rose-800 dark:bg-rose-600 dark:hover:bg-rose-500 text-white shadow-rose-700/20 dark:shadow-rose-500/30",
     },
   },
 ];
@@ -109,7 +107,6 @@ const AppPicker = () => {
   const { logout, user } = useAuth();
   const [_, setActiveId] = useState(null);
 
-  // Theme state synced with local storage & document element
   const [isDark, setIsDark] = useState(() => {
     return (
       localStorage.theme === "dark" ||
@@ -135,135 +132,87 @@ const AppPicker = () => {
 
   const toggleTheme = () => setIsDark((prev) => !prev);
 
-  // Filter apps strictly according to the user's assigned permissions
   const authorizedApps = useMemo(() => {
+    if (user?.isAdmin) return allApps;
     const userPermissions = user?.allowedApps || [];
     return allApps.filter((app) => userPermissions.includes(app.id));
   }, [user]);
 
-  const userInitials = useMemo(() => {
-    if (!user?.name) return "DM";
-    const parts = user.name.split(" ");
-    return parts.length >= 2
-      ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
-      : user.name.slice(0, 2).toUpperCase();
+  const firstName = useMemo(() => {
+    if (!user?.name) return "User";
+    return user.name.trim().split(" ")[0];
   }, [user]);
 
   return (
-    <div className="h-dvh w-screen bg-[#F8FAFC] dark:bg-[#060A14] text-slate-900 dark:text-slate-100 flex flex-col font-sans overflow-hidden relative selection:bg-emerald-600 selection:text-white transition-colors duration-300">
-      {/* --- AMBIENT LUXURY LIGHTING EFFECTS --- */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-[25%] left-1/4 w-[55vw] h-[55vw] max-w-150 max-h-150 rounded-full bg-emerald-400/15 dark:bg-emerald-500/10 blur-[120px] pointer-events-none" />
-        <div className="absolute -bottom-[25%] right-1/4 w-[55vw] h-[55vw] max-w-150 max-h-150 rounded-full bg-indigo-400/15 dark:bg-indigo-500/10 blur-[120px] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] dark:bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] bg-size-[24px_24px] opacity-35 dark:opacity-30 mask-[radial-gradient(ellipse_70%_60%_at_50%_50%,#000_70%,transparent_100%)]" />
+    <div className="h-dvh w-screen bg-[#F8FAFC] dark:bg-[#060A14] text-slate-900 dark:text-slate-100 flex flex-col font-serif overflow-hidden relative selection:bg-emerald-800 selection:text-white transition-colors duration-300">
+      {/* --- FLOATING CONTROLS --- */}
+      <div className="absolute top-4 sm:top-6 lg:top-7 right-4 sm:right-8 lg:right-10 z-50 flex items-center gap-2.5 sm:gap-3">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="flex items-center justify-center w-10 h-10 rounded-xl border border-slate-300/80 dark:border-white/15 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-400 hover:border-emerald-400/80 dark:hover:border-emerald-500/50 transition-all duration-200 shadow-xs active:scale-95 cursor-pointer outline-none"
+          aria-label="Toggle Theme"
+        >
+          {isDark ? (
+            <Sun size={17} className="text-amber-400" />
+          ) : (
+            <Moon size={17} className="text-emerald-700" />
+          )}
+        </button>
+
+        <button
+          onClick={logout}
+          className="group flex items-center gap-2 px-4 py-2 sm:py-2.5 bg-white/90 dark:bg-slate-900/90 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-slate-300/80 dark:border-white/15 hover:border-rose-400/80 dark:hover:border-rose-500/50 text-slate-700 dark:text-slate-200 hover:text-rose-700 dark:hover:text-rose-400 rounded-xl text-xs sm:text-sm font-sans tracking-wide transition-all duration-200 shadow-xs backdrop-blur-md outline-none active:scale-95 cursor-pointer"
+          title="Sign Out"
+        >
+          <LogOut
+            size={15}
+            className="transition-transform group-hover:-translate-x-0.5 text-slate-400 dark:text-slate-400 group-hover:text-rose-600 dark:group-hover:text-rose-400"
+          />
+          <span className="font-semibold">Sign Out</span>
+        </button>
       </div>
 
-      {/* --- TOP EXECUTIVE COMMAND BAR --- */}
-      <header className="relative z-50 w-full px-4 sm:px-8 py-3 sm:py-4 flex justify-between items-center shrink-0 border-b border-slate-200/70 dark:border-white/10 bg-white/75 dark:bg-[#0B1120]/80 backdrop-blur-xl shadow-[0_2px_15px_rgba(0,0,0,0.02)] dark:shadow-none transition-colors duration-300">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-slate-900 dark:bg-slate-800 shadow-sm flex items-center justify-center border border-slate-800 dark:border-slate-700">
+      {/* --- CENTRAL PORTAL WORKSPACE --- */}
+      <main className="flex-1 flex flex-col items-center justify-center w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 relative z-10 min-h-0 py-4 sm:py-6 lg:py-8">
+        {/* --- CLASSY BRANDING & WELCOME --- */}
+        <div className="flex flex-col items-center text-center mb-5 sm:mb-7 lg:mb-9 shrink-0">
+          <div className="mb-2.5 sm:mb-3 select-none transition-transform duration-300 hover:scale-105">
             <img
               src={Logo}
-              alt="Logo"
-              className="h-5 sm:h-6 w-auto object-contain drop-shadow-[0_4px_12px_rgba(16,185,129,0.25)]"
+              alt="Dalal Central Logo"
+              className="h-16 sm:h-22 lg:h-28 xl:h-32 w-auto object-contain drop-shadow-[0_8px_20px_rgba(16,185,129,0.22)] dark:drop-shadow-[0_10px_24px_rgba(16,185,129,0.3)]"
             />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xs sm:text-sm font-[1000] text-slate-900 dark:text-white uppercase tracking-tight leading-none">
-                Dalal{" "}
-                <span className="text-emerald-600 dark:text-emerald-400">
-                  Central
-                </span>
-              </h1>
-              <div className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Online
-              </div>
-            </div>
-            <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">
-              Select an App
-            </p>
-          </div>
-        </div>
 
-        {/* User Pill, Theme Switcher & Sign Out Action */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Theme Toggle Button */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-500/30 transition-all duration-200 shadow-2xs active:scale-95 cursor-pointer outline-none"
-            aria-label="Toggle Theme"
-          >
-            {isDark ? (
-              <Sun size={15} className="text-amber-400" />
-            ) : (
-              <Moon size={15} className="text-emerald-600" />
-            )}
-          </button>
-
-          {/* User Profile Pill */}
-          <div className="hidden md:flex items-center gap-2.5 px-3 py-1.5 bg-slate-50 dark:bg-white/3 border border-slate-200/80 dark:border-white/10 rounded-lg shadow-2xs">
-            <div className="w-6 h-6 rounded bg-emerald-600 dark:bg-emerald-500 text-white font-black text-[10px] flex items-center justify-center">
-              {userInitials}
-            </div>
-            <div className="text-left">
-              <p className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight leading-none truncate max-w-30">
-                {user?.name || "User"}
-              </p>
-              <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                {user?.isAdmin ? "Superuser" : user?.role || "Standard"}
-              </p>
-            </div>
-          </div>
-
-          {/* Sign Out Action */}
-          <button
-            onClick={logout}
-            className="group flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-slate-800/80 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-slate-200 dark:border-white/10 hover:border-rose-200 dark:hover:border-rose-500/30 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-200 shadow-2xs outline-none active:scale-95 cursor-pointer"
-            title="Sign Out"
-          >
-            <LogOut
-              size={13}
-              className="transition-transform group-hover:-translate-x-0.5 text-slate-400 dark:text-slate-500 group-hover:text-rose-600 dark:group-hover:text-rose-400"
-            />
-            <span className="hidden sm:inline">Sign Out</span>
-          </button>
-        </div>
-      </header>
-
-      {/* --- CENTRAL PORTAL WORKSPACE --- */}
-      <main className="flex-1 flex flex-col items-center justify-center w-full max-w-6xl mx-auto px-4 sm:px-6 relative z-10 min-h-0 py-2 sm:py-6">
-        {/* Header Hero Capsule */}
-        <div className="text-center space-y-1 sm:space-y-2 mb-4 sm:mb-6 shrink-0">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/90 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] shadow-2xs backdrop-blur-md">
-            <Sparkles
-              size={12}
-              className="text-emerald-600 dark:text-emerald-400 animate-spin"
-              style={{ animationDuration: "6s" }}
-            />
-            <span>Choose App</span>
-          </div>
-          <h2 className="text-2xl sm:text-4xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tight">
-            Select Your{" "}
-            <span className="bg-linear-to-r from-emerald-600 via-teal-500 to-indigo-600 dark:from-emerald-400 dark:via-teal-400 dark:to-indigo-400 bg-clip-text text-transparent">
-              Workspace
+          <h1 className="text-3xl sm:text-4xl lg:text-7xl font-serif tracking-tight text-slate-900 dark:text-slate-100">
+            Dalal{" "}
+            <span className="italic font-normal text-emerald-800 dark:text-emerald-400">
+              Central
             </span>
-          </h2>
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide hidden sm:block">
-            Click on an application below to start
+          </h1>
+
+          <p className="font-serif text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 mt-2 sm:mt-3 max-w-xl leading-relaxed">
+            Hello,{" "}
+            <span className="font-semibold text-slate-900 dark:text-slate-100">
+              {firstName}
+            </span>
+            , welcome to{" "}
+            <span className="italic font-normal text-emerald-800 dark:text-emerald-400">
+              Dalal Central
+            </span>
+            . Choose your application.
           </p>
         </div>
 
         {/* Empty State Fallback */}
         {authorizedApps.length === 0 ? (
-          <div className="p-8 text-center bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 rounded-2xl backdrop-blur-md shadow-xs max-w-md mx-auto">
-            <p className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+          <div className="p-8 text-center bg-white/90 dark:bg-slate-900/90 border-2 border-slate-300 dark:border-white/20 rounded-2xl backdrop-blur-md shadow-sm max-w-md mx-auto">
+            <p className="text-base font-serif font-semibold text-slate-800 dark:text-slate-200">
               No Assigned Applications
             </p>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-              Contact an administrator to grant access permissions for your profile.
+            <p className="font-sans text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">
+              Please contact an administrator to grant access permissions for your profile.
             </p>
           </div>
         ) : (
@@ -276,54 +225,59 @@ const AppPicker = () => {
                 <div
                   key={`mob-${app.id}`}
                   onClick={() => navigate(app.path)}
-                  className={`group relative flex items-center justify-between p-4 rounded-xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border ${app.theme.border} transition-all duration-200 active:scale-[0.98] shadow-sm hover:shadow-md cursor-pointer overflow-hidden`}
+                  className={`group relative flex items-center justify-between p-4 rounded-xl bg-white dark:bg-slate-900/90 ${app.theme.border} transition-all duration-200 active:scale-[0.98] shadow-sm hover:shadow-md cursor-pointer overflow-hidden`}
                 >
-                  <div className="flex items-center gap-3.5 min-w-0">
+                  {/* Subtle Corner Glow */}
+                  <div
+                    className={`absolute top-0 right-0 w-32 h-32 bg-linear-to-bl ${app.theme.glow} rounded-bl-full pointer-events-none opacity-80`}
+                  />
+
+                  <div className="flex items-center gap-3.5 min-w-0 relative z-10">
                     <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${app.theme.accentBg}`}
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${app.theme.accentBg}`}
                     >
-                      <app.icon size={22} strokeWidth={2.5} />
+                      <app.icon size={22} strokeWidth={2.2} />
                     </div>
                     <div className="min-w-0 text-left">
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <span
-                          className={`text-[8px] font-black uppercase tracking-widest ${app.theme.text}`}
+                          className={`font-serif italic text-xs font-semibold ${app.theme.text}`}
                         >
                           {app.category}
                         </span>
                         <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                        <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                        <span className="font-sans text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                           {app.badge}
                         </span>
                       </div>
-                      <h3 className="text-base font-[1000] text-slate-900 dark:text-white uppercase tracking-tight truncate leading-tight">
+                      <h3 className="text-lg font-serif font-bold text-slate-900 dark:text-white tracking-tight truncate leading-tight">
                         {app.title}
                       </h3>
-                      <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate mt-0.5">
+                      <p className="font-sans text-xs font-normal text-slate-600 dark:text-slate-300 truncate mt-0.5">
                         {app.subtitle}
                       </p>
                     </div>
                   </div>
 
                   <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${app.theme.accentBg} group-hover:translate-x-0.5 transition-transform`}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${app.theme.accentBg} group-hover:translate-x-0.5 transition-transform relative z-10`}
                   >
-                    <ArrowRight size={15} strokeWidth={2.5} />
+                    <ArrowRight size={15} strokeWidth={2.2} />
                   </div>
                 </div>
               ))}
             </div>
 
             {/* ======================================================== */}
-            {/* 💻 DESKTOP VIEW: DYNAMIC RESPONSIVE GRID (>= lg)         */}
+            {/* 💻 DESKTOP VIEW: PROMINENT BORDER & GLOW GRID (>= lg)   */}
             {/* ======================================================== */}
             <div
-              className={`hidden lg:grid gap-6 w-full max-w-6xl ${
+              className={`hidden lg:grid gap-6 xl:gap-8 w-full max-w-6xl xl:max-w-7xl ${
                 authorizedApps.length >= 3
                   ? "grid-cols-3"
                   : authorizedApps.length === 2
-                  ? "grid-cols-2 max-w-5xl"
-                  : "grid-cols-1 max-w-xl"
+                  ? "grid-cols-2 max-w-4xl"
+                  : "grid-cols-1 max-w-lg"
               }`}
             >
               {authorizedApps.map((app, idx) => (
@@ -332,7 +286,7 @@ const AppPicker = () => {
                   onMouseEnter={() => setActiveId(app.id)}
                   onMouseLeave={() => setActiveId(null)}
                   onClick={() => navigate(app.path)}
-                  className={`group relative flex flex-col justify-between p-7 rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border ${app.theme.border} transition-all duration-300 ${app.theme.cardHover} cursor-pointer min-h-76 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none`}
+                  className={`group relative flex flex-col justify-between p-7 xl:p-8 rounded-2xl bg-white dark:bg-slate-900/95 backdrop-blur-md ${app.theme.border} transition-all duration-300 ${app.theme.cardHover} cursor-pointer min-h-76 overflow-hidden shadow-xs hover:-translate-y-1`}
                 >
                   {/* Internal Accent Glow */}
                   <div
@@ -340,22 +294,22 @@ const AppPicker = () => {
                   />
 
                   {/* Background Index Marker */}
-                  <div className="absolute top-4 right-6 text-6xl font-[1000] italic leading-none pointer-events-none select-none text-slate-100 dark:text-slate-800/60 group-hover:text-slate-200/80 dark:group-hover:text-slate-700/60 transition-colors">
+                  <div className="absolute top-4 right-6 text-6xl font-serif italic leading-none pointer-events-none select-none text-slate-200/70 dark:text-slate-800/60 group-hover:text-slate-300/80 dark:group-hover:text-slate-700/70 transition-colors">
                     0{idx + 1}
                   </div>
 
                   {/* Card Top & Details */}
                   <div className="relative z-10">
-                    <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center justify-between mb-4">
                       <div
-                        className={`w-13 h-13 rounded-xl flex items-center justify-center border ${app.theme.accentBg} group-hover:scale-105 transition-transform duration-300 shadow-2xs`}
+                        className={`w-13 h-13 rounded-xl flex items-center justify-center ${app.theme.accentBg} group-hover:scale-105 transition-transform duration-300 shadow-2xs`}
                       >
-                        <app.icon size={24} strokeWidth={2.5} />
+                        <app.icon size={25} strokeWidth={2.2} />
                       </div>
                       <span
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-wider border shadow-2xs ${app.theme.badgeBg}`}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-sans font-semibold tracking-wide ${app.theme.badgeBg}`}
                       >
-                        <Zap size={11} />
+                        <Zap size={13} />
                         {app.badge}
                       </span>
                     </div>
@@ -363,18 +317,20 @@ const AppPicker = () => {
                     <div className="text-left space-y-1.5">
                       <div className="flex items-center gap-2">
                         <span
-                          className={`w-1.5 h-1.5 rounded-full ${app.theme.primary} animate-pulse`}
+                          className={`w-2 h-2 rounded-full ${app.theme.primary} opacity-90`}
                         />
                         <p
-                          className={`text-[10px] font-black uppercase tracking-[0.2em] ${app.theme.text}`}
+                          className={`font-serif italic text-xs font-semibold tracking-wide ${app.theme.text}`}
                         >
-                          {app.category} • {app.subtitle}
+                          {app.subtitle}
                         </p>
                       </div>
-                      <h3 className="text-xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-slate-950 dark:group-hover:text-rose-300 transition-colors">
+
+                      <h3 className="text-2xl font-serif font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-emerald-900 dark:group-hover:text-emerald-300 transition-colors">
                         {app.title}
                       </h3>
-                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm pt-1 line-clamp-2">
+
+                      <p className="font-sans text-sm font-normal text-slate-600 dark:text-slate-300 leading-relaxed max-w-sm pt-1 line-clamp-2">
                         {app.description}
                       </p>
                     </div>
@@ -384,7 +340,7 @@ const AppPicker = () => {
                       {app.features.map((feat) => (
                         <span
                           key={feat}
-                          className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${app.theme.pillBg}`}
+                          className={`font-sans text-xs font-medium px-2.5 py-0.5 rounded ${app.theme.pillBg}`}
                         >
                           {feat}
                         </span>
@@ -393,17 +349,17 @@ const AppPicker = () => {
                   </div>
 
                   {/* Card Footer CTA Bar */}
-                  <div className="relative z-10 pt-5 mt-4 border-t border-slate-100 dark:border-white/10 flex items-center justify-between">
-                    <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
+                  <div className="relative z-10 pt-4 mt-4 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-between">
+                    <span className="font-serif italic text-xs font-medium text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
                       Open Application
                     </span>
                     <div
-                      className={`px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-[1000] uppercase tracking-wider transition-all duration-200 ${app.theme.btn} shadow-sm group-hover:shadow-md`}
+                      className={`px-4 py-2 rounded-lg flex items-center gap-2 text-xs font-sans font-semibold transition-all duration-200 ${app.theme.btn} shadow-xs group-hover:shadow-md`}
                     >
                       <span>Open App</span>
                       <ArrowUpRight
-                        size={14}
-                        strokeWidth={3}
+                        size={15}
+                        strokeWidth={2.4}
                         className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                       />
                     </div>
@@ -414,25 +370,6 @@ const AppPicker = () => {
           </>
         )}
       </main>
-
-      {/* --- SYSTEM FOOTER --- */}
-      <footer className="relative z-50 w-full px-4 sm:px-8 py-2.5 sm:py-3 flex justify-between items-center shrink-0 border-t border-slate-200/70 dark:border-white/10 bg-white/75 dark:bg-[#0B1120]/80 backdrop-blur-xl text-slate-500 dark:text-slate-400 transition-colors duration-300">
-        <div className="flex items-center gap-2">
-          <ShieldCheck
-            size={14}
-            className="text-emerald-600 dark:text-emerald-400"
-          />
-          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-slate-300">
-            Secure Encrypted Session
-          </span>
-        </div>
-        <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-          <span>Logged in as:</span>
-          <span className="text-slate-700 dark:text-slate-200 font-black">
-            {user?.name || "User"}
-          </span>
-        </div>
-      </footer>
     </div>
   );
 };
