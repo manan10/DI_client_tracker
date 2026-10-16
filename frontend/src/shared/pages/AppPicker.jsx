@@ -132,8 +132,8 @@ const AppPicker = () => {
 
   const toggleTheme = () => setIsDark((prev) => !prev);
 
+  // Strict check: only render apps included in allowedApps, regardless of admin status
   const authorizedApps = useMemo(() => {
-    if (user?.isAdmin) return allApps;
     const userPermissions = user?.allowedApps || [];
     return allApps.filter((app) => userPermissions.includes(app.id));
   }, [user]);
@@ -145,7 +145,7 @@ const AppPicker = () => {
 
   return (
     <div className="h-dvh w-screen bg-[#F8FAFC] dark:bg-[#060A14] text-slate-900 dark:text-slate-100 flex flex-col font-serif overflow-hidden relative selection:bg-emerald-800 selection:text-white transition-colors duration-300">
- {/* --- TOP FLOATING CONTROLS (SOFT TINTED GRADIENTS) --- */}
+      {/* --- TOP FLOATING CONTROLS (SOFT TINTED GRADIENTS) --- */}
       <div className="absolute top-4 sm:top-6 lg:top-7 right-4 sm:right-8 lg:right-10 z-50 flex items-center gap-2 sm:gap-2.5">
         {/* Theme Toggle Button */}
         <button
