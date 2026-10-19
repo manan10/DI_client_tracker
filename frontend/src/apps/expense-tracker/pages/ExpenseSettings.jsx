@@ -4,16 +4,14 @@ import {
   Settings as SettingsIcon,
   Moon,
   Sun,
-  ShieldCheck,
-  ChevronRight,
-  Loader2,
   RotateCw,
   FileSpreadsheet,
   ArrowLeft,
   UserPlus,
   Lock,
   Tags,
-  Sparkles,
+  ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { useApi } from "../../../shared/hooks/useApi";
 import { toast } from "sonner";
@@ -31,7 +29,7 @@ const ExpenseSettings = () => {
   const [isMobileMenu, setIsMobileMenu] = useState(true);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isDark, setIsDark] = useState(
-    document.documentElement.classList.contains("dark"),
+    document.documentElement.classList.contains("dark")
   );
   const [wallets, setWallets] = useState([]);
 
@@ -75,51 +73,69 @@ const ExpenseSettings = () => {
       id: "wallets",
       label: "Wallets",
       sub: "Manage members & monthly goals",
+      badge: `${wallets.length} Active`,
       icon: WalletIcon,
       color: "text-emerald-500",
+      bgLight: "bg-emerald-500/10",
+      borderLight: "border-emerald-500/20",
     },
     {
       id: "categories",
       label: "Categories",
-      sub: "Classification & Icon logic",
+      sub: "Classification & icon logic",
+      badge: "Taxonomy",
       icon: Tags,
       color: "text-rose-500",
+      bgLight: "bg-rose-500/10",
+      borderLight: "border-rose-500/20",
     },
     {
       id: "access",
       label: "Access Control",
       sub: "Family members & security",
+      badge: "Security",
       icon: UserPlus,
       color: "text-purple-500",
+      bgLight: "bg-purple-500/10",
+      borderLight: "border-purple-500/20",
     },
     {
       id: "cycle",
       label: "Monthly Top-ups",
       sub: "Execute refill protocol",
+      badge: "Cycle",
       icon: RotateCw,
       color: "text-blue-500",
+      bgLight: "bg-blue-500/10",
+      borderLight: "border-blue-500/20",
     },
     {
       id: "appearance",
       label: "Theme",
       sub: "Visual mode configuration",
+      badge: isDark ? "Dark" : "Light",
       icon: isDark ? Sun : Moon,
       color: "text-amber-500",
+      bgLight: "bg-amber-500/10",
+      borderLight: "border-amber-500/20",
     },
     {
       id: "export",
       label: "Download Data",
       sub: "Export spending to XLSX",
+      badge: "Locked",
       icon: FileSpreadsheet,
       color: "text-slate-400",
+      bgLight: "bg-slate-500/10",
+      borderLight: "border-slate-500/20",
       isLocked: true,
     },
   ];
 
   if (isInitialLoading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-[#F8FAFC] dark:bg-[#020617]">
-        <Loader2 className="animate-spin text-emerald-500" size={40} />
+      <div className="h-screen w-full flex items-center justify-center bg-slate-50 dark:bg-[#030712]">
+        <Loader2 className="animate-spin text-emerald-600 dark:text-emerald-400" size={32} />
       </div>
     );
   }
@@ -144,128 +160,161 @@ const ExpenseSettings = () => {
         return <ThemeManager isDark={isDark} onToggle={toggleTheme} />;
       case "export":
         return (
-          <div className="h-full flex flex-col items-center justify-center text-center py-20 space-y-6 animate-in zoom-in-95 duration-700">
-            <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800/50 rounded-full flex items-center justify-center text-slate-400 shadow-inner">
-              <Lock size={32} />
+          <div className="h-full flex flex-col items-center justify-center text-center py-16 sm:py-20 space-y-4">
+            <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 border border-slate-200 dark:border-white/10">
+              <Lock size={24} />
             </div>
-            <div className="space-y-1.5">
-              <h3 className="text-xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter">
-                Module Locked
+            <div className="space-y-1.5 max-w-sm">
+              <h3 className="text-xl sm:text-2xl font-serif tracking-tight text-slate-900 dark:text-slate-100">
+                Module <span className="italic font-normal text-emerald-800 dark:text-emerald-400">Locked</span>
               </h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                Admin Authorization Pending
+              <p className="text-xs font-sans text-slate-500 dark:text-slate-400 leading-relaxed">
+                Data export functionality is currently restricted. Please contact
+                the system administrator to enable spreadsheet downloads.
               </p>
             </div>
-            <p className="max-w-xs text-[10px] font-bold text-slate-400/80 uppercase tracking-widest leading-relaxed">
-              Data export functionality is currently restricted. Please contact
-              the system administrator to enable XLSX reports.
-            </p>
           </div>
         );
       default:
         return (
           <div className="h-full flex flex-col items-center justify-center text-center py-20 opacity-20">
-            <SettingsIcon size={48} />
+            <SettingsIcon size={44} />
           </div>
         );
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] transition-colors duration-500 font-sans pb-20 text-left selection:bg-emerald-500/20">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#030712] text-slate-900 dark:text-slate-100 font-sans selection:bg-emerald-500/20 pb-20">
       <ExpenseNavbar />
 
-      <main className="w-full max-w-350 mx-auto pt-6 md:pt-10 sm: pb-10">
-        {/* PREMIUM HEADER - Matched to other pages */}
+      <main className="w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 pt-6 sm:pt-8 flex flex-col gap-6">
+        {/* Title & Explainer Header */}
         <header
-          className={`px-5 sm:px-8 mb-6 lg:mb-10 ${!isMobileMenu ? "hidden lg:block" : "block"}`}
+          className={`pb-5 border-b border-slate-200 dark:border-white/10 ${
+            !isMobileMenu ? "hidden lg:block" : "block"
+          }`}
         >
-          <div className="shrink-0">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80 shadow-sm mb-3 md:mb-4">
-              <Sparkles size={10} className="text-emerald-500 animate-pulse" />
-              <span className="text-[9px] font-black text-transparent bg-clip-text bg-linear-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-300 uppercase tracking-widest">
-                System Preferences
-              </span>
-            </div>
-            <h1 className="text-3xl sm:text-5xl font-[1000] italic uppercase tracking-tighter text-slate-900 dark:text-white leading-none">
-              Settings & <span className="text-emerald-500">Preferences</span>
+          <div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl 2xl:text-5xl font-serif tracking-tight text-slate-900 dark:text-slate-100 leading-tight">
+              Expense <span className="italic font-normal text-emerald-800 dark:text-emerald-400">Settings</span>
             </h1>
+            <p className="mt-1.5 text-xs sm:text-sm lg:text-base font-sans font-normal text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl">
+              Track category breakdown shifts, analyze multi-month outflow patterns, and monitor your household liquidity reserves in real time.
+            </p>
           </div>
         </header>
 
         {/* Dashboard Container */}
-        <div className="flex flex-col lg:flex-row gap-0 lg:gap-8 min-h-[75vh] px-0 sm:px-4 lg:px-8">
+        <div className="flex flex-col lg:flex-row gap-0 lg:gap-6 min-h-[72vh] items-start">
           {/* NAVIGATION SIDEBAR */}
           <aside
-            className={`w-full lg:w-80 shrink-0 flex flex-col ${isMobileMenu ? "block" : "hidden lg:flex"}`}
+            className={`w-full lg:w-84 shrink-0 flex flex-col ${
+              isMobileMenu ? "block" : "hidden lg:flex"
+            }`}
           >
-            <nav className="px-5 lg:px-0 space-y-2.5">
-              {menuItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveSection(item.id);
-                    setIsMobileMenu(false);
-                  }}
-                  className={`w-full flex items-center justify-between p-4 lg:p-5 rounded-2xl transition-all duration-300 active:scale-[0.98] ${
-                    activeSection === item.id
-                      ? "bg-white dark:bg-slate-900 border-2 border-emerald-500 dark:border-emerald-400 shadow-[0_8px_30px_rgb(16,185,129,0.12)]"
-                      : "bg-white dark:bg-[#0B1120] border-2 border-transparent hover:border-slate-200 dark:hover:border-slate-800 shadow-sm"
-                  }`}
-                >
-                  <div className="flex items-center gap-4 lg:gap-5">
-                    <div
-                      className={`p-2 rounded-xl ${activeSection === item.id ? "bg-emerald-50 dark:bg-emerald-500/10" : "bg-slate-50 dark:bg-slate-800/50"}`}
+            {/* On mobile: stripped outer box; on desktop: clean rounded container */}
+            <div className="bg-transparent lg:bg-white lg:dark:bg-[#0B1120] border-0 lg:border border-slate-200 lg:dark:border-white/10 rounded-none lg:rounded-xl p-0 lg:p-3 shadow-none lg:shadow-xs flex flex-col gap-1.5">
+              <nav className="flex flex-col gap-1.5 sm:gap-1">
+                {menuItems.map((item) => {
+                  const isActive = activeSection === item.id;
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveSection(item.id);
+                        setIsMobileMenu(false);
+                      }}
+                      className={`w-full flex items-center justify-between p-3.5 sm:p-3 rounded-xl lg:rounded-lg transition-all duration-150 cursor-pointer outline-none active:scale-[0.99] border text-left ${
+                        isActive
+                          ? "bg-emerald-50/80 dark:bg-emerald-500/10 border-emerald-500/50 dark:border-emerald-500/40 shadow-xs"
+                          : "bg-white dark:bg-[#0B1120] lg:bg-transparent border-slate-200/70 dark:border-white/5 lg:border-transparent hover:bg-slate-50 dark:hover:bg-white/[0.03] hover:border-slate-200 dark:hover:border-white/5"
+                      }`}
                     >
-                      <item.icon
-                        size={20}
-                        className={
-                          activeSection === item.id
-                            ? "text-emerald-500 dark:text-emerald-400"
-                            : item.color
-                        }
-                      />
-                    </div>
-                    <div className="text-left leading-none">
-                      <p
-                        className={`text-[11px] lg:text-xs font-black uppercase tracking-widest ${activeSection === item.id ? "text-slate-900 dark:text-white" : "text-slate-600 dark:text-slate-300"}`}
-                      >
-                        {item.label}
-                      </p>
-                      <p className="text-[9px] font-bold opacity-50 mt-1.5 uppercase tracking-tighter">
-                        {item.sub}
-                      </p>
-                    </div>
-                  </div>
-                  {item.isLocked ? (
-                    <Lock size={14} className="opacity-30" />
-                  ) : (
-                    <ChevronRight
-                      size={18}
-                      className={`transition-transform duration-300 ${activeSection === item.id ? "opacity-100 text-emerald-500 translate-x-1" : "opacity-20"}`}
-                    />
-                  )}
-                </button>
-              ))}
-            </nav>
+                      <div className="flex items-center gap-3.5 sm:gap-3 min-w-0 pr-2">
+                        <div
+                          className={`w-10 h-10 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center shrink-0 border ${
+                            isActive
+                              ? "bg-emerald-500 text-white border-emerald-600 shadow-xs"
+                              : `${item.bgLight} ${item.color}${item.borderLight}`
+                          }`}
+                        >
+                          <item.icon size={18} strokeWidth={2.3} />
+                        </div>
+
+                        <div className="flex flex-col min-w-0">
+                          <span
+                            className={`text-xs sm:text-[13px] font-sans font-semibold tracking-tight truncate ${
+                              isActive
+                                ? "text-emerald-950 dark:text-emerald-300"
+                                : "text-slate-800 dark:text-slate-200"
+                            }`}
+                          >
+                            {item.label}
+                          </span>
+                          <span className="text-[11px] font-sans font-normal text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                            {item.sub}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {item.badge && (
+                          <span
+                            className={`text-[10px] font-sans font-medium tracking-wide px-2 sm:px-1.5 py-0.5 rounded border ${
+                              isActive
+                                ? "bg-emerald-600 text-white border-emerald-700"
+                                : "bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/10"
+                            }`}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+
+                        {item.isLocked ? (
+                          <Lock size={14} className="text-slate-400 opacity-60" />
+                        ) : (
+                          <ChevronRight
+                            size={16}
+                            className={`transition-transform duration-150 ${
+                              isActive
+                                ? "text-emerald-600 dark:text-emerald-400 translate-x-0.5"
+                                : "text-slate-400 opacity-40"
+                            }`}
+                          />
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
           </aside>
 
           {/* CONTENT AREA */}
           <section
-            className={`flex-1 flex flex-col h-full lg:min-h-[70vh] bg-transparent lg:bg-white lg:dark:bg-[#0B1120] lg:border border-slate-200 lg:dark:border-slate-800 lg:rounded-4xl lg:shadow-sm overflow-hidden ${isMobileMenu ? "hidden lg:flex" : "flex"}`}
+            className={`flex-1 w-full flex flex-col bg-transparent lg:bg-white lg:dark:bg-[#0B1120] border-0 lg:border border-slate-200 lg:dark:border-white/10 rounded-none lg:rounded-xl shadow-none lg:shadow-xs min-h-[640px] ${
+              isMobileMenu ? "hidden lg:flex" : "flex"
+            }`}
           >
-            {/* Header (Visible only on Mobile when a tab is open) - Now completely seamless */}
-            <div className="px-5 sm:px-8 pt-5 pb-2 flex items-center justify-between lg:hidden sticky top-0 z-20 bg-[#F8FAFC] dark:bg-[#020617]">
+            {/* Mobile Sub-Header */}
+            <div className="pt-1 pb-4 flex items-center justify-between lg:hidden border-b border-slate-200 dark:border-white/10">
               <button
+                type="button"
                 onClick={() => setIsMobileMenu(true)}
-                className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:text-emerald-500 transition-colors"
+                className="flex items-center gap-2 text-xs font-sans font-medium text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition-colors"
               >
-                <ArrowLeft size={16} className="text-emerald-500" /> Settings
+                <ArrowLeft size={16} className="text-emerald-500" /> Back to Settings
               </button>
+              <span className="text-xs font-sans font-medium text-slate-500 dark:text-slate-400">
+                {menuItems.find((m) => m.id === activeSection)?.label}
+              </span>
             </div>
 
-            {/* Scrollable Content - Added generous padding for mobile */}
-            <div className="flex-1 overflow-y-auto px-5 sm:px-8 lg:px-12 py-6 lg:py-10 no-scrollbar">
+            {/* Scrollable Content Viewport */}
+            <div className="flex-1 py-4 sm:py-6 lg:p-8 no-scrollbar">
               {renderContent()}
             </div>
           </section>

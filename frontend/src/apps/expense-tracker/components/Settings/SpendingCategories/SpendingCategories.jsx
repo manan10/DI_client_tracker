@@ -31,8 +31,6 @@ const MasterRow = ({ parent, isActive, onSelect, isSelectionMode, isSelected, to
     transform: CSS.Translate.toString(transform), 
     transition, 
     opacity: isDragging ? 0.4 : 1,
-    background: isActive && !isSelectionMode ? `linear-gradient(90deg, ${hexToRgba(parent.color, 0.15)} 0%, transparent 100%)` : undefined,
-    boxShadow: isActive && !isSelectionMode ? `-4px 4px 15px -5px ${hexToRgba(parent.color, 0.4)}` : undefined,
   };
 
   return (
@@ -40,57 +38,55 @@ const MasterRow = ({ parent, isActive, onSelect, isSelectionMode, isSelected, to
       ref={setNodeRef} 
       style={style}
       onClick={() => isSelectionMode ? toggleSelection(parent._id) : onSelect(parent._id)}
-      className={`group relative flex items-center p-3 sm:p-3.5 mb-2 rounded-xl cursor-pointer transition-all duration-300 ease-out border ${
+      className={`group relative flex items-center p-2.5 sm:p-3 mb-1.5 rounded-lg cursor-pointer transition-all border text-left ${
         isActive && !isSelectionMode 
-          ? 'border-transparent shadow-md transform scale-[1.02]' 
-          : 'border-transparent hover:bg-white dark:hover:bg-slate-800/60 hover:shadow-sm hover:translate-x-1'
+          ? 'bg-slate-100/90 dark:bg-white/[0.06] border-slate-300 dark:border-white/15 shadow-2xs' 
+          : 'bg-white dark:bg-[#0B1120] border-slate-200/80 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 hover:bg-slate-50 dark:hover:bg-white/[0.02]'
       }`}
     >
+      {/* Active Left Indicator Bar */}
       <div 
-        className="absolute left-0 top-2 bottom-2 w-1.5 rounded-r-full transition-transform duration-300 ease-out"
+        className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r transition-transform duration-200"
         style={{ 
           backgroundColor: parent.color,
           transform: isActive && !isSelectionMode ? 'scaleY(1)' : 'scaleY(0)'
         }}
       />
 
-      <div className="relative flex items-center w-full z-10 pl-1 sm:pl-0">
+      <div className="relative flex items-center w-full min-w-0 pl-1.5 sm:pl-1">
         {isSelectionMode ? (
-          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center mr-3 transition-colors ${
-            isSelected ? 'bg-indigo-500 border-indigo-500 text-white' : 'bg-transparent border-slate-400 dark:border-slate-500'
+          <div className={`w-4 h-4 rounded border flex items-center justify-center mr-2.5 transition-colors shrink-0 ${
+            isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-transparent border-slate-400 dark:border-slate-500'
           }`}>
-            {isSelected && <Check size={12} strokeWidth={4} />}
+            {isSelected && <Check size={11} strokeWidth={3.5} />}
           </div>
         ) : (
-          <div {...attributes} {...listeners} className={`mr-2 sm:mr-3 shrink-0 p-1 rounded-md ${isSearchActive ? 'opacity-20 cursor-not-allowed' : 'cursor-grab bg-slate-100 dark:bg-slate-800/80 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 touch-none transition-colors'}`}>
-            <GripVertical size={16} />
+          <div {...attributes} {...listeners} className={`mr-2 shrink-0 p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 ${isSearchActive ? 'opacity-20 cursor-not-allowed' : 'cursor-grab touch-none'}`}>
+            <GripVertical size={14} />
           </div>
         )}
 
         <div 
-          className="w-3 sm:w-3.5 h-3 sm:h-3.5 rounded-full mr-2 sm:mr-3 shrink-0 shadow-sm transition-transform duration-300 group-hover:scale-125" 
-          style={{ backgroundColor: parent.color, boxShadow: `0 0 10px ${hexToRgba(parent.color, 0.6)}` }} 
+          className="w-2.5 h-2.5 rounded-full mr-2.5 shrink-0" 
+          style={{ backgroundColor: parent.color }} 
         />
         
-        <div className="flex-1 min-w-0">
-          <p className={`text-[11px] sm:text-xs font-[1000] uppercase tracking-widest truncate transition-colors duration-300 ${isActive ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
+        <div className="flex-1 min-w-0 pr-2">
+          <span className={`text-xs font-sans font-semibold tracking-tight truncate block ${
+            isActive ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'
+          }`}>
             {parent.label}
-          </p>
+          </span>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 pl-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           <span 
-            className="text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full transition-all duration-300"
-            style={{ 
-              backgroundColor: isActive ? parent.color : undefined,
-              color: isActive ? '#fff' : undefined,
-              boxShadow: isActive ? `0 2px 8px ${hexToRgba(parent.color, 0.5)}` : undefined
-            }}
+            className="text-[10px] font-sans font-medium px-1.5 py-0.2 rounded border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/10"
           >
             {parent.subCategories.length}
           </span>
           {!isSelectionMode && (
-            <ChevronRight size={16} className={`transition-transform duration-300 hidden sm:block ${isActive ? 'text-slate-900 dark:text-white translate-x-1' : 'text-slate-400 -translate-x-1 group-hover:translate-x-0'}`} />
+            <ChevronRight size={14} className={`text-slate-400 transition-transform ${isActive ? 'translate-x-0.5 text-slate-700 dark:text-slate-200' : 'opacity-40'}`} />
           )}
         </div>
       </div>
@@ -113,45 +109,36 @@ const DetailRow = ({ sub, parent, onEdit, onDelete, isEditing, editValue, onEdit
     transform: CSS.Translate.toString(transform), 
     transition, 
     opacity: isDragging ? 0.3 : 1,
-    animationDelay: `${index * 30}ms`,
-    borderColor: isEditing ? parent.color : undefined,
-    boxShadow: isEditing ? `0 10px 25px -5px ${hexToRgba(parent.color, 0.3)}` : undefined
+    animationDelay: `${index * 20}ms`,
   };
 
   return (
     <div 
       ref={setNodeRef} 
       style={style}
-      className={`relative group flex items-center p-3 sm:p-3.5 mb-3 rounded-xl transition-all duration-300 ease-out border overflow-hidden animate-in fade-in slide-in-from-bottom-4 ${
+      className={`group relative flex items-center p-2.5 sm:p-3 mb-2 rounded-lg border text-left transition-all ${
         isEditing 
-          ? 'bg-white dark:bg-slate-900 shadow-xl scale-[1.02] z-10' 
-          : 'bg-white dark:bg-[#111827] border-slate-200 dark:border-slate-800 hover:-translate-y-1 hover:shadow-lg'
+          ? 'bg-white dark:bg-[#0B1120] border-emerald-500 shadow-sm z-10' 
+          : 'bg-white dark:bg-[#0B1120] border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
       }`}
     >
-      {!isEditing && (
-        <>
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: `linear-gradient(120deg, transparent, ${hexToRgba(parent.color, 0.05)}, transparent)` }} />
-          <div className="absolute left-0 top-0 bottom-0 w-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ backgroundColor: parent.color }} />
-        </>
-      )}
-
-      <div {...attributes} {...listeners} className={`relative z-10 mr-3 sm:mr-4 shrink-0 p-1.5 rounded-md transition-colors ${isEditing || isSearchActive ? 'opacity-20 cursor-not-allowed' : 'cursor-grab bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200 touch-none'}`}>
-        <GripVertical size={16} />
+      <div {...attributes} {...listeners} className={`mr-2.5 shrink-0 p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 ${isEditing || isSearchActive ? 'opacity-20 cursor-not-allowed' : 'cursor-grab touch-none'}`}>
+        <GripVertical size={14} />
       </div>
 
-      <div className="relative z-10 flex-1 min-w-0">
+      <div className="flex-1 min-w-0 pr-2">
         {isEditing ? (
           <input
             ref={inputRef}
             value={editValue}
             onChange={(e) => onEditChange(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') onSubmitEdit(); if (e.key === 'Escape') onCancelEdit(); }}
-            className="w-full bg-transparent border-none outline-none text-xs font-[1000] uppercase tracking-widest text-slate-900 dark:text-white placeholder:text-slate-400"
-            placeholder="ENTER TAG NAME..."
+            className="w-full bg-transparent border-none outline-none text-xs font-sans font-medium text-slate-900 dark:text-white placeholder:text-slate-400"
+            placeholder="Type tag name..."
           />
         ) : (
           <span 
-            className="text-xs font-[1000] uppercase tracking-widest text-slate-700 dark:text-slate-200 cursor-text select-none block truncate transition-colors group-hover:text-slate-900 dark:group-hover:text-white"
+            className="text-xs font-sans font-medium text-slate-800 dark:text-slate-200 cursor-text select-none block truncate"
             onClick={() => onEdit(parent._id, sub)}
           >
             {sub.label}
@@ -159,18 +146,34 @@ const DetailRow = ({ sub, parent, onEdit, onDelete, isEditing, editValue, onEdit
         )}
       </div>
 
-      <div className="relative z-10">
+      <div className="flex items-center gap-1 shrink-0">
         {isEditing ? (
-          <div className="flex items-center gap-1.5 shrink-0 ml-2">
-            <button onMouseDown={(e) => { e.preventDefault(); onSubmitEdit(); }} className="w-8 h-8 flex items-center justify-center rounded-lg text-white shadow-md transition-transform hover:scale-105 active:scale-95" style={{ backgroundColor: parent.color }}><Check size={16} strokeWidth={3} /></button>
-            <button onMouseDown={(e) => { e.preventDefault(); onCancelEdit(); }} className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"><X size={16} strokeWidth={3} /></button>
-          </div>
+          <>
+            <button 
+              type="button" 
+              onMouseDown={(e) => { e.preventDefault(); onSubmitEdit(); }} 
+              className="p-1 text-white bg-emerald-600 hover:bg-emerald-700 rounded transition-colors"
+              title="Save"
+            >
+              <Check size={13} strokeWidth={2.5} />
+            </button>
+            <button 
+              type="button" 
+              onMouseDown={(e) => { e.preventDefault(); onCancelEdit(); }} 
+              className="p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+              title="Cancel"
+            >
+              <X size={13} />
+            </button>
+          </>
         ) : (
           <button 
+            type="button" 
             onClick={() => onDelete(parent._id, sub)} 
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white sm:opacity-0 group-hover:opacity-100 transition-all duration-300 shrink-0 ml-2 hover:bg-rose-500 hover:shadow-lg hover:shadow-rose-500/30"
+            className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded transition-colors"
+            title="Delete tag"
           >
-            <Trash2 size={15} />
+            <Trash2 size={13} />
           </button>
         )}
       </div>
@@ -239,18 +242,23 @@ const SpendingCategories = () => {
     if (res?.success) setTree(res.data);
   };
 
-  useEffect(() => { if (addingSubToId && newSubInputRef.current) newSubInputRef.current.focus(); }, [addingSubToId]);
+  useEffect(() => { 
+    if (addingSubToId && newSubInputRef.current) newSubInputRef.current.focus(); 
+  }, [addingSubToId]);
 
   const activeParent = filteredTree.find(p => p._id === effectiveActiveParentId);
 
   const triggerFeedback = (message) => {
     setFeedback(message);
-    setTimeout(() => setFeedback(null), 3000);
+    setTimeout(() => setFeedback(null), 2500);
   };
 
   const closeModal = () => {
-    setModalMode(null); setEditTarget(null); setCatName(""); 
-    setIsSelectionMode(false); setSelectedIds([]);
+    setModalMode(null); 
+    setEditTarget(null); 
+    setCatName(""); 
+    setIsSelectionMode(false); 
+    setSelectedIds([]);
   };
 
   const handleActionExecution = async () => {
@@ -261,7 +269,7 @@ const SpendingCategories = () => {
 
     if (res?.success) {
       await fetchCategories();
-      triggerFeedback(modalMode === 'merge' ? "Merged Successfully" : "Saved Successfully");
+      triggerFeedback(modalMode === 'merge' ? "Categories merged" : "Category saved");
       closeModal();
     }
   };
@@ -276,23 +284,30 @@ const SpendingCategories = () => {
         setIsMobileDetailView(false);
       }
       await fetchCategories();
-      triggerFeedback(isSub ? "Entry Removed" : "Category Deleted");
+      triggerFeedback(isSub ? "Tag removed" : "Category deleted");
       closeModal();
     }
   };
 
   const handleSubSubmit = async (parentId) => {
-    if (!inputValue.trim()) { setAddingSubToId(null); setEditingSub(null); return; }
+    if (!inputValue.trim()) { 
+      setAddingSubToId(null); 
+      setEditingSub(null); 
+      return; 
+    }
     const endpoint = editingSub ? `/categories/sub/${editingSub.subId}` : `/categories/${parentId}/sub`;
     const res = await request(endpoint, editingSub ? "PUT" : "POST", { label: inputValue });
     if (res?.success) {
       await fetchCategories();
-      triggerFeedback(editingSub ? "Entry Updated" : "Added Successfully");
-      setAddingSubToId(null); setEditingSub(null); setInputValue("");
+      triggerFeedback(editingSub ? "Tag updated" : "Tag added");
+      setAddingSubToId(null); 
+      setEditingSub(null); 
+      setInputValue("");
     }
   };
 
   const handleDragStart = (event) => setActiveDragItem(event.active.data.current);
+  
   const handleDragEnd = async (event) => {
     setActiveDragItem(null);
     const { active, over } = event;
@@ -327,147 +342,235 @@ const SpendingCategories = () => {
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="animate-in fade-in duration-700 text-left flex flex-col w-full h-[calc(100vh-4rem)] max-h-225 min-h-150">
+      <div className="space-y-5 text-left antialiased">
         
+        {/* TOAST FEEDBACK PILL */}
         {feedback && (
-          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-200 flex items-center gap-2 bg-emerald-500 text-white px-6 py-3 rounded-full shadow-[0_10px_40px_-10px_rgba(16,185,129,0.5)] animate-in slide-in-from-top-6 duration-300">
-            <CheckCircle2 size={18} />
-            <span className="text-[11px] font-black uppercase tracking-widest">{feedback}</span>
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-200 flex items-center gap-2 bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-4 py-2 rounded-md shadow-lg border border-slate-700 dark:border-white/20 animate-in fade-in slide-in-from-top-4 duration-200">
+            <CheckCircle2 size={15} className="text-emerald-500" />
+            <span className="text-xs font-sans font-medium">{feedback}</span>
           </div>
         )}
 
-        {/* HEADER SECTION */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 pb-4 mb-2 shrink-0">
+        {/* SECTION HEADER */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-white/10">
           <div>
-            <h2 className="text-2xl sm:text-4xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tight italic leading-none">Categories</h2>
-            <p className="text-[10px] font-bold text-transparent bg-clip-text bg-linear-to-r from-emerald-500 to-indigo-500 uppercase tracking-widest mt-1 sm:mt-2">Classification & Taxonomy Engine</p>
+            <h2 className="text-xl sm:text-2xl font-serif tracking-tight text-slate-900 dark:text-slate-100 leading-tight">
+              Spending <span className="italic font-normal text-emerald-800 dark:text-emerald-400">Categories</span>
+            </h2>
+            <p className="text-xs font-sans text-slate-500 dark:text-slate-400 mt-0.5">
+              Organize main spending groups, add subcategory tags, and reorder items by dragging.
+            </p>
           </div>
         </div>
 
-        {/* BORDERLESS SPLIT PANE */}
-        <div className="flex-1 flex relative overflow-hidden bg-transparent w-full">
+        {/* WORKSPACE SPLIT PANE */}
+        <div className="flex flex-col lg:flex-row gap-5 min-h-[560px] items-start">
           
-          {/* LEFT PANE: MASTER CATEGORIES */}
-          <div className={`w-full lg:w-[35%] flex flex-col transition-transform duration-500 ease-out z-20 absolute inset-0 lg:relative lg:translate-x-0 bg-white dark:bg-[#020617] lg:bg-transparent pr-0 lg:pr-6 ${isMobileDetailView ? '-translate-x-full' : 'translate-x-0'}`}>
-            
-            <div className="pb-4 shrink-0">
-              <div className="flex items-center justify-between mb-4 px-2 pt-2 lg:pt-0">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Master Folders</span>
-                <div className="flex gap-2">
-                  <button onClick={() => { setIsSelectionMode(!isSelectionMode); setSelectedIds([]); }} className={`p-2 rounded-xl transition-all duration-300 ${isSelectionMode ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-indigo-500 hover:border-indigo-200'}`} title="Merge">
-                    <Merge size={16} />
+          {/* LEFT PANE: MAIN CATEGORIES */}
+          <div className={`w-full lg:w-80 shrink-0 flex flex-col ${isMobileDetailView ? 'hidden lg:flex' : 'flex'}`}>
+            <div className="bg-slate-50/70 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-lg p-3 flex flex-col gap-3">
+              
+              {/* Controls Header */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-sans font-semibold text-slate-700 dark:text-slate-300">
+                  Main Categories ({tree.length})
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button 
+                    type="button"
+                    onClick={() => { setIsSelectionMode(!isSelectionMode); setSelectedIds([]); }} 
+                    className={`p-1.5 rounded text-xs font-sans transition-colors cursor-pointer border ${
+                      isSelectionMode 
+                        ? 'bg-indigo-600 text-white border-indigo-700' 
+                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:border-slate-300'
+                    }`} 
+                    title="Merge categories"
+                  >
+                    <Merge size={14} />
                   </button>
-                  <button onClick={() => { setCatColor("#10B981"); setModalMode('create'); }} className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-emerald-500 hover:border-emerald-200 transition-all duration-300 shadow-sm" title="Add Parent">
-                    <Plus size={16} strokeWidth={3} />
+
+                  <button 
+                    type="button"
+                    onClick={() => { setCatColor("#10B981"); setModalMode('create'); }} 
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-sans font-semibold transition-colors cursor-pointer shadow-2xs"
+                  >
+                    <Plus size={13} strokeWidth={2.5} />
+                    <span>New</span>
                   </button>
                 </div>
               </div>
-              
-              <div className="relative group px-1">
-                <Search size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+
+              {/* Merge Action Banner */}
+              {isSelectionMode && selectedIds.length > 1 && (
+                <div className="flex items-center justify-between p-2 rounded bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20">
+                  <span className="text-[11px] font-sans font-medium text-indigo-900 dark:text-indigo-200">
+                    {selectedIds.length} categories chosen
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => { setCatName(""); setModalMode('merge'); }}
+                    className="px-2 py-0.5 rounded bg-indigo-600 text-white text-[11px] font-sans font-semibold cursor-pointer"
+                  >
+                    Merge
+                  </button>
+                </div>
+              )}
+
+              {/* Search Field */}
+              <div className="relative">
+                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input 
                   type="text" 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="SEARCH REPOSITORY..."
-                  className="w-full bg-white dark:bg-[#111827] border-2 border-slate-200 dark:border-slate-800 rounded-xl py-3.5 pl-12 pr-4 text-xs font-[1000] uppercase tracking-widest text-slate-900 dark:text-white outline-none focus:border-indigo-500 dark:focus:border-indigo-500 transition-all shadow-sm focus:shadow-md focus:shadow-indigo-500/10 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  placeholder="Search categories..."
+                  className="w-full bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-md py-1.5 pl-8 pr-3 text-xs font-sans text-slate-900 dark:text-white outline-none focus:border-emerald-600 placeholder:text-slate-400"
                 />
               </div>
-            </div>
 
-            <div className="flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-24">
-              {filteredTree.length > 0 ? (
-                <SortableContext items={filteredTree.map(i => i._id)} strategy={verticalListSortingStrategy}>
-                  {filteredTree.map(parent => (
-                    <MasterRow 
-                      key={parent._id} parent={parent} 
-                      isActive={effectiveActiveParentId === parent._id} 
-                      onSelect={(id) => { setActiveParentId(id); setIsMobileDetailView(true); }}
-                      isSelectionMode={isSelectionMode} isSelected={selectedIds.includes(parent._id)}
-                      toggleSelection={(id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])}
-                      isSearchActive={searchTerm.length > 0}
-                    />
-                  ))}
-                </SortableContext>
-              ) : (
-                <div className="p-8 text-center flex flex-col items-center opacity-40 animate-in zoom-in duration-300">
-                   <Search size={40} className="mb-4 text-slate-400" />
-                   <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">No matching data</p>
-                </div>
-              )}
+              {/* Category Items List */}
+              <div className="flex-1 overflow-y-auto max-h-[460px] no-scrollbar">
+                {filteredTree.length > 0 ? (
+                  <SortableContext items={filteredTree.map(i => i._id)} strategy={verticalListSortingStrategy}>
+                    {filteredTree.map(parent => (
+                      <MasterRow 
+                        key={parent._id} 
+                        parent={parent} 
+                        isActive={effectiveActiveParentId === parent._id} 
+                        onSelect={(id) => { setActiveParentId(id); setIsMobileDetailView(true); }}
+                        isSelectionMode={isSelectionMode} 
+                        isSelected={selectedIds.includes(parent._id)}
+                        toggleSelection={(id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])}
+                        isSearchActive={searchTerm.length > 0}
+                      />
+                    ))}
+                  </SortableContext>
+                ) : (
+                  <div className="py-8 text-center text-xs font-sans text-slate-400">
+                    No matching categories found
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* RIGHT PANE: SUB CATEGORIES */}
-          <div className={`w-full lg:w-[65%] flex flex-col transition-transform duration-500 ease-out z-10 absolute inset-0 lg:relative lg:translate-x-0 bg-white dark:bg-[#020617] lg:bg-transparent ${!isMobileDetailView ? 'translate-x-full' : 'translate-x-0'}`}>
-            
+          {/* RIGHT PANE: SUB CATEGORIES & TAGS */}
+          <div className={`flex-1 w-full flex flex-col ${!isMobileDetailView ? 'hidden lg:flex' : 'flex'}`}>
             {activeParent ? (
-              <>
-                {/* Floating Vibrant Banner */}
-                <div 
-                  className="relative pt-6 sm:pt-10 pb-6 px-4 sm:px-8 shrink-0 overflow-hidden shadow-xl sm:rounded-3xl mb-4 sm:mb-6"
-                  style={{ 
-                    background: `linear-gradient(135deg, ${activeParent.color} 0%, ${hexToRgba(activeParent.color, 0.7)} 100%)`,
-                    boxShadow: `0 20px 40px -15px ${hexToRgba(activeParent.color, 0.4)}`
-                  }}
-                >
-                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay pointer-events-none" />
-                  <div className="absolute -top-32 -right-32 w-96 h-96 bg-white/20 blur-3xl rounded-full pointer-events-none" />
-                  
-                  <div className="relative z-10 flex items-start justify-between">
-                    <div className="flex items-start gap-3 sm:gap-4">
-                      <button onClick={() => setIsMobileDetailView(false)} className="lg:hidden p-2 -ml-2 rounded-xl bg-black/20 text-white hover:bg-black/30 backdrop-blur-sm transition-colors mt-1">
-                        <ArrowLeft size={20} />
-                      </button>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
-                          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-white/90 bg-black/20 px-3 py-1 rounded-full backdrop-blur-md border border-white/10 shadow-inner">
-                            Master Directory
-                          </span>
-                        </div>
-                        <h3 className="text-2xl sm:text-4xl font-[1000] uppercase tracking-tighter text-white drop-shadow-md">
-                          {activeParent.label}
-                        </h3>
-                      </div>
+              <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-lg p-4 sm:p-5 flex flex-col gap-4">
+                
+                {/* Header Strip with Color Accent & Controls */}
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <button 
+                      type="button"
+                      onClick={() => setIsMobileDetailView(false)} 
+                      className="lg:hidden p-1 -ml-1 text-slate-400 hover:text-slate-700 dark:hover:text-white"
+                    >
+                      <ArrowLeft size={16} />
+                    </button>
+                    <div 
+                      className="w-3.5 h-3.5 rounded-full shrink-0" 
+                      style={{ backgroundColor: activeParent.color }} 
+                    />
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-serif tracking-tight text-slate-900 dark:text-white truncate">
+                        {activeParent.label}
+                      </h3>
+                      <span className="text-[11px] font-sans text-slate-400 block mt-0.5">
+                        {activeParent.subCategories.length} subcategory tag{activeParent.subCategories.length === 1 ? '' : 's'}
+                      </span>
                     </div>
-                    
-                    <div className="flex gap-1.5 sm:gap-2 mt-1 sm:mt-0">
-                      <button onClick={() => { setEditTarget(activeParent); setCatName(activeParent.label); setCatColor(activeParent.color); setModalMode('edit'); }} className="p-2 sm:p-3 text-white bg-black/20 hover:bg-black/40 backdrop-blur-sm rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95" title="Edit Master">
-                        <Edit3 size={16} className="sm:w-5 sm:h-5" />
-                      </button>
-                      <button onClick={() => { setEditTarget({ ...activeParent, type: 'parent' }); setModalMode('delete'); }} className="p-2 sm:p-3 text-white bg-black/20 hover:bg-rose-500/80 backdrop-blur-sm rounded-xl transition-all shadow-md hover:shadow-rose-500/50 active:scale-95" title="Delete Master">
-                        <Trash2 size={16} className="sm:w-5 sm:h-5" />
-                      </button>
-                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button 
+                      type="button"
+                      onClick={() => { setEditTarget(activeParent); setCatName(activeParent.label); setCatColor(activeParent.color); setModalMode('edit'); }} 
+                      className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors cursor-pointer" 
+                      title="Edit Category Name & Color"
+                    >
+                      <Edit3 size={15} />
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => { setEditTarget({ ...activeParent, type: 'parent' }); setModalMode('delete'); }} 
+                      className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded transition-colors cursor-pointer" 
+                      title="Delete Category"
+                    >
+                      <Trash2 size={15} />
+                    </button>
                   </div>
                 </div>
 
-                {/* Sub List Area Header */}
-                <div className="px-2 pb-4 flex flex-col sm:flex-row sm:items-center justify-between shrink-0 gap-4 bg-transparent z-10 border-b border-slate-200 dark:border-slate-800/50 mb-2 sm:mb-4">
-                  <div className="flex items-center gap-3">
-                    <Tags size={16} className="text-slate-400" />
-                    <span className="text-[10px] sm:text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Active Tags ({activeParent.subCategories.length})</span>
+                {/* Subcategories Top Action Bar */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Tags size={14} className="text-slate-400" />
+                    <span className="text-xs font-sans font-semibold text-slate-700 dark:text-slate-300">
+                      Subcategory Tags
+                    </span>
                   </div>
+
                   <button 
+                    type="button"
                     onClick={() => { setAddingSubToId(activeParent._id); setEditingSub(null); setInputValue(""); }} 
                     disabled={searchTerm.length > 0}
-                    className="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 px-5 py-2.5 sm:py-3 rounded-xl shadow-lg disabled:opacity-30 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0 w-full sm:w-auto"
-                    style={{ backgroundColor: activeParent.color, color: '#fff', boxShadow: `0 10px 25px -5px ${hexToRgba(activeParent.color, 0.5)}` }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white rounded text-xs font-sans font-semibold transition-all cursor-pointer disabled:opacity-40"
                   >
-                    <Plus size={16} strokeWidth={3} /> Create Tag
+                    <Plus size={13} strokeWidth={2.5} />
+                    <span>Add Tag</span>
                   </button>
                 </div>
 
-                {/* Cards Container */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-24 px-2 sm:px-0">
+                {/* Subcategories List Area */}
+                <div className="space-y-1 overflow-y-auto max-h-[440px] no-scrollbar">
+                  {/* Inline Add Row */}
+                  {addingSubToId === activeParent._id && (
+                    <div className="flex items-center p-2.5 mb-2 rounded-lg border-2 border-emerald-500 bg-white dark:bg-[#0B1120] shadow-xs">
+                      <input 
+                        ref={newSubInputRef} 
+                        value={inputValue} 
+                        onChange={e => setInputValue(e.target.value)} 
+                        onKeyDown={e => { 
+                          if (e.key === "Enter") handleSubSubmit(activeParent._id); 
+                          if (e.key === 'Escape') { setAddingSubToId(null); setInputValue(""); } 
+                        }}
+                        className="flex-1 bg-transparent border-none outline-none text-xs font-sans text-slate-900 dark:text-white placeholder:text-slate-400" 
+                        placeholder="Type new tag name and press Enter..." 
+                      />
+                      <div className="flex items-center gap-1 shrink-0 ml-2">
+                        <button 
+                          type="button"
+                          onMouseDown={(e) => { e.preventDefault(); handleSubSubmit(activeParent._id); }} 
+                          className="p-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition-colors cursor-pointer"
+                        >
+                          <Check size={13} strokeWidth={2.5} />
+                        </button>
+                        <button 
+                          type="button"
+                          onMouseDown={(e) => { e.preventDefault(); setAddingSubToId(null); setInputValue(""); }} 
+                          className="p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors cursor-pointer"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <SortableContext items={activeParent.subCategories.map(s => s._id)} strategy={verticalListSortingStrategy}>
                     {activeParent.subCategories.map((sub, index) => (
                       <DetailRow 
-                        key={sub._id} sub={sub} parent={activeParent} index={index}
+                        key={sub._id} 
+                        sub={sub} 
+                        parent={activeParent} 
+                        index={index}
                         onEdit={(pId, s) => { setEditingSub({ parentId: pId, subId: s._id }); setInputValue(s.label); }} 
                         onDelete={(pId, sObj) => { setEditTarget({ ...sObj, type: 'sub' }); setModalMode('delete'); }}
                         isEditing={editingSub?.subId === sub._id}
-                        editValue={inputValue} onEditChange={setInputValue}
+                        editValue={inputValue} 
+                        onEditChange={setInputValue}
                         onSubmitEdit={() => handleSubSubmit(activeParent._id)}
                         onCancelEdit={() => { setEditingSub(null); setInputValue(""); }}
                         isSearchActive={searchTerm.length > 0}
@@ -475,37 +578,17 @@ const SpendingCategories = () => {
                     ))}
                   </SortableContext>
 
-                  {/* Add New Sub Row Inline */}
-                  {addingSubToId === activeParent._id && (
-                    <div className="flex items-center p-3 sm:p-4 mb-3 rounded-xl bg-white dark:bg-[#111827] shadow-xl ring-2 ring-inset animate-in fade-in slide-in-from-bottom-4 duration-300" style={{ ringColor: activeParent.color }}>
-                      <div className="mr-3 sm:mr-4 shrink-0 p-1" style={{ color: activeParent.color }}><Plus size={18} strokeWidth={3} /></div>
-                      <input 
-                        ref={newSubInputRef} value={inputValue} onChange={e => setInputValue(e.target.value)} 
-                        onKeyDown={e => { if (e.key === "Enter") handleSubSubmit(activeParent._id); if (e.key === 'Escape') { setAddingSubToId(null); setInputValue("");} }}
-                        className="flex-1 bg-transparent border-none outline-none text-xs font-[1000] uppercase tracking-widest text-slate-900 dark:text-white" 
-                        placeholder="ENTER NEW TAG NAME..." 
-                      />
-                      <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                        <button onMouseDown={(e) => { e.preventDefault(); handleSubSubmit(activeParent._id); }} className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center rounded-lg text-white shadow-lg transition-transform hover:scale-110 active:scale-95" style={{ backgroundColor: activeParent.color, boxShadow: `0 4px 15px ${hexToRgba(activeParent.color, 0.4)}` }}><Check size={16} strokeWidth={3} /></button>
-                        <button onMouseDown={(e) => { e.preventDefault(); setAddingSubToId(null); setInputValue(""); }} className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"><X size={16} strokeWidth={3} /></button>
-                      </div>
-                    </div>
-                  )}
-
                   {activeParent.subCategories.length === 0 && !addingSubToId && (
-                    <div className="flex flex-col items-center justify-center h-48 opacity-40 mt-4 animate-in fade-in duration-500">
-                      <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4 shadow-inner" style={{ backgroundColor: hexToRgba(activeParent.color, 0.1) }}>
-                        <Tags size={32} style={{ color: activeParent.color }} />
-                      </div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Directory Empty</p>
+                    <div className="py-12 text-center text-xs font-sans text-slate-400">
+                      No subcategory tags added yet. Click "Add Tag" above to create one.
                     </div>
                   )}
                 </div>
-              </>
+              </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center opacity-20 lg:flex">
-                <FolderOpen size={80} className="mb-6 stroke-1" />
-                <p className="text-sm font-[1000] uppercase tracking-[0.2em]">Select a Master Category</p>
+              <div className="h-64 border border-dashed border-slate-200 dark:border-white/10 rounded-lg flex flex-col items-center justify-center text-slate-400 gap-2">
+                <FolderOpen size={32} className="stroke-1" />
+                <span className="text-xs font-sans">Select a category on the left to view and edit its tags</span>
               </div>
             )}
           </div>
@@ -515,11 +598,11 @@ const SpendingCategories = () => {
         <DragOverlay dropAnimation={defaultDropAnimationSideEffects({ styles: { active: { opacity: "0.4" } } })}>
           {activeDragItem ? (
             activeDragItem.type === 'parent' ? (
-              <div className="opacity-95 w-75 shadow-2xl bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 scale-105">
+              <div className="w-72 shadow-xl bg-white dark:bg-[#0B1120] rounded-lg border border-slate-300 dark:border-white/20 p-2">
                 <MasterRow parent={activeDragItem.parent} isActive={true} onSelect={() => {}} />
               </div>
             ) : (
-              <div className="opacity-95 w-100 shadow-2xl bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 scale-105">
+              <div className="w-80 shadow-xl bg-white dark:bg-[#0B1120] rounded-lg border border-slate-300 dark:border-white/20 p-2">
                 <DetailRow sub={activeDragItem.sub} parent={tree.find(p => p._id === activeDragItem.parentId)} isEditing={false} index={0} />
               </div>
             )
@@ -527,11 +610,16 @@ const SpendingCategories = () => {
         </DragOverlay>
 
         <CategoryModal 
-          modalMode={modalMode} closeModal={closeModal} 
-          catName={catName} setCatName={setCatName} 
-          catColor={catColor} setCatColor={setCatColor} 
-          handleAction={handleActionExecution} confirmDelete={confirmDelete} 
-          editTarget={editTarget} selectedCount={selectedIds.length}
+          modalMode={modalMode} 
+          closeModal={closeModal} 
+          catName={catName} 
+          setCatName={setCatName} 
+          catColor={catColor} 
+          setCatColor={setCatColor} 
+          handleAction={handleActionExecution} 
+          confirmDelete={confirmDelete} 
+          editTarget={editTarget} 
+          selectedCount={selectedIds.length}
         />
       </div>
     </DndContext>

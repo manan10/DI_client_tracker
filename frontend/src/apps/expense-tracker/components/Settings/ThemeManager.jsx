@@ -3,86 +3,117 @@ import { Moon, Sun, Monitor, Check } from "lucide-react";
 
 const ThemeManager = ({ isDark, onToggle }) => {
   const themes = [
-    { 
-      id: "light", 
-      label: "Light Mode", 
-      icon: Sun, 
+    {
+      id: "light",
+      label: "Light Mode",
+      desc: "Clean daylight clarity with balanced contrast",
+      icon: Sun,
       active: !isDark,
-      desc: "High clarity for daylight usage" 
+      iconColor: "text-amber-500",
+      activeBorder: "border-amber-400/80 dark:border-amber-500/50",
+      activeBg: "bg-amber-50/50 dark:bg-amber-500/5",
+      checkBg: "bg-amber-600 border-amber-600 text-white",
     },
-    { 
-      id: "dark", 
-      label: "Dark Mode", 
-      icon: Moon, 
+    {
+      id: "dark",
+      label: "Dark Mode",
+      desc: "OLED-optimized slate theme for low-light environments",
+      icon: Moon,
       active: isDark,
-      desc: "OLED optimized for low light" 
-    }
+      iconColor: "text-emerald-600 dark:text-emerald-400",
+      activeBorder: "border-emerald-500/80 dark:border-emerald-400",
+      activeBg: "bg-emerald-50/50 dark:bg-emerald-500/5",
+      checkBg: "bg-emerald-600 border-emerald-600 text-white",
+    },
   ];
 
   return (
-    <div className="animate-in fade-in duration-500 text-left pb-10">
-      
+    <div className="space-y-6 text-left antialiased">
       {/* HEADER SECTION */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-white/10">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tight italic leading-none">Appearance</h2>
-          <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">Visual Configuration</p>
+          <h2 className="text-xl sm:text-2xl font-serif tracking-tight text-slate-900 dark:text-slate-100 leading-tight">
+            Appearance & <span className="italic font-normal text-emerald-800 dark:text-emerald-400">Theme</span>
+          </h2>
+          <p className="text-xs font-sans text-slate-500 dark:text-slate-400 mt-0.5">
+            Choose your preferred display mode across desktop and mobile views.
+          </p>
         </div>
+
+        <span className="self-start sm:self-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] font-sans font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10">
+          <Monitor size={13} className="text-slate-400" />
+          <span>{isDark ? "Dark theme active" : "Light theme active"}</span>
+        </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {themes.map((theme) => (
-          <button
-            key={theme.id}
-            onClick={() => {
-              if ((theme.id === "dark" && !isDark) || (theme.id === "light" && isDark)) {
-                onToggle();
-              }
-            }}
-            className={`flex items-center justify-between p-4 sm:p-5 rounded-2xl border transition-all duration-300 w-full text-left group active:scale-[0.98] ${
-              theme.active 
-                ? "bg-slate-900 dark:bg-white border-slate-900 dark:border-white shadow-lg" 
-                : "bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm"
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                theme.active 
-                  ? "bg-white/10 dark:bg-slate-900/10 text-white dark:text-slate-900" 
-                  : "bg-slate-50 dark:bg-slate-800/50 text-slate-400 group-hover:text-amber-500 transition-colors"
-              }`}>
-                <theme.icon size={20} strokeWidth={2.5} />
-              </div>
-              <div>
-                <p className={`text-xs sm:text-sm font-black uppercase tracking-widest ${
-                  theme.active ? "text-white dark:text-slate-900" : "text-slate-900 dark:text-white"
-                }`}>
-                  {theme.label}
-                </p>
-                <p className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mt-1 ${
-                  theme.active ? "text-slate-400 dark:text-slate-500" : "text-slate-500 dark:text-slate-400"
-                }`}>
-                  {theme.desc}
-                </p>
-              </div>
-            </div>
+      {/* THEME SELECTION TILES */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        {themes.map((theme) => {
+          const Icon = theme.icon;
 
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
-              theme.active ? "bg-amber-500 text-white scale-100 opacity-100" : "scale-50 opacity-0"
-            }`}>
-              <Check size={14} strokeWidth={4} />
-            </div>
-          </button>
-        ))}
+          return (
+            <button
+              key={theme.id}
+              type="button"
+              onClick={() => {
+                if (
+                  (theme.id === "dark" && !isDark) ||
+                  (theme.id === "light" && isDark)
+                ) {
+                  onToggle();
+                }
+              }}
+              className={`flex items-start justify-between p-4 rounded-lg border-2 text-left transition-all duration-150 cursor-pointer active:scale-[0.99] outline-none ${
+                theme.active
+                  ? `bg-white dark:bg-[#0B1120] ${theme.activeBorder} shadow-xs ring-1 ring-slate-200/50 dark:ring-white/5`
+                  : "bg-white dark:bg-[#0B1120] border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20"
+              }`}
+            >
+              <div className="flex items-start gap-3 min-w-0 pr-3">
+                <div
+                  className={`p-2 rounded-md border shrink-0 transition-colors ${
+                    theme.active
+                      ? `${theme.activeBg} border-slate-200 dark:border-white/10`
+                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-white/5"
+                  }`}
+                >
+                  <Icon
+                    size={18}
+                    className={theme.iconColor}
+                    strokeWidth={2.3}
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <span className="text-sm font-sans font-semibold text-slate-900 dark:text-slate-100 block truncate">
+                    {theme.label}
+                  </span>
+                  <span className="text-xs font-sans text-slate-500 dark:text-slate-400 mt-0.5 block leading-relaxed">
+                    {theme.desc}
+                  </span>
+                </div>
+              </div>
+
+              {/* Status Radio Check */}
+              <div
+                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-all ${
+                  theme.active
+                    ? theme.checkBg
+                    : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                }`}
+              >
+                {theme.active && <Check size={11} strokeWidth={3.5} />}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* INFO BANNER */}
-      <div className="mt-6 flex items-start sm:items-center gap-3 p-4 sm:p-5 bg-amber-50 dark:bg-amber-500/10 rounded-2xl border border-amber-100 dark:border-amber-500/20 shadow-sm">
-        <div className="p-2 bg-white dark:bg-amber-500/20 rounded-lg shrink-0 mt-0.5 sm:mt-0 border border-amber-200 dark:border-amber-500/30">
-          <Monitor size={16} className="text-amber-600 dark:text-amber-400" />
-        </div>
-        <p className="text-[10px] text-amber-800 dark:text-amber-300 uppercase font-bold tracking-widest leading-relaxed">
-          System will store your preference locally to maintain consistency across family sessions.
+      {/* FOOTER INFO NOTE */}
+      <div className="flex items-start gap-2.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-white/5">
+        <Monitor size={14} className="text-slate-400 shrink-0 mt-0.5" />
+        <p className="text-xs font-sans text-slate-600 dark:text-slate-400 leading-relaxed">
+          Your choice is saved to local browser storage and applied automatically whenever you log in.
         </p>
       </div>
     </div>

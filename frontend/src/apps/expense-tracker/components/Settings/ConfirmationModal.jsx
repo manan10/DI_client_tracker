@@ -1,56 +1,98 @@
 import React from "react";
-import { X, AlertTriangle, ShieldAlert, ArrowRight } from "lucide-react";
+import { AlertTriangle, ShieldAlert, X } from "lucide-react";
 
-const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, confirmText, type = "danger" }) => {
+const ConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmText = "Confirm Action",
+  type = "danger",
+  loading = false,
+}) => {
   if (!isOpen) return null;
 
-  const themes = {
-    danger: "bg-red-500 shadow-red-500/20 text-red-500 border-red-500/20",
-    warning: "bg-orange-500 shadow-orange-500/20 text-orange-500 border-orange-500/20",
-  };
+  const isDanger = type === "danger";
 
-  const theme = themes[type] || themes.danger;
+  const config = isDanger
+    ? {
+        icon: <ShieldAlert size={20} className="text-rose-600 dark:text-rose-400" />,
+        badgeBg: "bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20",
+        btnConfirm: "bg-rose-600 hover:bg-rose-700 text-white shadow-2xs",
+        accentBorder: "border-rose-500/30",
+        italicAccent: "text-rose-700 dark:text-rose-400",
+      }
+    : {
+        icon: <AlertTriangle size={20} className="text-amber-600 dark:text-amber-400" />,
+        badgeBg: "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20",
+        btnConfirm: "bg-amber-600 hover:bg-amber-700 text-white shadow-2xs",
+        accentBorder: "border-amber-500/30",
+        italicAccent: "text-amber-700 dark:text-amber-400",
+      };
 
   return (
-    <div className="fixed inset-0 z-110 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-110 flex items-center justify-center p-4 antialiased text-left font-sans">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300" 
-        onClick={onClose} 
+      <div
+        className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+        onClick={onClose}
       />
-      
-      {/* Modal Card */}
-      <div className="relative w-full max-w-sm bg-white dark:bg-[#0B1120] rounded-[2.5rem] p-8 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-300">
-        
-        <div className="flex flex-col items-center text-center">
-          {/* Icon Header */}
-          <div className={`p-4 rounded-3xl mb-6 ${theme.split(' ')[0]} bg-opacity-10 border ${theme.split(' ')[2]}`}>
-            {type === "danger" ? <ShieldAlert size={32} className={theme.split(' ')[2].replace('border-', 'text-').replace('/20', '')} /> : <AlertTriangle size={32} className={theme.split(' ')[2].replace('border-', 'text-').replace('/20', '')} />}
+
+      {/* Modal Card: Crisp, clean, non-bubbly geometry */}
+      <div
+        className={`relative w-full max-w-sm bg-white dark:bg-[#0B1120] rounded-xl p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-white/10 ${config.accentBorder} animate-in zoom-in-95 duration-200 z-10`}
+      >
+        {/* Top Header Row with Icon and Close Button */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div
+            className={`w-10 h-10 rounded-lg flex items-center justify-center border shrink-0 ${config.badgeBg}`}
+          >
+            {config.icon}
           </div>
 
-          <h3 className="text-xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tighter italic mb-3">
-            {title}
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            aria-label="Close modal"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Title & Explainer */}
+        <div className="space-y-1.5 mb-5">
+          <h3 className="text-lg font-serif tracking-tight text-slate-900 dark:text-white leading-tight">
+            {title}{" "}
+            <span className={`italic font-normal ${config.italicAccent}`}>
+              Confirmation
+            </span>
           </h3>
-          
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed mb-8">
+          <p className="text-xs font-sans text-slate-500 dark:text-slate-400 leading-relaxed">
             {message}
           </p>
+        </div>
 
-          <div className="flex flex-col w-full gap-3">
-            <button
-              onClick={onConfirm}
-              className={`w-full py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-white transition-all active:scale-95 shadow-xl ${theme.split(' ')[0]}`}
-            >
-              {confirmText || "Confirm Action"}
-            </button>
-            
-            <button
-              onClick={onClose}
-              className="w-full py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-            >
-              Cancel Request
-            </button>
-          </div>
+        {/* Action Controls */}
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-white/5 font-sans">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="px-3.5 py-1.5 rounded-md text-xs font-sans font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            className={`px-4 py-1.5 rounded-md text-xs font-sans font-semibold tracking-wide transition-all active:scale-95 disabled:opacity-50 cursor-pointer ${config.btnConfirm}`}
+          >
+            {confirmText}
+          </button>
         </div>
       </div>
     </div>

@@ -1,22 +1,19 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
-  UserPlus,
   Edit3,
   X,
   Loader2,
-  ShieldCheck,
-  ChevronDown,
   Check,
   Trash2,
   Eraser,
   Landmark,
   Globe,
-  TrendingUp,
-  WalletIcon,
+  Wallet as WalletIcon,
   ShieldAlert,
   AlertTriangle,
   AlertCircle,
   Plus,
+  ChevronDown,
 } from "lucide-react";
 import { useApi } from "../../../../shared/hooks/useApi";
 import { toast } from "sonner";
@@ -38,41 +35,51 @@ const ConfirmationModal = ({
   return (
     <div className="fixed inset-0 z-200 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+        className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/70 backdrop-blur-xs"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-sm bg-white dark:bg-[#0B1120] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
-        <div className="flex flex-col items-center text-center">
+      <div className="relative w-full max-w-sm bg-white dark:bg-[#0B1120] rounded-lg p-5 shadow-xl border border-slate-200 dark:border-white/10">
+        <div className="flex items-start gap-3">
           <div
-            className={`p-3 rounded-2xl mb-4 ${isDanger ? "bg-rose-50 text-rose-500 dark:bg-rose-500/10" : "bg-amber-50 text-amber-500 dark:bg-amber-500/10"}`}
+            className={`p-2 rounded-md border shrink-0 ${
+              isDanger
+                ? "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20"
+                : "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
+            }`}
           >
-            {isDanger ? <ShieldAlert size={24} /> : <AlertTriangle size={24} />}
+            {isDanger ? <ShieldAlert size={18} /> : <AlertTriangle size={18} />}
           </div>
-          <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight italic mb-2">
-            {title}
-          </h3>
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
-            {message}
-          </p>
-          <div className="flex w-full gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onConfirm}
-              disabled={loading}
-              className={`flex-1 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest text-white transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center ${isDanger ? "bg-rose-500 hover:bg-rose-600" : "bg-amber-500 hover:bg-amber-600"}`}
-            >
-              {loading ? (
-                <Loader2 className="animate-spin" size={14} />
-              ) : (
-                confirmText
-              )}
-            </button>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-serif tracking-tight text-slate-900 dark:text-white">
+              {title}
+            </h3>
+            <p className="text-xs font-sans text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+              {message}
+            </p>
           </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-5 pt-3 border-t border-slate-100 dark:border-white/5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3 py-1.5 rounded-md text-xs font-sans font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            className={`px-3.5 py-1.5 rounded-md text-xs font-sans font-semibold text-white transition-all active:scale-95 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer ${
+              isDanger
+                ? "bg-rose-600 hover:bg-rose-700"
+                : "bg-amber-600 hover:bg-amber-700"
+            }`}
+          >
+            {loading && <Loader2 className="animate-spin" size={13} />}
+            <span>{confirmText}</span>
+          </button>
         </div>
       </div>
     </div>
@@ -104,14 +111,15 @@ const WalletManager = ({ wallets, onUpdate }) => {
     user: "",
   });
 
-  const sections = useMemo(
-    () => ({
-      drawer: wallets.filter((w) => w.isGeneralPool),
-      cash: wallets.filter((w) => !w.isGeneralPool && !w.isVirtual),
-      virtual: wallets.filter((w) => w.isVirtual),
-    }),
-    [wallets],
-  );
+  const sortedWallets = useMemo(() => {
+    return [...wallets].sort((a, b) => {
+      if (a.isGeneralPool) return -1;
+      if (b.isGeneralPool) return 1;
+      if (a.isVirtual && !b.isVirtual) return 1;
+      if (!a.isVirtual && b.isVirtual) return -1;
+      return a.walletName.localeCompare(b.walletName);
+    });
+  }, [wallets]);
 
   const poolExists = wallets.find((w) => w.isGeneralPool);
 
@@ -145,15 +153,15 @@ const WalletManager = ({ wallets, onUpdate }) => {
     try {
       if (editingId) {
         await request(`/wallets/${editingId}`, "PUT", formData);
-        toast.success("Configuration Updated");
+        toast.success("Wallet configuration updated");
       } else {
         await request("/wallets", "POST", formData);
-        toast.success("Wallet Authorized");
+        toast.success("New wallet added");
       }
       setIsModalOpen(false);
       onUpdate();
     } catch (err) {
-      toast.error("Process Failed", { description: err.message });
+      toast.error("Operation failed", { description: err.message });
     }
   };
 
@@ -161,17 +169,17 @@ const WalletManager = ({ wallets, onUpdate }) => {
     setConfirmConfig({
       isOpen: true,
       type: "danger",
-      title: "Terminate Wallet",
+      title: "Delete Wallet",
       message:
-        "Are you sure? Standard funds will return to the Master Pool. Digital assets will be purged.",
+        "Are you sure? Cash funds will return to the Master Pool, and digital bindings will be removed.",
       onConfirm: async () => {
         try {
           await request(`/wallets/${id}`, "DELETE");
           onUpdate();
           setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
-          toast.success("Wallet Terminated");
+          toast.success("Wallet removed");
         } catch (err) {
-          toast.error("Delete Failed", { description: err.message });
+          toast.error("Delete failed", { description: err.message });
         }
       },
     });
@@ -181,113 +189,60 @@ const WalletManager = ({ wallets, onUpdate }) => {
     setConfirmConfig({
       isOpen: true,
       type: "warning",
-      title: "Authorize Sweep",
-      message: `Resetting balance for ${wallet.walletName}. Physical funds will move to the Master Pool.`,
+      title: "Sweep Wallet Funds",
+      message: `Reset balance for "${wallet.walletName}". Physical cash will transfer to Master Pool.`,
       onConfirm: async () => {
         try {
           await request(`/wallets/${wallet._id}/clear`, "POST");
           onUpdate();
           setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
-          toast.success("Balance Cleared");
+          toast.success("Balance cleared to Master Pool");
         } catch (err) {
-          toast.error("Clear Failed", { description: err.message });
+          toast.error("Sweep failed", { description: err.message });
         }
       },
     });
   };
 
-  const WalletCard = ({ w }) => {
-    const isMaster = w.isGeneralPool;
-    const isDigital = w.isVirtual;
-
-    const theme = isMaster
-      ? {
-          text: "text-blue-500",
-          bg: "bg-blue-50 dark:bg-blue-500/10",
-          icon: <Landmark size={18} />,
-        }
-      : isDigital
-        ? {
-            text: "text-indigo-500",
-            bg: "bg-indigo-50 dark:bg-indigo-500/10",
-            icon: <Globe size={18} />,
-          }
-        : {
-            text: "text-emerald-500",
-            bg: "bg-emerald-50 dark:bg-emerald-500/10",
-            icon: <WalletIcon size={18} />,
-          };
-
-    return (
-      <div className="flex items-center justify-between p-3.5 sm:p-4 bg-white dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500/40 transition-colors shadow-sm">
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center ${theme.bg} ${theme.text}`}
-          >
-            {theme.icon}
-          </div>
-          <div className="leading-tight">
-            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-              {w.walletName}
-            </p>
-            <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight mt-0.5">
-              {isDigital ? (
-                <span className="text-sm text-indigo-500/80 italic">
-                  Linked Asset
-                </span>
-              ) : (
-                <>₹{w.balance.toLocaleString("en-IN")}</>
-              )}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5 border-l border-slate-100 dark:border-slate-800 pl-3">
-          {!isDigital && (
-            <button
-              onClick={() => triggerClear(w)}
-              className="p-2 text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition-colors"
-              title="Sweep Funds"
-            >
-              <Eraser size={14} />
-            </button>
-          )}
-          <button
-            onClick={() => openEdit(w)}
-            className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg transition-colors"
-            title="Edit Config"
-          >
-            <Edit3 size={14} />
-          </button>
-          {!isMaster && (
-            <button
-              onClick={() => triggerDelete(w._id)}
-              className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors"
-              title="Terminate"
-            >
-              <Trash2 size={14} />
-            </button>
-          )}
-        </div>
-      </div>
-    );
+  const getTypeMeta = (w) => {
+    if (w.isGeneralPool) {
+      return {
+        label: "Master",
+        badge: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
+        icon: <Landmark size={14} className="text-blue-600 dark:text-blue-400" />,
+      };
+    }
+    if (w.isVirtual) {
+      return {
+        label: "Digital",
+        badge: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20",
+        icon: <Globe size={14} className="text-indigo-600 dark:text-indigo-400" />,
+      };
+    }
+    return {
+      label: "Cash",
+      badge: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border-emerald-500/20",
+      icon: <WalletIcon size={14} className="text-emerald-700 dark:text-emerald-400" />,
+    };
   };
 
   const selectedUser = users.find((u) => u._id === formData.user);
 
   return (
-    <div className="animate-in fade-in duration-500">
-      {/* HEADER SECTION */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-6">
+    <div className="space-y-5">
+      {/* SECTION TOP BAR */}
+      <div className="flex items-center justify-between gap-4 pb-3 border-b border-slate-200 dark:border-white/10">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tight italic leading-none">
-            Wallets
+          <h2 className="text-xl sm:text-2xl font-serif tracking-tight text-slate-900 dark:text-slate-100 leading-tight">
+            Wallet <span className="italic font-normal text-emerald-800 dark:text-emerald-400">List</span>
           </h2>
-          <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">
-            Registry & Configuration
+          <p className="text-xs font-sans text-slate-500 dark:text-slate-400 mt-0.5">
+            Overview and controls for cash allocations, master pools, and digital accounts.
           </p>
         </div>
+
         <button
+          type="button"
           onClick={() => {
             setEditingId(null);
             setFormData({
@@ -300,68 +255,192 @@ const WalletManager = ({ wallets, onUpdate }) => {
             });
             setIsModalOpen(true);
           }}
-          className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl active:scale-95 transition-all shadow-sm"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white rounded-md text-xs font-sans font-semibold transition-all active:scale-95 cursor-pointer shadow-2xs"
         >
-          <Plus size={14} strokeWidth={3} />
-          <span className="text-[10px] font-bold uppercase tracking-widest">
-            Add Wallet
-          </span>
+          <Plus size={14} strokeWidth={2.5} />
+          <span>Add Wallet</span>
         </button>
       </div>
 
-      <div className="space-y-8">
-        {/* Master Section */}
-        {sections.drawer.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <ShieldCheck size={14} className="text-blue-500" />
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-                Master Pool
-              </span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {sections.drawer.map((w) => (
-                <WalletCard key={w._id} w={w} />
-              ))}
-            </div>
-          </div>
-        )}
+      {/* COMPACT WALLET TABLE (DESKTOP) */}
+      <div className="hidden md:block w-full overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-slate-200 dark:border-white/10 text-[10px] font-sans font-semibold uppercase tracking-wider text-slate-400">
+              <th className="py-2 pr-3">Account</th>
+              <th className="py-2 px-3">Type</th>
+              <th className="py-2 px-3">Custodian</th>
+              <th className="py-2 px-3 text-right">Target (₹)</th>
+              <th className="py-2 px-3 text-right">Balance</th>
+              <th className="py-2 pl-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-xs font-sans">
+            {sortedWallets.map((w) => {
+              const meta = getTypeMeta(w);
+              const custodianName = w.user?.name || (w.isGeneralPool ? "Master Pool" : "Unassigned");
 
-        {/* Physical Section */}
-        {sections.cash.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <TrendingUp size={14} className="text-emerald-500" />
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-                Cash Allocations
-              </span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {sections.cash.map((w) => (
-                <WalletCard key={w._id} w={w} />
-              ))}
-            </div>
-          </div>
-        )}
+              return (
+                <tr
+                  key={w._id}
+                  className="hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors"
+                >
+                  {/* Account Name */}
+                  <td className="py-2.5 pr-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 rounded bg-slate-100 dark:bg-slate-800">
+                        {meta.icon}
+                      </div>
+                      <span>{w.walletName}</span>
+                    </div>
+                  </td>
 
-        {/* Digital Section */}
-        {sections.virtual.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <Globe size={14} className="text-indigo-500" />
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-                Digital Assets
-              </span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {sections.virtual.map((w) => (
-                <WalletCard key={w._id} w={w} />
-              ))}
-            </div>
-          </div>
-        )}
+                  {/* Type Badge */}
+                  <td className="py-2.5 px-3 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border ${meta.badge}`}
+                    >
+                      {meta.label}
+                    </span>
+                  </td>
+
+                  {/* Custodian */}
+                  <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                    {custodianName}
+                  </td>
+
+                  {/* Monthly Target */}
+                  <td className="py-2.5 px-3 text-right font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                    {!w.isVirtual ? (
+                      `₹${Number(w.targetAllowance || 0).toLocaleString("en-IN")}`
+                    ) : (
+                      <span className="text-slate-300 dark:text-slate-600">—</span>
+                    )}
+                  </td>
+
+                  {/* Balance */}
+                  <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                    {w.isVirtual ? (
+                      <span className="text-xs font-sans font-medium text-indigo-600 dark:text-indigo-400">
+                        Linked
+                      </span>
+                    ) : (
+                      `₹${Number(w.balance || 0).toLocaleString("en-IN")}`
+                    )}
+                  </td>
+
+                  {/* Actions */}
+                  <td className="py-2.5 pl-3 text-right whitespace-nowrap">
+                    <div className="inline-flex items-center gap-1">
+                      {!w.isVirtual && (
+                        <button
+                          type="button"
+                          onClick={() => triggerClear(w)}
+                          className="p-1 text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded transition-colors cursor-pointer"
+                          title="Sweep Funds to Master"
+                        >
+                          <Eraser size={14} />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => openEdit(w)}
+                        className="p-1 text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded transition-colors cursor-pointer"
+                        title="Edit Wallet"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                      {!w.isGeneralPool && (
+                        <button
+                          type="button"
+                          onClick={() => triggerDelete(w._id)}
+                          className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded transition-colors cursor-pointer"
+                          title="Delete Wallet"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
+      {/* MOBILE COMPACT LIST VIEW */}
+      <div className="md:hidden divide-y divide-slate-100 dark:divide-white/5">
+        {sortedWallets.map((w) => {
+          const meta = getTypeMeta(w);
+          const custodianName = w.user?.name || (w.isGeneralPool ? "Master Pool" : "Unassigned");
+
+          return (
+            <div key={w._id} className="py-2.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="p-1.5 rounded bg-slate-100 dark:bg-slate-800 shrink-0">
+                  {meta.icon}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-sans font-semibold text-slate-900 dark:text-slate-100 truncate">
+                      {w.walletName}
+                    </span>
+                    <span className={`text-[9px] font-sans px-1.5 py-0.2 rounded border shrink-0 ${meta.badge}`}>
+                      {meta.label}
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 truncate block">
+                    {custodianName}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="text-right">
+                  <span className="font-mono font-bold text-xs text-slate-900 dark:text-white block">
+                    {w.isVirtual ? "Linked" : `₹${Number(w.balance || 0).toLocaleString("en-IN")}`}
+                  </span>
+                  {!w.isVirtual && (
+                    <span className="text-[10px] font-mono text-slate-400 block">
+                      T: ₹{Number(w.targetAllowance || 0).toLocaleString("en-IN")}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(w)}
+                    className="p-1 text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-400"
+                    title="Edit"
+                  >
+                    <Edit3 size={14} />
+                  </button>
+                  {!w.isGeneralPool && (
+                    <button
+                      type="button"
+                      onClick={() => triggerDelete(w._id)}
+                      className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
+                      title="Delete"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {sortedWallets.length === 0 && (
+        <div className="py-10 text-center text-xs font-sans text-slate-400">
+          No wallets configured. Click "Add Wallet" above to create one.
+        </div>
+      )}
+
+      {/* CONFIRMATION MODAL */}
       <ConfirmationModal
         isOpen={confirmConfig.isOpen}
         onClose={() => setConfirmConfig((prev) => ({ ...prev, isOpen: false }))}
@@ -370,67 +449,66 @@ const WalletManager = ({ wallets, onUpdate }) => {
         message={confirmConfig.message}
         type={confirmConfig.type}
         loading={loading}
-        confirmText="Authorize"
+        confirmText="Confirm"
       />
 
-      {/* NEW/EDIT MODAL - Compact and Scrollbar hidden */}
+      {/* EDIT / CREATE WALLET MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-150 flex items-end sm:items-center justify-center sm:p-4">
+        <div className="fixed inset-0 z-150 flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+            className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/70 backdrop-blur-xs"
             onClick={() => setIsModalOpen(false)}
           />
           <form
             onSubmit={handleSave}
-            className="relative w-full sm:max-w-md bg-white dark:bg-[#0B1120] rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-8 duration-300 border border-slate-200 dark:border-slate-800 overflow-y-auto max-h-[85vh] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            className="relative w-full max-w-sm bg-white dark:bg-[#0B1120] rounded-lg p-5 shadow-xl border border-slate-200 dark:border-white/10"
           >
-            <div className="w-12 h-1 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto mb-6 sm:hidden" />
-
-            <div className="flex justify-between items-start mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
-              <div>
-                <h2 className="text-xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tight italic">
-                  {editingId ? "Update Config" : "New Wallet"}
-                </h2>
-              </div>
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-white/10 mb-4">
+              <h3 className="text-base font-serif tracking-tight text-slate-900 dark:text-white">
+                {editingId ? "Edit" : "New"}{" "}
+                <span className="italic font-normal text-emerald-800 dark:text-emerald-400">
+                  Wallet
+                </span>
+              </h3>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-full bg-slate-50 dark:bg-slate-800 transition-colors"
+                className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded cursor-pointer"
               >
-                <X size={16} strokeWidth={2.5} />
+                <X size={15} />
               </button>
             </div>
 
-            <div className="space-y-5">
-              {/* Type Segmented Control */}
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                  Entity Type
+            <div className="space-y-3.5">
+              {/* Type Switcher */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-sans font-semibold uppercase tracking-wider text-slate-400">
+                  Account Type
                 </label>
-                <div className="flex p-1 bg-slate-100 dark:bg-slate-900/80 rounded-lg">
+                <div className="grid grid-cols-3 gap-1 p-0.5 bg-slate-100 dark:bg-slate-900 rounded border border-slate-200 dark:border-white/5">
                   <button
                     type="button"
                     onClick={() =>
-                      setFormData({
-                        ...formData,
-                        isGeneralPool: false,
-                        isVirtual: false,
-                      })
+                      setFormData({ ...formData, isGeneralPool: false, isVirtual: false })
                     }
-                    className={`flex-1 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${!formData.isGeneralPool && !formData.isVirtual ? "bg-white dark:bg-slate-800 text-emerald-500 shadow-sm" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
+                    className={`py-1 text-xs font-sans font-medium rounded transition-all cursor-pointer ${
+                      !formData.isGeneralPool && !formData.isVirtual
+                        ? "bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-400 font-semibold shadow-2xs"
+                        : "text-slate-600 dark:text-slate-400"
+                    }`}
                   >
-                    Physical
+                    Cash
                   </button>
                   <button
                     type="button"
                     onClick={() =>
-                      setFormData({
-                        ...formData,
-                        isGeneralPool: false,
-                        isVirtual: true,
-                      })
+                      setFormData({ ...formData, isGeneralPool: false, isVirtual: true })
                     }
-                    className={`flex-1 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${formData.isVirtual ? "bg-white dark:bg-slate-800 text-indigo-500 shadow-sm" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
+                    className={`py-1 text-xs font-sans font-medium rounded transition-all cursor-pointer ${
+                      formData.isVirtual
+                        ? "bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-400 font-semibold shadow-2xs"
+                        : "text-slate-600 dark:text-slate-400"
+                    }`}
                   >
                     Digital
                   </button>
@@ -446,7 +524,11 @@ const WalletManager = ({ wallets, onUpdate }) => {
                         user: "",
                       })
                     }
-                    className={`flex-1 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${formData.isGeneralPool ? "bg-white dark:bg-slate-800 text-blue-500 shadow-sm" : "text-slate-400 disabled:opacity-30 hover:text-slate-600 dark:hover:text-slate-300"}`}
+                    className={`py-1 text-xs font-sans font-medium rounded transition-all cursor-pointer ${
+                      formData.isGeneralPool
+                        ? "bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-400 font-semibold shadow-2xs"
+                        : "text-slate-600 dark:text-slate-400 disabled:opacity-30"
+                    }`}
                   >
                     Master
                   </button>
@@ -454,9 +536,9 @@ const WalletManager = ({ wallets, onUpdate }) => {
               </div>
 
               {!formData.isGeneralPool && (
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    Wallet Nickname
+                <div className="space-y-1">
+                  <label className="text-[10px] font-sans font-semibold uppercase tracking-wider text-slate-400">
+                    Wallet Name
                   </label>
                   <input
                     type="text"
@@ -465,73 +547,62 @@ const WalletManager = ({ wallets, onUpdate }) => {
                     onChange={(e) =>
                       setFormData({ ...formData, walletName: e.target.value })
                     }
-                    className="w-full bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl text-sm font-bold uppercase tracking-wide text-slate-900 dark:text-white outline-none border border-slate-200 dark:border-slate-800 focus:border-emerald-500 transition-all placeholder:text-slate-400"
+                    className="w-full bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded border border-slate-200 dark:border-white/10 text-xs font-sans text-slate-900 dark:text-white outline-none focus:border-emerald-600"
                     placeholder="e.g. Daily Pocket"
                   />
                 </div>
               )}
 
               {!formData.isGeneralPool && (
-                <div className="space-y-1.5 relative">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    Assigned Custodian
+                <div className="space-y-1 relative">
+                  <label className="text-[10px] font-sans font-semibold uppercase tracking-wider text-slate-400">
+                    Custodian
                   </label>
                   <button
                     type="button"
                     onClick={() => setShowUserDropdown(!showUserDropdown)}
-                    className="w-full bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl text-left border border-slate-200 dark:border-slate-800 flex justify-between items-center transition-all focus:border-emerald-500"
+                    className="w-full bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded border border-slate-200 dark:border-white/10 text-left text-xs font-sans flex justify-between items-center cursor-pointer"
                   >
-                    <span
-                      className={`text-xs font-bold uppercase tracking-wide ${selectedUser ? "text-slate-900 dark:text-white" : "text-slate-400"}`}
-                    >
+                    <span className={selectedUser ? "text-slate-900 dark:text-white font-medium" : "text-slate-400"}>
                       {selectedUser ? selectedUser.name : "Unassigned / Shared"}
                     </span>
-                    <ChevronDown
-                      size={14}
-                      className={`text-slate-400 transition-transform duration-300 ${showUserDropdown ? "rotate-180" : ""}`}
-                    />
+                    <ChevronDown size={14} className="text-slate-400" />
                   </button>
 
                   {showUserDropdown && (
-                    <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 overflow-hidden">
-                      <div className="max-h-40 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        {users.map((u) => (
-                          <button
-                            key={u._id}
-                            type="button"
-                            onClick={() => {
-                              setFormData({ ...formData, user: u._id });
-                              setShowUserDropdown(false);
-                            }}
-                            className="w-full p-3 text-left flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 border-b border-slate-100 dark:border-slate-800/50 last:border-0"
-                          >
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-900 dark:text-white">
-                              {u.name}
-                            </span>
-                            {formData.user === u._id && (
-                              <Check size={14} className="text-emerald-500" />
-                            )}
-                          </button>
-                        ))}
+                    <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded shadow-lg z-50 py-1 max-h-40 overflow-y-auto no-scrollbar">
+                      {users.map((u) => (
                         <button
+                          key={u._id}
                           type="button"
                           onClick={() => {
-                            setFormData({ ...formData, user: "" });
+                            setFormData({ ...formData, user: u._id });
                             setShowUserDropdown(false);
                           }}
-                          className="w-full p-3 text-left text-[10px] font-bold uppercase tracking-widest text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+                          className="w-full px-3 py-1.5 text-left text-xs font-sans hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between cursor-pointer"
                         >
-                          Clear Binding
+                          <span className="text-slate-800 dark:text-slate-200">{u.name}</span>
+                          {formData.user === u._id && <Check size={12} className="text-emerald-600" />}
                         </button>
-                      </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, user: "" });
+                          setShowUserDropdown(false);
+                        }}
+                        className="w-full px-3 py-1.5 text-left text-xs font-sans text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 border-t border-slate-100 dark:border-white/5 cursor-pointer"
+                      >
+                        Clear Custodian
+                      </button>
                     </div>
                   )}
                 </div>
               )}
 
               {!formData.isVirtual ? (
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-sans font-semibold uppercase tracking-wider text-slate-400">
                     Monthly Target (₹)
                   </label>
                   <input
@@ -539,23 +610,16 @@ const WalletManager = ({ wallets, onUpdate }) => {
                     required
                     value={formData.targetAllowance}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        targetAllowance: e.target.value,
-                      })
+                      setFormData({ ...formData, targetAllowance: e.target.value })
                     }
-                    className="w-full bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl text-lg font-black text-slate-900 dark:text-white outline-none border border-slate-200 dark:border-slate-800 focus:border-emerald-500 transition-all"
+                    className="w-full bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded border border-slate-200 dark:border-white/10 text-xs font-mono font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-600"
                   />
                 </div>
               ) : (
-                <div className="flex items-start gap-2 p-3 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-xl mt-2">
-                  <AlertCircle
-                    size={14}
-                    className="text-indigo-500 shrink-0 mt-0.5"
-                  />
-                  <p className="text-[10px] font-semibold text-indigo-700 dark:text-indigo-300 leading-relaxed">
-                    Digital assets bypass the standard refill protocol. Balances
-                    are tracked independently of the Master Pool.
+                <div className="flex items-center gap-2 p-2 bg-indigo-50/70 dark:bg-indigo-500/10 border border-indigo-200/70 dark:border-indigo-500/20 rounded">
+                  <AlertCircle size={13} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                  <p className="text-[11px] font-sans text-indigo-900 dark:text-indigo-200">
+                    Digital accounts are reconciled separately from monthly cash refills.
                   </p>
                 </div>
               )}
@@ -563,14 +627,9 @@ const WalletManager = ({ wallets, onUpdate }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 bg-emerald-500 hover:bg-emerald-600 text-white py-3.5 rounded-xl font-bold uppercase text-[10px] tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full mt-2 bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white py-2 rounded text-xs font-sans font-semibold tracking-wide transition-all active:scale-98 disabled:opacity-50 cursor-pointer shadow-2xs"
               >
-                {loading ? (
-                  <Loader2 className="animate-spin" size={16} />
-                ) : (
-                  <ShieldCheck size={16} />
-                )}
-                {editingId ? "Confirm Update" : "Authorize Wallet"}
+                {loading ? <Loader2 className="animate-spin mx-auto" size={14} /> : (editingId ? "Save Changes" : "Create Wallet")}
               </button>
             </div>
           </form>

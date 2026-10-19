@@ -1,156 +1,225 @@
 import React from "react";
-import { 
-  ShieldCheck, Loader2, AlertCircle, ArrowDownCircle, 
-  ArrowUpRight, Landmark, Wallet, ArrowDown, ArrowRight
+import {
+  CheckCircle2,
+  Loader2,
+  AlertCircle,
+  ArrowDown,
+  Landmark,
+  Wallet,
+  Coins,
 } from "lucide-react";
 
-const MonthlyRefill = ({ wallets, onRefill, loading }) => {
-  const drawer = wallets.find(w => w.isGeneralPool);
-  const recipients = wallets.filter(w => !w.isGeneralPool && w.targetAllowance > 0);
-  const totalMemberOutflow = recipients.reduce((sum, w) => sum + w.targetAllowance, 0);
+const formatINR = (amount) => {
+  return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(
+    Math.abs(amount || 0)
+  );
+};
+
+const MonthlyRefill = ({ wallets = [], onRefill, loading }) => {
+  const drawer = wallets.find((w) => w.isGeneralPool);
+  const recipients = wallets.filter((w) => !w.isGeneralPool && w.targetAllowance > 0);
+  const totalGivenOut = recipients.reduce(
+    (sum, w) => sum + (Number(w.targetAllowance) || 0),
+    0
+  );
+  const drawerRefillAmount = Number(drawer?.targetAllowance || 0);
+  const remainingInDrawer = drawerRefillAmount - totalGivenOut;
 
   return (
-    <div className="animate-in fade-in duration-500 text-left pb-10">
-      
+    <div className="space-y-6 text-left">
       {/* HEADER SECTION */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-white/10">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tight italic leading-none">Monthly Top-up</h2>
-          <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">Sequential Refill Protocol</p>
-        </div>
-      </div>
-
-      <div className="relative">
-        
-        {/* PHASE 1: DRAWER INFLOW */}
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-3">
-            <ArrowDownCircle size={16} className="text-blue-500" strokeWidth={2.5} />
-            <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest">Phase 1: Source Replenishment</span>
-          </div>
-          
-          <div className="p-4 sm:p-5 bg-white dark:bg-[#0B1120] rounded-4xl border-2 border-blue-100 dark:border-blue-900/40 flex justify-between items-center shadow-sm relative overflow-hidden">
-            <div className="absolute inset-0 bg-linear-to-r from-blue-50/80 to-transparent dark:from-blue-900/10 pointer-events-none" />
-            
-            <div className="flex items-center gap-4 relative z-10">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 text-blue-500 flex items-center justify-center shadow-sm shrink-0 border border-blue-100 dark:border-blue-500/20">
-                <Landmark size={20} />
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">{drawer?.walletName || 'The Drawer'}</p>
-                <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 dark:text-blue-400 uppercase mt-1 tracking-widest">Replenishing Master Fund</p>
-              </div>
-            </div>
-            <div className="text-right relative z-10">
-              <span className="text-xl sm:text-3xl font-black text-blue-600 dark:text-blue-400 tracking-tighter">
-                +₹{drawer?.targetAllowance?.toLocaleString() || "0"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* TRANSITION PIPELINE */}
-        <div className="relative h-16 sm:h-20">
-          {/* Vertical Track bridging Phase 1 & 2 */}
-          <div className="absolute left-10.25 sm:left-11.25 top-0 h-full w-0.5 bg-linear-to-b from-blue-400 to-emerald-400 dark:from-blue-500/50 dark:to-emerald-500/50" />
-          
-          {/* Funds Flow Indicator */}
-          <div className="absolute top-1/2 -translate-y-1/2 left-6.25 sm:left-7.25 z-10">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-[8px] sm:text-[9px] font-black uppercase tracking-widest shadow-sm">
-              <ArrowDown size={14} className="text-emerald-500" strokeWidth={3} />
-              <span>Funds Allocated To</span>
-            </div>
-          </div>
-        </div>
-
-        {/* PHASE 2: MEMBER OUTFLOW */}
-        <div className="relative">
-          {/* Phase 2 Header & Track */}
-          <div className="relative pl-16 sm:pl-20 pb-4">
-            <div className="absolute left-10.25 sm:left-11.25 top-0 h-full w-0.5 bg-emerald-400/50 dark:bg-emerald-500/30" />
-            <div className="flex items-center gap-2 relative z-10">
-              <ArrowUpRight size={16} className="text-emerald-500" strokeWidth={2.5} />
-              <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest">Phase 2: Member Distribution</span>
-            </div>
-          </div>
-          
-          <div className="space-y-0">
-            {recipients.length > 0 ? (
-              recipients.map((wallet, index) => {
-                const isLast = index === recipients.length - 1;
-                return (
-                  <div key={wallet._id} className="relative pl-16 sm:pl-20 pb-4 group">
-                    
-                    {/* Vertical Track Segment (stops halfway on the last item) */}
-                    <div className={`absolute left-10.25 sm:left-11.25 top-0 w-0.5 bg-emerald-400/50 dark:bg-emerald-500/30 transition-all duration-500 ${isLast ? 'h-1/2' : 'h-full'}`} />
-                    
-                    {/* Horizontal Branch with Directing Arrow */}
-                    <div className="absolute left-10.75 sm:left-11.75 top-1/2 -translate-y-1/2 w-5.25 sm:w-8.25 flex items-center">
-                      <div className="w-full h-0.5 bg-emerald-400/50 dark:bg-emerald-500/30 transition-colors duration-300 group-hover:bg-emerald-500" />
-                      <div className="absolute right-0 text-emerald-500 dark:text-emerald-400 translate-x-1 transition-transform duration-300 group-hover:translate-x-1.5">
-                         <ArrowRight size={14} strokeWidth={3} />
-                      </div>
-                    </div>
-
-                    {/* Member Wallet Card */}
-                    <div className="flex items-center justify-between p-4 sm:p-5 bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500/40 transition-colors shadow-sm relative z-10">
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-500 flex items-center justify-center border border-slate-100 dark:border-slate-700 shrink-0 group-hover:text-emerald-500 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-500/10 group-hover:border-emerald-200 dark:group-hover:border-emerald-500/20 transition-all shadow-sm">
-                          <Wallet size={16} />
-                        </div>
-                        <div>
-                          <p className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">{wallet.walletName}</p>
-                          <p className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Allocation</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 tracking-tighter">
-                          +₹{wallet.targetAllowance.toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="relative pl-16 sm:pl-20 pb-4">
-                <div className="absolute left-10.25 sm:left-11.25 top-0 h-1/2 w-0.5 bg-slate-300 dark:bg-slate-700" />
-                <div className="absolute left-10.75 sm:left-11.75 top-1/2 -translate-y-1/2 w-5.25 sm:w-8.25 flex items-center">
-                  <div className="w-full h-0.5 bg-slate-300 dark:bg-slate-700" />
-                </div>
-                <div className="p-4 sm:p-5 bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200 dark:border-slate-800 text-center shadow-sm relative z-10">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No allocations pending</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* INFO BANNER */}
-        <div className="mt-8 flex items-start sm:items-center gap-3 p-4 sm:p-5 bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg shrink-0 mt-0.5 sm:mt-0 border border-slate-100 dark:border-slate-700">
-            <AlertCircle size={16} className="text-slate-500 dark:text-slate-400" />
-          </div>
-          <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase font-bold tracking-widest leading-relaxed">
-            System will credit <span className="text-blue-500 dark:text-blue-400">₹{drawer?.targetAllowance?.toLocaleString() || "0"}</span> to the Master Pool, 
-            then distribute <span className="text-emerald-500 dark:text-emerald-400">₹{totalMemberOutflow.toLocaleString()}</span> to member wallets.
+          <h2 className="text-xl sm:text-2xl font-serif tracking-tight text-slate-900 dark:text-slate-100 leading-tight">
+            Monthly <span className="italic font-normal text-emerald-800 dark:text-emerald-400">Refill</span>
+          </h2>
+          <p className="text-xs font-sans text-slate-500 dark:text-slate-400 mt-0.5">
+            Refill the main cash drawer and distribute monthly pocket allowances to family members.
           </p>
         </div>
 
-        {/* EXECUTION BUTTON */}
-        <button 
+        <span className="self-start sm:self-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-[11px] font-sans font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10">
+          <Coins size={13} className="text-emerald-600 dark:text-emerald-400" />
+          <span>New Month</span>
+        </span>
+      </div>
+
+      {/* 3-CARD SIMPLE SUMMARY */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="p-3.5 rounded-lg bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10">
+          <span className="text-[11px] font-sans font-medium text-slate-400 block">
+            Money Added to Drawer
+          </span>
+          <span className="text-base sm:text-lg font-mono font-bold text-blue-600 dark:text-blue-400 block mt-0.5">
+            +₹{formatINR(drawerRefillAmount)}
+          </span>
+          <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 mt-0.5 block truncate">
+            {drawer?.walletName || "Main Drawer"}
+          </span>
+        </div>
+
+        <div className="p-3.5 rounded-lg bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10">
+          <span className="text-[11px] font-sans font-medium text-slate-400 block">
+            Given to Family Members
+          </span>
+          <span className="text-base sm:text-lg font-mono font-bold text-emerald-600 dark:text-emerald-400 block mt-0.5">
+            -₹{formatINR(totalGivenOut)}
+          </span>
+          <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 mt-0.5 block truncate">
+            Split across {recipients.length} wallet{recipients.length === 1 ? "" : "s"}
+          </span>
+        </div>
+
+        <div className="p-3.5 rounded-lg bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10">
+          <span className="text-[11px] font-sans font-medium text-slate-400 block">
+            Left in Main Drawer
+          </span>
+          <span
+            className={`text-base sm:text-lg font-mono font-bold block mt-0.5 ${
+              remainingInDrawer >= 0
+                ? "text-slate-900 dark:text-white"
+                : "text-amber-600 dark:text-amber-400"
+            }`}
+          >
+            ₹{formatINR(remainingInDrawer)}
+          </span>
+          <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 mt-0.5 block truncate">
+            {remainingInDrawer >= 0 ? "Surplus remaining" : "Deficit (Need more cash)"}
+          </span>
+        </div>
+      </div>
+
+      {/* STEP 1: FILL THE MAIN DRAWER */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 text-xs font-bold flex items-center justify-center">
+            1
+          </span>
+          <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+            Fill the Main Cash Drawer
+          </h3>
+        </div>
+
+        <div className="p-3 rounded-lg bg-white dark:bg-[#0B1120] border border-blue-200/80 dark:border-blue-500/20 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-2 rounded bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30">
+              <Landmark size={16} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs sm:text-sm font-sans font-semibold text-slate-900 dark:text-white block truncate">
+                {drawer?.walletName || "Main Drawer"}
+              </span>
+              <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 block">
+                Current balance: ₹{formatINR(drawer?.balance || 0)}
+              </span>
+            </div>
+          </div>
+
+          <div className="text-right shrink-0">
+            <span className="text-sm sm:text-base font-mono font-bold text-blue-600 dark:text-blue-400">
+              +₹{formatINR(drawerRefillAmount)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* STEP 2: WHO RECEIVES ALLOWANCE */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold flex items-center justify-center">
+              2
+            </span>
+            <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              Send Allowance to Family Wallets
+            </h3>
+          </div>
+          <span className="text-[11px] font-sans text-slate-400">
+            {recipients.length} Person{recipients.length === 1 ? "" : "s"}
+          </span>
+        </div>
+
+        <div className="w-full bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-lg overflow-hidden">
+          {recipients.length > 0 ? (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-white/10 text-[10px] font-sans font-semibold uppercase tracking-wider text-slate-400 bg-slate-50/50 dark:bg-white/[0.01]">
+                  <th className="py-2 px-3 sm:px-4">Family Member / Wallet</th>
+                  <th className="py-2 px-3 sm:px-4 text-right">Current Balance</th>
+                  <th className="py-2 px-3 sm:px-4 text-right">Amount to Add</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-xs font-sans">
+                {recipients.map((wallet) => (
+                  <tr
+                    key={wallet._id}
+                    className="hover:bg-slate-50/60 dark:hover:bg-white/[0.02] transition-colors"
+                  >
+                    <td className="py-2.5 px-3 sm:px-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1 rounded bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                          <Wallet size={13} />
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-900 dark:text-slate-100 block">
+                            {wallet.walletName}
+                          </span>
+                          <span className="text-[11px] text-slate-400 block">
+                            {wallet.user?.name || "Shared"}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="py-2.5 px-3 sm:px-4 text-right font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      ₹{formatINR(wallet.balance || 0)}
+                    </td>
+
+                    <td className="py-2.5 px-3 sm:px-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400 whitespace-nowrap">
+                      +₹{formatINR(wallet.targetAllowance)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="py-6 text-center text-xs font-sans text-slate-400">
+              No members have monthly limits set. Go to the Wallets tab to add targets.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* PLAIN EXPLANATION BOX */}
+      <div className="flex items-start gap-2.5 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-white/5">
+        <AlertCircle size={15} className="text-slate-400 shrink-0 mt-0.5" />
+        <p className="text-xs font-sans text-slate-600 dark:text-slate-400 leading-relaxed">
+          When you click refill, the system will add{" "}
+          <strong className="text-blue-600 dark:text-blue-400 font-mono font-semibold">
+            ₹{formatINR(drawerRefillAmount)}
+          </strong>{" "}
+          into {drawer?.walletName || "Main Drawer"}, and transfer{" "}
+          <strong className="text-emerald-600 dark:text-emerald-400 font-mono font-semibold">
+            ₹{formatINR(totalGivenOut)}
+          </strong>{" "}
+          into the individual wallets.
+        </p>
+      </div>
+
+      {/* ACTION BUTTON */}
+      <div className="pt-1">
+        <button
+          type="button"
           onClick={onRefill}
           disabled={loading || !drawer}
-          className="w-full mt-6 bg-emerald-500 hover:bg-emerald-600 text-white py-4 sm:py-5 rounded-2xl font-[1000] uppercase text-xs tracking-[0.25em] transition-all flex items-center justify-center gap-3 shadow-[0_8px_30px_rgb(16,185,129,0.2)] active:scale-95 disabled:opacity-50"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white rounded-md text-xs font-sans font-semibold tracking-wide transition-all active:scale-98 disabled:opacity-50 cursor-pointer shadow-2xs"
         >
           {loading ? (
-            <Loader2 className="animate-spin" size={20} />
+            <Loader2 className="animate-spin" size={15} />
           ) : (
-            <>
-              <ShieldCheck size={20} strokeWidth={2.5} />
-              <span>Authorize Protocol</span>
-            </>
+            <CheckCircle2 size={15} />
           )}
+          <span>Confirm Monthly Refill</span>
         </button>
       </div>
     </div>
