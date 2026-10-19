@@ -58,7 +58,7 @@ const ReconcileModal = ({ isOpen, setOpen, wallet, onSubmit, loading }) => {
   const isBalanced = difference === 0;
 
   return (
-    <div className="fixed inset-0 z-100 flex items-end sm:items-center justify-center p-0 sm:p-4 text-left">
+    <div className="fixed inset-0 z-100 flex items-end sm:items-center justify-center p-0 sm:p-4 text-left font-sans">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-slate-900/60 dark:bg-[#020617]/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
@@ -73,7 +73,7 @@ const ReconcileModal = ({ isOpen, setOpen, wallet, onSubmit, loading }) => {
             <div className="w-6 h-6 rounded-md bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-500">
               <Scale size={14} strokeWidth={2.5} />
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-700 dark:text-slate-300">
+            <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-slate-700 dark:text-slate-300">
               Wallet Reconciliation
             </span>
           </div>
@@ -85,41 +85,40 @@ const ReconcileModal = ({ isOpen, setOpen, wallet, onSubmit, loading }) => {
             <X size={16} strokeWidth={2.5} />
           </button>
         </div>
-
         <div className="p-5 sm:p-6 space-y-5">
           {localError && (
             <div className="flex items-start gap-2.5 p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-lg animate-in fade-in slide-in-from-top-2">
               <AlertCircle size={14} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-              <p className="text-[10px] sm:text-xs font-semibold text-rose-700 dark:text-rose-300 leading-snug">
+              <p className="font-sans text-[10px] sm:text-xs font-semibold text-rose-700 dark:text-rose-300 leading-snug">
                 {localError}
               </p>
             </div>
           )}
 
           <div className="text-left space-y-1">
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white truncate">
+            <h2 className="font-serif text-lg sm:text-xl font-semibold tracking-tight text-slate-900 dark:text-white truncate">
               {wallet.walletName}
             </h2>
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+            <p className="font-sans text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
               Amount showing in Wallet:{" "}
-              <span className="font-bold tabular-nums text-slate-700 dark:text-slate-300">
+              <span className="font-sans font-bold tabular-nums text-slate-700 dark:text-slate-300">
                 ₹{currentBalance.toLocaleString("en-IN")}
               </span>
             </p>
           </div>
 
           <div className="relative border-b border-slate-200 dark:border-white/10 focus-within:border-amber-500 transition-colors pt-3">
-            <p className="text-[10px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest absolute top-0 left-0">
+            <p className="font-sans text-[10px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest absolute top-0 left-0">
               Actual Physical Balance
             </p>
-            <span className="absolute left-0 bottom-3 text-2xl font-bold text-slate-400 dark:text-slate-600">
+            <span className="font-serif italic absolute left-0 bottom-3 text-2xl font-bold text-slate-400 dark:text-slate-600">
               ₹
             </span>
             <input
               ref={amountInputRef}
               type="text"
               inputMode="numeric"
-              className="w-full bg-transparent pb-3 pl-8 text-3xl sm:text-4xl font-bold tabular-nums text-slate-900 dark:text-white outline-none placeholder:text-slate-200 dark:placeholder:text-slate-800"
+              className="w-full bg-transparent pb-3 pl-8 font-sans text-3xl sm:text-4xl font-bold tabular-nums text-slate-900 dark:text-white outline-none placeholder:text-slate-200 dark:placeholder:text-slate-800"
               value={formatDisplayAmount(actualAmount)}
               onChange={handleAmountChange}
               placeholder="0"
@@ -137,11 +136,11 @@ const ReconcileModal = ({ isOpen, setOpen, wallet, onSubmit, loading }) => {
             }`}
           >
             <div className="flex flex-col min-w-0 pr-2">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+              <span className="font-sans text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                 Difference
               </span>
               <span
-                className={`text-xs font-semibold truncate mt-0.5 ${
+                className={`font-sans text-xs font-semibold truncate mt-0.5 ${
                   isBalanced
                     ? "text-slate-600 dark:text-slate-300"
                     : isMissingCash
@@ -153,7 +152,7 @@ const ReconcileModal = ({ isOpen, setOpen, wallet, onSubmit, loading }) => {
               </span>
             </div>
             <span
-              className={`text-base font-bold tabular-nums tracking-tight shrink-0 ${
+              className={`font-sans text-base font-bold tabular-nums tracking-tight shrink-0 ${
                 isBalanced
                   ? "text-slate-400 dark:text-slate-500"
                   : isMissingCash
@@ -174,7 +173,7 @@ const ReconcileModal = ({ isOpen, setOpen, wallet, onSubmit, loading }) => {
               type="button"
               disabled={loading || isBalanced || actualAmount === ""}
               onClick={handleFinalSubmit}
-              className="w-full bg-amber-500 hover:bg-amber-600 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-amber-500 dark:focus-visible:ring-offset-[#0B1120] text-white h-12 rounded-lg font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 outline-none transition-all shadow-sm cursor-pointer"
+              className="w-full bg-amber-500 hover:bg-amber-600 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-amber-500 dark:focus-visible:ring-offset-[#0B1120] text-white h-12 rounded-lg font-sans font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 outline-none transition-all shadow-sm cursor-pointer"
             >
               {loading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />

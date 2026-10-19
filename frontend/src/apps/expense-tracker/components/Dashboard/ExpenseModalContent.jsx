@@ -261,7 +261,7 @@ const ExpenseModalContent = ({
   const currentWallet = wallets.find((w) => w._id === expenseData.sourceWallet);
 
   return (
-    <div className="fixed inset-0 z-100 flex items-end sm:items-center justify-center p-0 sm:p-4 text-left">
+    <div className="fixed inset-0 z-100 flex items-end sm:items-center justify-center p-0 sm:p-4 text-left font-sans">
       {/* Dimmed Backdrop */}
       <div
         className="fixed inset-0 bg-slate-900/60 dark:bg-[#020617]/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
@@ -281,7 +281,7 @@ const ExpenseModalContent = ({
                 aria-selected={step === s}
                 disabled={(step < s && !isEditMode) || loading}
                 onClick={() => setStep(s)}
-                className={`flex items-center gap-2 transition-all outline-none rounded-md focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+                className={`flex items-center gap-2 transition-all outline-none rounded-md focus-visible:ring-2 focus-visible:ring-emerald-500 font-sans ${
                   step === s ? "opacity-100" : "opacity-40 hover:opacity-75"
                 } ${step < s && !isEditMode ? "cursor-not-allowed" : "cursor-pointer"}`}
               >
@@ -312,7 +312,7 @@ const ExpenseModalContent = ({
           <button
             type="button"
             onClick={handleClose}
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 cursor-pointer"
+            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 cursor-pointer font-sans"
             aria-label="Close modal"
           >
             <X size={16} strokeWidth={2.5} />
@@ -324,7 +324,7 @@ const ExpenseModalContent = ({
           {localError && (
             <div className="mb-5 flex items-start gap-2.5 p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-lg animate-in fade-in slide-in-from-top-2">
               <AlertCircle size={14} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-              <p className="text-[10px] sm:text-xs font-semibold text-rose-700 dark:text-rose-300 leading-snug">
+              <p className="font-sans text-[10px] sm:text-xs font-semibold text-rose-700 dark:text-rose-300 leading-snug">
                 {localError}
               </p>
             </div>

@@ -91,7 +91,7 @@ const TransferModalContent = ({
   };
 
   return (
-    <div className="fixed inset-0 z-100 flex items-end sm:items-center justify-center p-0 sm:p-4 text-left">
+    <div className="fixed inset-0 z-100 flex items-end sm:items-center justify-center p-0 sm:p-4 text-left font-sans">
       {/* Dimmed Backdrop */}
       <div
         className="fixed inset-0 bg-slate-900/60 dark:bg-[#020617]/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
@@ -111,7 +111,7 @@ const TransferModalContent = ({
                 aria-selected={step === s}
                 disabled={step < s || loading}
                 onClick={() => setStep(s)}
-                className={`flex items-center gap-2 transition-all outline-none rounded-md focus-visible:ring-2 focus-visible:ring-amber-500 ${
+                className={`flex items-center gap-2 transition-all outline-none rounded-md focus-visible:ring-2 focus-visible:ring-amber-500 font-sans ${
                   step === s ? "opacity-100" : "opacity-40 hover:opacity-75"
                 } ${step < s ? "cursor-not-allowed" : "cursor-pointer"}`}
               >
@@ -138,7 +138,7 @@ const TransferModalContent = ({
           <button
             type="button"
             onClick={handleClose}
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-amber-500 cursor-pointer"
+            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-amber-500 cursor-pointer font-sans"
             aria-label="Close modal"
           >
             <X size={16} strokeWidth={2.5} />
@@ -150,7 +150,7 @@ const TransferModalContent = ({
           {localError && (
             <div className="mb-5 flex items-start gap-2.5 p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-lg animate-in fade-in slide-in-from-top-2">
               <AlertCircle size={14} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-              <p className="text-[10px] sm:text-xs font-semibold text-rose-700 dark:text-rose-300 leading-snug">
+              <p className="font-sans text-[10px] sm:text-xs font-semibold text-rose-700 dark:text-rose-300 leading-snug">
                 {localError}
               </p>
             </div>
@@ -160,10 +160,10 @@ const TransferModalContent = ({
           {step === 1 && (
             <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-150">
               <div className="text-left mb-2">
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                  Select Origin Wallet
+                <h2 className="font-serif text-base sm:text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
+                  Select Origin <span className="italic font-normal text-amber-600 dark:text-amber-400">Wallet</span>
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="font-sans text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Select the wallet from which you want to transfer funds.
                 </p>
               </div>
@@ -183,7 +183,7 @@ const TransferModalContent = ({
                         }));
                         nextStep();
                       }}
-                      className={`flex items-center justify-between p-3.5 rounded-lg border transition-all text-left outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 ${
+                      className={`flex items-center justify-between p-3.5 rounded-lg border transition-all text-left outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 font-sans ${
                         transferData.sourceWallet === w._id
                           ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/30 dark:bg-amber-500/10"
                           : w.isGeneralPool
@@ -203,7 +203,7 @@ const TransferModalContent = ({
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span
-                            className={`text-sm font-semibold truncate ${
+                            className={`font-sans text-sm font-semibold truncate ${
                               w.isGeneralPool
                                 ? "text-white dark:text-slate-900"
                                 : "text-slate-900 dark:text-white"
@@ -212,7 +212,7 @@ const TransferModalContent = ({
                             {w.walletName}
                           </span>
                           {w.isGeneralPool && (
-                            <p className="text-[9px] font-bold uppercase tracking-wider opacity-60 mt-0.5">
+                            <p className="font-sans text-[9px] font-bold uppercase tracking-wider opacity-60 mt-0.5">
                               Master Pool
                             </p>
                           )}
@@ -220,7 +220,7 @@ const TransferModalContent = ({
                       </div>
 
                       <span
-                        className={`text-sm font-bold tabular-nums shrink-0 pl-3 ${
+                        className={`font-sans text-sm font-bold tabular-nums shrink-0 pl-3 ${
                           w.isGeneralPool
                             ? "text-white/80 dark:text-slate-500"
                             : "text-slate-600 dark:text-slate-400"
@@ -241,16 +241,16 @@ const TransferModalContent = ({
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="p-1 -ml-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded-md cursor-pointer"
+                  className="p-1 -ml-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded-md cursor-pointer font-sans"
                   title="Back to Origin Wallet"
                 >
                   <ArrowLeft size={16} />
                 </button>
                 <div className="flex flex-col min-w-0">
-                  <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
-                    Select Destination Wallet
+                  <h2 className="font-serif text-base sm:text-lg font-semibold tracking-tight text-slate-900 dark:text-white leading-tight">
+                    Select Destination <span className="italic font-normal text-amber-600 dark:text-amber-400">Wallet</span>
                   </h2>
-                  <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest truncate">
+                  <p className="font-sans text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest truncate">
                     From: {sourceWalletObj?.walletName}
                   </p>
                 </div>
@@ -267,7 +267,7 @@ const TransferModalContent = ({
                         setTransferData((prev) => ({ ...prev, targetWallet: w._id }));
                         nextStep();
                       }}
-                      className={`flex items-center justify-between p-3.5 rounded-lg border transition-all text-left outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 ${
+                      className={`flex items-center justify-between p-3.5 rounded-lg border transition-all text-left outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 font-sans ${
                         transferData.targetWallet === w._id
                           ? "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/30 dark:bg-amber-500/10"
                           : w.isGeneralPool
@@ -287,7 +287,7 @@ const TransferModalContent = ({
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span
-                            className={`text-sm font-semibold truncate ${
+                            className={`font-sans text-sm font-semibold truncate ${
                               w.isGeneralPool
                                 ? "text-white dark:text-slate-900"
                                 : "text-slate-900 dark:text-white"
@@ -299,7 +299,7 @@ const TransferModalContent = ({
                       </div>
 
                       <span
-                        className={`text-sm font-bold tabular-nums shrink-0 pl-3 ${
+                        className={`font-sans text-sm font-bold tabular-nums shrink-0 pl-3 ${
                           w.isGeneralPool
                             ? "text-white/80 dark:text-slate-500"
                             : "text-slate-600 dark:text-slate-400"
@@ -310,7 +310,7 @@ const TransferModalContent = ({
                     </button>
                   ))}
                 {wallets.filter((w) => !w.isVirtual && w._id !== transferData.sourceWallet).length === 0 && (
-                  <div className="p-6 text-center text-slate-400 text-xs font-bold uppercase tracking-widest border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
+                  <div className="p-6 text-center text-slate-400 font-sans text-xs font-bold uppercase tracking-widest border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
                     No matching target wallets available
                   </div>
                 )}
@@ -325,19 +325,19 @@ const TransferModalContent = ({
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="p-1 -ml-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded-md cursor-pointer"
+                  className="p-1 -ml-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded-md cursor-pointer font-sans"
                   title="Back to Target Wallet"
                 >
                   <ArrowLeft size={16} />
                 </button>
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
-                  Transfer Details
+                <h2 className="font-serif text-base sm:text-lg font-semibold tracking-tight text-slate-900 dark:text-white leading-tight">
+                  Transfer <span className="italic font-normal text-amber-600 dark:text-amber-400">Details</span>
                 </h2>
               </div>
 
               {/* Amount Input */}
               <div className="relative border-b border-slate-200 dark:border-white/10 focus-within:border-amber-500 transition-colors pt-2">
-                <span className="absolute left-0 bottom-3 text-2xl font-bold text-slate-400 dark:text-slate-600">
+                <span className="font-serif italic absolute left-0 bottom-3 text-2xl font-bold text-slate-400 dark:text-slate-600">
                   ₹
                 </span>
                 <input
@@ -345,7 +345,7 @@ const TransferModalContent = ({
                   type="text"
                   inputMode="numeric"
                   placeholder="0"
-                  className="w-full bg-transparent pb-3 pl-8 text-3xl sm:text-4xl font-bold tabular-nums text-slate-900 dark:text-white outline-none placeholder:text-slate-200 dark:placeholder:text-slate-800"
+                  className="w-full bg-transparent pb-3 pl-8 font-sans text-3xl sm:text-4xl font-bold tabular-nums text-slate-900 dark:text-white outline-none placeholder:text-slate-200 dark:placeholder:text-slate-800"
                   value={formatDisplayAmount(transferData.amount)}
                   onChange={handleAmountChange}
                   onKeyDown={(e) => {
@@ -360,12 +360,12 @@ const TransferModalContent = ({
               </div>
 
               {/* Pathway Visualizer */}
-              <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-white/5">
+              <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-white/5 font-sans">
                 <div className="flex-1 min-w-0 pr-2">
-                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">
+                  <p className="font-sans text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">
                     From
                   </p>
-                  <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                  <p className="font-sans text-xs font-semibold text-slate-900 dark:text-white truncate">
                     {sourceWalletObj?.walletName}
                   </p>
                 </div>
@@ -373,25 +373,25 @@ const TransferModalContent = ({
                   <ArrowRight size={14} strokeWidth={2} />
                 </div>
                 <div className="flex-1 min-w-0 pl-2 text-right">
-                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">
+                  <p className="font-sans text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">
                     To
                   </p>
-                  <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                  <p className="font-sans text-xs font-semibold text-slate-900 dark:text-white truncate">
                     {targetWalletObj?.walletName}
                   </p>
                 </div>
               </div>
 
               {/* Comments Input */}
-              <div className="space-y-1.5 pt-2 text-left">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              <div className="space-y-1.5 pt-2 text-left font-sans">
+                <label className="font-sans text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                   Comments (Optional)
                 </label>
                 <textarea
                   ref={commentsInputRef}
                   rows="2"
                   placeholder="Add transfer notes..."
-                  className="w-full bg-white dark:bg-[#0B1120] p-3 rounded-lg text-sm text-slate-900 dark:text-white outline-none border border-slate-200 dark:border-white/10 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all no-scrollbar placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                  className="w-full bg-white dark:bg-[#0B1120] p-3 rounded-lg font-sans text-sm text-slate-900 dark:text-white outline-none border border-slate-200 dark:border-white/10 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all no-scrollbar placeholder:text-slate-400 dark:placeholder:text-slate-600"
                   value={transferData.description}
                   onChange={(e) =>
                     setTransferData((prev) => ({ ...prev, description: e.target.value }))
@@ -413,7 +413,7 @@ const TransferModalContent = ({
                   type="button"
                   disabled={!transferData.amount || Number(transferData.amount) <= 0 || loading}
                   onClick={handleFinalSubmit}
-                  className="w-full h-12 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 transition-all outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-amber-600 dark:focus-visible:ring-offset-[#0B1120] cursor-pointer"
+                  className="w-full h-12 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-sans font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 transition-all outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-amber-600 dark:focus-visible:ring-offset-[#0B1120] cursor-pointer"
                 >
                   {loading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />

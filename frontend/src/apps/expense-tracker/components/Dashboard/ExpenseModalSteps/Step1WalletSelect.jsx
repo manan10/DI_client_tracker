@@ -11,22 +11,30 @@ export const Step1WalletSelect = ({
   onSelectWallet,
 }) => {
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-150">
+    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-150 font-sans">
       <div className="text-left mb-2">
-        <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-          {isEditMode ? "Switch Wallet" : "Wallet Selection"}
+        <h2 className="font-serif text-base sm:text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
+          {isEditMode ? (
+            <>
+              Switch <span className="italic font-normal text-emerald-600 dark:text-emerald-400">Wallet</span>
+            </>
+          ) : (
+            <>
+              Wallet <span className="italic font-normal text-emerald-600 dark:text-emerald-400">Selection</span>
+            </>
+          )}
         </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+        <p className="font-sans text-xs text-slate-500 dark:text-slate-400 mt-0.5">
           Select the account the expense was paid from.
         </p>
       </div>
 
       {/* Segmented Control */}
-      <div className="bg-slate-100 dark:bg-slate-900/50 p-1 rounded-lg flex gap-1 border border-slate-200 dark:border-white/5">
+      <div className="bg-slate-100 dark:bg-slate-900/50 p-1 rounded-lg flex gap-1 border border-slate-200 dark:border-white/5 font-sans">
         <button
           type="button"
           onClick={() => setActiveTab("cash")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 cursor-pointer ${
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md font-sans text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 cursor-pointer ${
             activeTab === "cash"
               ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm"
               : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
@@ -37,7 +45,7 @@ export const Step1WalletSelect = ({
         <button
           type="button"
           onClick={() => setActiveTab("online")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer ${
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md font-sans text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer ${
             activeTab === "online"
               ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
               : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
@@ -56,7 +64,7 @@ export const Step1WalletSelect = ({
               setExpenseData((prev) => ({ ...prev, sourceWallet: w._id }));
               onSelectWallet();
             }}
-            className={`flex items-center justify-between p-3.5 rounded-lg border transition-all text-left outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+            className={`flex items-center justify-between p-3.5 rounded-lg border transition-all text-left outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 font-sans ${
               expenseData.sourceWallet === w._id
                 ? w.isVirtual
                   ? "bg-indigo-50 border-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-300"
@@ -83,9 +91,9 @@ export const Step1WalletSelect = ({
                 )}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold truncate">{w.walletName}</span>
+                <span className="font-sans text-sm font-semibold truncate">{w.walletName}</span>
                 <span
-                  className={`text-[9px] font-bold uppercase tracking-wider mt-0.5 ${
+                  className={`font-sans text-[9px] font-bold uppercase tracking-wider mt-0.5 ${
                     expenseData.sourceWallet === w._id ? "opacity-80" : "text-slate-500"
                   }`}
                 >
@@ -93,13 +101,13 @@ export const Step1WalletSelect = ({
                 </span>
               </div>
             </div>
-            <span className="text-sm font-bold tabular-nums shrink-0 pl-3">
+            <span className="font-sans text-sm font-bold tabular-nums shrink-0 pl-3">
               {w.isVirtual ? "—" : `₹${w.balance?.toLocaleString("en-IN") || 0}`}
             </span>
           </button>
         ))}
         {filteredWallets[activeTab].length === 0 && (
-          <div className="p-6 text-center text-slate-400 text-xs font-bold uppercase tracking-widest border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
+          <div className="p-6 text-center text-slate-400 font-sans text-xs font-bold uppercase tracking-widest border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
             No matching accounts
           </div>
         )}

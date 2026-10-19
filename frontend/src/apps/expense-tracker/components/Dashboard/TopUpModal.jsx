@@ -94,7 +94,7 @@ const TopUpModalContent = ({
   };
 
   return (
-    <div className="fixed inset-0 z-100 flex items-end sm:items-center justify-center p-0 sm:p-4 text-left">
+    <div className="fixed inset-0 z-100 flex items-end sm:items-center justify-center p-0 sm:p-4 text-left font-sans">
       {/* Dimmed Backdrop */}
       <div
         className="fixed inset-0 bg-slate-900/60 dark:bg-[#020617]/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
@@ -114,7 +114,7 @@ const TopUpModalContent = ({
                 aria-selected={step === s}
                 disabled={step < s || loading}
                 onClick={() => setStep(s)}
-                className={`flex items-center gap-2 transition-all outline-none rounded-md focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                className={`flex items-center gap-2 transition-all outline-none rounded-md focus-visible:ring-2 focus-visible:ring-indigo-500 font-sans ${
                   step === s ? "opacity-100" : "opacity-40 hover:opacity-75"
                 } ${step < s ? "cursor-not-allowed" : "cursor-pointer"}`}
               >
@@ -141,7 +141,7 @@ const TopUpModalContent = ({
           <button
             type="button"
             onClick={handleClose}
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
+            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer font-sans"
             aria-label="Close modal"
           >
             <X size={16} strokeWidth={2.5} />
@@ -153,7 +153,7 @@ const TopUpModalContent = ({
           {localError && (
             <div className="mb-5 flex items-start gap-2.5 p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-lg animate-in fade-in slide-in-from-top-2">
               <AlertCircle size={14} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-              <p className="text-[10px] sm:text-xs font-semibold text-rose-700 dark:text-rose-300 leading-snug">
+              <p className="font-sans text-[10px] sm:text-xs font-semibold text-rose-700 dark:text-rose-300 leading-snug">
                 {localError}
               </p>
             </div>
@@ -163,10 +163,10 @@ const TopUpModalContent = ({
           {step === 1 && (
             <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-150">
               <div className="text-left mb-2">
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                  Select Wallet
+                <h2 className="font-serif text-base sm:text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
+                  Select <span className="italic font-normal text-indigo-600 dark:text-indigo-400">Wallet</span>
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="font-sans text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Choose the destination account to receive funds.
                 </p>
               </div>
@@ -182,7 +182,7 @@ const TopUpModalContent = ({
                         setTopUpData((prev) => ({ ...prev, targetWallet: w._id }));
                         nextStep();
                       }}
-                      className={`flex items-center justify-between p-3.5 rounded-lg border transition-all text-left outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                      className={`flex items-center justify-between p-3.5 rounded-lg border transition-all text-left outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 font-sans ${
                         topUpData.targetWallet === w._id
                           ? "border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/20 dark:bg-indigo-500/10"
                           : w.isGeneralPool
@@ -202,7 +202,7 @@ const TopUpModalContent = ({
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span
-                            className={`text-sm font-semibold truncate ${
+                            className={`font-sans text-sm font-semibold truncate ${
                               w.isGeneralPool
                                 ? "text-white dark:text-slate-900"
                                 : "text-slate-900 dark:text-white"
@@ -211,7 +211,7 @@ const TopUpModalContent = ({
                             {w.walletName}
                           </span>
                           {w.isGeneralPool && (
-                            <p className="text-[9px] font-bold uppercase tracking-wider opacity-60 mt-0.5">
+                            <p className="font-sans text-[9px] font-bold uppercase tracking-wider opacity-60 mt-0.5">
                               Master Pool
                             </p>
                           )}
@@ -219,7 +219,7 @@ const TopUpModalContent = ({
                       </div>
 
                       <span
-                        className={`text-sm font-bold tabular-nums shrink-0 pl-3 ${
+                        className={`font-sans text-sm font-bold tabular-nums shrink-0 pl-3 ${
                           w.isGeneralPool
                             ? "text-white/80 dark:text-slate-500"
                             : "text-slate-600 dark:text-slate-400"
@@ -240,27 +240,27 @@ const TopUpModalContent = ({
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="p-1 -ml-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-md cursor-pointer"
+                  className="p-1 -ml-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-md cursor-pointer font-sans"
                   title="Back to Wallet Selection"
                 >
                   <ArrowLeft size={16} />
                 </button>
                 <div className="flex flex-col min-w-0">
-                  <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
-                    Top-Up Details
+                  <h2 className="font-serif text-base sm:text-lg font-semibold tracking-tight text-slate-900 dark:text-white leading-tight">
+                    Top-Up <span className="italic font-normal text-indigo-600 dark:text-indigo-400">Details</span>
                   </h2>
-                  <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest truncate">
+                  <p className="font-sans text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest truncate">
                     Target wallet: {currentWallet?.walletName}
                   </p>
                 </div>
               </div>
 
               {/* Segmented Source Selector */}
-              <div className="bg-slate-100 dark:bg-slate-900/50 p-1 rounded-lg flex gap-1 border border-slate-200 dark:border-white/5">
+              <div className="bg-slate-100 dark:bg-slate-900/50 p-1 rounded-lg flex gap-1 border border-slate-200 dark:border-white/5 font-sans">
                 <button
                   type="button"
                   onClick={() => setTopUpData((prev) => ({ ...prev, isExternal: false }))}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-2 rounded-md font-sans text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer ${
                     !topUpData.isExternal
                       ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
                       : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
@@ -271,7 +271,7 @@ const TopUpModalContent = ({
                 <button
                   type="button"
                   onClick={() => setTopUpData((prev) => ({ ...prev, isExternal: true }))}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-2 rounded-md font-sans text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer ${
                     topUpData.isExternal
                       ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
                       : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
@@ -283,7 +283,7 @@ const TopUpModalContent = ({
 
               {/* Amount Input */}
               <div className="relative border-b border-slate-200 dark:border-white/10 focus-within:border-indigo-500 transition-colors pt-2">
-                <span className="absolute left-0 bottom-3 text-2xl font-bold text-slate-400 dark:text-slate-600">
+                <span className="font-serif italic absolute left-0 bottom-3 text-2xl font-bold text-slate-400 dark:text-slate-600">
                   ₹
                 </span>
                 <input
@@ -291,7 +291,7 @@ const TopUpModalContent = ({
                   type="text"
                   inputMode="numeric"
                   placeholder="0"
-                  className="w-full bg-transparent pb-3 pl-8 text-3xl sm:text-4xl font-bold tabular-nums text-slate-900 dark:text-white outline-none placeholder:text-slate-200 dark:placeholder:text-slate-800"
+                  className="w-full bg-transparent pb-3 pl-8 font-sans text-3xl sm:text-4xl font-bold tabular-nums text-slate-900 dark:text-white outline-none placeholder:text-slate-200 dark:placeholder:text-slate-800"
                   value={formatDisplayAmount(topUpData.amount)}
                   onChange={handleAmountChange}
                   onKeyDown={(e) => {
@@ -310,7 +310,7 @@ const TopUpModalContent = ({
                   type="button"
                   disabled={!topUpData.amount || Number(topUpData.amount) <= 0}
                   onClick={nextStep}
-                  className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 h-12 rounded-lg font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-30 transition-all shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
+                  className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 h-12 rounded-lg font-sans font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-30 transition-all shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
                 >
                   Proceed to Review <ArrowRight size={14} strokeWidth={2.5} />
                 </button>
@@ -326,37 +326,37 @@ const TopUpModalContent = ({
                   type="button"
                   onClick={prevStep}
                   disabled={loading}
-                  className="p-1 -ml-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-md disabled:opacity-50 cursor-pointer"
+                  className="p-1 -ml-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-md disabled:opacity-50 cursor-pointer font-sans"
                   title="Back to Details"
                 >
                   <ArrowLeft size={16} />
                 </button>
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
-                  Review Top-Up
+                <h2 className="font-serif text-base sm:text-lg font-semibold tracking-tight text-slate-900 dark:text-white leading-tight">
+                  Review <span className="italic font-normal text-indigo-600 dark:text-indigo-400">Top-Up</span>
                 </h2>
               </div>
 
               {/* Receipt Summary Card */}
               <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-white/10 relative overflow-hidden">
-                <div className="absolute top-0 right-0 px-3 py-1 rounded-bl-lg text-[9px] font-bold uppercase tracking-widest text-white bg-indigo-600">
+                <div className="absolute top-0 right-0 px-3 py-1 rounded-bl-lg font-sans text-[9px] font-bold uppercase tracking-widest text-white bg-indigo-600">
                   {topUpData.isExternal ? "External" : "Internal"}
                 </div>
 
                 <div className="flex justify-between items-end border-b border-slate-200 dark:border-white/10 pb-3 mt-3 sm:mt-1">
                   <div className="space-y-0.5 text-left pr-2 min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                    <p className="font-sans text-[10px] font-bold uppercase tracking-widest text-slate-500">
                       Wallet
                     </p>
-                    <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                    <p className="font-sans text-xs font-semibold text-slate-900 dark:text-white truncate">
                       {currentWallet?.walletName}
                     </p>
                   </div>
-                  <p className="text-2xl sm:text-3xl font-bold tabular-nums tracking-tight shrink-0 text-indigo-600 dark:text-indigo-400">
+                  <p className="font-sans text-2xl sm:text-3xl font-bold tabular-nums tracking-tight shrink-0 text-indigo-600 dark:text-indigo-400">
                     +₹{Number(topUpData.amount).toLocaleString("en-IN")}
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between text-[10px] font-semibold text-slate-500 pt-3">
+                <div className="flex items-center justify-between font-sans text-[10px] font-semibold text-slate-500 pt-3">
                   <span>Projected Balance after Top-Up</span>
                   <span className="tabular-nums font-bold text-slate-700 dark:text-slate-300">
                     ₹{((currentWallet?.balance || 0) + Number(topUpData.amount)).toLocaleString("en-IN")}
@@ -364,15 +364,15 @@ const TopUpModalContent = ({
                 </div>
               </div>
 
-              <div className="space-y-1.5 pt-2 text-left">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              <div className="space-y-1.5 pt-2 text-left font-sans">
+                <label className="font-sans text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                   Comments (Optional)
                 </label>
                 <textarea
                   ref={commentsInputRef}
                   rows="2"
                   placeholder="Add details regarding this top-up..."
-                  className="w-full bg-white dark:bg-[#0B1120] p-3 rounded-lg text-sm text-slate-900 dark:text-white outline-none border border-slate-200 dark:border-white/10 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all no-scrollbar placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                  className="w-full bg-white dark:bg-[#0B1120] p-3 rounded-lg font-sans text-sm text-slate-900 dark:text-white outline-none border border-slate-200 dark:border-white/10 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all no-scrollbar placeholder:text-slate-400 dark:placeholder:text-slate-600"
                   value={topUpData.description}
                   onChange={(e) =>
                     setTopUpData((prev) => ({ ...prev, description: e.target.value }))
@@ -393,7 +393,7 @@ const TopUpModalContent = ({
                   type="button"
                   onClick={handleFinalSubmit}
                   disabled={loading}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-12 rounded-lg font-bold uppercase text-xs tracking-wider shadow-sm active:scale-[0.98] flex items-center justify-center gap-2 transition-all disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-600 dark:focus-visible:ring-offset-[#0B1120] cursor-pointer"
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-12 rounded-lg font-sans font-bold uppercase text-xs tracking-wider shadow-sm active:scale-[0.98] flex items-center justify-center gap-2 transition-all disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-600 dark:focus-visible:ring-offset-[#0B1120] cursor-pointer"
                 >
                   {loading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />

@@ -87,30 +87,30 @@ export const Step3CategorySelect = ({
   };
 
   return (
-    <div className="flex flex-col h-full text-left space-y-3.5 animate-in fade-in slide-in-from-right-4 duration-150">
+    <div className="flex flex-col h-full text-left space-y-3.5 animate-in fade-in slide-in-from-right-4 duration-150 font-sans">
       {/* Step Header */}
       <div className="flex items-center justify-between gap-2 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <button
             type="button"
             onClick={onPrev}
-            className="p-1 -ml-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-md cursor-pointer"
+            className="p-1 -ml-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-md cursor-pointer font-sans"
             title="Back to Amount"
           >
             <ArrowLeft size={16} />
           </button>
           <div className="flex flex-col min-w-0">
-            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
-              Select Category
+            <h2 className="font-serif text-base sm:text-lg font-semibold tracking-tight text-slate-900 dark:text-white leading-tight">
+              Select <span className="italic font-normal text-emerald-600 dark:text-emerald-400">Category</span>
             </h2>
-            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">
+            <p className="font-sans text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">
               Categorize This Expense
             </p>
           </div>
         </div>
 
         <span
-          className={`text-sm font-bold tabular-nums shrink-0 ${
+          className={`font-sans text-sm font-bold tabular-nums shrink-0 ${
             currentWallet?.isVirtual
               ? "text-indigo-600 dark:text-indigo-400"
               : "text-slate-900 dark:text-white"
@@ -121,7 +121,7 @@ export const Step3CategorySelect = ({
       </div>
 
       {/* Sticky Search Input */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-[#0B1120] pb-1 shrink-0">
+      <div className="sticky top-0 z-10 bg-white dark:bg-[#0B1120] pb-1 shrink-0 font-sans">
         <div className="relative">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -130,7 +130,7 @@ export const Step3CategorySelect = ({
           <input
             type="text"
             placeholder="Search categories (e.g., Groceries, Fuel)..."
-            className="w-full bg-slate-50 dark:bg-slate-900/50 p-2.5 pl-9 rounded-lg text-xs font-semibold text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 outline-none focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-slate-400"
+            className="w-full bg-slate-50 dark:bg-slate-900/50 p-2.5 pl-9 rounded-lg font-sans text-xs font-semibold text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 outline-none focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-slate-400"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -138,11 +138,11 @@ export const Step3CategorySelect = ({
       </div>
 
       {/* Scrollable Category Area */}
-      <div className="flex-1 overflow-y-auto no-scrollbar space-y-3.5 pb-2">
+      <div className="flex-1 overflow-y-auto no-scrollbar space-y-3.5 pb-2 font-sans">
         {/* MODE 1: SEARCH FILTER RESULTS */}
         {searchQuery ? (
           <div className="flex flex-col gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+            <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-slate-400">
               Matching Categories ({filteredResults.length})
             </span>
             {filteredResults.map((res) => (
@@ -150,15 +150,15 @@ export const Step3CategorySelect = ({
                 key={res._id}
                 type="button"
                 onClick={() => handlePickCategory(res._id)}
-                className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all active:scale-[0.98] outline-none text-left cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+                className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all active:scale-[0.98] outline-none text-left cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 font-sans ${
                   expenseData?.category === res._id
                     ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
                     : "bg-white dark:bg-[#0B1120] border-slate-200 dark:border-white/10 hover:border-emerald-500 text-slate-900 dark:text-white"
                 }`}
               >
                 <div className="flex flex-col min-w-0 pr-2">
-                  <p className="text-sm font-semibold truncate">{toTitleCase(res.label)}</p>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-0.5 truncate">
+                  <p className="font-sans text-sm font-semibold truncate">{toTitleCase(res.label)}</p>
+                  <p className="font-sans text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-0.5 truncate">
                     In {toTitleCase(res.parentLabel)}
                   </p>
                 </div>
@@ -173,7 +173,7 @@ export const Step3CategorySelect = ({
               </button>
             ))}
             {filteredResults.length === 0 && (
-              <div className="p-6 text-center text-slate-400 text-xs font-bold uppercase tracking-widest border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
+              <div className="p-6 text-center text-slate-400 font-sans text-xs font-bold uppercase tracking-widest border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
                 No Matching Categories Found
               </div>
             )}
@@ -183,10 +183,10 @@ export const Step3CategorySelect = ({
           <>
             {/* Quick 1-Tap Chips */}
             {quickCategories.length > 0 && (
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 font-sans">
                 <div className="flex items-center gap-1.5 text-slate-400">
                   <Sparkles size={12} className="text-amber-500" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider">
+                  <span className="font-sans text-[10px] font-bold uppercase tracking-wider">
                     Quick Picks
                   </span>
                 </div>
@@ -197,7 +197,7 @@ export const Step3CategorySelect = ({
                       key={quick._id}
                       type="button"
                       onClick={() => handlePickCategory(quick._id)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all active:scale-95 cursor-pointer outline-none ${
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-sans text-xs font-semibold transition-all active:scale-95 cursor-pointer outline-none ${
                         expenseData?.category === quick._id
                           ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
                           : "bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-600"
@@ -211,8 +211,8 @@ export const Step3CategorySelect = ({
             )}
 
             {/* Browse Groups Accordion Section */}
-            <div className="space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <div className="space-y-2 font-sans">
+              <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Browse Groups
               </span>
 
@@ -238,7 +238,7 @@ export const Step3CategorySelect = ({
                       <button
                         type="button"
                         onClick={() => toggleAccordion(parent._id)}
-                        className="w-full flex items-center justify-between p-3 sm:p-3.5 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                        className="w-full flex items-center justify-between p-3 sm:p-3.5 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 font-sans"
                       >
                         <div className="flex items-center gap-3 min-w-0 pr-3">
                           <div
@@ -252,10 +252,10 @@ export const Step3CategorySelect = ({
                           </div>
 
                           <div className="flex flex-col min-w-0 text-left">
-                            <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                            <span className="font-serif text-xs sm:text-sm font-semibold tracking-tight text-slate-900 dark:text-white truncate">
                               {toTitleCase(parent.label)}
                             </span>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                            <span className="font-sans text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
                               {parent.subCategories?.length || 0} Subcategories
                             </span>
                           </div>
@@ -264,7 +264,7 @@ export const Step3CategorySelect = ({
                         {/* Right-side Indicator */}
                         <div className="flex items-center gap-2 shrink-0">
                           {hasSelectedChild && (
-                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                            <span className="font-sans text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
                               Selected
                             </span>
                           )}
@@ -288,7 +288,7 @@ export const Step3CategorySelect = ({
 
                       {/* Subcategories Dropdown Area */}
                       {isExpanded && (
-                        <div className="p-3 pt-1 border-t border-slate-200/60 dark:border-white/10 animate-in fade-in duration-150 bg-white dark:bg-[#0B1120]">
+                        <div className="p-3 pt-1 border-t border-slate-200/60 dark:border-white/10 animate-in fade-in duration-150 bg-white dark:bg-[#0B1120] font-sans">
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1.5">
                             {parent.subCategories?.map((sub) => {
                               const isSubActive =
@@ -298,7 +298,7 @@ export const Step3CategorySelect = ({
                                   key={sub._id}
                                   type="button"
                                   onClick={() => handlePickCategory(sub._id)}
-                                  className={`flex items-center justify-between p-2.5 rounded-lg border text-left text-xs font-semibold transition-all active:scale-[0.98] outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+                                  className={`flex items-center justify-between p-2.5 rounded-lg border text-left font-sans text-xs font-semibold transition-all active:scale-[0.98] outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                                     isSubActive
                                       ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
                                       : "bg-slate-50/60 dark:bg-slate-900/40 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-emerald-500 hover:bg-white"
@@ -323,13 +323,13 @@ export const Step3CategorySelect = ({
                               <button
                                 type="button"
                                 onClick={() => setIsAddingSub(true)}
-                                className="flex items-center justify-center gap-1.5 p-2.5 rounded-lg border border-dashed border-slate-300 dark:border-white/20 text-slate-500 hover:text-emerald-600 hover:border-emerald-500 transition-all text-xs font-bold uppercase tracking-wider outline-none cursor-pointer"
+                                className="flex items-center justify-center gap-1.5 p-2.5 rounded-lg border border-dashed border-slate-300 dark:border-white/20 text-slate-500 hover:text-emerald-600 hover:border-emerald-500 transition-all font-sans text-xs font-bold uppercase tracking-wider outline-none cursor-pointer"
                               >
                                 <Plus size={13} strokeWidth={2.5} />
                                 <span>Add Sub</span>
                               </button>
                             ) : (
-                              <div className="col-span-2 sm:col-span-3 flex items-center bg-white dark:bg-[#0B1120] border border-emerald-500 rounded-lg p-1.5 shadow-sm mt-1">
+                              <div className="col-span-2 sm:col-span-3 flex items-center bg-white dark:bg-[#0B1120] border border-emerald-500 rounded-lg p-1.5 shadow-sm mt-1 font-sans">
                                 <input
                                   autoFocus
                                   value={newSubName}
@@ -345,12 +345,12 @@ export const Step3CategorySelect = ({
                                     }
                                   }}
                                   placeholder="New entry name..."
-                                  className="w-full bg-transparent px-2 py-1 text-xs font-semibold outline-none text-slate-900 dark:text-white"
+                                  className="w-full bg-transparent px-2 py-1 font-sans text-xs font-semibold outline-none text-slate-900 dark:text-white"
                                 />
                                 <button
                                   type="button"
                                   onClick={handleCreateSub}
-                                  className="p-1 bg-emerald-600 text-white rounded-md ml-1 hover:bg-emerald-700 outline-none cursor-pointer"
+                                  className="p-1 bg-emerald-600 text-white rounded-md ml-1 hover:bg-emerald-700 outline-none cursor-pointer font-sans"
                                 >
                                   <Check size={13} />
                                 </button>
@@ -368,13 +368,13 @@ export const Step3CategorySelect = ({
                   <button
                     type="button"
                     onClick={() => setIsAddingParent(true)}
-                    className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-slate-300 dark:border-white/20 text-slate-500 hover:text-emerald-600 hover:border-emerald-500 hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10 transition-all text-xs font-bold uppercase tracking-widest outline-none cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-slate-300 dark:border-white/20 text-slate-500 hover:text-emerald-600 hover:border-emerald-500 hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10 transition-all font-sans text-xs font-bold uppercase tracking-widest outline-none cursor-pointer"
                   >
                     <Plus size={14} strokeWidth={2.5} />
                     <span>Create New Group</span>
                   </button>
                 ) : (
-                  <div className="flex items-center bg-white dark:bg-[#0B1120] border border-emerald-500 rounded-xl p-1.5 shadow-sm">
+                  <div className="flex items-center bg-white dark:bg-[#0B1120] border border-emerald-500 rounded-xl p-1.5 shadow-sm font-sans">
                     <input
                       autoFocus
                       value={newParentName}
@@ -388,12 +388,12 @@ export const Step3CategorySelect = ({
                         }
                       }}
                       placeholder="Group name (e.g. Office Expenses)..."
-                      className="w-full bg-transparent px-2.5 py-1 text-xs font-semibold outline-none text-slate-900 dark:text-white"
+                      className="w-full bg-transparent px-2.5 py-1 font-sans text-xs font-semibold outline-none text-slate-900 dark:text-white"
                     />
                     <button
                       type="button"
                       onClick={handleCreateParent}
-                      className="p-1.5 bg-emerald-600 text-white rounded-md ml-1 hover:bg-emerald-700 outline-none cursor-pointer"
+                      className="p-1.5 bg-emerald-600 text-white rounded-md ml-1 hover:bg-emerald-700 outline-none cursor-pointer font-sans"
                     >
                       <Check size={14} />
                     </button>
@@ -407,3 +407,5 @@ export const Step3CategorySelect = ({
     </div>
   );
 };
+
+export default Step3CategorySelect;
