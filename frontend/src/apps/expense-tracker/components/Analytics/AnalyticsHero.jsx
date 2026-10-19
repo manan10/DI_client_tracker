@@ -1,18 +1,9 @@
 import React from "react";
-import {
-  Wallet,
-  CreditCard,
-  Activity,
-  ArrowDownRight,
-  RefreshCcw,
-  Landmark,
-  Zap,
-} from "lucide-react";
+import { Landmark, Zap, RefreshCw, ArrowDownRight } from "lucide-react";
 
 const formatINR = (num) => new Intl.NumberFormat("en-IN").format(num || 0);
 
 const AnalyticsHero = ({ data, loading, onRefresh, isRefreshing }) => {
-  // Filter and sort wallets by amount spent from high to low
   const physical = (data?.walletWise?.filter((w) => !w.isVirtual) || []).sort(
     (a, b) => b.monthSpend - a.monthSpend,
   );
@@ -25,180 +16,184 @@ const AnalyticsHero = ({ data, loading, onRefresh, isRefreshing }) => {
 
   return (
     <div
-      className={`transition-opacity duration-500 w-full min-w-0 font-sans ${loading ? "opacity-40 blur-sm pointer-events-none" : "opacity-100"}`}
+      className={`w-full min-w-0 font-sans transition-opacity duration-300 ${
+        loading ? "opacity-40 blur-xs pointer-events-none" : "opacity-100"
+      }`}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 min-w-0 font-sans">
-        {/* --- LEFT: HOUSEHOLD TOTAL SPEND (Executive Dark Card) --- */}
-        <div className="lg:col-span-4 flex flex-col bg-slate-900 dark:bg-[#0B1120] border border-slate-800 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden relative text-white min-w-0 font-sans">
-          {/* Subtle SaaS Glow Effect */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 dark:bg-indigo-500/20 blur-3xl rounded-full translate-x-1/3 -translate-y-1/4 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/10 blur-3xl rounded-full -translate-x-1/3 translate-y-1/3 pointer-events-none" />
+      {/* 1. TOP METRICS STRIP: Clean, borderless overview */}
+      <div className="pb-8 border-b border-slate-200 dark:border-white/10">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+          
+          {/* Main Total Spent Metric */}
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-2.5 mb-1.5">
+              <span className="text-xs font-sans font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Total Spent This Month
+              </span>
+              <button
+                type="button"
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                className="inline-flex items-center gap-1.5 text-xs font-sans font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors disabled:opacity-50 cursor-pointer outline-none ml-2"
+              >
+                <RefreshCw
+                  size={12}
+                  className={isRefreshing ? "animate-spin text-emerald-600" : ""}
+                />
+                <span>{isRefreshing ? "Updating..." : "Refresh"}</span>
+              </button>
+            </div>
+            
+            {/* Even, modern numeral display */}
+            <div className="flex items-baseline gap-1 text-slate-900 dark:text-white">
+              <span className="text-2xl sm:text-3xl lg:text-4xl font-sans font-bold text-emerald-700 dark:text-emerald-400">
+                ₹
+              </span>
+              <span className="text-4xl sm:text-5xl lg:text-6xl font-sans font-extrabold tracking-tight tabular-nums truncate">
+                {formatINR(totalSpend)}
+              </span>
+            </div>
+          </div>
 
-          <div className="p-6 sm:p-8 relative z-10 flex-1 flex flex-col justify-between font-sans">
-            <div className="min-w-0">
-              <div className="flex items-center justify-between mb-5 min-w-0">
-                <p className="text-[10px] font-sans font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2 truncate pr-2">
-                  <Activity size={14} className="text-indigo-400 shrink-0" />
-                  Total Spent This Month
-                </p>
+          {/* Sub-Metric Columns */}
+          <div className="flex flex-wrap items-center gap-8 sm:gap-14 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-white/5">
+            {/* Cash in Hand */}
+            <div className="flex flex-col min-w-0">
+              <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                Cash in Hand
+              </span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-base sm:text-lg font-sans font-bold text-emerald-700 dark:text-emerald-400">₹</span>
+                <span className="text-2xl sm:text-3xl font-sans font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">
+                  {formatINR(data?.aggregated?.totalCashBalance)}
+                </span>
+              </div>
+            </div>
 
-                {/* UPGRADED HERO SYNC BUTTON */}
-                <button
-                  onClick={onRefresh}
-                  disabled={isRefreshing}
-                  className="group flex items-center gap-2 px-2.5 py-1.5 bg-white/5 hover:bg-white/10 backdrop-blur-md rounded-md text-[9px] font-sans font-semibold tracking-wider uppercase border border-white/10 transition-all active:scale-95 disabled:opacity-50 cursor-pointer shrink-0 outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+            <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden sm:block" />
+
+            {/* Spent This Year */}
+            <div className="flex flex-col min-w-0">
+              <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                Spent This Year (YTD)
+              </span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-base sm:text-lg font-sans font-bold text-indigo-600 dark:text-indigo-400">₹</span>
+                <span className="text-2xl sm:text-3xl font-sans font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">
+                  {formatINR(data?.aggregated?.yearNetSpend)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* 2. WALLETS BREAKDOWN: Continuous ledger format */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 pt-8">
+        
+        {/* Cash Wallets */}
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10 mb-2">
+            <div className="flex items-center gap-2">
+              <div className="p-1 rounded-md bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                <Landmark size={14} />
+              </div>
+              <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                Cash Accounts
+              </h3>
+            </div>
+            <span className="text-xs font-sans font-semibold text-emerald-700 dark:text-emerald-400">
+              {physical.length} accounts
+            </span>
+          </div>
+
+          <div className="divide-y divide-slate-100 dark:divide-white/5">
+            {physical.length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-400 italic">
+                No cash spent this month.
+              </div>
+            ) : (
+              physical.map((w, i) => (
+                <div
+                  key={w._id || i}
+                  className="py-3 flex items-center justify-between gap-4 hover:bg-slate-50/70 dark:hover:bg-white/[0.02] px-1 rounded-md transition-colors"
                 >
-                  <RefreshCcw
-                    size={12}
-                    className={
-                      isRefreshing
-                        ? "animate-spin text-slate-300"
-                        : "text-indigo-400 group-hover:text-indigo-300 transition-colors"
-                    }
-                  />
-                  <span className="text-slate-300 group-hover:text-white transition-colors hidden sm:inline-block font-sans">
-                    {isRefreshing ? "Syncing..." : "Sync"}
-                  </span>
-                </button>
-              </div>
-              <h2 className="text-4xl sm:text-5xl font-serif font-bold tracking-tight mb-1 text-white tabular-nums truncate">
-                ₹{formatINR(totalSpend)}
-              </h2>
-            </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-sans font-bold text-slate-900 dark:text-white truncate">
+                      {w.name}
+                    </span>
+                    <span className="text-[11px] font-sans font-medium text-slate-500 dark:text-slate-400 capitalize mt-0.5">
+                      {w.user || "Personal"}
+                    </span>
+                  </div>
 
-            <div className="mt-8 pt-6 border-t border-slate-700 dark:border-white/10 grid grid-cols-2 gap-4 font-sans">
-              <div className="min-w-0 pr-2">
-                <p className="text-[9px] font-sans font-semibold text-slate-500 uppercase tracking-wider mb-1 truncate">
-                  Total Balance
-                </p>
-                <p className="text-lg font-mono font-bold text-slate-200 tabular-nums truncate">
-                  ₹{formatINR(data?.aggregated?.totalCashBalance)}
-                </p>
-              </div>
-              <div className="min-w-0 pl-2 border-l border-slate-700 dark:border-white/10">
-                <p className="text-[9px] font-sans font-semibold text-slate-500 uppercase tracking-wider mb-1 truncate text-right">
-                  YTD Spending
-                </p>
-                <p className="text-lg font-mono font-bold text-slate-200 tabular-nums truncate text-right">
-                  ₹{formatINR(data?.aggregated?.yearNetSpend)}
-                </p>
-              </div>
-            </div>
+                  <div className="text-right flex items-baseline gap-3 shrink-0">
+                    <span className="text-sm font-sans font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">
+                      ₹{formatINR(w.monthSpend)}
+                    </span>
+                    <span className="text-[11px] font-sans font-semibold text-emerald-700 dark:text-emerald-400 w-12 text-right tabular-nums flex items-center justify-end gap-0.5">
+                      <ArrowDownRight size={11} className="shrink-0" />
+                      {((w.monthSpend / (totalSpend || 1)) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
-        {/* --- RIGHT: ACCOUNT BREAKDOWN GRID --- */}
-        <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 min-w-0 font-sans">
-          {/* CASH ACCOUNTS */}
-          <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm p-5 sm:p-6 flex flex-col group hover:border-emerald-500/40 dark:hover:border-emerald-500/40 transition-colors min-w-0 font-sans">
-            <div className="flex items-center gap-3 mb-5 border-b border-slate-100 dark:border-white/5 pb-4 min-w-0">
-              <div className="p-1.5 bg-emerald-50 dark:bg-emerald-500/10 rounded-md shrink-0">
-                <Landmark
-                  size={14}
-                  className="text-emerald-600 dark:text-emerald-500"
-                />
+        {/* Digital & Bank Wallets */}
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10 mb-2">
+            <div className="flex items-center gap-2">
+              <div className="p-1 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                <Zap size={14} />
               </div>
-              <h3 className="text-sm font-serif font-bold tracking-tight text-slate-900 dark:text-white truncate">
-                Cash <span className="italic font-normal">Vaults</span>
+              <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                Bank & Online Wallets
               </h3>
             </div>
-
-            <div className="flex-1 overflow-y-auto custom-scroll pr-1 space-y-1 font-sans">
-              {physical.length === 0 ? (
-                <div className="h-full flex items-center justify-center p-4">
-                  <p className="text-[10px] text-slate-400 font-sans font-medium uppercase tracking-wider">
-                    No cash utilized.
-                  </p>
-                </div>
-              ) : (
-                physical.map((w, i) => (
-                  <div
-                    key={i}
-                    className="flex justify-between items-center p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/50 border border-transparent hover:border-slate-100 dark:hover:border-white/5 transition-colors min-w-0 font-sans"
-                  >
-                    <div className="flex flex-col min-w-0 pr-3">
-                      <span className="text-sm font-serif font-bold tracking-tight text-slate-900 dark:text-white truncate">
-                        {w.name}
-                      </span>
-                      <span className="text-[9px] font-sans font-medium text-slate-500 uppercase tracking-wider truncate mt-0.5">
-                        {w.user}
-                      </span>
-                    </div>
-                    <div className="text-right flex flex-col items-end shrink-0">
-                      <span className="text-sm font-mono font-bold text-slate-900 dark:text-white tabular-nums">
-                        ₹{formatINR(w.monthSpend)}
-                      </span>
-                      <div className="flex items-center gap-1 mt-0.5 font-sans">
-                        <ArrowDownRight
-                          size={10}
-                          className="text-emerald-500 shrink-0"
-                        />
-                        <span className="text-[9px] font-mono font-medium text-emerald-600 dark:text-emerald-500 tabular-nums">
-                          {((w.monthSpend / (totalSpend || 1)) * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+            <span className="text-xs font-sans font-semibold text-indigo-600 dark:text-indigo-400">
+              {digital.length} accounts
+            </span>
           </div>
 
-          {/* DIGITAL ACCOUNTS */}
-          <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm p-5 sm:p-6 flex flex-col group hover:border-indigo-500/40 dark:hover:border-indigo-500/40 transition-colors min-w-0 font-sans">
-            <div className="flex items-center gap-3 mb-5 border-b border-slate-100 dark:border-white/5 pb-4 min-w-0">
-              <div className="p-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-md shrink-0">
-                <Zap
-                  size={14}
-                  className="text-indigo-600 dark:text-indigo-400"
-                />
+          <div className="divide-y divide-slate-100 dark:divide-white/5">
+            {digital.length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-400 italic">
+                No online or bank spending this month.
               </div>
-              <h3 className="text-sm font-serif font-bold tracking-tight text-slate-900 dark:text-white truncate">
-                Digital <span className="italic font-normal">Wallets</span>
-              </h3>
-            </div>
-
-            <div className="flex-1 overflow-y-auto custom-scroll pr-1 space-y-1 font-sans">
-              {digital.length === 0 ? (
-                <div className="h-full flex items-center justify-center p-4">
-                  <p className="text-[10px] text-slate-400 font-sans font-medium uppercase tracking-wider">
-                    No digital transactions.
-                  </p>
-                </div>
-              ) : (
-                digital.map((w, i) => (
-                  <div
-                    key={i}
-                    className="flex justify-between items-center p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/50 border border-transparent hover:border-slate-100 dark:hover:border-white/5 transition-colors min-w-0 font-sans"
-                  >
-                    <div className="flex flex-col min-w-0 pr-3">
-                      <span className="text-sm font-serif font-bold tracking-tight text-slate-900 dark:text-white truncate">
-                        {w.name}
-                      </span>
-                      <span className="text-[9px] font-sans font-medium text-slate-500 uppercase tracking-wider truncate mt-0.5">
-                        {w.user}
-                      </span>
-                    </div>
-                    <div className="text-right flex flex-col items-end shrink-0">
-                      <span className="text-sm font-mono font-bold text-slate-900 dark:text-white tabular-nums">
-                        ₹{formatINR(w.monthSpend)}
-                      </span>
-                      <div className="flex items-center gap-1 mt-0.5 font-sans">
-                        <ArrowDownRight
-                          size={10}
-                          className="text-indigo-500 shrink-0"
-                        />
-                        <span className="text-[9px] font-mono font-medium text-indigo-600 dark:text-indigo-400 tabular-nums">
-                          {((w.monthSpend / (totalSpend || 1)) * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
+            ) : (
+              digital.map((w, i) => (
+                <div
+                  key={w._id || i}
+                  className="py-3 flex items-center justify-between gap-4 hover:bg-slate-50/70 dark:hover:bg-white/[0.02] px-1 rounded-md transition-colors"
+                >
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-sans font-bold text-slate-900 dark:text-white truncate">
+                      {w.name}
+                    </span>
+                    <span className="text-[11px] font-sans font-medium text-slate-500 dark:text-slate-400 capitalize mt-0.5">
+                      {w.user || "Personal"}
+                    </span>
                   </div>
-                ))
-              )}
-            </div>
+
+                  <div className="text-right flex items-baseline gap-3 shrink-0">
+                    <span className="text-sm font-sans font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">
+                      ₹{formatINR(w.monthSpend)}
+                    </span>
+                    <span className="text-[11px] font-sans font-semibold text-indigo-600 dark:text-indigo-400 w-12 text-right tabular-nums flex items-center justify-end gap-0.5">
+                      <ArrowDownRight size={11} className="shrink-0" />
+                      {((w.monthSpend / (totalSpend || 1)) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
+
       </div>
     </div>
   );
