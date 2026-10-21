@@ -458,18 +458,6 @@ const Settings = ({ mode, hideTopBar = false }) => {
               {/* --- RIGHT: ACTIONS & DISCRETE GLYPH USER PROFILE --- */}
               <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0 z-20 font-sans">
                 
-                {/* Mobile back trigger if in detail view */}
-                {activeItem && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveItem(null)}
-                    className="flex md:hidden items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black/30 border border-white/15 text-xs font-semibold text-slate-200"
-                  >
-                    <ArrowLeft size={13} className="text-emerald-400" />
-                    <span>Back</span>
-                  </button>
-                )}
-
                 {/* Utility Dock (App Switcher & Theme Toggle) */}
                 <div className="flex items-center p-0.5 rounded-lg bg-black/25 border border-white/10">
                   <Link
