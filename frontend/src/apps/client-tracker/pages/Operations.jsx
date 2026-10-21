@@ -6,6 +6,7 @@ import Navbar from "../components/Shared/Navbar";
 import OperationsDashboard from "../components/Operations/TaskBoard";
 import Submissions from "../components/Operations/Submissions";
 import FormsVault from "../components/Operations/FormsVault";
+import PageHeader from "../../../shared/components/Auth/PageHeader";
 // import FolioReconciler from "../components/Operations/FolioReconciler";
 // import ArnTransferReconciler from "../components/Operations/ArnTransferReconciler";
 // import BrokerageAuditor from "../components/Operations/BrokerageAuditor";
@@ -41,21 +42,11 @@ const Operations = () => {
         
         {/* BORDERLESS COMMAND HEADER */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end pb-8 mb-8 border-b border-slate-200 dark:border-white/10 gap-6">
-          <div className="flex flex-col gap-2">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-[1000] uppercase tracking-tight bg-linear-to-r from-slate-900 via-slate-800 to-emerald-700 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent">
-              Operations Center
-            </h1>
-            
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-md border border-emerald-200/60 dark:border-emerald-500/20">
-                Fulfillment Suite
-              </span>
-              <span className="text-slate-300 dark:text-slate-700">•</span>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Submission Fulfillment, Operations Board & Regulatory Forms
-              </p>
-            </div>
-          </div>
+          <PageHeader
+            title="Operations"
+            accent="Center"
+            description="Manage submission fulfillment, track operational tasks, and access regulatory forms from one centralized hub."
+          />
 
           {/* CONTINUOUS ENTERPRISE NAVIGATION */}
           <div className="w-full lg:w-auto">

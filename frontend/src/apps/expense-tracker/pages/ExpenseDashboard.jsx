@@ -6,6 +6,7 @@ import WalletActionModal from "../components/Dashboard/WalletActionModal";
 import WalletGridSection from "../components/Dashboard/WalletGridSection";
 import TransactionLedger from "../components/Dashboard/TransactionLedger";
 import { Wallet, CalendarDays, ArrowUpRight, Sparkles } from "lucide-react";
+import PageHeader from "../../../shared/components/Auth/PageHeader";
 
 const formatINR = (amount) => {
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(
@@ -141,14 +142,11 @@ const ExpenseDashboard = () => {
             </div>
 
             {/* Title & Explainer */}
-            <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl 2xl:text-5xl font-serif tracking-tight text-slate-900 dark:text-slate-100 leading-tight">
-                Expense <span className="italic font-normal text-emerald-800 dark:text-emerald-400">Overview</span>
-              </h1>
-              <p className="mt-1.5 text-xs sm:text-sm lg:text-base font-sans font-normal text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl">
-                See all your cash balances, track daily expenses, and check what's been spent this month in one place.
-              </p>
-            </div>
+            <PageHeader
+              title="Expense"
+              accent="Overview"
+              description="See all your cash balances, track daily expenses, and check what's been spent this month in one place."
+            />
 
             {/* Micro Balance Note */}
             <div className="flex items-center gap-3 text-xs font-sans font-medium text-slate-500 dark:text-slate-400">

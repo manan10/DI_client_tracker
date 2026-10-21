@@ -17,7 +17,7 @@ import TallyTest from "./apps/client-tracker/pages/TallyTest";
 // Client Tracker App Components
 const Home = lazy(() => import("./apps/client-tracker/pages/Home"));
 const ClientDirectory = lazy(() => import("./apps/client-tracker/pages/ClientDirectory"));
-const Settings = lazy(() => import("./apps/client-tracker/pages/Settings"));
+const ClientSettings = lazy(() => import("./apps/client-tracker/pages/ClientSettings"));
 const Accounts = lazy(() => import("./apps/client-tracker/pages/Accounts"));
 const ClientDetail = lazy(() => import("./apps/client-tracker/pages/ClientDetail"));
 const Operations = lazy(() => import("./apps/client-tracker/pages/Operations"));
@@ -31,13 +31,14 @@ const ExpenseSettings = lazy(() => import("./apps/expense-tracker/pages/ExpenseS
 const ExpenseAnalytics = lazy(() => import("./apps/expense-tracker/pages/ExpenseAnalytics"));
 const ExpenseHistory = lazy(() => import("./apps/expense-tracker/pages/ExpenseHistory"));
 
-// TV Rater App Components
+// TV Rater App Pages
 const ShowRaterHome = lazy(() => import("./apps/tv-ranker/pages/ShowRaterHome"));
 const Lists = lazy(() => import("./apps/tv-ranker/pages/Lists"));
 
-// Shared Components
+// Shared Pages
 const Auth = lazy(() => import("./shared/pages/Auth"));
 const AppPicker = lazy(() => import("./shared/pages/AppPicker"));
+const Settings = lazy(() => import("./shared/pages/Settings"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -83,9 +84,18 @@ function App() {
                 }
               />
 
+              <Route 
+                path="/settings/"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+
               {/* --- EXPENSE TRACKER ROUTES WITH SHARED ACTION LAYOUT --- */}
               <Route
-                element={
+                element={ 
                   <ProtectedRoute>
                     <ExpenseTrackerLayout />
                   </ProtectedRoute>
@@ -125,10 +135,10 @@ function App() {
                 }
               />
               <Route
-                path="/settings"
+                path="/client/settings"
                 element={
                   <ProtectedRoute>
-                    <Settings />
+                    <ClientSettings />
                   </ProtectedRoute>
                 }
               />

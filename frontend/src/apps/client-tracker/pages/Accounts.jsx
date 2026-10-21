@@ -10,6 +10,7 @@ import AuditManager from "../components/Accounts/AuditManager";
 import Insurance from "../components/Accounts/Insurance";
 import AccessDenied from "../components/Shared/AccessDenied";
 import { useAuth } from "../../../shared/hooks/useAuth";
+import PageHeader from "../../../shared/components/Auth/PageHeader";
 
 const Accounts = () => {
   const { user } = useAuth();
@@ -53,21 +54,11 @@ const Accounts = () => {
       <main className="w-full max-w-384 mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 sm:py-12 pb-32">
         {/* BORDERLESS COMMAND HEADER */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end pb-8 mb-8 border-b border-slate-200 dark:border-white/10 gap-6">
-          <div className="flex flex-col gap-2">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-[1000] uppercase tracking-tight bg-linear-to-r from-slate-900 via-slate-800 to-emerald-700 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent">
-              Accounting Hub
-            </h1>
-
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-md border border-emerald-200/60 dark:border-emerald-500/20">
-                Accounting Ledger
-              </span>
-              <span className="text-slate-300 dark:text-slate-700">•</span>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Liquidity Tracking & Digital Accounting Suite
-              </p>
-            </div>
-          </div>
+          <PageHeader
+            title="Accounting"
+            accent="Hub"
+            description="Track account balances, manage commissions, and access insurance and audit tools from one centralized hub."
+          />
 
           {/* ========================================== */}
           {/* CONTINUOUS ENTERPRISE NAVIGATION           */}

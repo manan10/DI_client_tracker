@@ -6,6 +6,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
+import PageHeader from "../../../../shared/components/Auth/PageHeader";
 
 const formatINR = (amount) => {
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(
@@ -51,14 +52,11 @@ const HistoryHeader = ({
           </span>
         </div>
 
-        {/* Dalal System: font-serif tracking-tight with italic accent */}
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif tracking-tight bg-linear-to-r from-slate-900 via-slate-800 to-emerald-700 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent leading-none">
-          Expense <span className="italic font-normal text-emerald-800 dark:text-emerald-400">History</span>
-        </h1>
-
-        <p className="text-sm sm:text-base font-normal text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed font-sans">
-          Track treasury reserves, monitor daily spending channels, and reconcile physical cash balances from one centralized command hub.
-        </p>
+        <PageHeader
+          title="Expense"
+          accent="History"
+          description="Track treasury reserves, monitor daily spending channels, and reconcile physical cash balances from one centralized command hub."
+        />
       </div>
 
       {/* Right Controls: Month Selector & Pure Typography Stats */}

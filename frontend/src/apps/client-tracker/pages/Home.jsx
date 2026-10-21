@@ -15,6 +15,7 @@ import NewSubmission from "../components/Operations/Submissions/NewSubmission";
 import NewTicketPanel from "../components/Operations/TaskBoard/NewTicketPanel";
 
 import { Plus, Activity, Layers, Compass, Zap } from "lucide-react";
+import PageHeader from "../../../shared/components/Auth/PageHeader";
 
 const Home = () => {
   // Drawer States
@@ -50,13 +51,11 @@ const Home = () => {
                 </span>
               </div>
               
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-[1000] uppercase tracking-tight bg-linear-to-r from-slate-900 via-slate-800 to-emerald-700 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent">
-                Dalal Investment Portal
-              </h1>
-              
-              <p className="text-sm sm:text-base font-medium text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
-                Track investor relationships, monitor portfolio growth, and manage daily business operations from one centralized command hub.
-              </p>
+              <PageHeader
+                title="Dalal Investment"
+                accent="CRM Portal"
+                description="Track investor relationships, monitor portfolio growth, and manage daily business operations from one centralized command hub."
+              />
             </div>
             
             <div className="w-full lg:w-120 xl:w-135 shrink-0">

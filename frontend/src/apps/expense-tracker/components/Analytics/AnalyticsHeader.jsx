@@ -1,6 +1,8 @@
 import React from "react";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 
+import PageHeader from "../../../../shared/components/Auth/PageHeader";
+
 const AnalyticsHeader = ({ selectedDate, onChangeMonth }) => {
   const isCurrentMonth =
     selectedDate.getMonth() === new Date().getMonth() &&
@@ -8,15 +10,11 @@ const AnalyticsHeader = ({ selectedDate, onChangeMonth }) => {
 
   return (
     <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-slate-200 dark:border-white/10 pb-8 min-w-0">
-      {/* Title & Explainer */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl 2xl:text-5xl font-serif tracking-tight text-slate-900 dark:text-slate-100 leading-tight">
-          Expense <span className="italic font-normal text-emerald-800 dark:text-emerald-400">Analytics</span>
-        </h1>
-        <p className="mt-1.5 text-xs sm:text-sm lg:text-base font-sans font-normal text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl">
-          Track category breakdown shifts, analyze multi-month outflow patterns, and monitor your household liquidity reserves in real time.
-        </p>
-      </div>
+      <PageHeader
+        title="Expense"
+        accent="Analytics"
+        description="Track category breakdown shifts, analyze multi-month outflow patterns, and monitor your household liquidity reserves in real time."
+      />
 
       {/* Month Selector Control */}
       <div className="w-full md:w-auto flex justify-start md:justify-end shrink-0 font-sans">

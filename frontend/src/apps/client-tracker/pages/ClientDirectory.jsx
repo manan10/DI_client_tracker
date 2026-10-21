@@ -25,6 +25,7 @@ import ClientTableContainer from "../components/Directory/ClientTableContainer";
 // Hooks
 import { useApi } from "../../../shared/hooks/useApi";
 import { useClientData } from "../hooks/useClientData";
+import PageHeader from "../../../shared/components/Auth/PageHeader";
 
 const ClientDirectory = () => {
   const [clients, setClients] = useState([]);
@@ -203,21 +204,11 @@ const ClientDirectory = () => {
         {/* COMMAND HEADER */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end pb-8 mb-8 border-b border-slate-200 dark:border-white/10 gap-6">
           <div className="flex flex-col gap-2">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-[1000] uppercase tracking-tight text-slate-900 dark:text-white">
-              Client Directory
-            </h1>
-
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-md border border-emerald-200/60 dark:border-emerald-500/20">
-                Registry Ledger
-              </span>
-              <span className="text-slate-300 dark:text-slate-700">•</span>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                {loading
-                  ? "Synchronizing registry..."
-                  : `Managing ${totalRecords} active family wealth portfolios`}
-              </p>
-            </div>
+            <PageHeader
+              title="Client"
+              accent="Registry"
+              description={`Managing ${totalRecords} active family wealth portfolios`}
+            />
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto shrink-0">

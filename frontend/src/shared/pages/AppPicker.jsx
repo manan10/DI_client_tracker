@@ -11,6 +11,7 @@ import {
   Sun,
   Moon,
   Clapperboard,
+  Settings,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import Logo from "../../assets/logo_nobrand.png";
@@ -80,7 +81,7 @@ const allApps = [
     description:
       "Track, score out of 10, log rating revisions over time, and import your curated lists.",
     features: ["Rating Timeline", "Notes Importer", "Watchlist"],
-    path: "/shows",
+    path: "/tv-rater",
     icon: Clapperboard,
     badge: "Leisure App",
     theme: {
@@ -147,6 +148,20 @@ const AppPicker = () => {
     <div className="h-dvh w-screen bg-[#F8FAFC] dark:bg-[#060A14] text-slate-900 dark:text-slate-100 flex flex-col font-serif overflow-hidden relative selection:bg-emerald-800 selection:text-white transition-colors duration-300">
       {/* --- TOP FLOATING CONTROLS (SOFT TINTED GRADIENTS) --- */}
       <div className="absolute top-4 sm:top-6 lg:top-7 right-4 sm:right-8 lg:right-10 z-50 flex items-center gap-2 sm:gap-2.5">
+        {/* Settings Button */}
+        <button
+          type="button"
+          onClick={() => navigate("/settings")}
+          className="group h-9 sm:h-10 px-2.5 sm:px-3.5 flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg bg-gradient-to-br from-slate-500/15 via-slate-500/10 to-slate-500/5 dark:from-slate-400/20 dark:via-slate-400/10 dark:to-slate-500/5 hover:from-slate-500/25 hover:to-slate-500/15 text-slate-800 dark:text-slate-200 border border-slate-300/60 dark:border-slate-500/30 shadow-xs active:scale-95 transition-all duration-200 outline-none cursor-pointer shrink-0 backdrop-blur-sm"
+          title="Settings"
+          aria-label="Settings"
+        >
+          <Settings
+            size={17}
+            className="transition-transform group-hover:rotate-45 text-slate-600 dark:text-slate-300"
+          />
+        </button>
+
         {/* Theme Toggle Button */}
         <button
           type="button"
