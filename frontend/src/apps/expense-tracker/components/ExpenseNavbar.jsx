@@ -18,6 +18,7 @@ const ExpenseNavbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Dark / Light Mode Sync
   const [isDark, setIsDark] = useState(() => {
     return (
       localStorage.theme === "dark" ||
@@ -49,137 +50,130 @@ const ExpenseNavbar = () => {
     { name: "Settings", path: "/expenses/settings", icon: SettingsIcon },
   ];
 
+  const userInitials = user?.name ? user.name.charAt(0).toUpperCase() : "U";
+
   return (
     <>
       {/* ========================================= */}
-      {/* TOP NAVIGATION BAR (Desktop & Mobile Top)   */}
+      {/* TOP NAVIGATION BAR                        */}
       {/* ========================================= */}
-      <nav className="sticky top-0 z-50 bg-slate-900/95 dark:bg-[#0E1626]/95 backdrop-blur-2xl border-b border-slate-800 dark:border-white/10 shadow-lg dark:shadow-2xl transition-all duration-300 font-sans">
-        {/* Subtle Horizon Glow Accent Line */}
-        <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-linear-to-r from-transparent via-emerald-500/40 to-transparent pointer-events-none" />
+      <nav className="sticky top-0 z-40 bg-[#232730]/95 dark:bg-[#16181D]/95 backdrop-blur-2xl border-b border-stone-400/20 dark:border-white/10 text-white shadow-md dark:shadow-[0_10px_35px_rgba(0,0,0,0.5)] transition-all duration-300 font-sans">
+        {/* Subtle horizon line */}
+        <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-linear-to-r from-transparent via-stone-400/40 to-transparent pointer-events-none" />
 
         <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 2xl:px-16">
-          <div className="relative flex justify-between items-center h-18">
-            {/* --- LEFT: LOGO & BRANDING --- */}
+          <div className="relative flex justify-between items-center h-[72px]">
+            
+            {/* --- LEFT: LOGO & BRAND TITLE --- */}
             <div className="flex items-center shrink-0 min-w-0 z-20">
-              <Link
-                to="/expenses"
-                className="flex items-center gap-3.5 group outline-none"
-              >
-                <div className="p-1 rounded-xl bg-white/5 border border-white/10 group-hover:border-emerald-500/40 transition-all duration-300 shadow-2xs">
+              <Link to="/expenses" className="group outline-none min-w-0">
+                <div className="flex items-center gap-2.5 sm:gap-3">
                   <img
                     src={Logo}
-                    alt="Logo"
-                    className="h-8 sm:h-8.5 w-auto group-hover:scale-105 transition-transform duration-300"
+                    alt="Dalal Investments"
+                    className="h-8 sm:h-8.5 w-auto transition-transform duration-300 group-hover:scale-105 shrink-0"
                   />
-                </div>
-                <div className="flex flex-col text-left min-w-0">
-                  <span className="text-[15px] sm:text-[17px] font-serif font-bold text-white tracking-tight leading-none truncate">
-                    Dalal <span className="italic font-normal">Investments</span>
-                  </span>
-                  <div className="flex items-center mt-1">
-                    <span className="px-2 py-0.5 rounded text-[9px] font-sans font-semibold text-emerald-400 bg-emerald-500/10 uppercase tracking-widest leading-none border border-emerald-500/20">
-                      Personal Expense Hub
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2.5">
+                    <span className="text-[13px] sm:text-base font-serif font-bold text-white tracking-tight leading-tight sm:leading-none">
+                      Dalal Investments
+                    </span>
+                    <span className="hidden sm:inline text-stone-500 font-light select-none text-xs">
+                      |
+                    </span>
+                    <span className="text-[10px] sm:text-xs font-sans font-medium text-stone-400 leading-tight sm:leading-none tracking-wide sm:tracking-normal">
+                      Expense Hub
                     </span>
                   </div>
                 </div>
               </Link>
             </div>
 
-            {/* --- CENTER: ABSOLUTE NAVIGATION (Desktop Only) --- */}
-            <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-1.5 p-1.5 bg-black/40 dark:bg-black/30 border border-white/10 dark:border-white/5 rounded-xl shadow-inner z-10 font-sans">
+            {/* --- CENTER: FIXED TACTILE DECK RAIL (NO BEAD) --- */}
+            <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center rounded-xl p-1 shadow-inner z-10 bg-black/45 border border-white/10 backdrop-blur-md">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
+
                 return (
                   <Link
                     key={item.name}
                     to={item.path}
-                    className={`flex items-center gap-2 px-3.5 xl:px-4.5 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-200 outline-none select-none font-sans ${
+                    className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-xs tracking-wide transition-all outline-none select-none ${
                       isActive
-                        ? "bg-emerald-500 text-slate-950 shadow-md font-bold ring-1 ring-emerald-400"
-                        : "text-slate-400 hover:text-white hover:bg-white/10 dark:hover:bg-white/5 font-medium"
+                        ? "bg-white/[0.12] text-white border border-white/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.35)] font-bold"
+                        : "text-slate-400 hover:text-white hover:bg-white/5 border border-transparent font-medium"
                     }`}
                   >
-                    <Icon size={15} strokeWidth={isActive ? 2.5 : 2} />
-                    {item.name}
+                    <Icon
+                      size={15}
+                      className={isActive ? "text-white" : "text-slate-400"}
+                      strokeWidth={isActive ? 2.5 : 2}
+                    />
+                    <span>{item.name}</span>
                   </Link>
                 );
               })}
             </div>
 
-            {/* --- RIGHT: ACTIONS & USER IDENTITY --- */}
-            <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 z-20 font-sans">
-              {/* App Picker & Theme Toggle */}
-              <div className="flex items-center gap-1.5">
+            {/* --- RIGHT: ACTIONS & DISCRETE GLYPH USER PROFILE --- */}
+            <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0 z-20 font-sans">
+              
+              {/* Utility Dock (App Switcher & Theme Toggle) */}
+              <div className="flex items-center p-0.5 rounded-lg bg-black/25 border border-white/10">
                 <Link
                   to="/app-picker"
-                  className="flex items-center justify-center w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-emerald-400 hover:border-emerald-500/40 hover:bg-white/10 transition-all outline-none"
-                  aria-label="App Picker"
+                  className="flex items-center justify-center w-8 h-8 rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-all outline-none"
+                  aria-label="App Switcher"
+                  title="App Switcher"
                 >
-                  <Grid size={17} strokeWidth={2.2} />
+                  <Grid size={16} strokeWidth={2.2} />
                 </Link>
 
+                <div className="w-px h-4 bg-white/10 mx-0.5" />
+
                 <button
+                  type="button"
                   onClick={() => setIsDark(!isDark)}
-                  className="flex items-center justify-center w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-emerald-400 hover:border-emerald-500/40 hover:bg-white/10 transition-all outline-none cursor-pointer"
+                  className="flex items-center justify-center w-8 h-8 rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-all outline-none cursor-pointer"
                   aria-label="Toggle Theme"
+                  title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
                 >
-                  {isDark ? (
-                    <Sun size={17} strokeWidth={2.2} />
-                  ) : (
-                    <Moon size={17} strokeWidth={2.2} />
-                  )}
+                  {isDark ? <Sun size={16} strokeWidth={2.2} /> : <Moon size={16} strokeWidth={2.2} />}
                 </button>
               </div>
 
-              {/* Hardware Divider */}
-              <div className="hidden sm:block w-px h-6 bg-white/15 mx-1" />
+              {/* Hardware Vertical Divider */}
+              <div className="hidden sm:block w-px h-6 bg-white/15 mx-0.5" />
 
-              {/* User Profile Chip */}
-              <div className="hidden sm:flex items-center gap-3 pl-1.5 p-1.5 pr-3.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all cursor-default shadow-xs font-sans">
-                {/* Avatar */}
-                <div className="flex items-center justify-center w-7.5 h-7.5 rounded-full bg-emerald-500/20 text-emerald-400 font-sans font-bold text-xs shrink-0 border border-emerald-500/40 shadow-xs">
-                  {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+              {/* User Profile Glyph & Logout */}
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-8 h-8 rounded-full bg-white/15 text-white border border-white/30 flex items-center justify-center font-bold text-xs select-none shadow-xs"
+                  title={user?.name || "User"}
+                >
+                  {userInitials}
                 </div>
 
-                {/* Identity */}
-                <div className="flex flex-col text-left min-w-0 pr-1">
-                  <span className="text-xs font-medium text-white leading-none truncate max-w-32 font-sans">
-                    {user?.name || "Authorized User"}
-                  </span>
-                </div>
-
-                {/* Logout Button */}
                 <button
+                  type="button"
                   onClick={handleLogout}
-                  className="flex items-center justify-center w-7 h-7 rounded-full text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors outline-none shrink-0 cursor-pointer ml-1"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer outline-none"
                   title="Sign Out"
                 >
-                  <LogOut size={15} strokeWidth={2.2} />
+                  <LogOut size={16} />
                 </button>
               </div>
 
-              {/* Mobile Logout Quick Icon */}
-              <button
-                onClick={handleLogout}
-                className="sm:hidden flex items-center justify-center w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-rose-400 hover:bg-rose-500/10 transition-all outline-none"
-                aria-label="Sign Out"
-              >
-                <LogOut size={17} strokeWidth={2.2} />
-              </button>
             </div>
           </div>
         </div>
       </nav>
 
       {/* ========================================= */}
-      {/* MOBILE BOTTOM NAVIGATION BAR                */}
+      {/* MOBILE BOTTOM NAVIGATION BAR              */}
       {/* ========================================= */}
-      <div className="md:hidden fixed bottom-0 left-0 w-full bg-slate-900/95 dark:bg-[#0E1626]/95 backdrop-blur-2xl border-t border-slate-800 dark:border-white/10 z-40 pb-[env(safe-area-inset-bottom)] shadow-2xl font-sans">
-        <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-linear-to-r from-transparent via-emerald-500/40 to-transparent pointer-events-none" />
-
-        <div className="flex items-center justify-around h-17 px-2 max-w-md mx-auto">
+      <div className="md:hidden fixed bottom-0 left-0 w-full z-40 pb-[env(safe-area-inset-bottom)] font-sans border-t border-stone-400/20 dark:border-white/10 bg-[#232730]/95 dark:bg-[#16181D]/95 backdrop-blur-2xl transition-all">
+        <div className="flex items-center justify-around h-16 px-3 max-w-md mx-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -188,27 +182,21 @@ const ExpenseNavbar = () => {
               <Link
                 key={item.name}
                 to={item.path}
-                className="relative flex flex-col items-center justify-center w-full h-full gap-1 outline-none group font-sans"
+                className="relative flex flex-col items-center justify-center w-full h-full gap-1 outline-none select-none"
               >
-                {/* Active Indicator Top Bar */}
                 {isActive && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-[2.5px] bg-emerald-400 rounded-b-full shadow-[0_2px_10px_rgba(16,185,129,0.8)]" />
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2.5px] rounded-b-full bg-white shadow-[0_2px_8px_rgba(255,255,255,0.8)]" />
                 )}
-
                 <div
-                  className={`mt-0.5 transition-colors duration-200 ${
-                    isActive
-                      ? "text-emerald-400"
-                      : "text-slate-400 group-hover:text-white"
+                  className={`mt-0.5 transition-colors ${
+                    isActive ? "text-white" : "text-slate-400 hover:text-white"
                   }`}
                 >
-                  <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                  <Icon size={19} strokeWidth={isActive ? 2.5 : 2} />
                 </div>
                 <span
-                  className={`text-[10px] font-sans uppercase tracking-wider ${
-                    isActive
-                      ? "text-emerald-400 font-bold"
-                      : "text-slate-400 group-hover:text-white font-medium"
+                  className={`text-[10px] font-medium tracking-wide ${
+                    isActive ? "text-white font-bold" : "text-slate-400"
                   }`}
                 >
                   {item.name}
