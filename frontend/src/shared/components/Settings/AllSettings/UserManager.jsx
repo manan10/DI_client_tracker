@@ -18,7 +18,7 @@ import {
   AlertTriangle,
   Clapperboard,
 } from "lucide-react";
-import { useApi } from "../../../../shared/hooks/useApi";
+import { useApi } from "../../../hooks/useApi";
 import { toast } from "sonner";
 
 const APP_ENTITLEMENTS = [

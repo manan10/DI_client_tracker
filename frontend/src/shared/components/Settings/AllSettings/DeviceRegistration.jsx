@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Fingerprint, Loader2, Smartphone, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { startRegistration } from '@simplewebauthn/browser';
-import { useApi } from '../../../../shared/hooks/useApi';
+import { useApi } from '../../../hooks/useApi';
 
 const DeviceRegistration = () => {
   const { request } = useApi();

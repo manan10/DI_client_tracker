@@ -198,7 +198,7 @@ const Settings = ({ mode, hideTopBar = false }) => {
       {
         id: "gen-team",
         app: "General Settings",
-        label: "Team",
+        label: "Users",
         sub: "Staff & users",
         icon: Users,
         color: "text-purple-600 dark:text-purple-400",

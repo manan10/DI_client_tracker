@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { useApi } from '../../../../shared/hooks/useApi';
+import { useApi } from '../../../hooks/useApi';
 import SyncStatusModal from "./SyncResultModal";
 
 

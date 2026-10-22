@@ -15,7 +15,7 @@ import {
   Plus,
   ChevronDown,
 } from "lucide-react";
-import { useApi } from "../../../../shared/hooks/useApi";
+import { useApi } from "../../../hooks/useApi";
 import { toast } from "sonner";
 
 // --- COMPACT CONFIRMATION MODAL ---

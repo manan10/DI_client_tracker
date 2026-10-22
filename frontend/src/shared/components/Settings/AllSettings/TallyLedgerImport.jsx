@@ -6,7 +6,7 @@ import {
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 
-import { useApi } from '../../../../shared/hooks/useApi';
+import { useApi } from '../../../hooks/useApi';
 
 const TallyLedgerImport = () => {
   const { request } = useApi();

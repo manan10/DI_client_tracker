@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Trash2, Shield, Loader2, Edit2, Check, X, AlertTriangle, Building2, Plus, ArrowRight, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { useApi } from '../../../../shared/hooks/useApi';
-import { tallyTemplates } from '../../utils/tallyTemplates';
+import { useApi } from '../../../hooks/useApi';
+import { tallyTemplates } from '../../../../apps/client-tracker/utils/tallyTemplates';
 
 const ArnManagement = () => {
   const { request } = useApi();

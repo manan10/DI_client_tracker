@@ -3,22 +3,22 @@ import { ArrowLeft, Lock } from "lucide-react";
 
 // Client Tracker Subcomponents
 import AccessDenied from "../../../apps/client-tracker/components/Shared/AccessDenied";
-import TierConfig from "../../../apps/client-tracker/components/Settings/TierConfig";
-import ComplianceConfig from "../../../apps/client-tracker/components/Settings/ComplianceConfig";
-import AmcManagement from "../../../apps/client-tracker/components/Settings/AmcManagement";
-import ArnManagement from "../../../apps/client-tracker/components/Settings/ArnManagement";
-import BankAccounts from "../../../apps/client-tracker/components/Settings/BankAccounts";
-import DataSync from "../../../apps/client-tracker/components/Settings/DataSync";
-import TallyLedgerImport from "../../../apps/client-tracker/components/Settings/TallyLedgerImport";
-import UserManagement from "../../../apps/client-tracker/components/Settings/UserManagement";
-import WorkflowManagement from "../../../apps/client-tracker/components/Settings/WorkflowManagement";
-import DeviceRegistration from "../../../apps/client-tracker/components/Settings/DeviceRegistration";
+import TierConfig from "../../components/Settings/AllSettings/TierConfig"; 
+import ComplianceConfig from "../../components/Settings/AllSettings/ComplianceConfig";
+import AmcManagement from "../../components/Settings/AllSettings/AmcManagement";
+import ArnManagement from "../../components/Settings/AllSettings/ArnManagement";
+import BankAccounts from "../../components/Settings/AllSettings/BankAccounts";
+import DataSync from "../../components/Settings/AllSettings/DataSync";
+import TallyLedgerImport from "../../components/Settings/AllSettings/TallyLedgerImport";
+import UserManagement from "../../components/Settings/AllSettings/UserManagement";
+import WorkflowManagement from "../../components/Settings/AllSettings/WorkflowManagement";
+import DeviceRegistration from "../../components/Settings/AllSettings/DeviceRegistration";
 
 // Expense Tracker Subcomponents
-import WalletManager from "../../../apps/expense-tracker/components/Settings/WalletManager";
-import MonthlyRefill from "../../../apps/expense-tracker/components/Settings/MonthlyRefill";
-import ThemeManager from "../../../apps/expense-tracker/components/Settings/ThemeManager";
-import SpendingCategories from "../../../apps/expense-tracker/components/Settings/SpendingCategories/SpendingCategories";
+import WalletManager from "../../components/Settings/AllSettings/WalletManager";
+import MonthlyRefill from "../../components/Settings/AllSettings/MonthlyRefill";
+import ThemeManager from "../../components/Settings/AllSettings/ThemeManager";
+import SpendingCategories from "../../components/Settings/AllSettings/SpendingCategories/SpendingCategories";
 
 /**
  * SettingsDetailView

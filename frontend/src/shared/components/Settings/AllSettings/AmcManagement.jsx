@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Trash2, Edit2, Check, Landmark, Loader2, AlertTriangle, Search, Save, X, Settings2, Plus, Building2, MapPin, Globe } from 'lucide-react';
-import { useApi } from '../../../../shared/hooks/useApi';
+import { useApi } from '../../../hooks/useApi';
 import { toast } from 'sonner';
 
 const AmcManagement = () => {
