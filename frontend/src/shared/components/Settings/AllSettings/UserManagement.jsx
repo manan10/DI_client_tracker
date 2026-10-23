@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   UserPlus, Key, X, Loader2, User, Trash2, Edit3, 
-  ShieldCheck, AlertTriangle, Users, Check, Clapperboard,
+  ShieldCheck, AlertTriangle, Check, Clapperboard,
   Mail, Phone, Shield, Search, ChevronRight, LayoutGrid
 } from "lucide-react";
 import { toast } from "sonner";
@@ -186,15 +186,14 @@ const UserManagement = () => {
   return (
     <div className="w-full max-w-[100rem] mx-auto px-4 sm:px-6 lg:px-10 py-4 sm:py-6 space-y-6 pb-28 text-slate-900 dark:text-slate-100 font-sans selection:bg-emerald-500/20">
       
-      {/* 1. STANDARDIZED PAGEHEADER[cite: 2] */}
+      {/* 1. STANDARDIZED PAGEHEADER */}
       <PageHeader
         title="Users"
         subtitle="Manage member accounts, systemic privileges, and portal permissions."
       />
 
-      {/* 2. DEDICATED TOOLBAR ROW (Search + Add Button + Live Counts)[cite: 2] */}
+      {/* 2. DEDICATED TOOLBAR ROW (Search + Add Button + Live Counts) */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
-        {/* Search Input */}
         <div className="relative w-full sm:w-80">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
@@ -214,7 +213,6 @@ const UserManagement = () => {
           )}
         </div>
 
-        {/* Counter Badges and Add User Button */}
         <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
           <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 px-2 py-1.5 rounded-lg bg-slate-100/70 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/5">
             <div className="flex items-center gap-1.5">
@@ -239,7 +237,7 @@ const UserManagement = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. MOBILE VIEW: Clean Native Directory Stream (Distinct Line Separation)   */}
+      {/* 3. MOBILE VIEW: Native Directory List (Line Separators)                  */}
       {/* ========================================================================= */}
       <div className="lg:hidden divide-y divide-slate-200 dark:divide-white/10 border-t border-b border-slate-200 dark:border-white/10">
         {filteredUsers.map((u) => (
@@ -252,7 +250,7 @@ const UserManagement = () => {
               <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
                 u.isAdmin 
                   ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300" 
-                  : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
               }`}>
                 {u.name ? u.name.charAt(0).toUpperCase() : <User size={16} />}
               </div>
@@ -309,7 +307,7 @@ const UserManagement = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* 4. DESKTOP VIEW: High-Impact Enterprise Ledger Table[cite: 2]               */}
+      {/* 4. DESKTOP VIEW: High-Impact Enterprise Ledger Table                     */}
       {/* ========================================================================= */}
       <div className="hidden lg:block bg-white dark:bg-[#0E1626] border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden">
         <table className="w-full text-left border-collapse">
@@ -328,7 +326,6 @@ const UserManagement = () => {
                 key={u._id} 
                 className="hover:bg-slate-50/80 dark:hover:bg-white/[0.015] transition-colors group"
               >
-                {/* User */}
                 <td className="py-4 px-6">
                   <div className="flex items-center gap-3.5">
                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border ${
@@ -349,7 +346,6 @@ const UserManagement = () => {
                   </div>
                 </td>
 
-                {/* Contact */}
                 <td className="py-4 px-6">
                   <div className="text-xs">
                     <div className="font-semibold text-slate-700 dark:text-slate-200 truncate">
@@ -367,7 +363,6 @@ const UserManagement = () => {
                   </div>
                 </td>
 
-                {/* Role */}
                 <td className="py-4 px-6">
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider border ${
                     u.isAdmin 
@@ -379,7 +374,6 @@ const UserManagement = () => {
                   </span>
                 </td>
 
-                {/* Applications */}
                 <td className="py-4 px-6">
                   <div className="flex flex-wrap gap-1.5">
                     {u.allowedApps?.length > 0 ? (
@@ -402,7 +396,6 @@ const UserManagement = () => {
                   </div>
                 </td>
 
-                {/* Actions */}
                 <td className="py-4 px-6 text-right">
                   <div className="flex items-center justify-end gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
                     <button 
@@ -473,7 +466,7 @@ const UserManagement = () => {
 
               <button 
                 onClick={() => setActiveSheetUser(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg"
+                className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -526,19 +519,19 @@ const UserManagement = () => {
             <div className="grid grid-cols-3 gap-2.5 pt-3 border-t border-slate-100 dark:border-white/5">
               <button 
                 onClick={() => handleOpenEdit(activeSheetUser)}
-                className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5"
+                className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Edit3 size={14} /> Edit
               </button>
               <button 
                 onClick={() => { setEditingUser(activeSheetUser); setActiveSheetUser(null); }}
-                className="py-2.5 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-xs font-bold text-indigo-700 dark:text-indigo-300 flex items-center justify-center gap-1.5"
+                className="py-2.5 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-xs font-bold text-indigo-700 dark:text-indigo-300 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Key size={14} /> Password
               </button>
               <button 
                 onClick={() => { setDeleteConfirm({ id: activeSheetUser._id, name: activeSheetUser.name }); setActiveSheetUser(null); }}
-                className="py-2.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-xs font-bold text-rose-700 dark:text-rose-400 flex items-center justify-center gap-1.5"
+                className="py-2.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-xs font-bold text-rose-700 dark:text-rose-400 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Trash2 size={14} /> Delete
               </button>
@@ -548,17 +541,17 @@ const UserManagement = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* 6. MODAL: ADD / EDIT USER (FIXED: Never pushed above screen edge)[cite: 3]     */}
+      {/* 6. MODAL: ADD / EDIT USER (Bottom-Sheet on Mobile, Centered on Desktop)    */}
       {/* ========================================================================= */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex justify-center items-start p-4 sm:p-6 sm:py-14 animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-150">
           <div className="fixed inset-0" onClick={closeModals} />
           
           <form 
             onSubmit={handleSaveUser} 
-            className="relative z-10 w-full max-w-xl my-auto bg-white dark:bg-[#0E1626] border border-slate-200/90 dark:border-white/10 rounded-2xl shadow-2xl flex flex-col max-h-[calc(100dvh-4rem)] overflow-hidden"
+            className="relative z-10 w-full sm:max-w-xl bg-white dark:bg-[#0E1626] border-t sm:border border-slate-200/90 dark:border-white/10 rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[92dvh] sm:max-h-[85vh] overflow-hidden"
           >
-            {/* Modal Header: Sticky at top */}
+            {/* Modal Header: Pinned at top */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-white/5 shrink-0 bg-white dark:bg-[#0E1626]">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
@@ -583,8 +576,8 @@ const UserManagement = () => {
               </button>
             </div>
 
-            {/* Scrollable Form Body[cite: 3] */}
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+            {/* Scrollable Form Body */}
+            <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -639,7 +632,7 @@ const UserManagement = () => {
                 </div>
               </div>
 
-              {/* Admin Switch[cite: 3] */}
+              {/* Admin Switch */}
               <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-white/10 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
@@ -666,7 +659,7 @@ const UserManagement = () => {
                 </button>
               </div>
 
-              {/* Application Entitlements Selection[cite: 3] */}
+              {/* Application Entitlements Selection */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   Application Access
@@ -682,7 +675,7 @@ const UserManagement = () => {
                         onClick={() => toggleApp(app.id)}
                         className={`flex flex-col p-3 rounded-xl border text-left transition-all cursor-pointer ${
                           hasAccess
-                            ? `${app.theme.activeBorder}${app.theme.activeBg}`
+                            ? `${app.theme.activeBorder} ${app.theme.activeBg}`
                             : "border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-slate-300"
                         }`}
                       >
@@ -706,7 +699,7 @@ const UserManagement = () => {
                 </div>
               </div>
 
-              {/* Initial Password (New Users Only)[cite: 3] */}
+              {/* Initial Password (New Users Only) */}
               {!updatingUser && (
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -724,7 +717,7 @@ const UserManagement = () => {
               )}
             </div>
 
-            {/* Modal Footer: Sticky at bottom */}
+            {/* Modal Footer: Pinned at bottom */}
             <div className="flex items-center justify-end gap-2.5 px-6 py-3.5 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/40 shrink-0">
               <button 
                 type="button" 
@@ -748,12 +741,12 @@ const UserManagement = () => {
       {/* 7. MODAL: PASSWORD RESET                                                  */}
       {/* ========================================================================= */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex justify-center items-start p-4 sm:p-6 sm:py-16 animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-150">
           <div onClick={closeModals} className="fixed inset-0" />
           
           <form 
             onSubmit={handleResetPassword} 
-            className="relative z-10 w-full max-w-sm my-auto bg-white dark:bg-[#0E1626] border border-slate-200 dark:border-white/10 p-6 rounded-2xl shadow-2xl text-center"
+            className="relative z-10 w-full sm:max-w-sm bg-white dark:bg-[#0E1626] border-t sm:border border-slate-200 dark:border-white/10 rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl text-center"
           >
             <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3 text-indigo-600 dark:text-indigo-400">
               <Key size={22} strokeWidth={2.4} />
@@ -798,10 +791,10 @@ const UserManagement = () => {
       {/* 8. MODAL: DELETE CONFIRMATION                                             */}
       {/* ========================================================================= */}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex justify-center items-start p-4 sm:p-6 sm:py-16 animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-150">
           <div onClick={() => setDeleteConfirm(null)} className="fixed inset-0" />
           
-          <div className="relative z-10 w-full max-w-sm my-auto bg-white dark:bg-[#0E1626] border border-slate-200 dark:border-white/10 p-6 rounded-2xl shadow-2xl text-center">
+          <div className="relative z-10 w-full sm:max-w-sm bg-white dark:bg-[#0E1626] border-t sm:border border-slate-200 dark:border-white/10 rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl text-center">
             <div className="w-12 h-12 bg-rose-50 dark:bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3 text-rose-600 dark:text-rose-400">
               <AlertTriangle size={22} strokeWidth={2.4} />
             </div>
