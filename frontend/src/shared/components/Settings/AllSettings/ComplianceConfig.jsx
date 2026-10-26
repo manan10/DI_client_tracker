@@ -2,7 +2,7 @@ import React from 'react';
 import { ShieldCheck, FileSignature, CheckCircle2 } from 'lucide-react';
 
 const ComplianceConfig = ({ compliance, setCompliance }) => (
-  <div className="w-full max-w-4xl pb-32 space-y-6 animate-in fade-in duration-300">
+  <div className="w-full max-w-[100rem] pb-32 space-y-6 animate-in fade-in duration-300">
     
     {/* Mobile-Only Header */}
     <div className="lg:hidden border-b border-slate-200 dark:border-white/5 pb-4">

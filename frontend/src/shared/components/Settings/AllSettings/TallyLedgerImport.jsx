@@ -125,7 +125,7 @@ const TallyLedgerImport = () => {
   if (isInitialLoading) return <div className="flex justify-center py-32"><Loader2 className="animate-spin text-emerald-500" size={40} /></div>;
 
   return (
-    <div className="w-full pb-32 space-y-6 animate-in fade-in duration-300">
+    <div className="w-full max-w-[100rem] pb-32 space-y-6 animate-in fade-in duration-300">
       
       {/* Mobile-Only Header */}
       <div className="lg:hidden border-b border-slate-200 dark:border-white/5 pb-4">
