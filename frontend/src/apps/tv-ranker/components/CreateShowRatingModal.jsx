@@ -214,20 +214,21 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
       onClick={onClose}
     >
       <div 
-        className="w-full sm:w-[500px] md:w-[540px] bg-[#E9EEF5] dark:bg-[#1E2636] border-t-2 sm:border-t-0 sm:border-l-2 border-slate-300 dark:border-[#334158] shadow-[0_15px_45px_rgba(0,0,0,0.25)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col max-h-[92vh] sm:max-h-screen rounded-t-2xl sm:rounded-none text-slate-800 dark:text-slate-100 overflow-hidden relative"
+        className="w-full sm:w-[500px] md:w-[540px] bg-[#E9EEF5] dark:bg-[#1E2636] border-t-2 sm:border-t-0 sm:border-l-2 border-slate-300 dark:border-[#334158] shadow-[0_15px_45px_rgba(0,0,0,0.25)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col max-h-[92dvh] sm:max-h-screen rounded-t-2xl sm:rounded-none text-slate-800 dark:text-slate-100 overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#40bcf4] to-transparent pointer-events-none z-30" />
 
-        <div className="w-full flex sm:hidden items-center justify-center pt-2.5 pb-1 bg-[#DEE5EF] dark:bg-[#19202E]">
+        {/* Grab Handle */}
+        <div className="w-full flex sm:hidden items-center justify-center pt-2.5 pb-1 bg-[#DEE5EF] dark:bg-[#19202E] shrink-0">
           <div className="w-12 h-1.5 bg-slate-400 dark:bg-slate-600 rounded-full" />
         </div>
 
         {/* Header */}
-        <div className="px-6 py-4.5 bg-[#DEE5EF] dark:bg-[#171F2C] border-b-2 border-slate-300 dark:border-[#2C384D] flex items-center justify-between shrink-0 shadow-[0_2px_4px_rgba(0,0,0,0.03)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.25)] relative z-20">
+        <div className="px-5 sm:px-6 py-3.5 sm:py-4.5 bg-[#DEE5EF] dark:bg-[#171F2C] border-b-2 border-slate-300 dark:border-[#2C384D] flex items-center justify-between shrink-0 shadow-[0_2px_4px_rgba(0,0,0,0.03)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.25)] relative z-20">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-white dark:bg-[#253044] border border-slate-300 dark:border-[#3B4B67] flex items-center justify-center text-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#141A24] shrink-0">
-              <Star size={17} className="fill-[#40bcf4]" />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white dark:bg-[#253044] border border-slate-300 dark:border-[#3B4B67] flex items-center justify-center text-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#141A24] shrink-0">
+              <Star size={16} className="fill-[#40bcf4]" />
             </div>
             
             <div className="flex flex-col text-left">
@@ -250,8 +251,8 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
           </button>
         </div>
 
-        {/* Content */}
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 overflow-y-auto space-y-4.5 no-scrollbar flex-1 text-left">
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-4.5 no-scrollbar flex-1 text-left">
           
           {/* Select Show */}
           <div className="space-y-1.5 relative" ref={showDropdownRef}>
@@ -263,7 +264,7 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
             <button
               type="button"
               onClick={() => setIsShowDropdownOpen((prev) => !prev)}
-              className={`w-full min-h-12 px-3.5 py-2 flex items-center justify-between gap-3 rounded-xl bg-white dark:bg-[#141C28] border-2 text-left transition-all cursor-pointer outline-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] ${
+              className={`w-full min-h-11 sm:min-h-12 px-3.5 py-2 flex items-center justify-between gap-3 rounded-xl bg-white dark:bg-[#141C28] border-2 text-left transition-all cursor-pointer outline-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] ${
                 isShowDropdownOpen 
                   ? 'border-[#40bcf4] ring-2 ring-[#40bcf4]/20' 
                   : 'border-slate-300 dark:border-[#2C384D] hover:border-slate-400 dark:hover:border-[#40bcf4]/50'
@@ -398,9 +399,9 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
             )}
           </div>
 
-          {/* Rating Console */}
-          <div className="p-4 rounded-xl bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#2C384D] shadow-[0_3px_0_0_#CBD5E1] dark:shadow-[0_3px_0_0_#0F1520] space-y-3.5 relative">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#222E42] pb-3">
+          {/* Rating Console (Responsive Mobile Flow) */}
+          <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#2C384D] shadow-[0_3px_0_0_#CBD5E1] dark:shadow-[0_3px_0_0_#0F1520] space-y-3 sm:space-y-3.5 relative">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#222E42] pb-2.5 sm:pb-3">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
                   Your Rating
@@ -434,21 +435,25 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-[#F5F8FC] dark:bg-[#0F1622] border border-slate-300 dark:border-[#232F42] shadow-inner">
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-black tracking-tight text-slate-900 dark:text-white font-mono leading-none">
-                  {rating.toFixed(1)}
-                </span>
-                <span className="text-xs font-bold text-slate-400">/ 10</span>
+            {/* Score & Presets - Responsive Wrap / Grid to avoid overflow */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-[#F5F8FC] dark:bg-[#0F1622] border border-slate-300 dark:border-[#232F42] shadow-inner">
+              <div className="flex items-baseline justify-between sm:justify-start gap-1">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white font-mono leading-none">
+                    {rating.toFixed(1)}
+                  </span>
+                  <span className="text-xs font-bold text-slate-400">/ 10</span>
+                </div>
               </div>
 
-              <div className="flex items-center gap-1.5">
+              {/* 6 Quick Preset Buttons arranged in a 6-col grid to guarantee no horizontal overflow on mobile */}
+              <div className="grid grid-cols-6 gap-1 w-full sm:w-auto">
                 {QUICK_SCORES.map((val) => (
                   <button
                     key={val}
                     type="button"
                     onClick={() => setRating(val)}
-                    className={`px-2.5 py-1 rounded text-xs font-mono font-bold border transition-all cursor-pointer active:translate-y-[1px] active:shadow-none ${
+                    className={`h-8 sm:h-auto px-1 sm:px-2.5 py-1 text-center rounded text-xs font-mono font-bold border transition-all cursor-pointer active:translate-y-[1px] active:shadow-none ${
                       Math.abs(rating - val) < 0.05
                         ? 'bg-[#40bcf4] text-[#0A1017] border-[#29a8e2] font-black shadow-[0_2px_0_0_#1c86b8]'
                         : 'bg-white dark:bg-[#1F293A] text-slate-700 dark:text-slate-300 border-slate-300 dark:border-[#34425A] hover:border-slate-400 dark:hover:border-slate-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520]'
@@ -460,7 +465,8 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 pt-1">
+            {/* Slider with Precision Steppers */}
+            <div className="flex items-center gap-2.5 sm:gap-3 pt-1">
               <button
                 type="button"
                 onClick={() => adjustScore(-0.1)}
@@ -491,22 +497,25 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
             </div>
           </div>
 
-          {/* Watch Status */}
+          {/* Watch Status (Mobile: 2 cols with last item full width, sm+: 3 cols) */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
               Watch Status
             </label>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {STATUS_OPTIONS.map((opt) => {
+              {STATUS_OPTIONS.map((opt, idx) => {
                 const Icon = opt.icon;
                 const isSelected = status === opt.value;
+                const isLastOnMobile = idx === STATUS_OPTIONS.length - 1;
                 return (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => setStatus(opt.value)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 text-xs font-bold transition-all cursor-pointer text-left active:translate-y-[1px] ${
+                    className={`flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-lg border-2 text-xs font-bold transition-all cursor-pointer text-left active:translate-y-[1px] ${
+                      isLastOnMobile ? 'col-span-2 sm:col-span-1' : ''
+                    } ${
                       isSelected
                         ? opt.active
                         : 'bg-white dark:bg-[#141C28] border-slate-300 dark:border-[#2C384D] text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520]'
@@ -535,8 +544,8 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
           </div>
         </form>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t-2 border-slate-300 dark:border-[#2C384D] bg-[#DEE5EF] dark:bg-[#171F2C] flex items-center justify-between gap-3 shrink-0 shadow-[0_-2px_6px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.25)]">
+        {/* Footer Bar with safe-area spacing */}
+        <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-t-2 border-slate-300 dark:border-[#2C384D] bg-[#DEE5EF] dark:bg-[#171F2C] flex items-center justify-between gap-3 shrink-0 shadow-[0_-2px_6px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.25)] pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))] sm:pb-4">
           <button
             type="button"
             onClick={onClose}
@@ -549,7 +558,7 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
             type="button"
             onClick={handleSubmit}
             disabled={loading || !selectedShow}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-[#00e054] hover:bg-[#00c94b] text-[#14181C] text-xs font-black uppercase tracking-wider border border-[#00c94b] border-b-[3px] border-b-[#009e3a] active:border-b active:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-[0_4px_12px_rgba(0,224,84,0.3)]"
+            className="flex items-center gap-2 px-5 sm:px-6 py-2.5 rounded-lg bg-[#00e054] hover:bg-[#00c94b] text-[#14181C] text-xs font-black uppercase tracking-wider border border-[#00c94b] border-b-[3px] border-b-[#009e3a] active:border-b active:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-[0_4px_12px_rgba(0,224,84,0.3)]"
           >
             {loading ? (
               <>
