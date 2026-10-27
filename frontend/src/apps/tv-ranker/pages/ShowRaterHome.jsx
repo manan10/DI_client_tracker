@@ -8,8 +8,6 @@ import ScoreHistoryModal from '../components/ScoreHistoryModal';
 import CreateShowRatingModal from '../components/CreateShowRatingModal';
 
 import HomeHeroBanner from '../components/Home/HomeHeroBanner';
-import HomeCategoryPills from '../components/Home/HomeCategoryPills';
-import HomeControlBar from '../components/Home/HomeControlBar';
 import HomeShowCatalog from '../components/Home/HomeShowCatalog';
 
 const ShowRaterHome = () => {
@@ -20,16 +18,19 @@ const ShowRaterHome = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Category Segregation: 'ALL' | 'INDIAN' | 'HOLLYWOOD' | 'ANIME'
+  // Category Filter: 'ALL' | 'INDIAN' | 'HOLLYWOOD' | 'ANIME'
   const [activeCategory, setActiveCategory] = useState('ALL');
 
-  // Tier Filter: 'ALL' | 'GOD_TIER' | 'ACCLAIMED' | 'FAVORITES' | 'WATCHLIST'
+  // Tier Filter: 'ALL' | 'GOD_TIER' | 'ACCLAIMED' | 'BANGER' | 'CASUAL' | 'FAVORITES' | 'WATCHLIST'
   const [tierFilter, setTierFilter] = useState('ALL');
 
-  // Layout View Switcher: 'CARDS' | 'LIST' | 'TABLE'
+  // Status Filter: 'ALL' | 'COMPLETED' | 'WATCHING' | 'PLAN_TO_WATCH' | 'DROPPED'
+  const [statusFilter, setStatusFilter] = useState('ALL');
+
+  // Strictly first 3 layouts: 'CARDS' | 'COMPACT_TILES' | 'LIST'
   const [layoutView, setLayoutView] = useState('CARDS');
 
-  // Sorting
+  // Sorting: 'RATING_DESC' | 'RATING_ASC' | 'TITLE' | 'RECENT' | 'YEAR_DESC'
   const [sortBy, setSortBy] = useState('RATING_DESC');
 
   // Modals
@@ -75,23 +76,23 @@ const ShowRaterHome = () => {
   };
 
   const categorizeShow = (item) => {
-    const genres = (item.show?.genres || []).map(g => g.toLowerCase());
+    const genres = (item.show?.genres || []).map((g) => g.toLowerCase());
     const type = String(item.show?.type || '').toUpperCase();
     const title = String(item.show?.title || '').toLowerCase();
 
     if (
-      type === 'ANIME' || 
-      genres.includes('anime') || 
-      genres.includes('animation') || 
-      title.includes('one piece') || 
+      type === 'ANIME' ||
+      genres.includes('anime') ||
+      genres.includes('animation') ||
+      title.includes('one piece') ||
       title.includes('attack on titan')
     ) {
       return 'ANIME';
     }
 
     if (
-      genres.includes('indian') || 
-      genres.includes('hindi') || 
+      genres.includes('indian') ||
+      genres.includes('hindi') ||
       genres.includes('regional') ||
       item.region === 'INDIAN'
     ) {
@@ -105,10 +106,10 @@ const ShowRaterHome = () => {
     return ratings
       .filter((item) => {
         const title = item.show?.title?.toLowerCase() || '';
-        const genres = item.show?.genres?.map(g => g.toLowerCase()) || [];
+        const genres = item.show?.genres?.map((g) => g.toLowerCase()) || [];
         const query = searchQuery.toLowerCase().trim();
 
-        const matchesSearch = title.includes(query) || genres.some(g => g.includes(query));
+        const matchesSearch = title.includes(query) || genres.some((g) => g.includes(query));
         if (!matchesSearch) return false;
 
         const showCategory = categorizeShow(item);
@@ -116,10 +117,16 @@ const ShowRaterHome = () => {
           return false;
         }
 
+        if (statusFilter !== 'ALL' && item.status !== statusFilter) {
+          return false;
+        }
+
         if (tierFilter === 'FAVORITES') return item.isFavorite;
         if (tierFilter === 'WATCHLIST') return item.status === 'PLAN_TO_WATCH';
         if (tierFilter === 'GOD_TIER') return item.rating >= 9.0;
         if (tierFilter === 'ACCLAIMED') return item.rating >= 8.5 && item.rating < 9.0;
+        if (tierFilter === 'BANGER') return item.rating >= 8.0 && item.rating < 8.5;
+        if (tierFilter === 'CASUAL') return item.rating > 0 && item.rating < 8.0;
 
         return true;
       })
@@ -128,39 +135,41 @@ const ShowRaterHome = () => {
         if (sortBy === 'RATING_ASC') return (a.rating || 0) - (b.rating || 0);
         if (sortBy === 'TITLE') return (a.show?.title || '').localeCompare(b.show?.title || '');
         if (sortBy === 'RECENT') return new Date(b.updatedAt) - new Date(a.updatedAt);
+        if (sortBy === 'YEAR_DESC') return (b.show?.year || 0) - (a.show?.year || 0);
         return 0;
       });
-  }, [ratings, searchQuery, activeCategory, tierFilter, sortBy]);
+  }, [ratings, searchQuery, activeCategory, tierFilter, statusFilter, sortBy]);
 
   const stats = useMemo(() => {
     const total = ratings.length;
     const completed = ratings.filter((r) => r.status === 'COMPLETED').length;
     const godTierCount = ratings.filter((r) => r.rating >= 9.0).length;
     const ratedList = ratings.filter((r) => r.rating > 0);
-    const avgScore = ratedList.length > 0 
-      ? (ratedList.reduce((acc, curr) => acc + curr.rating, 0) / ratedList.length).toFixed(1)
-      : '0.0';
+    const avgScore =
+      ratedList.length > 0
+        ? (ratedList.reduce((acc, curr) => acc + curr.rating, 0) / ratedList.length).toFixed(1)
+        : '0.0';
 
-    const indianCount = ratings.filter(r => categorizeShow(r) === 'INDIAN').length;
-    const hollywoodCount = ratings.filter(r => categorizeShow(r) === 'HOLLYWOOD').length;
-    const animeCount = ratings.filter(r => categorizeShow(r) === 'ANIME').length;
+    const indianCount = ratings.filter((r) => categorizeShow(r) === 'INDIAN').length;
+    const hollywoodCount = ratings.filter((r) => categorizeShow(r) === 'HOLLYWOOD').length;
+    const animeCount = ratings.filter((r) => categorizeShow(r) === 'ANIME').length;
 
-    return { 
-      total, 
-      completed, 
-      godTierCount, 
+    return {
+      total,
+      completed,
+      godTierCount,
       avgScore,
       indianCount,
       hollywoodCount,
-      animeCount
+      animeCount,
     };
   }, [ratings]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#060A14] text-slate-900 dark:text-slate-100 font-sans selection:bg-rose-500/20 transition-colors duration-300 pb-28 lg:pb-16 relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#101419] text-slate-900 dark:text-stone-100 font-sans selection:bg-[#40bcf4]/20 selection:text-slate-950 dark:selection:bg-[#40bcf4]/30 dark:selection:text-white transition-colors duration-300 pb-28 lg:pb-16 relative overflow-x-hidden">
       
       {/* Background Atmosphere */}
-      <div className="absolute top-0 inset-x-0 h-96 bg-linear-to-b from-rose-500/10 via-amber-500/5 to-transparent pointer-events-none dark:from-rose-500/5 dark:via-transparent" />
+      <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-[#40bcf4]/10 dark:from-[#40bcf4]/5 via-transparent to-transparent pointer-events-none" />
 
       {/* Top Navbar */}
       <ShowNavbar
@@ -168,48 +177,35 @@ const ShowRaterHome = () => {
         onOpenAddShow={() => setIsCreateOpen(true)}
       />
 
-      <main className="relative z-10 w-full max-w-425 mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 pt-5 sm:pt-7 flex flex-col gap-6">
+      <main className="relative z-10 w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 2xl:px-12 pt-3 sm:pt-6 flex flex-col gap-4 sm:gap-6">
         
-        {/* 1. Hero Telemetry Banner (Kept exactly as requested) */}
-        <HomeHeroBanner stats={stats} />
+        {/* Unified Command Slate: Combined Banner + Integrated Control Bar */}
+        <HomeHeroBanner
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          layoutView={layoutView}
+          onLayoutChange={setLayoutView}
+          activeCategory={activeCategory}
+          onSelectCategory={setActiveCategory}
+          tierFilter={tierFilter}
+          onTierChange={setTierFilter}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          stats={stats}
+          totalVisible={filteredShows.length}
+        />
 
-        {/* 2. Responsive Workspace Matrix: Desktop Left Sidebar + Content Canvas */}
-        <div className="flex items-start gap-6 w-full">
-          
-          {/* Desktop Left Sidebar / Mobile Bottom Dock */}
-          <HomeCategoryPills
-            activeCategory={activeCategory}
-            onSelectCategory={setActiveCategory}
-            stats={stats}
-          />
-
-          {/* Right Core Content Area */}
-          <div className="flex-1 min-w-0 w-full flex flex-col gap-4">
-            {/* Discovery & Layout Controls */}
-            <HomeControlBar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              layoutView={layoutView}
-              onLayoutChange={setLayoutView}
-              sortBy={sortBy}
-              onSortChange={setSortBy}
-              tierFilter={tierFilter}
-              onTierChange={setTierFilter}
-              totalVisible={filteredShows.length}
-            />
-
-            {/* Catalog (Cards, List, or Ledger) */}
-            <HomeShowCatalog
-              filteredShows={filteredShows}
-              layoutView={layoutView}
-              isLoading={isLoading}
-              categorizeShow={categorizeShow}
-              onSelectItem={setActiveItemForEdit}
-              onToggleFavorite={handleToggleFavorite}
-            />
-          </div>
-
-        </div>
+        {/* Catalog Content Deck */}
+        <HomeShowCatalog
+          filteredShows={filteredShows}
+          layoutView={layoutView}
+          isLoading={isLoading}
+          categorizeShow={categorizeShow}
+          onSelectItem={setActiveItemForEdit}
+          onToggleFavorite={handleToggleFavorite}
+        />
 
       </main>
 

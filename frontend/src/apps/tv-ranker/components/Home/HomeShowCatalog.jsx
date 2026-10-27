@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
-  Clapperboard, Heart, Loader2, Star, 
-  ArrowUpRight, CheckCircle2, PlayCircle, 
-  Clock, Ban, ChevronLeft, ChevronRight, 
-  ChevronDown, Check, Sparkles, Flame
+  Clapperboard, Heart, Loader2, 
+  ChevronLeft, ChevronRight, ChevronDown, Check
 } from 'lucide-react';
 
 const DEFAULT_POSTERS = [
@@ -16,9 +14,9 @@ const DEFAULT_POSTERS = [
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 const HomeShowCatalog = ({ 
-  filteredShows, 
-  layoutView, 
-  isLoading, 
+  filteredShows = [], 
+  layoutView = 'CARDS', 
+  isLoading = false, 
   categorizeShow, 
   onSelectItem, 
   onToggleFavorite 
@@ -26,29 +24,46 @@ const HomeShowCatalog = ({
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
-  const [isTopPageSizeOpen, setIsTopPageSizeOpen] = useState(false);
-  const [isBottomPageSizeOpen, setIsBottomPageSizeOpen] = useState(false);
+  const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
+  
+  const pageSizeRef = useRef(null);
+  const catalogTopRef = useRef(null);
+  const isInitialMount = useRef(true);
 
-  const topPageSizeRef = useRef(null);
-  const bottomPageSizeRef = useRef(null);
-
-  // Auto-reset to Page 1 when total shows change
+  // Auto-reset to Page 1 when dataset count or layout changes
   useEffect(() => {
     setCurrentPage(1);
   }, [filteredShows.length, layoutView]);
 
-  // Click outside handlers for page size selectors
+  // Smooth Auto-Scroll to Top of Catalog on Page Change
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    if (catalogTopRef.current) {
+      // scrollIntoView with block: 'start' smoothly pulls the top bar into view
+      catalogTopRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  }, [currentPage]);
+
+  // Click outside handler for page density selector
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (topPageSizeRef.current && !topPageSizeRef.current.contains(e.target)) {
-        setIsTopPageSizeOpen(false);
-      }
-      if (bottomPageSizeRef.current && !bottomPageSizeRef.current.contains(e.target)) {
-        setIsBottomPageSizeOpen(false);
+      if (pageSizeRef.current && !pageSizeRef.current.contains(e.target)) {
+        setIsPageSizeOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   // Compute sliced records
@@ -56,68 +71,137 @@ const HomeShowCatalog = ({
   const totalPages = Math.ceil(totalRecords / itemsPerPage) || 1;
   const indexOfLastRecord = currentPage * itemsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - itemsPerPage;
+
   const currentShows = useMemo(() => {
     return filteredShows.slice(indexOfFirstRecord, indexOfLastRecord);
   }, [filteredShows, indexOfFirstRecord, indexOfLastRecord]);
 
+  // Generate numbered pagination pills with ellipsis
+  const paginationRange = useMemo(() => {
+    const delta = 1;
+    const range = [];
+    const rangeWithDots = [];
+    let l;
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+        range.push(i);
+      }
+    }
+
+    for (let i of range) {
+      if (l) {
+        if (i - l === 2) {
+          rangeWithDots.push(l + 1);
+        } else if (i - l !== 1) {
+          rangeWithDots.push('...');
+        }
+      }
+      rangeWithDots.push(i);
+      l = i;
+    }
+
+    return rangeWithDots;
+  }, [totalPages, currentPage]);
+
   const getScoreBadge = (score) => {
     if (!score || score === 0) {
-      return 'bg-slate-800 text-slate-400 border-slate-700';
+      return 'bg-slate-200 text-slate-700 border-slate-400 dark:bg-white/10 dark:text-slate-400 dark:border-white/20';
     }
     if (score >= 9.0) {
-      return 'bg-gradient-to-r from-amber-400 to-rose-600 text-slate-950 font-black border-amber-300 shadow-[0_0_10px_rgba(251,191,36,0.4)]';
+      return 'bg-amber-400 text-slate-950 font-black border-2 border-amber-500 shadow-[0_0_12px_rgba(251,191,36,0.5)] dark:bg-amber-400/20 dark:text-amber-300 dark:border-amber-400';
     }
     if (score >= 8.5) {
-      return 'bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-[0_0_8px_rgba(244,63,94,0.3)]';
+      return 'bg-[#40bcf4] text-slate-950 font-black border-2 border-[#0284c7] shadow-[0_0_12px_rgba(64,188,244,0.5)] dark:bg-[#40bcf4]/20 dark:text-[#40bcf4] dark:border-[#40bcf4]';
     }
     if (score >= 8.0) {
-      return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/50 shadow-[0_0_8px_rgba(99,102,241,0.2)]';
+      return 'bg-orange-400 text-slate-950 font-black border-2 border-orange-500 dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-400';
     }
     if (score >= 7.0) {
-      return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50';
+      return 'bg-cyan-400 text-slate-950 font-bold border-2 border-cyan-500 dark:bg-cyan-500/20 dark:text-cyan-300 dark:border-cyan-400';
     }
-    return 'bg-slate-800 text-slate-300 border-slate-700';
+    return 'bg-slate-200 text-slate-900 border-2 border-slate-400 dark:bg-white/10 dark:text-slate-300 dark:border-white/20 font-bold';
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'COMPLETED': return <CheckCircle2 size={12} className="text-emerald-400" />;
-      case 'WATCHING': return <PlayCircle size={12} className="text-sky-400" />;
-      case 'PLAN_TO_WATCH': return <Clock size={12} className="text-amber-400" />;
-      case 'DROPPED': return <Ban size={12} className="text-rose-400" />;
-      default: return null;
+  const getFormatLabel = (item) => {
+    const rawType = item.show?.type || item.type || 'TV_SERIES';
+    switch (rawType) {
+      case 'MINISERIES': return 'Miniseries';
+      case 'MOVIE': return 'Movie';
+      case 'ANIME': return 'Anime';
+      case 'DOCUMENTARY': return 'Docuseries';
+      default: return 'TV Series';
     }
   };
 
-  // Reusable Pagination Bar Subcomponent
-  const renderPaginationBar = (isTop = false) => {
-    const isPopoverOpen = isTop ? isTopPageSizeOpen : isBottomPageSizeOpen;
-    const setIsPopoverOpen = isTop ? setIsTopPageSizeOpen : setIsBottomPageSizeOpen;
-    const ref = isTop ? topPageSizeRef : bottomPageSizeRef;
+  const getGenreLabel = (item) => {
+    const genres = item.show?.genres || [];
+    if (genres.length > 0) return genres[0];
+    const category = categorizeShow ? categorizeShow(item) : 'HOLLYWOOD';
+    return category === 'INDIAN' ? 'Desi' : category === 'ANIME' ? 'Anime' : 'Global';
+  };
 
+  if (isLoading) {
     return (
-      <div className="flex flex-col sm:flex-row justify-between items-center px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#170B22] via-[#0F0D24] to-[#0A1224] border border-rose-500/30 gap-3 shadow-[0_4px_25px_rgba(244,63,94,0.08)] text-left relative z-10 backdrop-blur-md text-white">
-        
-        {/* Left: Range Counter & Custom Rows-Per-Page Selector */}
-        <div className="flex items-center gap-3.5 w-full sm:w-auto justify-between sm:justify-start">
-          <p className="text-xs font-medium text-slate-300 font-mono tracking-wide">
-            Showing <span className="font-bold text-amber-300">{totalRecords > 0 ? indexOfFirstRecord + 1 : 0}</span> to{' '}
-            <span className="font-bold text-amber-300">{Math.min(indexOfLastRecord, totalRecords)}</span> of{' '}
-            <span className="font-bold text-white">{totalRecords}</span> entries
-          </p>
+      <div className="w-full h-80 flex flex-col items-center justify-center gap-3 transition-colors duration-300">
+        <Loader2 size={32} className="text-[#40bcf4] animate-spin" />
+        <p className="text-xs font-mono font-black uppercase tracking-widest text-slate-700 dark:text-slate-300">
+          Syncing Catalog Ledger...
+        </p>
+      </div>
+    );
+  }
 
-          <div className="relative" ref={ref}>
+  return (
+    <div className="relative w-full font-sans select-none space-y-4">
+
+      {/* ========================================================================= */}
+      {/* 1. TOP DENSITY & VOLUME STRIP (Anchor Target for Auto-Scroll)             */}
+      {/* ========================================================================= */}
+      <div 
+        ref={catalogTopRef}
+        className="relative scroll-mt-20 border-b-2 border-slate-900 dark:border-[#1F2C3F] bg-slate-900 text-white dark:bg-[#0B101A] px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-3 text-xs shadow-sm"
+      >
+        {/* Subtle Cyan Horizon Glow */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#40bcf4] to-transparent pointer-events-none opacity-80" />
+
+        {/* Left: Summary Counter */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#40bcf4] opacity-80" />
+            <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-[#40bcf4]" />
+          </span>
+          <p className="font-mono text-[11px] sm:text-xs text-slate-200 dark:text-slate-300 font-medium">
+            Showing <strong className="text-white font-black underline decoration-[#40bcf4] decoration-2">{totalRecords > 0 ? indexOfFirstRecord + 1 : 0}</strong>–
+            <strong className="text-white font-black underline decoration-[#40bcf4] decoration-2">{Math.min(indexOfLastRecord, totalRecords)}</strong> of{' '}
+            <strong className="text-[#40bcf4] font-black">{totalRecords}</strong> titles
+          </p>
+        </div>
+
+        {/* Right: Rows Density Popover */}
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold hidden xs:inline">
+            Density:
+          </span>
+
+          <div className="relative" ref={pageSizeRef}>
             <button
               type="button"
-              onClick={() => setIsPopoverOpen(!isPopoverOpen)}
-              className="h-8 px-2.5 flex items-center gap-1.5 rounded-md bg-white/[0.08] hover:bg-white/[0.14] border border-white/15 text-xs font-mono font-bold text-slate-200 transition-all cursor-pointer outline-none shadow-xs"
+              onClick={() => setIsPageSizeOpen((prev) => !prev)}
+              className="h-7 sm:h-8 px-2 sm:px-3 flex items-center gap-1.5 sm:gap-2 rounded-xs bg-slate-800 dark:bg-[#121A26] border-2 border-slate-700 dark:border-[#22354E] text-[11px] sm:text-xs font-mono font-black text-white hover:border-[#40bcf4] transition-all cursor-pointer outline-none shadow-xs"
             >
-              <span>{itemsPerPage} / page</span>
-              <ChevronDown size={11} className={`text-rose-400 transition-transform ${isPopoverOpen ? 'rotate-180' : ''}`} />
+              <span>{itemsPerPage} / view</span>
+              <ChevronDown 
+                size={12} 
+                className={`text-[#40bcf4] transition-transform duration-200 ${isPageSizeOpen ? 'rotate-180' : ''}`} 
+              />
             </button>
 
-            {isPopoverOpen && (
-              <div className={`absolute ${isTop ? 'top-[calc(100%+4px)]' : 'bottom-[calc(100%+4px)]'} left-0 w-28 z-50 bg-[#0E0A1E] border border-rose-500/40 rounded-md shadow-2xl p-1 space-y-0.5 animate-in fade-in duration-150 backdrop-blur-xl`}>
+            {isPageSizeOpen && (
+              <div className="absolute right-0 top-[calc(100%+6px)] w-36 rounded-xs bg-slate-900 dark:bg-[#0D1420] border-2 border-slate-700 dark:border-[#2B3E59] shadow-2xl p-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="px-2 py-1 text-[8px] font-mono tracking-wider uppercase text-slate-400 select-none">
+                  Page Density
+                </div>
                 {PAGE_SIZE_OPTIONS.map((size) => {
                   const isSelected = itemsPerPage === size;
                   return (
@@ -127,16 +211,16 @@ const HomeShowCatalog = ({
                       onClick={() => {
                         setItemsPerPage(size);
                         setCurrentPage(1);
-                        setIsPopoverOpen(false);
+                        setIsPageSizeOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between p-1.5 rounded-sm text-left transition-all cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-2xs text-xs font-mono font-bold transition-colors cursor-pointer text-left ${
                         isSelected
-                          ? 'bg-rose-500/25 text-amber-300 font-bold border border-rose-500/40'
-                          : 'hover:bg-white/5 text-slate-300 hover:text-white'
+                          ? 'bg-[#40bcf4] text-slate-950 font-black'
+                          : 'text-slate-200 hover:bg-slate-800 hover:text-white'
                       }`}
                     >
-                      <span className="text-[11px] font-mono font-bold">{size} rows</span>
-                      {isSelected && <Check size={11} className="text-amber-400" strokeWidth={3} />}
+                      <span>{size} rows</span>
+                      {isSelected && <Check size={12} strokeWidth={3} className="text-slate-950" />}
                     </button>
                   );
                 })}
@@ -145,394 +229,334 @@ const HomeShowCatalog = ({
           </div>
         </div>
 
-        {/* Right: Step Page Controls */}
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-          <button
-            type="button"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs font-serif font-bold uppercase tracking-wider rounded-md border border-white/15 bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 disabled:opacity-30 transition-all outline-none cursor-pointer"
-          >
-            <ChevronLeft size={13} />
-            <span>Prev</span>
-          </button>
+      </div>
 
-          <div className="flex items-center gap-1 font-mono text-xs font-bold text-slate-400 px-1.5">
-            <span className="text-amber-300 font-bold">{currentPage}</span>
-            <span>/</span>
-            <span>{totalPages}</span>
+      {/* ========================================================================= */}
+      {/* 2. CATALOG CONTENT AREA                                                   */}
+      {/* ========================================================================= */}
+      <div>
+        
+        {/* Empty State */}
+        {filteredShows.length === 0 && (
+          <div className="p-10 sm:p-14 text-center rounded-xs bg-white dark:bg-[#0A0F17] border-2 border-dashed border-slate-400 dark:border-[#22334A] space-y-3 shadow-sm">
+            <div className="w-12 h-12 rounded-xs bg-slate-100 dark:bg-white/5 border-2 border-slate-300 dark:border-white/10 flex items-center justify-center mx-auto text-slate-500">
+              <Clapperboard size={24} />
+            </div>
+            <h3 className="text-sm font-black uppercase tracking-wider text-slate-950 dark:text-white">
+              No Matching Titles
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto font-mono">
+              Adjust your category filter, tier rating, or search parameters to populate records.
+            </p>
           </div>
+        )}
 
-          <button
-            type="button"
-            disabled={currentPage >= totalPages}
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs font-serif font-bold uppercase tracking-wider rounded-md bg-gradient-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white disabled:opacity-30 transition-all shadow-md shadow-rose-600/25 outline-none cursor-pointer"
-          >
-            <span>Next</span>
-            <ChevronRight size={13} />
-          </button>
-        </div>
+        {/* ========================================================================= */}
+        {/* VIEW 1: CARDS VIEW (Horizontal on Mobile, Vertical on Desktop)            */}
+        {/* ========================================================================= */}
+        {filteredShows.length > 0 && layoutView === 'CARDS' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4.5">
+            {currentShows.map((item, index) => {
+              const poster = item.show?.posterUrl || DEFAULT_POSTERS[index % DEFAULT_POSTERS.length];
+              const globalIndex = indexOfFirstRecord + index + 1;
+              const format = getFormatLabel(item);
+              const genre = getGenreLabel(item);
 
-      </div>
-    );
-  };
+              return (
+                <div
+                  key={item._id}
+                  onClick={() => onSelectItem(item)}
+                  className="group relative rounded-xs bg-white dark:bg-[#0A0F16] border-2 border-slate-900 dark:border-[#1F2E42] hover:border-[#40bcf4] dark:hover:border-[#40bcf4] shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] sm:shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] dark:shadow-[0_12px_28px_rgba(0,0,0,0.9),0_0_12px_rgba(64,188,244,0.15)] hover:shadow-[5px_5px_0px_0px_rgba(15,23,42,1)] dark:hover:shadow-[0_16px_36px_rgba(0,0,0,1),0_0_24px_rgba(64,188,244,0.4)] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-row sm:flex-col justify-between overflow-hidden text-left"
+                >
+                  {/* Photo Container */}
+                  <div className="relative w-28 xs:w-32 sm:w-full h-auto sm:h-48 shrink-0 bg-slate-950 overflow-hidden border-r-2 sm:border-r-0 sm:border-b-2 border-slate-900 dark:border-[#1F2E42]">
+                    <img
+                      src={poster}
+                      alt={item.show?.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-95"
+                      onError={(e) => { e.target.src = DEFAULT_POSTERS[0]; }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 sm:from-black/60 via-transparent to-transparent" />
 
-  if (isLoading) {
-    return (
-      <div className="h-72 flex flex-col items-center justify-center gap-3">
-        <Loader2 size={32} className="text-rose-500 animate-spin" />
-        <p className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400">
-          Syncing Catalog Dossier...
-        </p>
-      </div>
-    );
-  }
+                    {/* Rank Badge */}
+                    <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-xs bg-slate-950 text-white font-mono text-[9px] font-black border-2 border-white/30 shadow-md">
+                      #{globalIndex}
+                    </div>
 
-  if (filteredShows.length === 0) {
-    return (
-      <div className="p-12 text-center rounded-lg bg-gradient-to-r from-[#170B20] via-[#0F0D24] to-[#0A1224] border border-rose-500/30 space-y-3 text-white">
-        <Clapperboard size={36} className="text-rose-400 mx-auto" />
-        <h3 className="text-sm font-serif font-bold uppercase tracking-wider text-slate-200">
-          No Titles In This Filter
-        </h3>
-        <p className="text-xs text-slate-400 max-w-sm mx-auto font-mono">
-          No matching records were located. Adjust your tier gate, status, or search query.
-        </p>
-      </div>
-    );
-  }
+                    {/* Score Badge (Visible directly on image on Desktop) */}
+                    <div className="hidden sm:block absolute top-2 right-2">
+                      <div className={`px-2 py-0.5 rounded-xs text-xs font-mono ${getScoreBadge(item.rating)}`}>
+                        {item.rating ? item.rating.toFixed(1) : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
 
-  return (
-    <div className="flex flex-col gap-4">
-      {/* 1. TOP PAGINATION BAR */}
-      {renderPaginationBar(true)}
+                  {/* Details Container */}
+                  <div className="p-3 sm:p-3.5 flex-1 flex flex-col justify-between gap-2.5 bg-white dark:bg-[#0A0F16] min-w-0">
+                    
+                    {/* Top Row: Meta & Title */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="px-1.5 py-0.2 rounded-xs text-[9px] font-mono font-black uppercase bg-[#40bcf4]/15 border border-[#40bcf4]/40 text-[#0284c7] dark:text-[#40bcf4]">
+                          {genre}
+                        </span>
+                        <span className="px-1.5 py-0.2 rounded-xs text-[9px] font-mono font-bold uppercase bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-300">
+                          {format}
+                        </span>
+                      </div>
 
-      {/* ========================================================================= */}
-      {/* VIEW 1: CINEMA POSTER CARDS                                               */}
-      {/* ========================================================================= */}
-      {layoutView === 'CARDS' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4">
-          {currentShows.map((item, index) => {
-            const category = categorizeShow(item);
-            const seasons = item.seasonsWatched || item.show?.totalSeasons || 1;
-            const poster = item.show?.posterUrl || DEFAULT_POSTERS[index % DEFAULT_POSTERS.length];
-            const globalIndex = indexOfFirstRecord + index + 1;
+                      <h4 className="text-sm sm:text-base font-[1000] uppercase text-slate-950 dark:text-white tracking-tight line-clamp-2 leading-tight">
+                        {item.show?.title}
+                      </h4>
+                    </div>
 
-            return (
-              <div
-                key={item._id}
-                onClick={() => onSelectItem(item)}
-                className="group relative rounded-md bg-gradient-to-b from-[#160B24] via-[#0F0C1E] to-[#0A0F1D] border border-rose-500/25 hover:border-rose-400 shadow-lg hover:shadow-rose-950/40 transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden text-left"
-              >
-                <div className="relative h-44 w-full bg-slate-900 overflow-hidden">
+                    {/* Score Row for Mobile Only */}
+                    <div className="flex sm:hidden items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-white/5">
+                      <span className="text-[10px] font-mono font-bold uppercase text-slate-400">Score</span>
+                      <div className={`px-2 py-0.5 rounded-xs text-xs font-mono font-black ${getScoreBadge(item.rating)}`}>
+                        {item.rating ? item.rating.toFixed(1) : 'N/A'}
+                      </div>
+                    </div>
+
+                    {/* Bottom Action Strip: Wishlist + Edit Score */}
+                    <div className="pt-2 border-t-2 border-slate-200 dark:border-[#1A2536] flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleFavorite(e, item._id);
+                        }}
+                        className={`p-1.5 rounded-xs transition-colors cursor-pointer border ${
+                          item.isFavorite 
+                            ? 'text-rose-600 bg-rose-50 border-rose-300 dark:bg-rose-500/20 dark:border-rose-500/40' 
+                            : 'text-slate-500 border-slate-300 hover:text-rose-600 hover:border-rose-400 dark:border-slate-700 dark:text-slate-400'
+                        }`}
+                        title={item.isFavorite ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                      >
+                        <Heart size={14} fill={item.isFavorite ? 'currentColor' : 'none'} strokeWidth={2.5} />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectItem(item);
+                        }}
+                        className="px-2.5 py-1 rounded-xs bg-slate-900 dark:bg-white text-white dark:text-slate-950 text-[10px] font-mono font-black uppercase tracking-wider hover:bg-[#0284c7] dark:hover:bg-[#40bcf4] transition-colors"
+                      >
+                        Edit Score
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* VIEW 2: DENSE POSTER TILES                                                */}
+        {/* ========================================================================= */}
+        {filteredShows.length > 0 && layoutView === 'COMPACT_TILES' && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2.5 sm:gap-3">
+            {currentShows.map((item, index) => {
+              const poster = item.show?.posterUrl || DEFAULT_POSTERS[index % DEFAULT_POSTERS.length];
+              const globalIndex = indexOfFirstRecord + index + 1;
+
+              return (
+                <div
+                  key={item._id}
+                  onClick={() => onSelectItem(item)}
+                  className="group relative aspect-2/3 rounded-xs bg-slate-950 border-2 border-slate-900 dark:border-[#1E2E42] hover:border-[#40bcf4] shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.8)] hover:-translate-y-1 overflow-hidden cursor-pointer text-left transition-all duration-200"
+                >
                   <img
                     src={poster}
                     alt={item.show?.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-80"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-85"
                     onError={(e) => { e.target.src = DEFAULT_POSTERS[0]; }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0F0C1E] via-[#0F0C1E]/30 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
 
-                  <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-sm bg-black/80 backdrop-blur-md text-amber-300 font-mono text-[10px] font-bold border border-white/10">
+                  {/* Top Index */}
+                  <div className="absolute top-1.5 left-1.5 px-1 py-0.2 rounded-xs bg-black/85 text-white font-mono text-[9px] font-black border border-white/25">
                     #{globalIndex}
                   </div>
 
-                  <div className="absolute top-2.5 right-2.5">
-                    <div className={`px-2 py-0.5 rounded-sm text-xs font-mono font-black border ${getScoreBadge(item.rating)}`}>
-                      {item.rating ? item.rating.toFixed(1) : 'N/A'}
+                  {/* Score Tag */}
+                  <div className="absolute top-1.5 right-1.5">
+                    <div className={`px-2 py-0.5 rounded-xs text-[11px] font-mono font-black ${getScoreBadge(item.rating)}`}>
+                      {item.rating ? item.rating.toFixed(1) : '—'}
                     </div>
                   </div>
 
-                  <div className="absolute bottom-2.5 left-2.5 right-2.5">
-                    <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-rose-300 block mb-0.5">
-                      {category === 'INDIAN' ? '🇮🇳 Desi' : category === 'ANIME' ? '⚡ Anime' : '🎬 Hollywood'}
-                    </span>
-                    <h4 className="text-sm font-bold uppercase text-white tracking-tight truncate leading-tight">
-                      {item.show?.title}
-                    </h4>
-                  </div>
-                </div>
-
-                <div className="p-3 space-y-2 text-white">
-                  <div className="flex items-center justify-between text-[10px] font-mono text-slate-300">
-                    <span className="flex items-center gap-1.5">
-                      {getStatusIcon(item.status)}
-                      <span>S{seasons} Watched</span>
-                    </span>
-                    {item.show?.releaseYear && <span className="text-amber-300">{item.show.releaseYear}</span>}
-                  </div>
-
-                  {item.review ? (
-                    <p className="text-[11px] text-slate-300 italic line-clamp-2 leading-tight">
-                      "{item.review}"
-                    </p>
-                  ) : (
-                    <p className="text-[11px] text-slate-500 italic">No review notes logged.</p>
-                  )}
-
-                  <div className="pt-2 border-t border-white/10 flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={(e) => onToggleFavorite(e, item._id)}
-                      className={`p-1 rounded-sm transition-colors ${
-                        item.isFavorite ? 'text-rose-400' : 'text-slate-400 hover:text-rose-400'
-                      }`}
-                    >
-                      <Heart size={14} fill={item.isFavorite ? 'currentColor' : 'none'} />
-                    </button>
-
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-400 group-hover:text-amber-300 transition-colors">
-                      Edit Score →
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* VIEW 2: COMPACT TILES                                                     */}
-      {/* ========================================================================= */}
-      {layoutView === 'COMPACT_TILES' && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2.5">
-          {currentShows.map((item, index) => {
-            const poster = item.show?.posterUrl || DEFAULT_POSTERS[index % DEFAULT_POSTERS.length];
-            return (
-              <div
-                key={item._id}
-                onClick={() => onSelectItem(item)}
-                className="group relative aspect-2/3 rounded-md bg-slate-900 border border-rose-500/20 hover:border-rose-400 overflow-hidden cursor-pointer shadow-md text-left transition-all"
-              >
-                <img
-                  src={poster}
-                  alt={item.show?.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-75"
-                  onError={(e) => { e.target.src = DEFAULT_POSTERS[0]; }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
-
-                <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-xs text-[10px] font-mono font-black border backdrop-blur-sm bg-black/70 text-amber-300 border-amber-400/40">
-                  {item.rating ? item.rating.toFixed(1) : '—'}
-                </div>
-
-                <div className="absolute bottom-2 left-2 right-2">
-                  <p className="text-xs font-bold uppercase text-white truncate leading-tight">
-                    {item.show?.title}
-                  </p>
-                  <div className="flex items-center justify-between text-[9px] font-mono text-slate-300 mt-0.5">
-                    <span>S{item.seasonsWatched || 1}</span>
-                    {item.isFavorite && <Heart size={10} className="fill-rose-500 text-rose-500" />}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* VIEW 3: EDITORIAL LIST                                                    */}
-      {/* ========================================================================= */}
-      {layoutView === 'LIST' && (
-        <div className="flex flex-col divide-y divide-white/10 bg-gradient-to-b from-[#160B24] via-[#0F0C1E] to-[#0A0F1D] border border-rose-500/30 rounded-md overflow-hidden shadow-lg text-white">
-          {currentShows.map((item, index) => {
-            const category = categorizeShow(item);
-            const seasons = item.seasonsWatched || item.show?.totalSeasons || 1;
-            const poster = item.show?.posterUrl || DEFAULT_POSTERS[index % DEFAULT_POSTERS.length];
-            const globalIndex = indexOfFirstRecord + index + 1;
-
-            return (
-              <div
-                key={item._id}
-                onClick={() => onSelectItem(item)}
-                className="p-3 sm:p-3.5 hover:bg-white/[0.04] transition-colors cursor-pointer flex items-center justify-between gap-3 text-left"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="font-mono text-xs font-bold text-amber-400 w-5 text-right shrink-0">
-                    {globalIndex}
-                  </span>
-
-                  <div className="w-9 h-11 rounded-sm overflow-hidden bg-slate-800 shrink-0 border border-white/10">
-                    <img src={poster} alt="" className="w-full h-full object-cover" />
-                  </div>
-
-                  <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-bold uppercase text-white truncate">
+                  {/* Bottom Strip: Title & Wishlist */}
+                  <div className="absolute bottom-2 left-2 right-2">
+                    <div className="flex items-end justify-between gap-1.5">
+                      <p className="text-xs font-[1000] uppercase text-white truncate leading-tight drop-shadow-md flex-1">
                         {item.show?.title}
-                      </h4>
-                      <span className="px-1.5 py-0.2 rounded-xs text-[9px] font-mono font-bold uppercase bg-white/10 text-rose-300 border border-rose-500/30 shrink-0">
-                        {category}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] font-mono text-slate-400">
-                        Season {seasons} Watched
-                      </span>
-                      {item.review && (
-                        <>
-                          <span className="text-slate-500">•</span>
-                          <span className="text-[11px] text-slate-300 truncate italic max-w-sm">
-                            "{item.review}"
-                          </span>
-                        </>
+                      </p>
+                      {item.isFavorite && (
+                        <Heart size={12} className="fill-rose-500 text-rose-500 shrink-0 mb-0.5" />
                       )}
                     </div>
                   </div>
                 </div>
+              );
+            })}
+          </div>
+        )}
 
-                <div className="flex items-center gap-2.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={(e) => onToggleFavorite(e, item._id)}
-                    className={`p-1.5 rounded-sm transition-colors ${
-                      item.isFavorite ? 'text-rose-400' : 'text-slate-400 hover:text-rose-400'
-                    }`}
-                  >
-                    <Heart size={14} fill={item.isFavorite ? 'currentColor' : 'none'} />
-                  </button>
+        {/* ========================================================================= */}
+        {/* VIEW 3: LIST VIEW                                                         */}
+        {/* ========================================================================= */}
+        {filteredShows.length > 0 && layoutView === 'LIST' && (
+          <div className="flex flex-col divide-y-2 divide-slate-900 dark:divide-[#1E2E42] border-2 border-slate-900 dark:border-[#1E2E42] rounded-xs overflow-hidden bg-white dark:bg-[#0A0F16] shadow-[4px_4px_0px_0px_rgba(15,23,42,1)]">
+            {currentShows.map((item, index) => {
+              const poster = item.show?.posterUrl || DEFAULT_POSTERS[index % DEFAULT_POSTERS.length];
+              const globalIndex = indexOfFirstRecord + index + 1;
+              const format = getFormatLabel(item);
+              const genre = getGenreLabel(item);
 
-                  <div className={`px-2 py-0.5 rounded-sm text-xs font-mono font-bold border ${getScoreBadge(item.rating)}`}>
-                    {item.rating ? item.rating.toFixed(1) : 'N/A'}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              return (
+                <div
+                  key={item._id}
+                  onClick={() => onSelectItem(item)}
+                  className="p-3 sm:p-3.5 hover:bg-slate-100 dark:hover:bg-[#121A26] transition-colors cursor-pointer flex items-center justify-between gap-3 sm:gap-4 text-left"
+                >
+                  {/* Left Cluster: Index, Poster & Full Title Block */}
+                  <div className="flex items-center gap-3 sm:gap-3.5 min-w-0 flex-1">
+                    <span className="font-mono text-xs font-black text-slate-900 dark:text-slate-300 w-6 text-right shrink-0">
+                      #{globalIndex}
+                    </span>
 
-      {/* ========================================================================= */}
-      {/* VIEW 4: TIMELINE STRIP                                                    */}
-      {/* ========================================================================= */}
-      {layoutView === 'TIMELINE' && (
-        <div className="space-y-2 text-left">
-          {currentShows.map((item) => {
-            const category = categorizeShow(item);
-            const reviewDate = item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('en-IN', { month: 'short', day: '2-digit', year: 'numeric' }) : 'Logged';
-
-            return (
-              <div
-                key={item._id}
-                onClick={() => onSelectItem(item)}
-                className="p-3 rounded-md bg-gradient-to-r from-[#170B22] via-[#0F0D24] to-[#0A1224] border border-rose-500/25 hover:border-rose-400 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer shadow-md transition-colors text-white"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="px-2.5 py-1 rounded-sm bg-white/[0.08] border border-white/10 font-mono text-[10px] font-bold text-amber-300 shrink-0 text-center">
-                    {item.show?.releaseYear || reviewDate}
-                  </div>
-
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-bold uppercase text-white truncate">
-                        {item.show?.title}
-                      </h4>
-                      <span className="text-[9px] font-mono uppercase text-rose-300">
-                        [{category}]
-                      </span>
+                    <div className="w-10 h-12 rounded-xs overflow-hidden bg-slate-950 shrink-0 border-2 border-slate-900 dark:border-white/20 shadow-xs">
+                      <img src={poster} alt="" className="w-full h-full object-cover" />
                     </div>
 
-                    <p className="text-xs text-slate-300 truncate italic mt-0.5">
-                      {item.review ? `"${item.review}"` : 'No review note added'}
-                    </p>
+                    {/* Unbroken Title Container */}
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-xs sm:text-sm font-[1000] uppercase text-slate-950 dark:text-white break-words">
+                          {item.show?.title}
+                        </h4>
+                        
+                        <span className="px-1.5 py-0.2 rounded-xs text-[9px] font-mono font-black uppercase bg-[#40bcf4] text-slate-950 border border-[#0284c7] shrink-0">
+                          {genre}
+                        </span>
+
+                        <span className="hidden sm:inline-block px-1.5 py-0.2 rounded-xs text-[9px] font-mono font-bold uppercase bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-300 shrink-0">
+                          {format}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Cluster: Wishlist & Rating */}
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleFavorite(e, item._id);
+                      }}
+                      className={`p-1.5 rounded-xs transition-colors cursor-pointer border ${
+                        item.isFavorite 
+                          ? 'text-rose-600 bg-rose-50 border-rose-300 dark:bg-rose-500/20 dark:border-rose-500/40' 
+                          : 'text-slate-400 border-slate-300 hover:text-rose-600 dark:border-slate-700'
+                      }`}
+                      title={item.isFavorite ? 'Remove Wishlist' : 'Add Wishlist'}
+                    >
+                      <Heart size={14} fill={item.isFavorite ? 'currentColor' : 'none'} strokeWidth={2.5} />
+                    </button>
+
+                    <div className={`px-2.5 py-0.5 rounded-xs text-xs font-mono ${getScoreBadge(item.rating)}`}>
+                      {item.rating ? item.rating.toFixed(1) : 'N/A'}
+                    </div>
                   </div>
                 </div>
+              );
+            })}
+          </div>
+        )}
 
-                <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-white/10">
-                  <span className="text-[10px] font-mono text-slate-400">
-                    {item.ratingHistory?.length > 1 ? `${item.ratingHistory.length} edits` : 'Original score'}
-                  </span>
-
-                  <div className={`px-2.5 py-0.5 rounded-sm text-xs font-mono font-bold border ${getScoreBadge(item.rating)}`}>
-                    {item.rating ? `${item.rating.toFixed(1)} / 10` : '—'}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      </div>
 
       {/* ========================================================================= */}
-      {/* VIEW 5: DENSE AUDIT TABLE                                                 */}
+      {/* 3. PAGINATION FOOTER STRIP                                               */}
       {/* ========================================================================= */}
-      {layoutView === 'TABLE' && (
-        <div className="w-full overflow-x-auto bg-gradient-to-b from-[#160B24] via-[#0F0C1E] to-[#0A0F1D] border border-rose-500/30 rounded-md shadow-lg text-left text-white">
-          <table className="w-full border-collapse min-w-[720px]">
-            <thead>
-              <tr className="border-b border-white/10 bg-white/[0.04] text-[10px] font-mono font-bold uppercase tracking-wider text-rose-300/80">
-                <th className="py-2.5 px-3.5 w-10 text-center">#</th>
-                <th className="py-2.5 px-3.5">Title</th>
-                <th className="py-2.5 px-3.5">Channel</th>
-                <th className="py-2.5 px-3.5">Progress</th>
-                <th className="py-2.5 px-3.5">Critique Snippet</th>
-                <th className="py-2.5 px-3.5 text-right">Score</th>
-                <th className="py-2.5 px-3.5 text-center w-12">Fav</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5 text-xs font-sans">
-              {currentShows.map((item, idx) => {
-                const category = categorizeShow(item);
-                const seasons = item.seasonsWatched || item.show?.totalSeasons || 1;
-                const globalIndex = indexOfFirstRecord + idx + 1;
+      {filteredShows.length > 0 && (
+        <div className="relative border-t-2 border-slate-900 dark:border-[#1F2C3F] bg-slate-900 text-white dark:bg-[#0B101A] px-3 sm:px-4 py-2.5 sm:py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-sm">
+          
+          {/* Subtle Cyan Horizon Glow */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#40bcf4] to-transparent pointer-events-none opacity-80" />
 
+          {/* Direct Jump Indicator */}
+          <div className="text-[11px] font-mono text-slate-300">
+            Page <span className="font-black text-[#40bcf4]">{currentPage}</span> of <span className="font-black text-white">{totalPages}</span>
+          </div>
+
+          {/* Numbered Step Navigation */}
+          <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap justify-center">
+            
+            {/* Prev Button */}
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="flex items-center gap-1 sm:gap-1.5 h-8 px-2.5 sm:px-3 rounded-xs border-2 border-slate-700 dark:border-[#22354E] bg-slate-800 dark:bg-[#121A26] text-white hover:border-[#40bcf4] text-xs font-mono font-black shadow-xs transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+              aria-label="Previous Page"
+            >
+              <ChevronLeft size={13} strokeWidth={3} />
+              <span className="text-[10px] uppercase font-mono tracking-tight hidden xs:inline">Prev</span>
+            </button>
+
+            {/* Page Chips */}
+            <div className="flex items-center gap-1 mx-0.5 sm:mx-1">
+              {paginationRange.map((page, index) => {
+                if (page === '...') {
+                  return (
+                    <span key={`ellipsis-${index}`} className="px-1 sm:px-1.5 py-1 text-slate-500 font-mono text-xs">
+                      ...
+                    </span>
+                  );
+                }
+
+                const isSelected = currentPage === page;
                 return (
-                  <tr
-                    key={item._id}
-                    onClick={() => onSelectItem(item)}
-                    className="hover:bg-white/[0.04] transition-colors cursor-pointer"
+                  <button
+                    key={`page-${page}`}
+                    type="button"
+                    onClick={() => setCurrentPage(page)}
+                    className={`h-8 min-w-[30px] sm:min-w-[34px] px-1.5 sm:px-2 rounded-xs text-xs font-mono font-black transition-all cursor-pointer border-2 ${
+                      isSelected
+                        ? 'bg-[#40bcf4] border-[#40bcf4] text-slate-950 shadow-[0_0_12px_rgba(64,188,244,0.5)]'
+                        : 'bg-slate-800 dark:bg-[#121A26] border-slate-700 dark:border-[#22354E] text-slate-200 hover:border-slate-500'
+                    }`}
                   >
-                    <td className="py-2.5 px-3.5 font-mono text-center font-bold text-amber-300">
-                      {globalIndex}
-                    </td>
-
-                    <td className="py-2.5 px-3.5 font-bold text-white uppercase truncate max-w-[200px]">
-                      {item.show?.title}
-                    </td>
-
-                    <td className="py-2.5 px-3.5">
-                      <span className="px-1.5 py-0.5 rounded-xs text-[9px] font-mono font-bold uppercase bg-white/10 text-rose-300 border border-rose-500/30">
-                        {category}
-                      </span>
-                    </td>
-
-                    <td className="py-2.5 px-3.5 font-mono text-slate-300">
-                      S{seasons}
-                    </td>
-
-                    <td className="py-2.5 px-3.5 text-slate-300 italic truncate max-w-xs">
-                      {item.review || '—'}
-                    </td>
-
-                    <td className="py-2.5 px-3.5 text-right">
-                      <span className={`inline-block px-2 py-0.5 rounded-sm text-xs font-mono font-bold border ${getScoreBadge(item.rating)}`}>
-                        {item.rating ? item.rating.toFixed(1) : '—'}
-                      </span>
-                    </td>
-
-                    <td className="py-2.5 px-3.5 text-center" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        type="button"
-                        onClick={(e) => onToggleFavorite(e, item._id)}
-                        className={item.isFavorite ? 'text-rose-400' : 'text-slate-400 hover:text-rose-400'}
-                      >
-                        <Heart size={13} fill={item.isFavorite ? 'currentColor' : 'none'} />
-                      </button>
-                    </td>
-                  </tr>
+                    {page}
+                  </button>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+
+            {/* Next Button */}
+            <button
+              type="button"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="flex items-center gap-1 sm:gap-1.5 h-8 px-2.5 sm:px-3 rounded-xs border-2 border-[#40bcf4] bg-[#40bcf4] text-slate-950 hover:bg-[#38aade] text-xs font-mono font-black shadow-[0_0_12px_rgba(64,188,244,0.35)] transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+              aria-label="Next Page"
+            >
+              <span className="text-[10px] uppercase font-mono tracking-tight hidden xs:inline">Next</span>
+              <ChevronRight size={13} strokeWidth={3} />
+            </button>
+
+          </div>
+
         </div>
       )}
 
-      {/* 2. BOTTOM PAGINATION BAR */}
-      {renderPaginationBar(false)}
     </div>
   );
 };

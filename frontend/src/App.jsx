@@ -34,6 +34,7 @@ const ExpenseHistory = lazy(() => import("./apps/expense-tracker/pages/ExpenseHi
 // TV Rater App Pages
 const ShowRaterHome = lazy(() => import("./apps/tv-ranker/pages/ShowRaterHome"));
 const Lists = lazy(() => import("./apps/tv-ranker/pages/Lists"));
+const Stats = lazy(() => import("./apps/tv-ranker/pages/Stats"));
 
 // Shared Pages
 const Auth = lazy(() => import("./shared/pages/Auth"));
@@ -201,6 +202,15 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Lists />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/tv-rater/stats"
+                element={
+                  <ProtectedRoute>
+                    <Stats />
                   </ProtectedRoute>
                 }
               />

@@ -1,28 +1,79 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Tv, 
-  Grid, 
+  Home,
+  List,
+  BarChart3,
+  Plus, 
+  UploadCloud,
   Sun, 
   Moon, 
   LogOut, 
-  Plus, 
-  Flame,
-  Ticket,
-  MoreVertical,
-  X,
-  Sparkles,
-  Home,
-  List
+  ChevronDown,
+  Users,
+  ReceiptIndianRupee,
+  Clapperboard,
+  Check,
+  Grid
 } from 'lucide-react';
 import { useAuth } from '../../../shared/hooks/useAuth';
 
-const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user, logout } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+// Application registry matching Dalal Central / AppPicker
+const allApps = [
+  {
+    id: 'CLIENT_TRACKER',
+    title: 'Distributor Portal',
+    path: '/dashboard',
+    icon: Users,
+  },
+  {
+    id: 'EXPENSE_TRACKER',
+    title: 'Expense Hub',
+    path: '/expenses',
+    icon: ReceiptIndianRupee,
+  },
+  {
+    id: 'SHOW_RATER',
+    title: 'Show Rater',
+    path: '/tv-rater',
+    icon: Clapperboard,
+  },
+];
 
+const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
+  const { user, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const [isAppDropdownOpen, setIsAppDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Filter apps strictly based on user.allowedApps permissions
+  const authorizedApps = useMemo(() => {
+    const userPermissions = user?.allowedApps || [];
+    return allApps.filter((app) => userPermissions.includes(app.id));
+  }, [user]);
+
+  // Close app dropdown on outside clicks
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsAppDropdownOpen(false);
+      }
+    };
+
+    if (isAppDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isAppDropdownOpen]);
+
+  // Dark / Light Mode Sync
   const [isDark, setIsDark] = useState(() => {
     return (
       localStorage.theme === 'dark' ||
@@ -48,11 +99,23 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
 
   const toggleTheme = () => setIsDark((prev) => !prev);
 
-  const handleSignOut = () => {
-    setIsMobileMenuOpen(false);
+  const handleLogout = () => {
+    setIsAppDropdownOpen(false);
     logout();
     navigate('/login');
   };
+
+  const handleAppSelect = (path) => {
+    setIsAppDropdownOpen(false);
+    navigate(path);
+  };
+
+  // Navigation Links including Stats
+  const navItems = [
+    { name: 'Home', path: '/tv-rater', icon: Home },
+    { name: 'Lists', path: '/tv-rater/lists', icon: List },
+    { name: 'Stats', path: '/tv-rater/stats', icon: BarChart3 }
+  ];
 
   const userInitials = user?.name
     ? user.name
@@ -61,305 +124,336 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
         .join('')
         .slice(0, 2)
         .toUpperCase()
-    : 'TV';
-
-  const navLinks = [
-    { name: 'Home', path: '/tv-rater', icon: Home },
-    { name: 'Lists', path: '/tv-rater/lists', icon: List }
-  ];
+    : 'PT';
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full transition-all duration-300 bg-linear-to-r from-rose-950 via-slate-900 to-[#0F1424] border-b border-rose-500/30 shadow-[0_4px_30px_rgba(0,0,0,0.4)] select-none font-sans">
+      {/* ========================================================================= */}
+      {/* TOP NAVIGATION BAR (Letterboxd Smoked Onyx)                                */}
+      {/* ========================================================================= */}
+      <header className="sticky top-0 z-40 w-full transition-colors duration-300 bg-[#14181C] border-b border-[#2C3440] shadow-[0_4px_25px_rgba(0,0,0,0.5)] select-none font-sans">
         
-        {/* Ambient Subtle Horizon Glow */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
-          <div className="absolute -top-12 left-1/4 w-72 h-32 bg-rose-500/30 blur-[60px] rounded-full" />
-          <div className="absolute -bottom-10 right-1/4 w-80 h-32 bg-amber-400/20 blur-[50px] rounded-full" />
-        </div>
+        {/* Fine Cyan Horizon Accent Line */}
+        <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-[#40bcf4]/50 to-transparent pointer-events-none" />
 
-        {/* Laser-sharp neon marquee bottom accent line */}
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-amber-400 via-rose-500 to-cyan-400 opacity-80 pointer-events-none" />
-
-        {/* Top Navbar Row */}
-        <div className="w-full px-3.5 sm:px-6 lg:px-8 py-2.5 sm:py-3 relative z-10">
-          <div className="flex items-center justify-between gap-2.5 min-h-12">
+        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 2xl:px-16 relative z-10">
+          <div className="relative flex justify-between items-center h-[72px]">
             
             {/* ========================================================================= */}
-            {/* LEFT: BRANDING LOCKUP                                                     */}
+            {/* LEFT: TV GLYPH & HYBRID PLOT TWIST LOGO LOCKUP (3 + 12 COMBINED)          */}
             {/* ========================================================================= */}
-            <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
-              {/* App Switcher Button */}
-              <Link
-                to="/app-picker"
-                className="group relative p-2 rounded-md bg-white/5 hover:bg-white/10 border border-white/15 hover:border-rose-400/40 text-slate-300 hover:text-white transition-all active:scale-95 shrink-0 shadow-xs outline-none"
-                title="Switch Workspace"
-              >
-                <Grid size={16} strokeWidth={2.4} className="group-hover:rotate-90 transition-transform duration-300" />
-              </Link>
+            <div className="flex items-center shrink-0 min-w-0 z-20">
+              <div className="flex items-center gap-2.5 sm:gap-3.5">
+                
+                {/* TV Glyph Container */}
+                <Link
+                  to="/tv-rater"
+                  className="group flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#1F242B] border border-[#2C3440] hover:border-[#40bcf4]/50 hover:bg-[#252C35] text-stone-300 hover:text-[#40bcf4] shadow-inner transition-all duration-200 outline-none shrink-0"
+                  title="Plot Twist Home"
+                >
+                  <Clapperboard size={18} strokeWidth={2.3} className="text-[#40bcf4] group-hover:scale-105 transition-transform" />                </Link>
 
-              {/* Brand Title & Logo */}
-              <div 
-                className="flex items-center gap-2.5 sm:gap-3 min-w-0 group cursor-pointer" 
-                onClick={() => navigate('/shows')}
-              >
-                {/* Media Icon Block */}
-                <div className="relative shrink-0">
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-md bg-linear-to-tr from-rose-600 via-pink-600 to-amber-500 text-white flex items-center justify-center shadow-md shadow-rose-600/30 border border-rose-400/40 transform -rotate-1 group-hover:rotate-0 transition-transform">
-                    <Tv size={16} strokeWidth={2.4} className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
-                  </div>
-                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                  
+                  {/* Combined Option 3 & Option 12 Brand Lockup */}
+                  <Link
+                    to="/tv-rater"
+                    className="group/brand flex flex-col text-left outline-none"
+                    title="Plot Twist — Screen Vault"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-baseline leading-none">
+                        <span className="text-[17px] sm:text-[20px] font-[1000] tracking-[-0.03em] text-white">
+                          plot
+                        </span>
+                        <span className="text-[17px] sm:text-[20px] font-[1000] tracking-[-0.03em] text-[#40bcf4]">
+                          twist
+                        </span>
+                      </div>
 
-                {/* Typography */}
-                <div className="flex flex-col text-left min-w-0">
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <h1 className="text-sm sm:text-lg font-serif font-bold tracking-[0.14em] uppercase leading-none text-white drop-shadow-sm truncate">
-                      Over <span className="bg-linear-to-r from-amber-300 via-rose-300 to-fuchsia-300 bg-clip-text text-transparent font-black tracking-normal">Rated</span>
-                    </h1>
-                    
-                    {/* Status Badge */}
-                    <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-xs text-[8px] font-mono font-bold tracking-widest uppercase bg-amber-400 text-slate-950 shadow-xs">
-                      <Flame size={10} className="fill-slate-950" />
-                      ON AIR
+                      {/* Letterboxd Cinephile Tri-Dot Trio */}
+                      <div className="flex items-center gap-1 shrink-0 pb-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#ff8000] shadow-[0_0_6px_rgba(255,128,0,0.6)]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#00e054] shadow-[0_0_6px_rgba(0,224,84,0.6)]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#40bcf4] shadow-[0_0_6px_rgba(64,188,244,0.6)]" />
+                      </div>
+                    </div>
+
+                    <span className="text-[7.5px] font-mono tracking-[0.22em] uppercase text-stone-400 mt-1 leading-none font-bold">
+                      Cinematic Universe
                     </span>
-                  </div>
+                  </Link>
 
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_6px_rgba(34,211,238,0.9)] shrink-0" />
-                    <span className="text-[9px] font-mono font-bold uppercase tracking-[0.18em] text-rose-300/80 truncate max-w-35 xs:max-w-[200px] sm:max-w-none">
-                      <span className="hidden sm:inline">No show left unjudged • </span>Curated by {user?.name || 'Curator'}
-                    </span>
+                  <span className="hidden sm:inline text-stone-600 font-light select-none text-xs">
+                    |
+                  </span>
+
+                  {/* QUICK APP SWITCHER DROPDOWN TRIGGER */}
+                  <div className="relative" ref={dropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsAppDropdownOpen((prev) => !prev)}
+                      className="group/switcher inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-sans font-medium text-stone-400 hover:text-white leading-tight sm:leading-none px-2 py-1 -mx-2 rounded-md hover:bg-white/5 transition-all cursor-pointer outline-none"
+                      title="Switch Workspace Application"
+                      aria-haspopup="true"
+                      aria-expanded={isAppDropdownOpen}
+                    >
+                      <span className="font-semibold text-stone-300 group-hover/switcher:text-white">
+                        Show Rater
+                      </span>
+                      <ChevronDown
+                        size={12}
+                        className={`text-stone-500 group-hover/switcher:text-white transition-transform duration-200 ${
+                          isAppDropdownOpen ? 'rotate-180 text-white' : ''
+                        }`}
+                      />
+                    </button>
+
+                    {/* APP DROPDOWN MENU */}
+                    {isAppDropdownOpen && (
+                      <div className="absolute left-0 mt-2 w-56 rounded-xl bg-[#14181C]/98 backdrop-blur-xl border border-[#2C3440] shadow-[0_12px_36px_rgba(0,0,0,0.8)] p-1 z-50 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="px-2.5 py-1.5 text-[9px] font-mono tracking-wider uppercase text-stone-400 select-none">
+                          Switch Workspace
+                        </div>
+
+                        <div className="flex flex-col gap-0.5">
+                          {authorizedApps.length === 0 ? (
+                            <div className="px-3 py-2 text-center text-xs text-stone-400">
+                              No accessible apps
+                            </div>
+                          ) : (
+                            authorizedApps.map((app) => {
+                              const AppIcon = app.icon;
+                              const isCurrent =
+                                (app.id === 'SHOW_RATER' &&
+                                  (location.pathname.startsWith('/tv-rater') || location.pathname.startsWith('/shows'))) ||
+                                (app.id === 'EXPENSE_TRACKER' &&
+                                  location.pathname.startsWith('/expenses')) ||
+                                (app.id === 'CLIENT_TRACKER' &&
+                                  location.pathname.startsWith('/dashboard'));
+
+                              return (
+                                <button
+                                  key={app.id}
+                                  type="button"
+                                  onClick={() => handleAppSelect(app.path)}
+                                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs transition-colors cursor-pointer outline-none text-left ${
+                                    isCurrent
+                                      ? 'bg-[#2C3440] text-white font-semibold'
+                                      : 'text-stone-300 hover:text-white hover:bg-white/5 font-normal'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    <AppIcon
+                                      size={14}
+                                      className={isCurrent ? 'text-[#40bcf4]' : 'text-stone-400'}
+                                      strokeWidth={isCurrent ? 2.5 : 2}
+                                    />
+                                    <span className="truncate">{app.title}</span>
+                                  </div>
+
+                                  {isCurrent && (
+                                    <Check
+                                      size={13}
+                                      strokeWidth={2.5}
+                                      className="text-[#40bcf4] shrink-0 ml-1.5"
+                                    />
+                                  )}
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
 
             {/* ========================================================================= */}
-            {/* CENTER: DESKTOP NAVIGATION LINKS                                          */}
+            {/* CENTER: DESKTOP TACTILE DECK RAIL (Home, Lists, Stats)                    */}
             {/* ========================================================================= */}
-            <nav className="hidden md:flex items-center gap-1 p-1 rounded-lg bg-white/5 border border-white/10 backdrop-blur-md">
-              {navLinks.map((link) => {
-                const Icon = link.icon;
-                const isActive = location.pathname === link.path;
+            <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center rounded-xl p-1 shadow-inner z-10 bg-black/45 border border-[#2C3440] backdrop-blur-md">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+
                 return (
                   <Link
-                    key={link.name}
-                    to={link.path}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] font-serif font-bold uppercase tracking-[0.12em] transition-all duration-200 outline-none select-none ${
+                    key={item.name}
+                    to={item.path}
+                    className={`relative flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs tracking-wide transition-all outline-none select-none ${
                       isActive
-                        ? 'bg-rose-500/20 text-rose-200 border border-rose-500/40 shadow-xs shadow-rose-950/40'
-                        : 'text-slate-300 hover:text-white hover:bg-white/5'
+                        ? 'bg-[#2C3440] text-white border border-white/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)] font-bold'
+                        : 'text-stone-400 hover:text-white hover:bg-white/5 border border-transparent font-medium'
                     }`}
                   >
-                    <Icon size={13} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-rose-400' : 'text-slate-400'} />
-                    <span>{link.name}</span>
+                    <Icon
+                      size={15}
+                      className={isActive ? 'text-[#40bcf4]' : 'text-stone-400'}
+                      strokeWidth={isActive ? 2.5 : 2}
+                    />
+                    <span>{item.name}</span>
                   </Link>
                 );
               })}
-            </nav>
+            </div>
 
             {/* ========================================================================= */}
-            {/* RIGHT: DESKTOP ACTIONS (Hidden on mobile)                                 */}
+            {/* RIGHT: ACTIONS                                                            */}
             {/* ========================================================================= */}
-            <div className="hidden sm:flex items-center gap-2.5 lg:gap-3 shrink-0">
-              {/* Rate New Show Hero Button */}
-              <button
-                type="button"
-                onClick={onOpenAddShow}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-linear-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-[11px] font-serif font-bold uppercase tracking-[0.14em] shadow-md shadow-rose-600/25 active:scale-95 transition-all cursor-pointer outline-none"
-              >
-                <Plus size={14} strokeWidth={3} className="shrink-0 text-white" />
-                <span>Rate New</span>
-              </button>
+            <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 z-20 font-sans">
+              
+              {/* Rate New Show Button (Letterboxd Green - Hidden on mobile view) */}
+              {onOpenAddShow && (
+                <button
+                  type="button"
+                  onClick={onOpenAddShow}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-md bg-[#00e054] hover:bg-[#00c94b] text-[#14181C] font-bold border border-[#00e054] text-[11px] font-sans tracking-wide active:scale-95 transition-all cursor-pointer outline-none shadow-xs shrink-0"
+                >
+                  <Plus size={14} strokeWidth={3} className="shrink-0 text-[#14181C]" />
+                  <span>Add Rating</span>
+                </button>
+              )}
 
-              {/* Theme Toggle Button */}
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="w-8.5 h-8.5 flex items-center justify-center rounded-md bg-white/5 hover:bg-white/10 border border-white/15 text-slate-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs outline-none"
-                aria-label="Toggle Theme"
-              >
-                {isDark ? (
-                  <Sun size={15} strokeWidth={2.4} className="text-amber-300" />
-                ) : (
-                  <Moon size={15} strokeWidth={2.4} className="text-cyan-300 -rotate-12" />
-                )}
-              </button>
+              {/* Bulk Import Action */}
+              {onOpenImport && (
+                <button
+                  type="button"
+                  onClick={onOpenImport}
+                  className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-stone-300 hover:text-white text-[11px] font-sans font-medium transition-all active:scale-95 cursor-pointer outline-none shrink-0"
+                  title="Bulk Import Notes Archive"
+                >
+                  <UploadCloud size={13} className="text-[#40bcf4]" />
+                  <span>Bulk Import</span>
+                </button>
+              )}
 
-              {/* User Profile Chip */}
-              <div className="flex items-center gap-2 pl-2 border-l border-white/15">
-                <div className="flex items-center gap-2 p-1 pr-2 rounded-md bg-white/5 border border-white/10 shadow-xs">
-                  <div className="w-6 h-6 rounded-sm bg-linear-to-tr from-rose-600 to-amber-500 text-white flex items-center justify-center font-mono font-bold text-[10px] shadow-xs">
-                    {userInitials}
-                  </div>
+              {/* Utility Dock (App Picker & Theme Toggle) */}
+              <div className="flex items-center p-0.5 rounded-lg bg-black/40 border border-[#2C3440] shrink-0">
+                <Link
+                  to="/app-picker"
+                  className="flex items-center justify-center w-8 h-8 rounded-md text-stone-400 hover:text-white hover:bg-white/10 transition-all outline-none"
+                  aria-label="App Switcher"
+                  title="App Switcher"
+                >
+                  <Grid size={16} strokeWidth={2.2} />
+                </Link>
 
-                  <div className="hidden lg:flex flex-col text-left">
-                    <span className="text-[11px] font-bold text-white uppercase tracking-tight leading-none truncate max-w-24">
-                      {user?.name || 'Curator'}
-                    </span>
-                    <span className="text-[8px] font-mono font-bold tracking-wider text-rose-300/80 uppercase mt-0.5 leading-none">
-                      {user?.isAdmin ? 'Critic' : 'Viewer'}
-                    </span>
-                  </div>
+                <div className="w-px h-4 bg-[#2C3440] mx-0.5" />
 
-                  <button
-                    type="button"
-                    onClick={handleSignOut}
-                    className="p-1 rounded-sm text-slate-400 hover:text-rose-400 hover:bg-white/10 transition-all active:scale-90 cursor-pointer outline-none ml-0.5"
-                    title="Sign Out"
-                  >
-                    <LogOut size={13} strokeWidth={2.4} />
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="flex items-center justify-center w-8 h-8 rounded-md text-stone-400 hover:text-white hover:bg-white/10 transition-all outline-none cursor-pointer"
+                  aria-label="Toggle Theme"
+                  title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                >
+                  {isDark ? (
+                    <Sun size={16} strokeWidth={2.2} className="text-amber-400" />
+                  ) : (
+                    <Moon size={16} strokeWidth={2.2} className="text-sky-300" />
+                  )}
+                </button>
               </div>
+
+              {/* Hardware Vertical Divider */}
+              <div className="hidden sm:block w-px h-6 bg-[#2C3440] mx-0.5 shrink-0" />
+
+              {/* User Profile Glyph & Logout */}
+              <div className="flex items-center gap-2 shrink-0">
+                <div
+                  className="w-8 h-8 rounded-full bg-[#1F242B] text-stone-200 border border-[#2C3440] flex items-center justify-center font-bold text-xs select-none shadow-xs"
+                  title={user?.name || 'User'}
+                >
+                  {userInitials}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="p-1.5 rounded-lg text-stone-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer outline-none"
+                  title="Sign Out"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
+
             </div>
-
-            {/* ========================================================================= */}
-            {/* RIGHT: MOBILE STREAMLINED ACTIONS (Clean & Functional)                     */}
-            {/* ========================================================================= */}
-            <div className="flex sm:hidden items-center gap-1.5 shrink-0">
-              {/* Primary Rate New Action */}
-              <button
-                type="button"
-                onClick={onOpenAddShow}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-linear-to-r from-rose-600 to-amber-500 text-white text-[10px] font-serif font-bold uppercase tracking-wider shadow-sm active:scale-95"
-              >
-                <Plus size={13} strokeWidth={3} />
-                <span>Rate</span>
-              </button>
-
-              {/* Compact Menu Trigger */}
-              <button
-                type="button"
-                onClick={() => setIsMobileMenuOpen(true)}
-                className="p-1.5 rounded-md bg-white/5 border border-white/15 text-slate-300 active:scale-95"
-                aria-label="Open Actions Menu"
-              >
-                <MoreVertical size={16} />
-              </button>
-            </div>
-
           </div>
         </div>
       </header>
 
       {/* ========================================================================= */}
-      {/* MOBILE ACTION BOTTOM SHEET                                                */}
+      {/* MOBILE BOTTOM NAVIGATION BAR (Home, Lists, Stats, Rate New)                */}
       {/* ========================================================================= */}
-      {isMobileMenuOpen && (
-        <div className="sm:hidden fixed inset-0 z-100 flex items-end justify-center">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200" 
-            onClick={() => setIsMobileMenuOpen(false)} 
-          />
+      <div className="md:hidden fixed bottom-0 left-0 w-full z-40 pb-[env(safe-area-inset-bottom)] font-sans border-t bg-[#14181C]/95 border-[#2C3440] backdrop-blur-2xl transition-all shadow-[0_-8px_30px_rgba(0,0,0,0.7)]">
+        <div className="flex items-center justify-around h-16 px-3 max-w-md mx-auto">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
 
-          {/* Sheet */}
-          <div className="relative w-full bg-[#0A0E18] border-t border-rose-500/30 rounded-t-2xl shadow-2xl p-5 pb-8 animate-in slide-in-from-bottom-full duration-300 text-white">
-            
-            {/* Grab Handle */}
-            <div className="w-10 h-1 bg-rose-400/40 rounded-full mx-auto mb-4" />
+            return (
+              <Link
+                key={item.name}
+                to={item.path}
+                className="relative flex flex-col items-center justify-center w-full h-full gap-1 outline-none select-none"
+              >
+                {isActive && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] rounded-b-full bg-[#40bcf4] shadow-[0_2px_8px_rgba(64,188,244,0.8)]" />
+                )}
+                <div
+                  className={`mt-0.5 transition-colors ${
+                    isActive ? 'text-[#40bcf4]' : 'text-stone-400 hover:text-white'
+                  }`}
+                >
+                  <Icon size={19} strokeWidth={isActive ? 2.5 : 2} />
+                </div>
+                <span
+                  className={`text-[10px] font-medium tracking-wide ${
+                    isActive ? 'text-white font-bold' : 'text-stone-400'
+                  }`}
+                >
+                  {item.name}
+                </span>
+              </Link>
+            );
+          })}
 
-            {/* User Meta Row */}
-            <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-white/10">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-md bg-linear-to-tr from-rose-600 to-amber-500 text-white flex items-center justify-center font-mono font-bold text-xs shadow-md">
-                  {userInitials}
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-white leading-none">
-                    {user?.name || 'Curator'}
-                  </p>
-                  <p className="text-[9px] font-mono text-rose-300/80 uppercase tracking-widest mt-1">
-                    {user?.isAdmin ? '★ Lead Critic' : 'Standard Watcher'}
-                  </p>
-                </div>
+          {/* Quick Mobile Action for "Rate New" */}
+          {onOpenAddShow && (
+            <button
+              type="button"
+              onClick={onOpenAddShow}
+              className="relative flex flex-col items-center justify-center w-full h-full gap-1 outline-none select-none text-stone-300 hover:text-white cursor-pointer"
+            >
+              <div className="mt-0.5 p-1 rounded-md bg-[#00e054] text-[#14181C] shadow-xs">
+                <Plus size={15} strokeWidth={3} />
               </div>
+              <span className="text-[10px] font-medium tracking-wide text-stone-300">
+                Add Rating
+              </span>
+            </button>
+          )}
 
-              <button
-                type="button"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-md bg-white/5 text-slate-400"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Menu Action List */}
-            <div className="space-y-2">
-              {/* Primary Navigation Links */}
-              {navLinks.map((link) => {
-                const Icon = link.icon;
-                const isActive = location.pathname === link.path;
-                return (
-                  <button
-                    key={link.name}
-                    type="button"
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      navigate(link.path);
-                    }}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg border text-left text-xs font-serif font-bold uppercase tracking-wider transition-colors ${
-                      isActive
-                        ? 'bg-rose-500/15 border-rose-500/40 text-rose-200'
-                        : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-200'
-                    }`}
-                  >
-                    <div className={`p-1.5 rounded-md border ${
-                      isActive 
-                        ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' 
-                        : 'bg-white/10 text-slate-300 border-white/10'
-                    }`}>
-                      <Icon size={16} />
-                    </div>
-                    <span>{link.name}</span>
-                  </button>
-                );
-              })}
-
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  onOpenImport();
-                }}
-                className="w-full flex items-center gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-left text-xs font-serif font-bold uppercase tracking-wider text-slate-200"
-              >
-                <div className="p-1.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                  <Ticket size={16} className="-rotate-12" />
-                </div>
-                <span>Import Notes Archive</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="w-full flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-left text-xs font-serif font-bold uppercase tracking-wider text-slate-200"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-1.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                    {isDark ? <Sun size={16} /> : <Moon size={16} />}
-                  </div>
-                  <span>Appearance: {isDark ? 'Dark Mode' : 'Light Mode'}</span>
-                </div>
-                <span className="text-[9px] font-mono text-slate-400 uppercase">Toggle</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="w-full flex items-center gap-3 p-3 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-left text-xs font-serif font-bold uppercase tracking-wider text-rose-300"
-              >
-                <div className="p-1.5 rounded-md bg-rose-500/20 text-rose-400">
-                  <LogOut size={16} />
-                </div>
-                <span>Sign Out Securely</span>
-              </button>
-            </div>
-
-          </div>
+          {/* Mobile "Bulk Import" Trigger */}
+          {onOpenImport && (
+            <button
+              type="button"
+              onClick={onOpenImport}
+              className="relative flex flex-col items-center justify-center w-full h-full gap-1 outline-none select-none text-stone-400 hover:text-white cursor-pointer"
+            >
+              <div className="mt-0.5">
+                <UploadCloud size={19} strokeWidth={2} />
+              </div>
+              <span className="text-[10px] font-medium tracking-wide">
+                Bulk Import
+              </span>
+            </button>
+          )}
         </div>
-      )}
+      </div>
     </>
   );
 };
