@@ -166,8 +166,7 @@ const ShowRaterHome = () => {
   }, [ratings]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#101419] text-slate-900 dark:text-stone-100 font-sans selection:bg-[#40bcf4]/20 selection:text-slate-950 dark:selection:bg-[#40bcf4]/30 dark:selection:text-white transition-colors duration-300 pb-28 lg:pb-16 relative overflow-x-hidden">
-      
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#1B2230] text-slate-900 dark:text-stone-100 font-sans selection:bg-[#40bcf4]/20 selection:text-slate-950 dark:selection:bg-[#40bcf4]/30 dark:selection:text-white transition-colors duration-300 pb-28 lg:pb-16 relative overflow-x-hidden">      
       {/* Background Atmosphere */}
       <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-[#40bcf4]/10 dark:from-[#40bcf4]/5 via-transparent to-transparent pointer-events-none" />
 

@@ -21,7 +21,6 @@ const HomeShowCatalog = ({
   onSelectItem, 
   onToggleFavorite 
 }) => {
-  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
@@ -30,7 +29,7 @@ const HomeShowCatalog = ({
   const catalogTopRef = useRef(null);
   const isInitialMount = useRef(true);
 
-  // Auto-reset to Page 1 when dataset count or layout changes
+  // Auto-reset to Page 1 when total shows change or layout changes
   useEffect(() => {
     setCurrentPage(1);
   }, [filteredShows.length, layoutView]);
@@ -43,7 +42,6 @@ const HomeShowCatalog = ({
     }
 
     if (catalogTopRef.current) {
-      // scrollIntoView with block: 'start' smoothly pulls the top bar into view
       catalogTopRef.current.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
@@ -76,7 +74,7 @@ const HomeShowCatalog = ({
     return filteredShows.slice(indexOfFirstRecord, indexOfLastRecord);
   }, [filteredShows, indexOfFirstRecord, indexOfLastRecord]);
 
-  // Generate numbered pagination pills with ellipsis
+  // Numbered pagination range calculation
   const paginationRange = useMemo(() => {
     const delta = 1;
     const range = [];
@@ -153,34 +151,31 @@ const HomeShowCatalog = ({
   }
 
   return (
-    <div className="relative w-full font-sans select-none space-y-4">
+    <div className="relative w-full font-sans select-none flex flex-col gap-5">
 
       {/* ========================================================================= */}
-      {/* 1. TOP DENSITY & VOLUME STRIP (Anchor Target for Auto-Scroll)             */}
+      {/* 1. TOP EDITORIAL META LINE (Anchor Target for Auto-Scroll)                */}
       {/* ========================================================================= */}
       <div 
         ref={catalogTopRef}
-        className="relative scroll-mt-20 border-b-2 border-slate-900 dark:border-[#1F2C3F] bg-slate-900 text-white dark:bg-[#0B101A] px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-3 text-xs shadow-sm"
+        className="scroll-mt-20 flex items-center justify-between pb-3 border-b-2 border-slate-300 dark:border-[#262E3B] text-xs transition-colors duration-300"
       >
-        {/* Subtle Cyan Horizon Glow */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#40bcf4] to-transparent pointer-events-none opacity-80" />
-
         {/* Left: Summary Counter */}
-        <div className="flex items-center gap-2 sm:gap-2.5">
-          <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
+        <div className="flex items-center gap-2.5">
+          <span className="relative flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#40bcf4] opacity-80" />
-            <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-[#40bcf4]" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#40bcf4]" />
           </span>
-          <p className="font-mono text-[11px] sm:text-xs text-slate-200 dark:text-slate-300 font-medium">
-            Showing <strong className="text-white font-black underline decoration-[#40bcf4] decoration-2">{totalRecords > 0 ? indexOfFirstRecord + 1 : 0}</strong>–
-            <strong className="text-white font-black underline decoration-[#40bcf4] decoration-2">{Math.min(indexOfLastRecord, totalRecords)}</strong> of{' '}
-            <strong className="text-[#40bcf4] font-black">{totalRecords}</strong> titles
+          <p className="font-mono text-xs text-slate-700 dark:text-stone-300 font-medium">
+            Showing <strong className="text-slate-950 dark:text-white font-black underline decoration-[#40bcf4] decoration-2">{totalRecords > 0 ? indexOfFirstRecord + 1 : 0}</strong>–
+            <strong className="text-slate-950 dark:text-white font-black underline decoration-[#40bcf4] decoration-2">{Math.min(indexOfLastRecord, totalRecords)}</strong> of{' '}
+            <strong className="text-[#0284c7] dark:text-[#40bcf4] font-black">{totalRecords}</strong> titles
           </p>
         </div>
 
-        {/* Right: Rows Density Popover */}
+        {/* Right: Page Density Dropdown */}
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold hidden xs:inline">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-stone-400 font-bold hidden xs:inline">
             Density:
           </span>
 
@@ -188,7 +183,7 @@ const HomeShowCatalog = ({
             <button
               type="button"
               onClick={() => setIsPageSizeOpen((prev) => !prev)}
-              className="h-7 sm:h-8 px-2 sm:px-3 flex items-center gap-1.5 sm:gap-2 rounded-xs bg-slate-800 dark:bg-[#121A26] border-2 border-slate-700 dark:border-[#22354E] text-[11px] sm:text-xs font-mono font-black text-white hover:border-[#40bcf4] transition-all cursor-pointer outline-none shadow-xs"
+              className="h-8 px-3 flex items-center gap-2 rounded-xs bg-white dark:bg-[#161B22] border-2 border-slate-300 dark:border-[#2C3545] text-xs font-mono font-black text-slate-900 dark:text-stone-200 hover:border-[#40bcf4] hover:text-slate-950 dark:hover:text-white transition-all cursor-pointer outline-none shadow-xs"
             >
               <span>{itemsPerPage} / view</span>
               <ChevronDown 
@@ -198,7 +193,7 @@ const HomeShowCatalog = ({
             </button>
 
             {isPageSizeOpen && (
-              <div className="absolute right-0 top-[calc(100%+6px)] w-36 rounded-xs bg-slate-900 dark:bg-[#0D1420] border-2 border-slate-700 dark:border-[#2B3E59] shadow-2xl p-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+              <div className="absolute right-0 top-[calc(100%+6px)] w-36 rounded-xs bg-white dark:bg-[#161B22] border-2 border-slate-300 dark:border-[#2C3545] shadow-2xl p-1 z-50 animate-in fade-in zoom-in-95 duration-100">
                 <div className="px-2 py-1 text-[8px] font-mono tracking-wider uppercase text-slate-400 select-none">
                   Page Density
                 </div>
@@ -216,7 +211,7 @@ const HomeShowCatalog = ({
                       className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-2xs text-xs font-mono font-bold transition-colors cursor-pointer text-left ${
                         isSelected
                           ? 'bg-[#40bcf4] text-slate-950 font-black'
-                          : 'text-slate-200 hover:bg-slate-800 hover:text-white'
+                          : 'text-slate-700 dark:text-stone-300 hover:bg-slate-100 dark:hover:bg-white/5'
                       }`}
                     >
                       <span>{size} rows</span>
@@ -228,7 +223,6 @@ const HomeShowCatalog = ({
             )}
           </div>
         </div>
-
       </div>
 
       {/* ========================================================================= */}
@@ -238,7 +232,7 @@ const HomeShowCatalog = ({
         
         {/* Empty State */}
         {filteredShows.length === 0 && (
-          <div className="p-10 sm:p-14 text-center rounded-xs bg-white dark:bg-[#0A0F17] border-2 border-dashed border-slate-400 dark:border-[#22334A] space-y-3 shadow-sm">
+          <div className="p-14 text-center rounded-xs bg-white dark:bg-[#0A0F17] border-2 border-dashed border-slate-300 dark:border-[#22334A] space-y-3 shadow-sm">
             <div className="w-12 h-12 rounded-xs bg-slate-100 dark:bg-white/5 border-2 border-slate-300 dark:border-white/10 flex items-center justify-center mx-auto text-slate-500">
               <Clapperboard size={24} />
             </div>
@@ -252,10 +246,10 @@ const HomeShowCatalog = ({
         )}
 
         {/* ========================================================================= */}
-        {/* VIEW 1: CARDS VIEW (Horizontal on Mobile, Vertical on Desktop)            */}
+        {/* VIEW 1: CARDS VIEW (Tactile 3D Cards Restored)                            */}
         {/* ========================================================================= */}
         {filteredShows.length > 0 && layoutView === 'CARDS' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5">
             {currentShows.map((item, index) => {
               const poster = item.show?.posterUrl || DEFAULT_POSTERS[index % DEFAULT_POSTERS.length];
               const globalIndex = indexOfFirstRecord + index + 1;
@@ -266,7 +260,7 @@ const HomeShowCatalog = ({
                 <div
                   key={item._id}
                   onClick={() => onSelectItem(item)}
-                  className="group relative rounded-xs bg-white dark:bg-[#0A0F16] border-2 border-slate-900 dark:border-[#1F2E42] hover:border-[#40bcf4] dark:hover:border-[#40bcf4] shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] sm:shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] dark:shadow-[0_12px_28px_rgba(0,0,0,0.9),0_0_12px_rgba(64,188,244,0.15)] hover:shadow-[5px_5px_0px_0px_rgba(15,23,42,1)] dark:hover:shadow-[0_16px_36px_rgba(0,0,0,1),0_0_24px_rgba(64,188,244,0.4)] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-row sm:flex-col justify-between overflow-hidden text-left"
+                  className="group relative rounded-xs bg-white dark:bg-[#0A0F16] border-2 border-slate-900 dark:border-[#1F2E42] hover:border-[#40bcf4] dark:hover:border-[#40bcf4] shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] dark:shadow-[0_12px_28px_rgba(0,0,0,0.9),0_0_12px_rgba(64,188,244,0.15)] hover:shadow-[6px_6px_0px_0px_rgba(15,23,42,1)] dark:hover:shadow-[0_16px_36px_rgba(0,0,0,1),0_0_24px_rgba(64,188,244,0.4)] hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-row sm:flex-col justify-between overflow-hidden text-left"
                 >
                   {/* Photo Container */}
                   <div className="relative w-28 xs:w-32 sm:w-full h-auto sm:h-48 shrink-0 bg-slate-950 overflow-hidden border-r-2 sm:border-r-0 sm:border-b-2 border-slate-900 dark:border-[#1F2E42]">
@@ -283,7 +277,7 @@ const HomeShowCatalog = ({
                       #{globalIndex}
                     </div>
 
-                    {/* Score Badge (Visible directly on image on Desktop) */}
+                    {/* Score Badge (Visible on Desktop) */}
                     <div className="hidden sm:block absolute top-2 right-2">
                       <div className={`px-2 py-0.5 rounded-xs text-xs font-mono ${getScoreBadge(item.rating)}`}>
                         {item.rating ? item.rating.toFixed(1) : 'N/A'}
@@ -318,7 +312,7 @@ const HomeShowCatalog = ({
                       </div>
                     </div>
 
-                    {/* Bottom Action Strip: Wishlist + Edit Score */}
+                    {/* Bottom Action Strip: Wishlist + Edit Score Button */}
                     <div className="pt-2 border-t-2 border-slate-200 dark:border-[#1A2536] flex items-center justify-between gap-2">
                       <button
                         type="button"
@@ -356,10 +350,10 @@ const HomeShowCatalog = ({
         )}
 
         {/* ========================================================================= */}
-        {/* VIEW 2: DENSE POSTER TILES                                                */}
+        {/* VIEW 2: DENSE POSTER TILES (Tactile 3D Tiles Restored)                    */}
         {/* ========================================================================= */}
         {filteredShows.length > 0 && layoutView === 'COMPACT_TILES' && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2.5 sm:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 sm:gap-3.5">
             {currentShows.map((item, index) => {
               const poster = item.show?.posterUrl || DEFAULT_POSTERS[index % DEFAULT_POSTERS.length];
               const globalIndex = indexOfFirstRecord + index + 1;
@@ -376,7 +370,7 @@ const HomeShowCatalog = ({
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-85"
                     onError={(e) => { e.target.src = DEFAULT_POSTERS[0]; }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
 
                   {/* Top Index */}
                   <div className="absolute top-1.5 left-1.5 px-1 py-0.2 rounded-xs bg-black/85 text-white font-mono text-[9px] font-black border border-white/25">
@@ -408,7 +402,7 @@ const HomeShowCatalog = ({
         )}
 
         {/* ========================================================================= */}
-        {/* VIEW 3: LIST VIEW                                                         */}
+        {/* VIEW 3: LIST VIEW (Tactile Rows & Full Unbroken Titles Restored)          */}
         {/* ========================================================================= */}
         {filteredShows.length > 0 && layoutView === 'LIST' && (
           <div className="flex flex-col divide-y-2 divide-slate-900 dark:divide-[#1E2E42] border-2 border-slate-900 dark:border-[#1E2E42] rounded-xs overflow-hidden bg-white dark:bg-[#0A0F16] shadow-[4px_4px_0px_0px_rgba(15,23,42,1)]">
@@ -422,10 +416,10 @@ const HomeShowCatalog = ({
                 <div
                   key={item._id}
                   onClick={() => onSelectItem(item)}
-                  className="p-3 sm:p-3.5 hover:bg-slate-100 dark:hover:bg-[#121A26] transition-colors cursor-pointer flex items-center justify-between gap-3 sm:gap-4 text-left"
+                  className="p-3.5 hover:bg-slate-100 dark:hover:bg-[#121A26] transition-colors cursor-pointer flex items-center justify-between gap-3 sm:gap-4 text-left"
                 >
                   {/* Left Cluster: Index, Poster & Full Title Block */}
-                  <div className="flex items-center gap-3 sm:gap-3.5 min-w-0 flex-1">
+                  <div className="flex items-center gap-3.5 min-w-0 flex-1">
                     <span className="font-mono text-xs font-black text-slate-900 dark:text-slate-300 w-6 text-right shrink-0">
                       #{globalIndex}
                     </span>
@@ -453,7 +447,7 @@ const HomeShowCatalog = ({
                   </div>
 
                   {/* Right Cluster: Wishlist & Rating */}
-                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                  <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -483,28 +477,25 @@ const HomeShowCatalog = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. PAGINATION FOOTER STRIP                                               */}
+      {/* 3. DOCKED BOTTOM PAGINATION (High Contrast Brutalist Strip)               */}
       {/* ========================================================================= */}
       {filteredShows.length > 0 && (
-        <div className="relative border-t-2 border-slate-900 dark:border-[#1F2C3F] bg-slate-900 text-white dark:bg-[#0B101A] px-3 sm:px-4 py-2.5 sm:py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-sm">
+        <div className="pt-4 border-t-2 border-slate-300 dark:border-[#262E3B] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs transition-colors duration-300">
           
-          {/* Subtle Cyan Horizon Glow */}
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#40bcf4] to-transparent pointer-events-none opacity-80" />
-
           {/* Direct Jump Indicator */}
-          <div className="text-[11px] font-mono text-slate-300">
-            Page <span className="font-black text-[#40bcf4]">{currentPage}</span> of <span className="font-black text-white">{totalPages}</span>
+          <div className="text-[11px] font-mono text-slate-700 dark:text-stone-300">
+            Page <span className="font-black text-[#0284c7] dark:text-[#40bcf4]">{currentPage}</span> of <span className="font-black text-slate-900 dark:text-white">{totalPages}</span>
           </div>
 
-          {/* Numbered Step Navigation */}
-          <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap justify-center">
+          {/* Stepped Number Pills */}
+          <div className="flex items-center gap-1.5 flex-wrap justify-center">
             
             {/* Prev Button */}
             <button
               type="button"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="flex items-center gap-1 sm:gap-1.5 h-8 px-2.5 sm:px-3 rounded-xs border-2 border-slate-700 dark:border-[#22354E] bg-slate-800 dark:bg-[#121A26] text-white hover:border-[#40bcf4] text-xs font-mono font-black shadow-xs transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+              className="flex items-center gap-1.5 h-8 px-3 rounded-xs border-2 border-slate-900 dark:border-[#2C3545] bg-white dark:bg-[#161B22] text-slate-900 dark:text-stone-200 hover:border-[#40bcf4] hover:text-[#0284c7] dark:hover:text-[#40bcf4] text-xs font-mono font-black shadow-xs transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
               aria-label="Previous Page"
             >
               <ChevronLeft size={13} strokeWidth={3} />
@@ -516,7 +507,7 @@ const HomeShowCatalog = ({
               {paginationRange.map((page, index) => {
                 if (page === '...') {
                   return (
-                    <span key={`ellipsis-${index}`} className="px-1 sm:px-1.5 py-1 text-slate-500 font-mono text-xs">
+                    <span key={`ellipsis-${index}`} className="px-1.5 py-1 text-slate-400 dark:text-stone-500 font-mono text-xs">
                       ...
                     </span>
                   );
@@ -528,10 +519,10 @@ const HomeShowCatalog = ({
                     key={`page-${page}`}
                     type="button"
                     onClick={() => setCurrentPage(page)}
-                    className={`h-8 min-w-[30px] sm:min-w-[34px] px-1.5 sm:px-2 rounded-xs text-xs font-mono font-black transition-all cursor-pointer border-2 ${
+                    className={`h-8 min-w-[34px] px-2 rounded-xs text-xs font-mono font-black transition-all cursor-pointer border-2 ${
                       isSelected
                         ? 'bg-[#40bcf4] border-[#40bcf4] text-slate-950 shadow-[0_0_12px_rgba(64,188,244,0.5)]'
-                        : 'bg-slate-800 dark:bg-[#121A26] border-slate-700 dark:border-[#22354E] text-slate-200 hover:border-slate-500'
+                        : 'bg-white dark:bg-[#161B22] border-slate-900 dark:border-[#2C3545] text-slate-900 dark:text-stone-200 hover:border-[#40bcf4]'
                     }`}
                   >
                     {page}
@@ -545,7 +536,7 @@ const HomeShowCatalog = ({
               type="button"
               disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="flex items-center gap-1 sm:gap-1.5 h-8 px-2.5 sm:px-3 rounded-xs border-2 border-[#40bcf4] bg-[#40bcf4] text-slate-950 hover:bg-[#38aade] text-xs font-mono font-black shadow-[0_0_12px_rgba(64,188,244,0.35)] transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+              className="flex items-center gap-1.5 h-8 px-3 rounded-xs border-2 border-[#40bcf4] bg-[#40bcf4] text-slate-950 hover:bg-[#38aade] text-xs font-mono font-black shadow-[0_0_12px_rgba(64,188,244,0.35)] transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
               aria-label="Next Page"
             >
               <span className="text-[10px] uppercase font-mono tracking-tight hidden xs:inline">Next</span>
