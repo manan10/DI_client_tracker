@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
-  X, Check, Loader2, Heart, Clapperboard, ChevronDown, 
-  Layers, CheckCircle2, PlayCircle, Clock, Ban, Minus, Plus, 
-  Search, Film
+  X, Check, Loader2, Heart, ChevronDown, 
+  Search, Film, Star, Minus, Plus, 
+  CheckCircle2, PlayCircle, Clock, PauseCircle, XCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApi } from '../../../shared/hooks/useApi';
@@ -10,40 +10,41 @@ import { useApi } from '../../../shared/hooks/useApi';
 const STATUS_OPTIONS = [
   { 
     value: 'COMPLETED', 
-    label: 'Completed', 
-    icon: CheckCircle2, 
-    color: 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border-emerald-500/30 ring-emerald-500/10' 
+    label: 'Finished', 
+    icon: CheckCircle2,
+    active: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/50 shadow-[0_2px_0_0_rgba(16,185,129,0.3)]' 
   },
   { 
     value: 'WATCHING', 
     label: 'Watching', 
-    icon: PlayCircle, 
-    color: 'text-sky-700 dark:text-sky-300 bg-sky-500/15 border-sky-500/30 ring-sky-500/10' 
+    icon: PlayCircle,
+    active: 'bg-[#40bcf4]/15 text-[#0284c7] dark:text-[#40bcf4] border-[#40bcf4]/50 shadow-[0_2px_0_0_rgba(64,188,244,0.3)]' 
   },
   { 
     value: 'PLAN_TO_WATCH', 
     label: 'Plan to Watch', 
-    icon: Clock, 
-    color: 'text-amber-700 dark:text-amber-300 bg-amber-500/15 border-amber-500/30 ring-amber-500/10' 
+    icon: Clock,
+    active: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/50 shadow-[0_2px_0_0_rgba(245,158,11,0.3)]' 
   },
   { 
     value: 'ON_HOLD', 
     label: 'On Hold', 
-    icon: Layers, 
-    color: 'text-purple-700 dark:text-purple-300 bg-purple-500/15 border-purple-500/30 ring-purple-500/10' 
+    icon: PauseCircle,
+    active: 'bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/50 shadow-[0_2px_0_0_rgba(168,85,247,0.3)]' 
   },
   { 
     value: 'DROPPED', 
     label: 'Dropped', 
-    icon: Ban, 
-    color: 'text-rose-700 dark:text-rose-300 bg-rose-500/15 border-rose-500/30 ring-rose-500/10' 
+    icon: XCircle,
+    active: 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/50 shadow-[0_2px_0_0_rgba(244,63,94,0.3)]' 
   }
 ];
+
+const QUICK_SCORES = [6.0, 7.0, 8.0, 8.5, 9.0, 10.0];
 
 const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
   const { request, loading } = useApi();
 
-  // Show Catalog & Ratings State
   const [catalogShows, setCatalogShows] = useState([]);
   const [ratedShowIds, setRatedShowIds] = useState(new Set());
   const [loadingCatalog, setLoadingCatalog] = useState(false);
@@ -51,21 +52,13 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isShowDropdownOpen, setIsShowDropdownOpen] = useState(false);
 
-  // Rating & Review State
   const [rating, setRating] = useState(8.5);
   const [status, setStatus] = useState('COMPLETED');
-  const [seasonsWatched, setSeasonsWatched] = useState(1);
   const [review, setReview] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // Dropdown & Dial References
-  const [isStatusOpen, setIsStatusOpen] = useState(false);
   const showDropdownRef = useRef(null);
-  const statusDropdownRef = useRef(null);
-  const dialRef = useRef(null);
-  const isDraggingDial = useRef(false);
 
-  // Fetch catalog & user ratings to isolate UNRATED shows only
   useEffect(() => {
     if (!isOpen) return;
 
@@ -106,8 +99,8 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
         setCatalogShows(rawShows);
         setRatedShowIds(ratedIds);
       } catch (err) {
-        console.error('Failed to load show list or ratings:', err);
-        toast.error('Unable to fetch unrated catalog');
+        console.error('Failed to load shows:', err);
+        toast.error('Unable to load show directory');
       } finally {
         if (isMounted) setLoadingCatalog(false);
       }
@@ -120,21 +113,16 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
     };
   }, [isOpen, request]);
 
-  // Click outside listener for custom dropdowns
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (showDropdownRef.current && !showDropdownRef.current.contains(e.target)) {
         setIsShowDropdownOpen(false);
-      }
-      if (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target)) {
-        setIsStatusOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Filter shows: ONLY shows that are NOT rated yet & match the search term
   const unratedShows = useMemo(() => {
     return catalogShows.filter((s) => !ratedShowIds.has(String(s._id)));
   }, [catalogShows, ratedShowIds]);
@@ -150,99 +138,49 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
     });
   }, [unratedShows, searchQuery]);
 
-  // Circular gauge math & scrubbing
-  const calculateAngleScore = useCallback((clientX, clientY) => {
-    if (!dialRef.current) return;
-    const rect = dialRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const x = clientX - centerX;
-    const y = clientY - centerY;
-
-    let degrees = Math.atan2(y, x) * (180 / Math.PI) + 90;
-    if (degrees < 0) degrees += 360;
-
-    const rawScore = (degrees / 360) * 10;
-    const clampedScore = Math.min(10, Math.max(0, parseFloat(rawScore.toFixed(1))));
-    setRating(clampedScore);
-  }, []);
-
-  const handleDialMouseDown = (e) => {
-    isDraggingDial.current = true;
-    calculateAngleScore(e.clientX, e.clientY);
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (isDraggingDial.current) {
-        calculateAngleScore(e.clientX, e.clientY);
-      }
-    };
-    const handleMouseUp = () => {
-      isDraggingDial.current = false;
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [calculateAngleScore]);
-
   if (!isOpen) return null;
 
   const adjustScore = (delta) => {
     setRating((prev) => Math.min(10, Math.max(0, parseFloat((prev + delta).toFixed(1)))));
   };
 
-  const currentStatusObj = STATUS_OPTIONS.find((s) => s.value === status) || STATUS_OPTIONS[0];
-
-  const getTierDetails = () => {
-    const val = parseFloat(rating) || 0;
+  const getTierDetails = (val) => {
     if (val >= 9.0) {
       return { 
         label: 'Masterpiece', 
-        badge: 'text-amber-300 bg-amber-400/20 border-amber-400/50', 
-        stroke: '#f59e0b' 
+        badge: 'text-[#40bcf4] bg-[#40bcf4]/15 border-[#40bcf4]/40 shadow-[0_2px_0_0_rgba(64,188,244,0.3)]' 
       };
     }
     if (val >= 8.0) {
       return { 
-        label: 'Great', 
-        badge: 'text-rose-300 bg-rose-500/20 border-rose-500/40', 
-        stroke: '#f43f5e' 
+        label: 'Great Watch', 
+        badge: 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/15 border-emerald-500/40 shadow-[0_2px_0_0_rgba(16,185,129,0.3)]' 
       };
     }
-    if (val >= 7.0) {
+    if (val >= 6.5) {
       return { 
-        label: 'Good', 
-        badge: 'text-cyan-300 bg-cyan-500/20 border-cyan-500/40', 
-        stroke: '#06b6d4' 
+        label: 'Solid', 
+        badge: 'text-amber-700 dark:text-amber-400 bg-amber-500/15 border-amber-500/40 shadow-[0_2px_0_0_rgba(245,158,11,0.3)]' 
       };
     }
     return { 
       label: 'Casual', 
-      badge: 'text-slate-300 bg-slate-800 border-slate-700', 
-      stroke: '#94a3b8' 
+      badge: 'text-slate-600 dark:text-slate-300 bg-slate-200 dark:bg-[#1E2636] border-slate-300 dark:border-[#38455C] shadow-[0_2px_0_0_rgba(0,0,0,0.15)]' 
     };
   };
 
-  const tier = getTierDetails();
+  const tier = getTierDetails(rating);
 
   const handleSelectShow = (show) => {
     setSelectedShow(show);
     setSearchQuery('');
     setIsShowDropdownOpen(false);
-    if (show.totalSeasons) {
-      setSeasonsWatched(Math.min(seasonsWatched || 1, show.totalSeasons));
-    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedShow?._id) {
-      toast.error('Please select an unrated show from the list');
+      toast.error('Please pick a show first');
       return;
     }
 
@@ -250,20 +188,19 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
       const ratingRes = await request(`/shows/${selectedShow._id}/rating`, 'POST', {
         rating: parseFloat(rating) || 0,
         status: status || 'COMPLETED',
-        seasonsWatched: parseInt(seasonsWatched, 10) || 1,
         review: review.trim(),
         isFavorite: Boolean(isFavorite),
-        reason: 'Vault Entry'
+        reason: 'User Rating'
       });
 
       if (ratingRes?.success || ratingRes?.data || ratingRes?._id) {
-        toast.success('Title Rated Successfully', {
+        toast.success('Rating saved successfully', {
           description: `${selectedShow.title} marked ${status} with ${parseFloat(rating).toFixed(1)}/10`
         });
         if (typeof onCreated === 'function') onCreated();
         if (typeof onClose === 'function') onClose();
       } else {
-        toast.error(ratingRes?.message || 'Failed to record rating');
+        toast.error(ratingRes?.message || 'Failed to save rating');
       }
     } catch (err) {
       console.error('Rate show failure:', err);
@@ -271,36 +208,34 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
     }
   };
 
-  const radius = 44;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (circumference * (rating / 10));
-
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm select-none font-sans"
       onClick={onClose}
     >
       <div 
-        className="w-full sm:max-w-xl md:max-w-2xl bg-white dark:bg-[#070A12] border-t sm:border border-slate-200 dark:border-white/10 rounded-t-2xl sm:rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-slate-900 dark:text-slate-100 transition-all relative font-sans"
+        className="w-full sm:w-[500px] md:w-[540px] bg-[#E9EEF5] dark:bg-[#1E2636] border-t-2 sm:border-t-0 sm:border-l-2 border-slate-300 dark:border-[#334158] shadow-[0_15px_45px_rgba(0,0,0,0.25)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col max-h-[92vh] sm:max-h-screen rounded-t-2xl sm:rounded-none text-slate-800 dark:text-slate-100 overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Mobile Slide-Up Grab Handle */}
-        <div className="w-full flex sm:hidden items-center justify-center pt-2 pb-1.5 bg-linear-to-r from-rose-950 via-slate-900 to-[#0F1424]">
-          <div className="w-10 h-1 bg-rose-400/50 rounded-full" />
+        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#40bcf4] to-transparent pointer-events-none z-30" />
+
+        <div className="w-full flex sm:hidden items-center justify-center pt-2.5 pb-1 bg-[#DEE5EF] dark:bg-[#19202E]">
+          <div className="w-12 h-1.5 bg-slate-400 dark:bg-slate-600 rounded-full" />
         </div>
 
-        {/* ===================== HEADER BAR ===================== */}
-        <div className="px-5 sm:px-6 py-4 bg-linear-to-r from-rose-950 via-slate-900 to-[#0F1424] border-b border-rose-500/30 flex items-center justify-between text-white shrink-0 relative overflow-hidden">
-          <div className="flex items-center gap-3 relative z-10">
-            <div className="w-9 h-9 rounded-lg bg-linear-to-tr from-rose-600 to-amber-500 text-white flex items-center justify-center shadow-md shadow-rose-950/50 shrink-0 border border-white/10">
-              <Clapperboard size={18} strokeWidth={2.4} />
+        {/* Header */}
+        <div className="px-6 py-4.5 bg-[#DEE5EF] dark:bg-[#171F2C] border-b-2 border-slate-300 dark:border-[#2C384D] flex items-center justify-between shrink-0 shadow-[0_2px_4px_rgba(0,0,0,0.03)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.25)] relative z-20">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-white dark:bg-[#253044] border border-slate-300 dark:border-[#3B4B67] flex items-center justify-center text-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#141A24] shrink-0">
+              <Star size={17} className="fill-[#40bcf4]" />
             </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-serif font-bold tracking-[0.14em] uppercase leading-none text-white drop-shadow-xs">
-                Rate a Show
+            
+            <div className="flex flex-col text-left">
+              <h2 className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-slate-900 dark:text-white leading-none">
+                Rate Show
               </h2>
-              <p className="text-[11px] font-mono tracking-wider uppercase text-rose-200/90 mt-1 font-semibold">
-                Unrated Database Titles Only
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                Add your score, watch status, and thoughts
               </p>
             </div>
           </div>
@@ -308,41 +243,35 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer border border-white/10 shadow-xs"
+            className="p-1.5 rounded-lg bg-white dark:bg-[#253044] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-300 dark:border-[#38465E] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#131924] active:translate-y-[1px] active:shadow-none transition-all cursor-pointer"
+            title="Close"
           >
-            <X size={16} strokeWidth={2.5} />
+            <X size={16} strokeWidth={2.4} />
           </button>
         </div>
 
-        {/* ===================== MAIN FORM ===================== */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-5 overflow-y-auto space-y-4 no-scrollbar flex-1 text-left">
+        {/* Content */}
+        <form onSubmit={handleSubmit} className="p-5 sm:p-6 overflow-y-auto space-y-4.5 no-scrollbar flex-1 text-left">
           
-          {/* Row 1: Custom Show Search & Selection Dropdown */}
+          {/* Select Show */}
           <div className="space-y-1.5 relative" ref={showDropdownRef}>
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-serif font-bold tracking-[0.12em] uppercase text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                <span>Select Unrated Show</span>
-                <span className="text-rose-500">*</span>
-              </label>
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <span>Select Show</span>
+              <span className="text-[#40bcf4]">*</span>
+            </label>
 
-              <span className="text-[10px] font-mono font-bold uppercase text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-md border border-slate-200 dark:border-white/10">
-                {unratedShows.length} unrated available
-              </span>
-            </div>
-
-            {/* Custom Dropdown Trigger Button */}
             <button
               type="button"
               onClick={() => setIsShowDropdownOpen((prev) => !prev)}
-              className={`w-full min-h-12 px-3.5 py-2 flex items-center justify-between gap-3 rounded-lg bg-slate-50 dark:bg-white/5 border text-left transition-all cursor-pointer outline-none ${
+              className={`w-full min-h-12 px-3.5 py-2 flex items-center justify-between gap-3 rounded-xl bg-white dark:bg-[#141C28] border-2 text-left transition-all cursor-pointer outline-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] ${
                 isShowDropdownOpen 
-                  ? 'border-rose-500 ring-2 ring-rose-500/20 bg-white dark:bg-white/10' 
-                  : 'border-slate-300 dark:border-white/15 hover:border-slate-400 dark:hover:border-white/30 shadow-2xs'
+                  ? 'border-[#40bcf4] ring-2 ring-[#40bcf4]/20' 
+                  : 'border-slate-300 dark:border-[#2C384D] hover:border-slate-400 dark:hover:border-[#40bcf4]/50'
               }`}
             >
               {selectedShow ? (
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-10 rounded-sm bg-slate-800 shrink-0 overflow-hidden border border-slate-300 dark:border-white/20 shadow-xs">
+                  <div className="w-8 h-10 rounded bg-slate-200 dark:bg-slate-800 shrink-0 overflow-hidden border border-slate-300 dark:border-white/10 shadow-xs">
                     {selectedShow.posterUrl ? (
                       <img 
                         src={selectedShow.posterUrl} 
@@ -356,39 +285,41 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-serif font-bold uppercase tracking-wide text-slate-900 dark:text-white truncate">
+                    <p className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate">
                       {selectedShow.title}
                     </p>
                     <div className="flex items-center gap-2 text-[11px] font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                      <span className="font-semibold">{selectedShow.releaseYear || '—'}</span>
+                      <span>{selectedShow.releaseYear || '—'}</span>
                       <span>•</span>
-                      <span className="uppercase">{selectedShow.type?.replace('_', ' ') || 'SERIES'}</span>
+                      <span className="uppercase text-[#0284c7] dark:text-[#40bcf4] font-bold">
+                        {selectedShow.type?.replace('_', ' ') || 'SERIES'}
+                      </span>
                       {selectedShow.totalSeasons && (
                         <>
                           <span>•</span>
-                          <span>{selectedShow.totalSeasons} Seasons</span>
+                          <span>{selectedShow.totalSeasons}S</span>
                         </>
                       )}
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2.5 text-slate-500 dark:text-slate-400">
-                  <Search size={16} className="text-rose-500 shrink-0" />
-                  <span className="text-xs sm:text-sm font-medium">Search unrated show by title or genre...</span>
+                <div className="flex items-center gap-2.5 text-slate-400 dark:text-slate-500">
+                  <Search size={15} className="text-[#40bcf4] shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium">Search by title or genre...</span>
                 </div>
               )}
 
               <ChevronDown 
                 size={16} 
-                className={`text-slate-400 shrink-0 transition-transform duration-200 ${isShowDropdownOpen ? 'rotate-180 text-rose-500' : ''}`} 
+                className={`text-slate-400 shrink-0 transition-transform duration-200 ${isShowDropdownOpen ? 'rotate-180 text-[#40bcf4]' : ''}`} 
               />
             </button>
 
-            {/* Custom Popover Menu */}
+            {/* Custom Popover Search Menu */}
             {isShowDropdownOpen && (
-              <div className="absolute top-[calc(100%+6px)] left-0 right-0 z-50 bg-white dark:bg-[#0B101E] border-2 border-slate-300 dark:border-white/20 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                <div className="p-2.5 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/3">
+              <div className="absolute top-[calc(100%+6px)] inset-x-0 z-50 bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#38465E] rounded-xl shadow-[0_12px_30px_rgba(0,0,0,0.18)] dark:shadow-[0_15px_40px_rgba(0,0,0,0.7)] overflow-hidden animate-in fade-in duration-150">
+                <div className="p-2 border-b border-slate-200 dark:border-[#232F42] bg-[#F5F8FC] dark:bg-[#101721]">
                   <div className="relative flex items-center">
                     <Search size={14} className="absolute left-3 text-slate-400 pointer-events-none" />
                     <input
@@ -396,28 +327,21 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                       autoFocus
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Type show title, anime, comedy, drama..."
-                      className="w-full h-9 pl-9 pr-3 rounded-md bg-white dark:bg-[#070A12] border border-slate-300 dark:border-white/15 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30 transition-all font-sans"
+                      placeholder="Type show title, anime, drama..."
+                      className="w-full h-8.5 pl-9 pr-3 rounded-lg bg-white dark:bg-[#192230] border border-slate-300 dark:border-[#2C384D] text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-[#40bcf4] transition-all"
                     />
                   </div>
                 </div>
 
-                <div className="max-h-60 overflow-y-auto p-1.5 space-y-1 no-scrollbar">
+                <div className="max-h-56 overflow-y-auto p-1.5 space-y-1 no-scrollbar">
                   {loadingCatalog ? (
-                    <div className="p-6 flex flex-col items-center justify-center gap-2 text-xs font-mono text-slate-400">
-                      <Loader2 size={16} className="animate-spin text-rose-500" />
-                      <span>Checking database for unrated titles...</span>
+                    <div className="p-5 flex flex-col items-center justify-center gap-2 text-xs font-mono text-slate-400">
+                      <Loader2 size={16} className="animate-spin text-[#40bcf4]" />
+                      <span>Loading shows...</span>
                     </div>
                   ) : filteredUnratedShows.length === 0 ? (
-                    <div className="p-6 text-center space-y-1">
-                      <p className="text-xs font-serif font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                        {searchQuery ? `No unrated shows match "${searchQuery}"` : 'All database shows are already rated!'}
-                      </p>
-                      <p className="text-[11px] font-mono text-slate-400">
-                        {searchQuery 
-                          ? 'Check your search query or add a new show first.' 
-                          : 'Use the Add Show modal to register new titles.'}
-                      </p>
+                    <div className="p-5 text-center text-xs text-slate-500 dark:text-slate-400">
+                      {searchQuery ? `No shows found for "${searchQuery}"` : 'All shows are already rated'}
                     </div>
                   ) : (
                     filteredUnratedShows.map((show) => {
@@ -429,32 +353,32 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                           onClick={() => handleSelectShow(show)}
                           className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-rose-50 dark:bg-rose-500/15 text-rose-800 dark:text-rose-200 font-bold border border-rose-300 dark:border-rose-500/40 shadow-xs'
-                              : 'hover:bg-slate-100/80 dark:hover:bg-white/5 text-slate-800 dark:text-slate-200 border border-transparent'
+                              ? 'bg-[#40bcf4]/15 text-[#0284c7] dark:text-[#40bcf4] font-bold border border-[#40bcf4]/40 shadow-2xs'
+                              : 'hover:bg-slate-100 dark:hover:bg-[#1E293B] text-slate-800 dark:text-slate-200 border border-transparent'
                           }`}
                         >
-                          <div className="flex items-center gap-3 min-w-0 pr-2">
-                            <div className="w-7 h-9 rounded-xs bg-slate-800 shrink-0 overflow-hidden border border-slate-300 dark:border-white/10 shadow-2xs">
+                          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                            <div className="w-7 h-9 rounded bg-slate-200 dark:bg-slate-800 shrink-0 overflow-hidden border border-slate-300 dark:border-white/10 shadow-2xs">
                               {show.posterUrl ? (
                                 <img src={show.posterUrl} alt="" className="w-full h-full object-cover" />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-slate-500">
+                                <div className="w-full h-full flex items-center justify-center text-slate-400">
                                   <Film size={12} />
                                 </div>
                               )}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-xs sm:text-sm font-serif tracking-wide font-bold uppercase truncate">
+                              <p className="text-xs font-bold truncate text-slate-900 dark:text-white">
                                 {show.title}
                               </p>
                               <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                                <span className="font-semibold text-slate-700 dark:text-slate-300">{show.releaseYear || '—'}</span>
+                                <span>{show.releaseYear || '—'}</span>
                                 <span>•</span>
                                 <span className="uppercase">{show.type?.replace('_', ' ') || 'SERIES'}</span>
                                 {Array.isArray(show.genres) && show.genres.length > 0 && (
                                   <>
                                     <span>•</span>
-                                    <span className="text-rose-600 dark:text-rose-400 truncate font-semibold">
+                                    <span className="text-[#0284c7] dark:text-[#40bcf4] truncate">
                                       {show.genres.slice(0, 2).join(', ')}
                                     </span>
                                   </>
@@ -462,14 +386,9 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                               </div>
                             </div>
                           </div>
-
-                          <div className="shrink-0 flex items-center gap-2">
-                            {isSelected && (
-                              <div className="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center">
-                                <Check size={12} strokeWidth={3} />
-                              </div>
-                            )}
-                          </div>
+                          {isSelected && (
+                            <Check size={14} className="text-[#40bcf4] shrink-0" strokeWidth={2.5} />
+                          )}
                         </button>
                       );
                     })
@@ -479,138 +398,76 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
             )}
           </div>
 
-          {/* ========================================================================= */}
-          {/* COMPACT HYBRID RATINGS CONSOLE (WITH INTEGRATED FAVORITE TOGGLE)          */}
-          {/* ========================================================================= */}
-          <div className="p-4 rounded-xl bg-linear-to-r from-indigo-950 via-slate-900 to-purple-950 border border-indigo-500/40 shadow-lg text-white relative overflow-hidden space-y-3.5">
-            <div className="absolute top-0 right-0 w-48 h-full bg-linear-to-l from-rose-500/15 to-transparent pointer-events-none" />
-
-            {/* Header Strip: Title + Tier Badge + Integrated Favorites Heart Button */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-2.5 relative z-10">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-sm shadow-cyan-400/50" />
-                <span className="text-[11px] font-mono font-bold tracking-[0.18em] uppercase text-cyan-300">
-                  Ratings Console
+          {/* Rating Console */}
+          <div className="p-4 rounded-xl bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#2C384D] shadow-[0_3px_0_0_#CBD5E1] dark:shadow-[0_3px_0_0_#0F1520] space-y-3.5 relative">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#222E42] pb-3">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+                  Your Rating
+                </span>
+                <span className="text-[10px] font-mono text-slate-400 dark:text-slate-400">
+                  Scale of 0.0 to 10.0
                 </span>
               </div>
 
               <div className="flex items-center gap-2">
-                <div className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider border shadow-xs ${tier.badge}`}>
+                <span className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider border transition-all ${tier.badge}`}>
                   {tier.label}
-                </div>
+                </span>
 
-                {/* Integrated Heart Favorite Button */}
                 <button
                   type="button"
                   onClick={() => setIsFavorite((prev) => !prev)}
-                  className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider border transition-all cursor-pointer active:scale-95 shadow-xs select-none ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold border transition-all cursor-pointer active:translate-y-[1px] ${
                     isFavorite
-                      ? 'bg-rose-500/25 border-rose-400 text-rose-300 ring-1 ring-rose-500/30'
-                      : 'bg-white/5 border-white/15 text-slate-300 hover:text-white hover:bg-white/10'
+                      ? 'bg-rose-500/15 border-rose-500/40 text-rose-600 dark:text-rose-400 shadow-[0_2px_0_0_rgba(244,63,94,0.3)]'
+                      : 'bg-slate-100 dark:bg-[#1E2838] border-slate-300 dark:border-[#38465E] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#101621]'
                   }`}
-                  title={isFavorite ? 'Pinned to Favorites' : 'Click to pin to Favorites'}
+                  title={isFavorite ? 'Saved to Favorites' : 'Add to Favorites'}
                 >
                   <Heart 
-                    size={13} 
-                    className={`transition-colors duration-200 ${isFavorite ? 'fill-rose-500 text-rose-500 animate-in zoom-in-50' : 'text-slate-400'}`} 
+                    size={12} 
+                    className={`transition-colors ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} 
                   />
                   <span>Favorite</span>
                 </button>
               </div>
             </div>
 
-            {/* Center Scoring Stage */}
-            <div className="flex items-center justify-between gap-4 sm:gap-6 relative z-10">
-              {/* Circular Dial */}
-              <div 
-                ref={dialRef}
-                onMouseDown={handleDialMouseDown}
-                className="relative w-24 h-24 sm:w-26 sm:h-26 flex items-center justify-center cursor-pointer select-none shrink-0 group"
-                title="Drag or click dial to adjust rating"
-              >
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r={radius}
-                    fill="transparent"
-                    stroke="#1e1b4b"
-                    strokeWidth="8"
-                  />
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r={radius}
-                    fill="transparent"
-                    stroke={tier.stroke}
-                    strokeWidth="8"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                    strokeLinecap="round"
-                    className="transition-all duration-100"
-                  />
-                </svg>
-
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-2xl sm:text-3xl font-mono font-[1000] tracking-tighter text-white leading-none">
-                    {parseFloat(rating || 0).toFixed(1)}
-                  </span>
-                  <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                    / 10
-                  </span>
-                </div>
+            <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-[#F5F8FC] dark:bg-[#0F1622] border border-slate-300 dark:border-[#232F42] shadow-inner">
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-black tracking-tight text-slate-900 dark:text-white font-mono leading-none">
+                  {rating.toFixed(1)}
+                </span>
+                <span className="text-xs font-bold text-slate-400">/ 10</span>
               </div>
 
-              {/* Steppers & Snap Benchmarks */}
-              <div className="flex-1 min-w-0 space-y-2.5">
-                <div className="flex items-center justify-between text-[10px] font-mono text-slate-300 uppercase tracking-wider font-semibold">
-                  <span>Fine Adjust:</span>
-                  <span>Quick Snaps:</span>
-                </div>
-
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1">
-                    {[-0.5, -0.1, +0.1, +0.5].map((delta) => (
-                      <button
-                        key={delta}
-                        type="button"
-                        onClick={() => adjustScore(delta)}
-                        className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 border border-white/20 text-[11px] font-mono font-bold text-white transition-all active:scale-95 cursor-pointer shadow-xs"
-                      >
-                        {delta > 0 ? `+${delta}` : delta}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    {[6.0, 7.5, 8.5, 9.5].map((snap) => (
-                      <button
-                        key={snap}
-                        type="button"
-                        onClick={() => setRating(snap)}
-                        className={`px-2 py-1 rounded-md text-[11px] font-mono font-bold border transition-all cursor-pointer ${
-                          Math.abs(rating - snap) < 0.05
-                            ? 'bg-amber-400 text-slate-950 border-amber-300 font-black shadow-xs shadow-amber-400/30'
-                            : 'bg-white/10 text-slate-200 border-white/15 hover:border-white/30'
-                        }`}
-                      >
-                        {snap.toFixed(1)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              <div className="flex items-center gap-1.5">
+                {QUICK_SCORES.map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setRating(val)}
+                    className={`px-2.5 py-1 rounded text-xs font-mono font-bold border transition-all cursor-pointer active:translate-y-[1px] active:shadow-none ${
+                      Math.abs(rating - val) < 0.05
+                        ? 'bg-[#40bcf4] text-[#0A1017] border-[#29a8e2] font-black shadow-[0_2px_0_0_#1c86b8]'
+                        : 'bg-white dark:bg-[#1F293A] text-slate-700 dark:text-slate-300 border-slate-300 dark:border-[#34425A] hover:border-slate-400 dark:hover:border-slate-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520]'
+                    }`}
+                  >
+                    {val === 10 ? '10' : val.toFixed(1)}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Slider Control Rail */}
-            <div className="flex items-center gap-2.5 pt-1.5 border-t border-white/10 relative z-10">
+            <div className="flex items-center gap-3 pt-1">
               <button
                 type="button"
                 onClick={() => adjustScore(-0.1)}
-                className="p-1.5 rounded-md bg-white/10 hover:bg-white/20 border border-white/20 text-slate-200 transition-colors shrink-0 cursor-pointer active:scale-90"
+                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1E2838] hover:bg-slate-200 dark:hover:bg-[#253246] border border-slate-300 dark:border-[#34425A] flex items-center justify-center text-slate-700 dark:text-slate-300 transition-all cursor-pointer active:translate-y-[1px] active:shadow-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] shrink-0"
                 title="-0.1"
               >
-                <Minus size={12} strokeWidth={3} />
+                <Minus size={13} strokeWidth={2.5} />
               </button>
 
               <input
@@ -620,126 +477,70 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                 step="0.1"
                 value={rating}
                 onChange={(e) => setRating(parseFloat(e.target.value))}
-                className="flex-1 accent-amber-400 cursor-pointer h-2 bg-slate-800 rounded-sm appearance-none"
+                className="flex-1 h-2 bg-slate-200 dark:bg-[#0E1520] rounded-lg appearance-none accent-[#40bcf4] cursor-pointer"
               />
 
               <button
                 type="button"
                 onClick={() => adjustScore(0.1)}
-                className="p-1.5 rounded-md bg-white/10 hover:bg-white/20 border border-white/20 text-slate-200 transition-colors shrink-0 cursor-pointer active:scale-90"
+                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1E2838] hover:bg-slate-200 dark:hover:bg-[#253246] border border-slate-300 dark:border-[#34425A] flex items-center justify-center text-slate-700 dark:text-slate-300 transition-all cursor-pointer active:translate-y-[1px] active:shadow-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] shrink-0"
                 title="+0.1"
               >
-                <Plus size={12} strokeWidth={3} />
+                <Plus size={13} strokeWidth={2.5} />
               </button>
             </div>
           </div>
 
-          {/* Row 2: Status & Seasons Seen */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {/* Viewing Status Custom Dropdown */}
-            <div className="space-y-1.5 relative" ref={statusDropdownRef}>
-              <label className="text-xs font-serif font-bold tracking-[0.12em] uppercase text-slate-700 dark:text-slate-300">
-                Viewing Status
-              </label>
-
-              <button
-                type="button"
-                onClick={() => setIsStatusOpen(!isStatusOpen)}
-                className={`w-full h-11 px-3.5 flex items-center justify-between rounded-lg bg-slate-50 dark:bg-white/5 border text-left transition-all cursor-pointer outline-none ${
-                  isStatusOpen
-                    ? 'border-rose-500 ring-2 ring-rose-500/20'
-                    : 'border-slate-300 dark:border-white/15 hover:border-slate-400 dark:hover:border-white/25 shadow-2xs'
-                }`}
-              >
-                <div className="flex items-center gap-2 truncate">
-                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider border truncate ${currentStatusObj.color}`}>
-                    {currentStatusObj.label}
-                  </span>
-                </div>
-                <ChevronDown
-                  size={15}
-                  className={`text-slate-400 shrink-0 transition-transform duration-200 ${isStatusOpen ? 'rotate-180 text-rose-500' : ''}`}
-                />
-              </button>
-
-              {/* Status Popover Options */}
-              {isStatusOpen && (
-                <div className="absolute top-[calc(100%+4px)] left-0 right-0 z-50 bg-white dark:bg-[#0B101E] border-2 border-slate-300 dark:border-white/20 rounded-xl shadow-xl p-1.5 space-y-1 animate-in fade-in duration-150">
-                  {STATUS_OPTIONS.map((s) => {
-                    const isSelected = s.value === status;
-                    const Icon = s.icon;
-                    return (
-                      <button
-                        key={s.value}
-                        type="button"
-                        onClick={() => {
-                          setStatus(s.value);
-                          setIsStatusOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-slate-100 dark:bg-white/10 font-bold'
-                            : 'hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <Icon size={14} className="text-rose-500 shrink-0" />
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase border ${s.color}`}>
-                            {s.label}
-                          </span>
-                        </div>
-                        {isSelected && <Check size={14} className="text-emerald-500 shrink-0" strokeWidth={3} />}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Seasons Watched */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-serif font-bold tracking-[0.12em] uppercase text-slate-700 dark:text-slate-300">
-                  Seasons Watched
-                </label>
-                {selectedShow?.totalSeasons && (
-                  <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400">
-                    Max: {selectedShow.totalSeasons}
-                  </span>
-                )}
-              </div>
-              <input
-                type="number"
-                min="0"
-                max={selectedShow?.totalSeasons || 99}
-                value={seasonsWatched}
-                onChange={(e) => setSeasonsWatched(e.target.value)}
-                className="w-full h-11 px-3.5 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-300 dark:border-white/15 text-sm font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/20 transition-colors shadow-2xs"
-              />
-            </div>
-          </div>
-
-          {/* Row 3: Personal Review & Critique */}
+          {/* Watch Status */}
           <div className="space-y-1.5">
-            <label className="text-xs font-serif font-bold tracking-[0.12em] uppercase text-slate-700 dark:text-slate-300">
-              Personal Review & Notes
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+              Watch Status
+            </label>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {STATUS_OPTIONS.map((opt) => {
+                const Icon = opt.icon;
+                const isSelected = status === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setStatus(opt.value)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 text-xs font-bold transition-all cursor-pointer text-left active:translate-y-[1px] ${
+                      isSelected
+                        ? opt.active
+                        : 'bg-white dark:bg-[#141C28] border-slate-300 dark:border-[#2C384D] text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520]'
+                    }`}
+                  >
+                    <Icon size={14} className="shrink-0" />
+                    <span className="truncate">{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Personal Review */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+              Review & Notes
             </label>
             <textarea
               rows={3}
               value={review}
               onChange={(e) => setReview(e.target.value)}
-              placeholder="What stood out? Performances, plot twists, soundtrack, pacing..."
-              className="w-full p-3 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-300 dark:border-white/15 text-xs sm:text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/20 resize-none transition-colors placeholder:text-slate-400 font-sans shadow-2xs"
+              placeholder="What stood out? Story, acting, pacing, ending..."
+              className="w-full p-3 rounded-xl bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#2C384D] text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] transition-colors resize-none"
             />
           </div>
         </form>
 
-        {/* ===================== FOOTER ACTIONS ===================== */}
-        <div className="px-5 sm:px-6 py-3.5 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/2 flex items-center justify-between gap-3 shrink-0">
+        {/* Footer */}
+        <div className="px-6 py-4 border-t-2 border-slate-300 dark:border-[#2C384D] bg-[#DEE5EF] dark:bg-[#171F2C] flex items-center justify-between gap-3 shrink-0 shadow-[0_-2px_6px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.25)]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-lg text-xs font-serif font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -748,17 +549,17 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
             type="button"
             onClick={handleSubmit}
             disabled={loading || !selectedShow}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-linear-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-serif font-bold uppercase tracking-wider shadow-md shadow-rose-600/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 cursor-pointer"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-[#00e054] hover:bg-[#00c94b] text-[#14181C] text-xs font-black uppercase tracking-wider border border-[#00c94b] border-b-[3px] border-b-[#009e3a] active:border-b active:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-[0_4px_12px_rgba(0,224,84,0.3)]"
           >
             {loading ? (
               <>
-                <Loader2 size={14} className="animate-spin text-white" />
-                <span>Recording...</span>
+                <Loader2 size={14} className="animate-spin text-[#14181C]" />
+                <span>Saving...</span>
               </>
             ) : (
               <>
-                <Check size={15} strokeWidth={2.5} />
-                <span>Save to Vault</span>
+                <Check size={15} strokeWidth={3} />
+                <span>Save Rating</span>
               </>
             )}
           </button>
