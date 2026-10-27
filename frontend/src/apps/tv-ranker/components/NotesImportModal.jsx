@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { 
-  X, UploadCloud, FileText, CheckCircle2, 
-  Loader2, Ticket, Check, Sparkles, Terminal
+  X, UploadCloud, FileText, Check, 
+  Loader2, Ticket, Terminal, Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApi } from '../../../shared/hooks/useApi';
 
 const NotesImportModal = ({ isOpen, onClose, onImportComplete }) => {
-  const { request } = useApi();
+  const { request, loading: apiLoading } = useApi();
   const [pastedText, setPastedText] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -20,14 +20,15 @@ const NotesImportModal = ({ isOpen, onClose, onImportComplete }) => {
       if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
         setSelectedFile(file);
       } else {
-        toast.error('Invalid Format', { description: 'Please choose a plain text (.txt) file.' });
+        toast.error('Invalid file', { description: 'Please choose a plain text (.txt) file.' });
       }
     }
   };
 
-  const handleImport = async () => {
+  const handleImport = async (e) => {
+    if (e) e.preventDefault();
     if (!pastedText.trim() && !selectedFile) {
-      toast.error('No Content Detected', { description: 'Paste note content or attach your .txt file.' });
+      toast.error('No notes found', { description: 'Paste your notes or attach a text file.' });
       return;
     }
 
@@ -43,51 +44,61 @@ const NotesImportModal = ({ isOpen, onClose, onImportComplete }) => {
       }
 
       if (res?.success) {
-        toast.success('Archive Ingested Successfully', {
-          description: `Imported ${res.stats?.newRatingsCreated || 0} new ratings (${res.stats?.totalParsed || 0} total parsed).`
+        toast.success('Notes imported successfully', {
+          description: `Added ${res.stats?.newRatingsCreated || 0} new ratings (${res.stats?.totalParsed || 0} total parsed).`
         });
         setPastedText('');
         setSelectedFile(null);
         if (typeof onImportComplete === 'function') onImportComplete();
         if (typeof onClose === 'function') onClose();
       } else {
-        toast.error(res?.message || 'Import failed');
+        toast.error(res?.message || 'Failed to import notes');
       }
     } catch (err) {
       console.error('Import error:', err);
-      toast.error(err.message || 'Server ingestion error');
+      toast.error(err.message || 'Could not import notes');
     } finally {
       setIsProcessing(false);
     }
   };
 
+  const isLoading = isProcessing || apiLoading;
+
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm select-none font-sans"
       onClick={onClose}
     >
-      {/* Container: Less Rounded Shell */}
+      {/* Two-Tone Slide-over Drawer Frame */}
       <div 
-        className="w-full sm:max-w-xl md:max-w-2xl bg-white dark:bg-[#070A12] border-t sm:border border-slate-200/90 dark:border-white/10 rounded-t-xl sm:rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-slate-900 dark:text-slate-100 transition-all relative font-sans"
+        className="w-full sm:w-[500px] md:w-[540px] bg-[#E9EEF5] dark:bg-[#1E2636] border-t-2 sm:border-t-0 sm:border-l-2 border-slate-300 dark:border-[#334158] shadow-[0_15px_45px_rgba(0,0,0,0.25)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col max-h-[92dvh] sm:max-h-screen rounded-t-2xl sm:rounded-none text-slate-800 dark:text-slate-100 overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Mobile Pull Handle */}
-        <div className="w-full flex sm:hidden items-center justify-center pt-2 pb-1 bg-linear-to-r from-rose-950 via-slate-900 to-slate-950">
-          <div className="w-8 h-1 bg-rose-400/40 rounded-full" />
+        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#40bcf4] to-transparent pointer-events-none z-30" />
+
+        {/* Grab Handle for Mobile */}
+        <div className="w-full flex sm:hidden items-center justify-center pt-2.5 pb-1 bg-[#DEE5EF] dark:bg-[#19202E] shrink-0">
+          <div className="w-12 h-1.5 bg-slate-400 dark:bg-slate-600 rounded-full" />
         </div>
 
-        {/* ===================== COLORED HEADER BAR ===================== */}
-        <div className="px-5 sm:px-6 py-3.5 bg-linear-to-r from-rose-950 via-slate-900 to-[#0F1424] border-b border-rose-500/30 flex items-center justify-between text-white shrink-0 relative overflow-hidden">
-          <div className="flex items-center gap-3 relative z-10">
-            <div className="w-8 h-8 rounded-md bg-linear-to-tr from-rose-600 to-amber-500 text-white flex items-center justify-center shadow-md shrink-0">
-              <Ticket size={17} strokeWidth={2.4} className="-rotate-12" />
+        {/* Header */}
+        <div className="px-5 sm:px-6 py-3.5 sm:py-4.5 bg-[#DEE5EF] dark:bg-[#171F2C] border-b-2 border-slate-300 dark:border-[#2C384D] flex items-center justify-between shrink-0 shadow-[0_2px_4px_rgba(0,0,0,0.03)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.25)] relative z-20">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white dark:bg-[#253044] border border-slate-300 dark:border-[#3B4B67] flex items-center justify-center text-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#141A24] shrink-0">
+              <Ticket size={16} strokeWidth={2.4} className="text-[#40bcf4] -rotate-12" />
             </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-serif font-bold tracking-[0.14em] uppercase leading-none text-white">
-                Import Archive
-              </h2>
-              <p className="text-[10px] font-mono tracking-wider uppercase text-rose-300/80 mt-0.5">
-                Batch Notes Ingestion & Parser
+            
+            <div className="flex flex-col text-left">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-slate-900 dark:text-white leading-none">
+                  Import Notes
+                </h2>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#0284c7] dark:text-[#40bcf4] bg-[#40bcf4]/10 border border-[#40bcf4]/30 px-2 py-0.5 rounded shadow-2xs">
+                  Batch
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                Add ratings quickly from text or a file
               </p>
             </div>
           </div>
@@ -95,37 +106,38 @@ const NotesImportModal = ({ isOpen, onClose, onImportComplete }) => {
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-md bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer border border-white/10"
+            className="p-1.5 rounded-lg bg-white dark:bg-[#253044] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-300 dark:border-[#38465E] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#131924] active:translate-y-[1px] active:shadow-none transition-all cursor-pointer"
+            title="Close"
           >
-            <X size={15} strokeWidth={2.5} />
+            <X size={16} strokeWidth={2.4} />
           </button>
         </div>
 
-        {/* ===================== BODY CONTENT ===================== */}
-        <div className="p-4 sm:p-5 overflow-y-auto space-y-4 no-scrollbar flex-1 text-left">
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleImport} className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-4.5 no-scrollbar flex-1 text-left">
           
-          {/* Format Guide Banner */}
-          <div className="p-3 rounded-md bg-linear-to-r from-indigo-950/80 via-slate-900 to-purple-950/80 border border-indigo-500/30 text-white flex items-start gap-2.5 shadow-xs">
-            <div className="p-1 rounded-sm bg-cyan-500/20 text-cyan-300 shrink-0 mt-0.5">
-              <Terminal size={13} />
+          {/* Format Helper Banner */}
+          <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#2C384D] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-[#40bcf4]/15 border border-[#40bcf4]/30 flex items-center justify-center text-[#0284c7] dark:text-[#40bcf4] shrink-0 mt-0.5">
+              <Terminal size={15} />
             </div>
             <div className="min-w-0">
-              <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-cyan-300 block">
-                Automatic Syntax Detection
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#0284c7] dark:text-[#40bcf4] block">
+                Accepted Formats
               </span>
-              <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed font-mono">
-                Accepts lines like <span className="text-amber-300">1. Show Name ( 9.3/10 )</span>, season markers like <span className="text-rose-300">Show - s2</span>, unrated watchlist items, and <span className="text-cyan-300">INDIAN SHOWS</span> headers.
+              <p className="text-xs text-slate-600 dark:text-slate-300 font-mono mt-0.5 leading-relaxed">
+                Accepts lines like <span className="font-bold text-amber-600 dark:text-amber-400">Show Name ( 9.2/10 )</span>, seasons like <span className="font-bold text-rose-500">Show - s2</span>, or unrated watchlist titles.
               </p>
             </div>
           </div>
 
-          {/* Raw Text Input */}
+          {/* Raw Text Input Card */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-[11px] font-serif font-bold tracking-[0.12em] uppercase text-slate-600 dark:text-slate-300">
-                Paste Notes Content *
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+                Paste Notes Text
               </label>
-              <span className="text-[9px] font-mono text-slate-400">0 - 10 /10 patterns recognized</span>
+              <span className="text-[10px] font-mono text-slate-400">0 to 10 score pattern</span>
             </div>
             <textarea
               rows={8}
@@ -135,56 +147,77 @@ const NotesImportModal = ({ isOpen, onClose, onImportComplete }) => {
                 if (selectedFile) setSelectedFile(null);
               }}
               placeholder={`INTERNATIONAL\n1. Sherlock ( 9.3/10 )\n2. Succession ( 9.1/10 )\n\n56 days\nThe bear\n\nINDIAN SHOWS\n1. Scam 1992 ( 9/10 )`}
-              className="w-full p-3 rounded-md bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/20 resize-none transition-all"
+              className="w-full p-3 rounded-xl bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#2C384D] text-xs font-mono text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] transition-colors resize-none"
             />
           </div>
 
           {/* Divider */}
           <div className="flex items-center gap-3 py-0.5">
-            <div className="h-px bg-slate-200 dark:bg-white/10 flex-1" />
-            <span className="text-[9px] font-mono font-bold uppercase text-slate-400 tracking-widest">
-              OR ATTACH .TXT FILE
+            <div className="h-0.5 bg-slate-300 dark:bg-[#2C384D] flex-1" />
+            <span className="text-[10px] font-mono font-bold uppercase text-slate-400 tracking-wider">
+              OR UPLOAD A FILE
             </span>
-            <div className="h-px bg-slate-200 dark:bg-white/10 flex-1" />
+            <div className="h-0.5 bg-slate-300 dark:bg-[#2C384D] flex-1" />
           </div>
 
           {/* File Upload Drop Target */}
-          <label className="border border-dashed border-slate-300 dark:border-white/15 hover:border-rose-500 dark:hover:border-rose-500 rounded-md p-3.5 flex items-center justify-between gap-3 cursor-pointer bg-slate-50/60 dark:bg-white/2 hover:bg-rose-500/5 transition-all">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-                <UploadCloud size={16} />
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+              Text File (.txt)
+            </label>
+
+            <label className="w-full p-3.5 rounded-xl bg-white dark:bg-[#141C28] border-2 border-dashed border-slate-300 dark:border-[#2C384D] hover:border-[#40bcf4] dark:hover:border-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] flex items-center justify-between gap-3 cursor-pointer transition-all">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-lg bg-[#40bcf4]/15 border border-[#40bcf4]/30 text-[#0284c7] dark:text-[#40bcf4] flex items-center justify-center shrink-0">
+                  <UploadCloud size={18} />
+                </div>
+                <div className="flex flex-col truncate min-w-0">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {selectedFile ? selectedFile.name : 'Choose or drag a notes file (.txt)'}
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    {selectedFile ? `${(selectedFile.size / 1024).toFixed(1)} KB` : 'Plain text file only'}
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-col truncate">
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-                  {selectedFile ? selectedFile.name : 'Select or drop notes text file (.txt)'}
-                </span>
-                <span className="text-[10px] font-mono text-slate-400">
-                  {selectedFile ? `${(selectedFile.size / 1024).toFixed(1)} KB` : 'Plain text encoding'}
+
+              <div className="flex items-center gap-2 shrink-0">
+                {selectedFile && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setSelectedFile(null);
+                    }}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
+                    title="Remove file"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+                <span className="px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-slate-100 dark:bg-[#1E2838] border border-slate-300 dark:border-[#38465E] text-slate-700 dark:text-slate-300 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#101621]">
+                  Browse
                 </span>
               </div>
-            </div>
 
-            <span className="px-2.5 py-1 rounded-sm text-[10px] font-mono font-bold uppercase tracking-wider bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 shrink-0">
-              Browse
-            </span>
+              <input
+                type="file"
+                accept=".txt"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </label>
+          </div>
 
-            <input
-              type="file"
-              accept=".txt"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-          </label>
+        </form>
 
-        </div>
-
-        {/* ===================== FOOTER ACTIONS ===================== */}
-        <div className="px-5 sm:px-6 py-3 border-t border-slate-100 dark:border-white/5 bg-slate-50/70 dark:bg-white/2 flex items-center justify-end gap-2 shrink-0">
+        {/* Footer Bar */}
+        <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-t-2 border-slate-300 dark:border-[#2C384D] bg-[#DEE5EF] dark:bg-[#171F2C] flex items-center justify-between gap-3 shrink-0 shadow-[0_-2px_6px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.25)] pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))] sm:pb-4">
           <button
             type="button"
             onClick={onClose}
-            disabled={isProcessing}
-            className="px-3.5 py-2 rounded-md text-xs font-serif font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors cursor-pointer"
+            disabled={isLoading}
+            className="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer disabled:opacity-50"
           >
             Cancel
           </button>
@@ -192,18 +225,18 @@ const NotesImportModal = ({ isOpen, onClose, onImportComplete }) => {
           <button
             type="button"
             onClick={handleImport}
-            disabled={isProcessing || (!pastedText.trim() && !selectedFile)}
-            className="flex items-center gap-2 px-5 py-2 rounded-md bg-linear-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white text-xs font-serif font-bold uppercase tracking-wider shadow-md shadow-rose-600/20 disabled:opacity-50 transition-all active:scale-95 cursor-pointer"
+            disabled={isLoading || (!pastedText.trim() && !selectedFile)}
+            className="flex items-center gap-2 px-5 sm:px-6 py-2.5 rounded-lg bg-[#00e054] hover:bg-[#00c94b] text-[#14181C] text-xs font-black uppercase tracking-wider border border-[#00c94b] border-b-[3px] border-b-[#009e3a] active:border-b active:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-[0_4px_12px_rgba(0,224,84,0.3)]"
           >
-            {isProcessing ? (
+            {isLoading ? (
               <>
-                <Loader2 size={13} className="animate-spin text-white" />
-                <span>Ingesting Archive...</span>
+                <Loader2 size={14} className="animate-spin text-[#14181C]" />
+                <span>Importing...</span>
               </>
             ) : (
               <>
-                <CheckCircle2 size={14} strokeWidth={2.5} />
-                <span>Parse & Seed Database</span>
+                <Check size={15} strokeWidth={3} />
+                <span>Import Notes</span>
               </>
             )}
           </button>
