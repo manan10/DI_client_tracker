@@ -65,6 +65,7 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
 
   const show = item.show || {};
   const history = item.ratingHistory || [];
+  const heroImage = show.bannerUrl || show.backdropUrl || show.posterUrl;
 
   const adjustScore = (delta) => {
     setRating((prev) => Math.min(10, Math.max(0, parseFloat((prev + delta).toFixed(1)))));
@@ -141,91 +142,99 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
       >
         <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#40bcf4] to-transparent pointer-events-none z-30" />
 
-        {/* Mobile Pull Handle */}
-        <div className="w-full flex sm:hidden items-center justify-center pt-2.5 pb-1 bg-[#DEE5EF] dark:bg-[#19202E] shrink-0">
-          <div className="w-12 h-1.5 bg-slate-400 dark:bg-slate-600 rounded-full" />
-        </div>
+        {/* ========================================================================= */}
+        {/* HERO SHOW HEADER WITH FULL-BLEED COVER PHOTO                              */}
+        {/* ========================================================================= */}
+        <div className="relative w-full h-56 sm:h-64 bg-slate-900 shrink-0 overflow-hidden">
+          {heroImage ? (
+            <img 
+              src={heroImage} 
+              alt={show.title || 'Show poster'} 
+              className="w-full h-full object-cover object-center"
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-slate-500">
+              <Film size={48} strokeWidth={1.5} />
+              <span className="text-xs font-mono uppercase tracking-widest mt-2">No Photo Available</span>
+            </div>
+          )}
 
-        {/* Header */}
-        <div className="px-5 sm:px-6 py-3.5 sm:py-4.5 bg-[#DEE5EF] dark:bg-[#171F2C] border-b-2 border-slate-300 dark:border-[#2C384D] flex items-center justify-between shrink-0 shadow-[0_2px_4px_rgba(0,0,0,0.03)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.25)] relative z-20">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white dark:bg-[#253044] border border-slate-300 dark:border-[#3B4B67] flex items-center justify-center text-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#141A24] shrink-0">
-              <History size={16} strokeWidth={2.5} className="text-[#40bcf4]" />
-            </div>
-            
-            <div className="flex flex-col text-left">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-slate-900 dark:text-white leading-none">
-                  Edit Score
-                </h2>
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#0284c7] dark:text-[#40bcf4] bg-[#40bcf4]/10 border border-[#40bcf4]/30 px-2 py-0.5 rounded shadow-2xs">
-                  Update
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                Change your score, watch status, and notes
-              </p>
-            </div>
+          {/* Cinematic Multi-stop Gradient Overlays */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#141C28] via-[#141C28]/60 to-black/40" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#141C28]/80 via-transparent to-black/30" />
+
+          {/* Mobile Pull Handle Over Picture */}
+          <div className="w-full flex sm:hidden items-center justify-center pt-2.5 pb-1 relative z-20">
+            <div className="w-12 h-1.5 bg-white/40 backdrop-blur-md rounded-full" />
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg bg-white dark:bg-[#253044] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-300 dark:border-[#38465E] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#131924] active:translate-y-[1px] active:shadow-none transition-all cursor-pointer"
-            title="Close"
-          >
-            <X size={16} strokeWidth={2.4} />
-          </button>
+          {/* Top Actions: Category Badge & Close Button */}
+          <div className="absolute top-3 sm:top-4 inset-x-4 sm:inset-x-5 flex items-center justify-between z-20">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-black/50 backdrop-blur-md border border-white/15 text-white shadow-lg">
+              <History size={12} className="text-[#40bcf4]" />
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-200">
+                Score Revision
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-full bg-black/55 backdrop-blur-md text-white/80 hover:text-white hover:bg-black/80 border border-white/20 transition-all cursor-pointer shadow-lg active:scale-95"
+              title="Close"
+            >
+              <X size={17} strokeWidth={2.4} />
+            </button>
+          </div>
+
+          {/* Bottom Title & Show Metadata Overlay */}
+          <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 z-20 flex items-end justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] font-mono font-black uppercase tracking-widest text-[#40bcf4] drop-shadow-sm block">
+                {show.type?.replace('_', ' ') || 'SERIES'}
+              </span>
+
+              <h1 className="text-xl sm:text-2xl font-[1000] text-white tracking-tight leading-tight line-clamp-2 drop-shadow-md">
+                {show.title || 'Untitled Show'}
+              </h1>
+
+              <div className="flex items-center gap-2 text-[11px] font-mono text-stone-300 mt-1 drop-shadow-sm">
+                <span>{show.releaseYear || '—'}</span>
+                <span>•</span>
+                {show.totalSeasons ? (
+                  <span>{show.totalSeasons} Season{show.totalSeasons > 1 ? 's' : ''}</span>
+                ) : (
+                  <span>Single Run</span>
+                )}
+                {Array.isArray(show.genres) && show.genres.length > 0 && (
+                  <>
+                    <span>•</span>
+                    <span className="text-[#40bcf4] font-semibold truncate max-w-[150px] sm:max-w-[200px]">
+                      {show.genres.slice(0, 2).join(', ')}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Current Stored Score Chip */}
+            <div className="shrink-0 px-2.5 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/15 text-right shadow-xl">
+              <span className="text-[9px] font-mono uppercase text-stone-400 block font-semibold leading-none">
+                Current
+              </span>
+              <div className="flex items-baseline gap-0.5 justify-end mt-0.5">
+                <span className="text-base sm:text-lg font-black font-mono text-[#40bcf4] leading-none">
+                  {(item.rating ?? 0).toFixed(1)}
+                </span>
+                <span className="text-[9px] font-bold text-stone-400 leading-none">/10</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Scrollable Form Body */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-4.5 no-scrollbar flex-1 text-left">
           
-          {/* Read-Only Show Details Card */}
-          <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#2C384D] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-13 rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0 overflow-hidden border border-slate-300 dark:border-white/10 shadow-xs">
-                {show.posterUrl ? (
-                  <img 
-                    src={show.posterUrl} 
-                    alt={show.title} 
-                    className="w-full h-full object-cover" 
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-400">
-                    <Film size={16} />
-                  </div>
-                )}
-              </div>
-              <div className="min-w-0">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#0284c7] dark:text-[#40bcf4] block">
-                  Selected Show
-                </span>
-                <p className="text-sm font-extrabold text-slate-900 dark:text-white truncate mt-0.5">
-                  {show.title || 'Untitled Show'}
-                </p>
-                <div className="flex items-center gap-2 text-[11px] font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                  <span>{show.releaseYear || '—'}</span>
-                  <span>•</span>
-                  <span className="uppercase">{show.type?.replace('_', ' ') || 'SERIES'}</span>
-                  {show.totalSeasons && (
-                    <>
-                      <span>•</span>
-                      <span>{show.totalSeasons}S</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="shrink-0 text-right">
-              <span className="text-[10px] font-mono uppercase text-slate-400 block font-semibold">Current Score</span>
-              <span className="text-base font-black font-mono text-[#0284c7] dark:text-[#40bcf4]">
-                {(item.rating ?? 0).toFixed(1)}
-              </span>
-            </div>
-          </div>
-
           {/* Rating Console */}
           <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#2C384D] shadow-[0_3px_0_0_#CBD5E1] dark:shadow-[0_3px_0_0_#0F1520] space-y-3 sm:space-y-3.5 relative">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#222E42] pb-2.5 sm:pb-3">

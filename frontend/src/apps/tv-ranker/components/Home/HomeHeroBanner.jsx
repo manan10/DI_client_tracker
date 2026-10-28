@@ -111,13 +111,13 @@ const HomeHeroBanner = ({
   };
 
   return (
-    <section className="relative w-full rounded-lg bg-white dark:bg-[#161B22] border border-slate-200 dark:border-[#262E3B] shadow-sm dark:shadow-[0_12px_36px_rgba(0,0,0,0.6)] overflow-hidden font-sans select-none transition-colors duration-300">
+    <section className="relative w-full rounded-lg bg-white dark:bg-[#161B22] border border-slate-200 dark:border-[#262E3B] shadow-sm dark:shadow-[0_12px_36px_rgba(0,0,0,0.6)] font-sans select-none transition-colors duration-300 z-30">
       
       {/* Precision Cyan Horizon Highlight */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#40bcf4] to-transparent pointer-events-none opacity-90" />
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#40bcf4] to-transparent pointer-events-none opacity-90 rounded-t-lg overflow-hidden" />
 
       {/* Atmospheric Radial Sheen */}
-      <div className="absolute -top-12 -right-12 w-96 h-96 bg-[#40bcf4]/10 dark:bg-[#40bcf4]/12 blur-3xl pointer-events-none rounded-full" />
+      <div className="absolute -top-12 -right-12 w-96 h-96 bg-[#40bcf4]/10 dark:bg-[#40bcf4]/12 blur-3xl pointer-events-none rounded-full overflow-hidden" />
 
       {/* ========================================================================= */}
       {/* 1. EDITORIAL HEADLINE BLOCK                                              */}
@@ -145,7 +145,7 @@ const HomeHeroBanner = ({
       {/* ========================================================================= */}
       {/* 2. UNIFIED COMMAND DECK                                                  */}
       {/* ========================================================================= */}
-      <div className="border-t border-slate-200/90 dark:border-[#262E3B] bg-slate-50/70 dark:bg-[#11161D] p-2.5 sm:p-4 space-y-2.5 relative z-10">
+      <div className="border-t border-slate-200/90 dark:border-[#262E3B] bg-slate-50/70 dark:bg-[#11161D] p-2.5 sm:p-4 space-y-2.5 relative z-20 rounded-b-lg">
         
         {/* ROW 1: SEARCH + SORT + FILTERS + 3 VIEW MODES */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -176,7 +176,7 @@ const HomeHeroBanner = ({
           <div className="flex items-center justify-between sm:justify-start gap-1.5 shrink-0">
             
             {/* Sort Dropdown */}
-            <div className="relative shrink-0 flex-1 sm:flex-initial" ref={sortRef}>
+            <div className={`relative shrink-0 flex-1 sm:flex-initial ${isSortOpen ? 'z-50' : 'z-10'}`} ref={sortRef}>
               <button
                 type="button"
                 onClick={() => setIsSortOpen((prev) => !prev)}
@@ -195,7 +195,7 @@ const HomeHeroBanner = ({
               </button>
 
               {isSortOpen && (
-                <div className="absolute left-0 sm:left-auto sm:right-0 top-[calc(100%+4px)] w-44 rounded bg-white dark:bg-[#161B22] border border-slate-200 dark:border-[#262E3B] shadow-[0_12px_32px_rgba(0,0,0,0.6)] p-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute left-0 sm:left-auto sm:right-0 top-[calc(100%+4px)] w-44 rounded bg-white dark:bg-[#161B22] border border-slate-200 dark:border-[#262E3B] shadow-[0_16px_36px_rgba(0,0,0,0.65)] p-1 z-50 animate-in fade-in zoom-in-95 duration-100">
                   <div className="px-2 py-1 text-[8px] font-mono tracking-wider uppercase text-slate-400 dark:text-stone-400 select-none">
                     Sort Order
                   </div>

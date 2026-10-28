@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   X, Check, Loader2, Heart, ChevronDown, 
   Search, Film, Star, Minus, Plus, 
-  CheckCircle2, PlayCircle, Clock, PauseCircle, XCircle
+  CheckCircle2, PlayCircle, Clock, PauseCircle, XCircle,
+  RefreshCw, Clapperboard, Sparkles, Filter, ArrowUpRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApi } from '../../../shared/hooks/useApi';
@@ -42,6 +43,13 @@ const STATUS_OPTIONS = [
 
 const QUICK_SCORES = [6.0, 7.0, 8.0, 8.5, 9.0, 10.0];
 
+const FILTER_PILLS = [
+  { id: 'ALL', label: 'All Shows' },
+  { id: 'SERIES', label: 'Series' },
+  { id: 'ANIME', label: 'Anime' },
+  { id: 'MINISERIES', label: 'Miniseries' }
+];
+
 const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
   const { request, loading } = useApi();
 
@@ -49,15 +57,16 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
   const [ratedShowIds, setRatedShowIds] = useState(new Set());
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [selectedShow, setSelectedShow] = useState(null);
+  
+  // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
-  const [isShowDropdownOpen, setIsShowDropdownOpen] = useState(false);
+  const [typeFilter, setTypeFilter] = useState('ALL');
 
+  // Rating State
   const [rating, setRating] = useState(8.5);
   const [status, setStatus] = useState('COMPLETED');
   const [review, setReview] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
-
-  const showDropdownRef = useRef(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -113,30 +122,39 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
     };
   }, [isOpen, request]);
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (showDropdownRef.current && !showDropdownRef.current.contains(e.target)) {
-        setIsShowDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const unratedShows = useMemo(() => {
     return catalogShows.filter((s) => !ratedShowIds.has(String(s._id)));
   }, [catalogShows, ratedShowIds]);
 
   const filteredUnratedShows = useMemo(() => {
     const term = searchQuery.toLowerCase().trim();
-    if (!term) return unratedShows;
+
     return unratedShows.filter((s) => {
+      // Type/Format filter
+      if (typeFilter !== 'ALL') {
+        const sType = (s.type || '').toUpperCase();
+        const sGenres = Array.isArray(s.genres) ? s.genres.map(g => g.toUpperCase()) : [];
+        
+        if (typeFilter === 'ANIME') {
+          const isAnime = sType === 'ANIME' || sGenres.includes('ANIME');
+          if (!isAnime) return false;
+        } else if (typeFilter === 'MINISERIES') {
+          const isMini = sType === 'MINISERIES' || s.totalSeasons === 1;
+          if (!isMini) return false;
+        } else if (typeFilter === 'SERIES') {
+          if (sType === 'ANIME' || sGenres.includes('ANIME')) return false;
+        }
+      }
+
+      // Keyword search
+      if (!term) return true;
       const titleMatch = s.title?.toLowerCase().includes(term);
       const genreMatch = Array.isArray(s.genres) && s.genres.some((g) => g.toLowerCase().includes(term));
-      const typeMatch = s.type?.toLowerCase().includes(term);
-      return titleMatch || genreMatch || typeMatch;
+      const yearMatch = String(s.releaseYear || '').includes(term);
+
+      return titleMatch || genreMatch || yearMatch;
     });
-  }, [unratedShows, searchQuery]);
+  }, [unratedShows, searchQuery, typeFilter]);
 
   if (!isOpen) return null;
 
@@ -174,7 +192,11 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
   const handleSelectShow = (show) => {
     setSelectedShow(show);
     setSearchQuery('');
-    setIsShowDropdownOpen(false);
+  };
+
+  const handleClearSelectedShow = () => {
+    setSelectedShow(null);
+    setSearchQuery('');
   };
 
   const handleSubmit = async (e) => {
@@ -208,350 +230,454 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
     }
   };
 
+  const heroImage = selectedShow?.bannerUrl || selectedShow?.backdropUrl || selectedShow?.posterUrl;
+
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm select-none font-sans"
+      className="fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm select-none font-sans"
       onClick={onClose}
     >
       <div 
-        className="w-full sm:w-[500px] md:w-[540px] bg-[#E9EEF5] dark:bg-[#1E2636] border-t-2 sm:border-t-0 sm:border-l-2 border-slate-300 dark:border-[#334158] shadow-[0_15px_45px_rgba(0,0,0,0.25)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col max-h-[92dvh] sm:max-h-screen rounded-t-2xl sm:rounded-none text-slate-800 dark:text-slate-100 overflow-hidden relative"
+        className="w-full sm:w-[520px] md:w-[560px] bg-[#E9EEF5] dark:bg-[#151C28] border-t-2 sm:border-t-0 sm:border-l-2 border-slate-300 dark:border-[#2C384D] shadow-[0_15px_45px_rgba(0,0,0,0.25)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.85)] flex flex-col max-h-[94dvh] sm:max-h-screen rounded-t-2xl sm:rounded-none text-slate-800 dark:text-slate-100 overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#40bcf4] to-transparent pointer-events-none z-30" />
 
-        {/* Grab Handle */}
-        <div className="w-full flex sm:hidden items-center justify-center pt-2.5 pb-1 bg-[#DEE5EF] dark:bg-[#19202E] shrink-0">
-          <div className="w-12 h-1.5 bg-slate-400 dark:bg-slate-600 rounded-full" />
-        </div>
-
-        {/* Header */}
-        <div className="px-5 sm:px-6 py-3.5 sm:py-4.5 bg-[#DEE5EF] dark:bg-[#171F2C] border-b-2 border-slate-300 dark:border-[#2C384D] flex items-center justify-between shrink-0 shadow-[0_2px_4px_rgba(0,0,0,0.03)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.25)] relative z-20">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white dark:bg-[#253044] border border-slate-300 dark:border-[#3B4B67] flex items-center justify-center text-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#141A24] shrink-0">
-              <Star size={16} className="fill-[#40bcf4]" />
-            </div>
-            
-            <div className="flex flex-col text-left">
-              <h2 className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-slate-900 dark:text-white leading-none">
-                Rate Show
-              </h2>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                Add your score, watch status, and thoughts
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg bg-white dark:bg-[#253044] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-300 dark:border-[#38465E] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#131924] active:translate-y-[1px] active:shadow-none transition-all cursor-pointer"
-            title="Close"
-          >
-            <X size={16} strokeWidth={2.4} />
-          </button>
-        </div>
-
-        {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-4.5 no-scrollbar flex-1 text-left">
-          
-          {/* Select Show */}
-          <div className="space-y-1.5 relative" ref={showDropdownRef}>
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <span>Select Show</span>
-              <span className="text-[#40bcf4]">*</span>
-            </label>
-
-            <button
-              type="button"
-              onClick={() => setIsShowDropdownOpen((prev) => !prev)}
-              className={`w-full min-h-11 sm:min-h-12 px-3.5 py-2 flex items-center justify-between gap-3 rounded-xl bg-white dark:bg-[#141C28] border-2 text-left transition-all cursor-pointer outline-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] ${
-                isShowDropdownOpen 
-                  ? 'border-[#40bcf4] ring-2 ring-[#40bcf4]/20' 
-                  : 'border-slate-300 dark:border-[#2C384D] hover:border-slate-400 dark:hover:border-[#40bcf4]/50'
-              }`}
-            >
-              {selectedShow ? (
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-10 rounded bg-slate-200 dark:bg-slate-800 shrink-0 overflow-hidden border border-slate-300 dark:border-white/10 shadow-xs">
-                    {selectedShow.posterUrl ? (
-                      <img 
-                        src={selectedShow.posterUrl} 
-                        alt={selectedShow.title} 
-                        className="w-full h-full object-cover" 
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-400">
-                        <Film size={14} />
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate">
-                      {selectedShow.title}
-                    </p>
-                    <div className="flex items-center gap-2 text-[11px] font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                      <span>{selectedShow.releaseYear || '—'}</span>
-                      <span>•</span>
-                      <span className="uppercase text-[#0284c7] dark:text-[#40bcf4] font-bold">
-                        {selectedShow.type?.replace('_', ' ') || 'SERIES'}
-                      </span>
-                      {selectedShow.totalSeasons && (
-                        <>
-                          <span>•</span>
-                          <span>{selectedShow.totalSeasons}S</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2.5 text-slate-400 dark:text-slate-500">
-                  <Search size={15} className="text-[#40bcf4] shrink-0" />
-                  <span className="text-xs sm:text-sm font-medium">Search by title or genre...</span>
-                </div>
-              )}
-
-              <ChevronDown 
-                size={16} 
-                className={`text-slate-400 shrink-0 transition-transform duration-200 ${isShowDropdownOpen ? 'rotate-180 text-[#40bcf4]' : ''}`} 
+        {/* ========================================================================= */}
+        {/* VIEW A: AFTER SHOW SELECTION (FULL BLEED HERO PHOTO HEADER)                */}
+        {/* ========================================================================= */}
+        {selectedShow ? (
+          <div className="relative w-full h-56 sm:h-64 bg-slate-900 shrink-0 overflow-hidden">
+            {heroImage ? (
+              <img 
+                src={heroImage} 
+                alt={selectedShow.title || 'Show photo'} 
+                className="w-full h-full object-cover object-center"
               />
-            </button>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-slate-500">
+                <Film size={44} strokeWidth={1.5} />
+                <span className="text-xs font-mono uppercase tracking-widest mt-2">No Photo Available</span>
+              </div>
+            )}
 
-            {/* Custom Popover Search Menu */}
-            {isShowDropdownOpen && (
-              <div className="absolute top-[calc(100%+6px)] inset-x-0 z-50 bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#38465E] rounded-xl shadow-[0_12px_30px_rgba(0,0,0,0.18)] dark:shadow-[0_15px_40px_rgba(0,0,0,0.7)] overflow-hidden animate-in fade-in duration-150">
-                <div className="p-2 border-b border-slate-200 dark:border-[#232F42] bg-[#F5F8FC] dark:bg-[#101721]">
-                  <div className="relative flex items-center">
-                    <Search size={14} className="absolute left-3 text-slate-400 pointer-events-none" />
-                    <input
-                      type="text"
-                      autoFocus
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Type show title, anime, drama..."
-                      className="w-full h-8.5 pl-9 pr-3 rounded-lg bg-white dark:bg-[#192230] border border-slate-300 dark:border-[#2C384D] text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-[#40bcf4] transition-all"
-                    />
-                  </div>
-                </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-[#151C28] via-[#151C28]/60 to-black/40" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#151C28]/80 via-transparent to-black/30" />
 
-                <div className="max-h-56 overflow-y-auto p-1.5 space-y-1 no-scrollbar">
-                  {loadingCatalog ? (
-                    <div className="p-5 flex flex-col items-center justify-center gap-2 text-xs font-mono text-slate-400">
-                      <Loader2 size={16} className="animate-spin text-[#40bcf4]" />
-                      <span>Loading shows...</span>
-                    </div>
-                  ) : filteredUnratedShows.length === 0 ? (
-                    <div className="p-5 text-center text-xs text-slate-500 dark:text-slate-400">
-                      {searchQuery ? `No shows found for "${searchQuery}"` : 'All shows are already rated'}
-                    </div>
+            {/* Mobile Drag Handle */}
+            <div className="w-full flex sm:hidden items-center justify-center pt-2.5 pb-1 relative z-20">
+              <div className="w-12 h-1.5 bg-white/40 backdrop-blur-md rounded-full" />
+            </div>
+
+            {/* Top Toolbar */}
+            <div className="absolute top-3 sm:top-4 inset-x-4 sm:inset-x-5 flex items-center justify-between z-20">
+              <button
+                type="button"
+                onClick={handleClearSelectedShow}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white shadow-lg transition-all cursor-pointer active:scale-95"
+                title="Choose a different show"
+              >
+                <RefreshCw size={11} className="text-[#40bcf4]" />
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-200">
+                  Change Show
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 rounded-full bg-black/55 backdrop-blur-md text-white/80 hover:text-white hover:bg-black/80 border border-white/20 transition-all cursor-pointer shadow-lg active:scale-95"
+                title="Close"
+              >
+                <X size={17} strokeWidth={2.4} />
+              </button>
+            </div>
+
+            {/* Bottom Title & Details */}
+            <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 z-20 flex items-end justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-mono font-black uppercase tracking-widest text-[#40bcf4] drop-shadow-sm block">
+                  {selectedShow.type?.replace('_', ' ') || 'SERIES'}
+                </span>
+
+                <h1 className="text-xl sm:text-2xl font-[1000] text-white tracking-tight leading-tight line-clamp-2 drop-shadow-md">
+                  {selectedShow.title || 'Untitled Show'}
+                </h1>
+
+                <div className="flex items-center gap-2 text-[11px] font-mono text-stone-300 mt-1 drop-shadow-sm">
+                  <span>{selectedShow.releaseYear || '—'}</span>
+                  <span>•</span>
+                  {selectedShow.totalSeasons ? (
+                    <span>{selectedShow.totalSeasons} Season{selectedShow.totalSeasons > 1 ? 's' : ''}</span>
                   ) : (
-                    filteredUnratedShows.map((show) => {
-                      const isSelected = selectedShow?._id === show._id;
-                      return (
-                        <button
-                          key={show._id}
-                          type="button"
-                          onClick={() => handleSelectShow(show)}
-                          className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-[#40bcf4]/15 text-[#0284c7] dark:text-[#40bcf4] font-bold border border-[#40bcf4]/40 shadow-2xs'
-                              : 'hover:bg-slate-100 dark:hover:bg-[#1E293B] text-slate-800 dark:text-slate-200 border border-transparent'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                            <div className="w-7 h-9 rounded bg-slate-200 dark:bg-slate-800 shrink-0 overflow-hidden border border-slate-300 dark:border-white/10 shadow-2xs">
-                              {show.posterUrl ? (
-                                <img src={show.posterUrl} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-slate-400">
-                                  <Film size={12} />
-                                </div>
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold truncate text-slate-900 dark:text-white">
-                                {show.title}
-                              </p>
-                              <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                                <span>{show.releaseYear || '—'}</span>
-                                <span>•</span>
-                                <span className="uppercase">{show.type?.replace('_', ' ') || 'SERIES'}</span>
-                                {Array.isArray(show.genres) && show.genres.length > 0 && (
-                                  <>
-                                    <span>•</span>
-                                    <span className="text-[#0284c7] dark:text-[#40bcf4] truncate">
-                                      {show.genres.slice(0, 2).join(', ')}
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          {isSelected && (
-                            <Check size={14} className="text-[#40bcf4] shrink-0" strokeWidth={2.5} />
-                          )}
-                        </button>
-                      );
-                    })
+                    <span>Single Run</span>
+                  )}
+                  {Array.isArray(selectedShow.genres) && selectedShow.genres.length > 0 && (
+                    <>
+                      <span>•</span>
+                      <span className="text-[#40bcf4] font-semibold truncate max-w-[150px] sm:max-w-[200px]">
+                        {selectedShow.genres.slice(0, 2).join(', ')}
+                      </span>
+                    </>
                   )}
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* Rating Console (Responsive Mobile Flow) */}
-          <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#2C384D] shadow-[0_3px_0_0_#CBD5E1] dark:shadow-[0_3px_0_0_#0F1520] space-y-3 sm:space-y-3.5 relative">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#222E42] pb-2.5 sm:pb-3">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
-                  Your Rating
+              <div className="shrink-0 px-2.5 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/15 text-right shadow-xl">
+                <span className="text-[9px] font-mono uppercase text-stone-400 block font-semibold leading-none">
+                  Entry
                 </span>
-                <span className="text-[10px] font-mono text-slate-400 dark:text-slate-400">
-                  Scale of 0.0 to 10.0
+                <span className="text-xs font-black font-mono text-[#00e054] leading-none mt-1 inline-block uppercase">
+                  Unrated
                 </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider border transition-all ${tier.badge}`}>
-                  {tier.label}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => setIsFavorite((prev) => !prev)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold border transition-all cursor-pointer active:translate-y-[1px] ${
-                    isFavorite
-                      ? 'bg-rose-500/15 border-rose-500/40 text-rose-600 dark:text-rose-400 shadow-[0_2px_0_0_rgba(244,63,94,0.3)]'
-                      : 'bg-slate-100 dark:bg-[#1E2838] border-slate-300 dark:border-[#38465E] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#101621]'
-                  }`}
-                  title={isFavorite ? 'Saved to Favorites' : 'Add to Favorites'}
-                >
-                  <Heart 
-                    size={12} 
-                    className={`transition-colors ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} 
-                  />
-                  <span>Favorite</span>
-                </button>
               </div>
             </div>
+          </div>
+        ) : (
+          /* ========================================================================= */
+          /* VIEW B: PRE-SELECTION HEADER                                              */
+          /* ========================================================================= */
+          <div className="shrink-0 border-b-2 border-slate-300 dark:border-[#263143] bg-[#DEE5EF] dark:bg-[#121824] shadow-[0_2px_8px_rgba(0,0,0,0.05)] relative z-20">
+            {/* Mobile Grab Handle */}
+            <div className="w-full flex sm:hidden items-center justify-center pt-2 pb-1">
+              <div className="w-12 h-1.5 bg-slate-400 dark:bg-slate-600 rounded-full" />
+            </div>
 
-            {/* Score & Presets - Responsive Wrap / Grid to avoid overflow */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-[#F5F8FC] dark:bg-[#0F1622] border border-slate-300 dark:border-[#232F42] shadow-inner">
-              <div className="flex items-baseline justify-between sm:justify-start gap-1">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white font-mono leading-none">
-                    {rating.toFixed(1)}
-                  </span>
-                  <span className="text-xs font-bold text-slate-400">/ 10</span>
+            <div className="px-5 sm:px-6 pt-3 pb-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#40bcf4]/15 border border-[#40bcf4]/30 flex items-center justify-center text-[#0284c7] dark:text-[#40bcf4] shadow-xs">
+                  <Clapperboard size={18} strokeWidth={2.4} />
+                </div>
+                
+                <div className="flex flex-col text-left">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-slate-900 dark:text-white leading-none">
+                      Pick a Show
+                    </h2>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#0284c7] dark:text-[#40bcf4] bg-[#40bcf4]/10 border border-[#40bcf4]/30 px-2 py-0.5 rounded shadow-2xs">
+                      {unratedShows.length} Pending
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                    Search and select any unrated show to score it
+                  </p>
                 </div>
               </div>
 
-              {/* 6 Quick Preset Buttons arranged in a 6-col grid to guarantee no horizontal overflow on mobile */}
-              <div className="grid grid-cols-6 gap-1 w-full sm:w-auto">
-                {QUICK_SCORES.map((val) => (
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 rounded-lg bg-white dark:bg-[#1E2838] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-300 dark:border-[#38465E] shadow-2xs active:scale-95 transition-all cursor-pointer"
+                title="Close"
+              >
+                <X size={16} strokeWidth={2.4} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* BODY WORKSPACE                                                            */}
+        {/* ========================================================================= */}
+        <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col text-left">
+          
+          {/* ----------------------------------------------------------------------- */}
+          {/* SCREEN 1: PRE-SELECTION SHOW DIRECTORY                                  */}
+          {/* ----------------------------------------------------------------------- */}
+          {!selectedShow ? (
+            <div className="p-4 sm:p-5 space-y-3.5 flex-1 flex flex-col">
+              
+              {/* Search Control */}
+              <div className="relative flex items-center">
+                <Search size={16} className="absolute left-3.5 text-slate-400 dark:text-stone-400 pointer-events-none" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search series, anime, genre, year..."
+                  className="w-full h-11 pl-10 pr-9 rounded-xl bg-white dark:bg-[#101621] border-2 border-slate-300 dark:border-[#2C384D] text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-stone-500 outline-none focus:border-[#40bcf4] focus:ring-1 focus:ring-[#40bcf4]/30 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14] transition-all"
+                />
+                {searchQuery && (
                   <button
-                    key={val}
                     type="button"
-                    onClick={() => setRating(val)}
-                    className={`h-8 sm:h-auto px-1 sm:px-2.5 py-1 text-center rounded text-xs font-mono font-bold border transition-all cursor-pointer active:translate-y-[1px] active:shadow-none ${
-                      Math.abs(rating - val) < 0.05
-                        ? 'bg-[#40bcf4] text-[#0A1017] border-[#29a8e2] font-black shadow-[0_2px_0_0_#1c86b8]'
-                        : 'bg-white dark:bg-[#1F293A] text-slate-700 dark:text-slate-300 border-slate-300 dark:border-[#34425A] hover:border-slate-400 dark:hover:border-slate-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520]'
-                    }`}
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
                   >
-                    {val === 10 ? '10' : val.toFixed(1)}
+                    <X size={14} />
                   </button>
-                ))}
+                )}
+              </div>
+
+              {/* Interactive Category Filter Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                {FILTER_PILLS.map((pill) => {
+                  const isSelected = typeFilter === pill.id;
+                  return (
+                    <button
+                      key={pill.id}
+                      type="button"
+                      onClick={() => setTypeFilter(pill.id)}
+                      className={`px-3 py-1 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider shrink-0 transition-all cursor-pointer border ${
+                        isSelected
+                          ? 'bg-[#40bcf4] text-[#0A1017] border-[#29a8e2] shadow-xs'
+                          : 'bg-white dark:bg-[#131B27] text-slate-600 dark:text-slate-300 border-slate-300 dark:border-[#2A374C] hover:border-slate-400 dark:hover:border-slate-500'
+                      }`}
+                    >
+                      {pill.label}
+                    </button>
+                  );
+                })}
+
+                <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 ml-auto shrink-0 pl-1 font-semibold">
+                  {filteredUnratedShows.length} found
+                </span>
+              </div>
+
+              {/* Catalog Cards Grid */}
+              <div className="flex-1 min-h-[300px] overflow-y-auto space-y-2 pr-0.5 no-scrollbar">
+                {loadingCatalog ? (
+                  <div className="h-64 flex flex-col items-center justify-center gap-2 text-xs font-mono text-slate-400">
+                    <Loader2 size={20} className="animate-spin text-[#40bcf4]" />
+                    <span>Indexing unrated collection...</span>
+                  </div>
+                ) : filteredUnratedShows.length === 0 ? (
+                  <div className="h-64 flex flex-col items-center justify-center text-center p-6 rounded-2xl bg-white dark:bg-[#101621] border-2 border-slate-300 dark:border-[#2C384D] shadow-sm">
+                    <Film size={34} className="text-slate-400 dark:text-slate-600 mb-2 stroke-1" />
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                      {searchQuery ? `No matches for "${searchQuery}"` : 'All database shows are rated'}
+                    </p>
+                    <p className="text-[11px] text-slate-400 dark:text-stone-400 mt-1 max-w-xs">
+                      {searchQuery ? 'Try another keyword or change your filter pill.' : 'Your backlog is completely up to date!'}
+                    </p>
+                  </div>
+                ) : (
+                  filteredUnratedShows.map((show) => (
+                    <div
+                      key={show._id}
+                      onClick={() => handleSelectShow(show)}
+                      className="group flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-[#101621] border-2 border-slate-300 dark:border-[#253043] hover:border-[#40bcf4] dark:hover:border-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14] transition-all cursor-pointer text-left active:translate-y-[1px]"
+                    >
+                      {/* Left: Poster + Content */}
+                      <div className="flex items-center gap-3 min-w-0 pr-2">
+                        <div className="w-11 h-15 rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0 overflow-hidden border border-slate-300 dark:border-white/10 shadow-xs relative">
+                          {show.posterUrl ? (
+                            <img 
+                              src={show.posterUrl} 
+                              alt={show.title} 
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" 
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-400">
+                              <Film size={16} />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0">
+                          <h3 className="text-xs sm:text-sm font-extrabold truncate text-slate-900 dark:text-white group-hover:text-[#40bcf4] transition-colors leading-snug">
+                            {show.title}
+                          </h3>
+
+                          <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500 dark:text-slate-400 mt-1 flex-wrap">
+                            <span className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-white/5 font-bold text-slate-700 dark:text-slate-300">
+                              {show.releaseYear || '—'}
+                            </span>
+                            <span>•</span>
+                            <span className="uppercase text-[#0284c7] dark:text-[#40bcf4] font-bold">
+                              {show.type?.replace('_', ' ') || 'SERIES'}
+                            </span>
+                            {show.totalSeasons && (
+                              <>
+                                <span>•</span>
+                                <span>{show.totalSeasons}S</span>
+                              </>
+                            )}
+                          </div>
+
+                          {Array.isArray(show.genres) && show.genres.length > 0 && (
+                            <p className="text-[10px] font-medium text-slate-400 dark:text-stone-400 truncate mt-0.5">
+                              {show.genres.slice(0, 3).join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right: Action Chip */}
+                      <div className="shrink-0 pl-1">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1A2332] group-hover:bg-[#40bcf4] text-slate-600 dark:text-slate-300 group-hover:text-[#0A1017] border border-slate-300 dark:border-[#2C384D] group-hover:border-[#40bcf4] text-[10px] font-mono font-black uppercase tracking-wider transition-all shadow-2xs">
+                          <span>Rate</span>
+                          <ArrowUpRight size={12} strokeWidth={2.8} />
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
+          ) : (
+            /* ----------------------------------------------------------------------- */
+            /* SCREEN 2: SCORING & LOGGING CONSOLE (AFTER SHOW IS SELECTED)            */
+            /* ----------------------------------------------------------------------- */
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-4.5">
+              
+              {/* Rating Console */}
+              <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#101621] border-2 border-slate-300 dark:border-[#2C384D] shadow-[0_3px_0_0_#CBD5E1] dark:shadow-[0_3px_0_0_#0F1520] space-y-3 sm:space-y-3.5 relative">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#222E42] pb-2.5 sm:pb-3">
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+                      Your Score
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400 dark:text-slate-400">
+                      Scale of 0.0 to 10.0
+                    </span>
+                  </div>
 
-            {/* Slider with Precision Steppers */}
-            <div className="flex items-center gap-2.5 sm:gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => adjustScore(-0.1)}
-                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1E2838] hover:bg-slate-200 dark:hover:bg-[#253246] border border-slate-300 dark:border-[#34425A] flex items-center justify-center text-slate-700 dark:text-slate-300 transition-all cursor-pointer active:translate-y-[1px] active:shadow-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] shrink-0"
-                title="-0.1"
-              >
-                <Minus size={13} strokeWidth={2.5} />
-              </button>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider border transition-all ${tier.badge}`}>
+                      {tier.label}
+                    </span>
 
-              <input
-                type="range"
-                min="0"
-                max="10"
-                step="0.1"
-                value={rating}
-                onChange={(e) => setRating(parseFloat(e.target.value))}
-                className="flex-1 h-2 bg-slate-200 dark:bg-[#0E1520] rounded-lg appearance-none accent-[#40bcf4] cursor-pointer"
-              />
+                    <button
+                      type="button"
+                      onClick={() => setIsFavorite((prev) => !prev)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold border transition-all cursor-pointer active:translate-y-[1px] ${
+                        isFavorite
+                          ? 'bg-rose-500/15 border-rose-500/40 text-rose-600 dark:text-rose-400 shadow-[0_2px_0_0_rgba(244,63,94,0.3)]'
+                          : 'bg-slate-100 dark:bg-[#1E2838] border-slate-300 dark:border-[#38465E] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#101621]'
+                      }`}
+                      title={isFavorite ? 'Saved to Favorites' : 'Add to Favorites'}
+                    >
+                      <Heart 
+                        size={12} 
+                        className={`transition-colors ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} 
+                      />
+                      <span>Favorite</span>
+                    </button>
+                  </div>
+                </div>
 
-              <button
-                type="button"
-                onClick={() => adjustScore(0.1)}
-                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1E2838] hover:bg-slate-200 dark:hover:bg-[#253246] border border-slate-300 dark:border-[#34425A] flex items-center justify-center text-slate-700 dark:text-slate-300 transition-all cursor-pointer active:translate-y-[1px] active:shadow-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] shrink-0"
-                title="+0.1"
-              >
-                <Plus size={13} strokeWidth={2.5} />
-              </button>
-            </div>
-          </div>
+                {/* Score & Presets Display */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-[#F5F8FC] dark:bg-[#0A0E15] border border-slate-300 dark:border-[#232F42] shadow-inner">
+                  <div className="flex items-baseline justify-between sm:justify-start gap-1">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white font-mono leading-none">
+                        {rating.toFixed(1)}
+                      </span>
+                      <span className="text-xs font-bold text-slate-400">/ 10</span>
+                    </div>
+                  </div>
 
-          {/* Watch Status (Mobile: 2 cols with last item full width, sm+: 3 cols) */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
-              Watch Status
-            </label>
+                  <div className="grid grid-cols-6 gap-1 w-full sm:w-auto">
+                    {QUICK_SCORES.map((val) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setRating(val)}
+                        className={`h-8 sm:h-auto px-1 sm:px-2.5 py-1 text-center rounded text-xs font-mono font-bold border transition-all cursor-pointer active:translate-y-[1px] active:shadow-none ${
+                          Math.abs(rating - val) < 0.05
+                            ? 'bg-[#40bcf4] text-[#0A1017] border-[#29a8e2] font-black shadow-[0_2px_0_0_#1c86b8]'
+                            : 'bg-white dark:bg-[#1F293A] text-slate-700 dark:text-slate-300 border-slate-300 dark:border-[#34425A] hover:border-slate-400 dark:hover:border-slate-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520]'
+                        }`}
+                      >
+                        {val === 10 ? '10' : val.toFixed(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {STATUS_OPTIONS.map((opt, idx) => {
-                const Icon = opt.icon;
-                const isSelected = status === opt.value;
-                const isLastOnMobile = idx === STATUS_OPTIONS.length - 1;
-                return (
+                {/* Slider with Precision Steppers */}
+                <div className="flex items-center gap-2.5 sm:gap-3 pt-1">
                   <button
-                    key={opt.value}
                     type="button"
-                    onClick={() => setStatus(opt.value)}
-                    className={`flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-lg border-2 text-xs font-bold transition-all cursor-pointer text-left active:translate-y-[1px] ${
-                      isLastOnMobile ? 'col-span-2 sm:col-span-1' : ''
-                    } ${
-                      isSelected
-                        ? opt.active
-                        : 'bg-white dark:bg-[#141C28] border-slate-300 dark:border-[#2C384D] text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520]'
-                    }`}
+                    onClick={() => adjustScore(-0.1)}
+                    className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1E2838] hover:bg-slate-200 dark:hover:bg-[#253246] border border-slate-300 dark:border-[#34425A] flex items-center justify-center text-slate-700 dark:text-slate-300 transition-all cursor-pointer active:translate-y-[1px] active:shadow-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] shrink-0"
+                    title="-0.1"
                   >
-                    <Icon size={14} className="shrink-0" />
-                    <span className="truncate">{opt.label}</span>
+                    <Minus size={13} strokeWidth={2.5} />
                   </button>
-                );
-              })}
-            </div>
-          </div>
 
-          {/* Personal Review */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
-              Review & Notes
-            </label>
-            <textarea
-              rows={3}
-              value={review}
-              onChange={(e) => setReview(e.target.value)}
-              placeholder="What stood out? Story, acting, pacing, ending..."
-              className="w-full p-3 rounded-xl bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#2C384D] text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] transition-colors resize-none"
-            />
-          </div>
-        </form>
+                  <input
+                    type="range"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    value={rating}
+                    onChange={(e) => setRating(parseFloat(e.target.value))}
+                    className="flex-1 h-2 bg-slate-200 dark:bg-[#0A0E15] rounded-lg appearance-none accent-[#40bcf4] cursor-pointer"
+                  />
 
-        {/* Footer Bar with safe-area spacing */}
-        <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-t-2 border-slate-300 dark:border-[#2C384D] bg-[#DEE5EF] dark:bg-[#171F2C] flex items-center justify-between gap-3 shrink-0 shadow-[0_-2px_6px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.25)] pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))] sm:pb-4">
+                  <button
+                    type="button"
+                    onClick={() => adjustScore(0.1)}
+                    className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1E2838] hover:bg-slate-200 dark:hover:bg-[#253246] border border-slate-300 dark:border-[#34425A] flex items-center justify-center text-slate-700 dark:text-slate-300 transition-all cursor-pointer active:translate-y-[1px] active:shadow-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] shrink-0"
+                    title="+0.1"
+                  >
+                    <Plus size={13} strokeWidth={2.5} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Watch Status */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+                  Watch Status
+                </label>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {STATUS_OPTIONS.map((opt, idx) => {
+                    const Icon = opt.icon;
+                    const isSelected = status === opt.value;
+                    const isLastOnMobile = idx === STATUS_OPTIONS.length - 1;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setStatus(opt.value)}
+                        className={`flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-lg border-2 text-xs font-bold transition-all cursor-pointer text-left active:translate-y-[1px] ${
+                          isLastOnMobile ? 'col-span-2 sm:col-span-1' : ''
+                        } ${
+                          isSelected
+                            ? opt.active
+                            : 'bg-white dark:bg-[#101621] border-slate-300 dark:border-[#2C384D] text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520]'
+                        }`}
+                      >
+                        <Icon size={14} className="shrink-0" />
+                        <span className="truncate">{opt.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Personal Review */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+                  Review & Notes
+                </label>
+                <textarea
+                  rows={3}
+                  value={review}
+                  onChange={(e) => setReview(e.target.value)}
+                  placeholder="What stood out? Story, acting, pacing, ending..."
+                  className="w-full p-3 rounded-xl bg-white dark:bg-[#101621] border-2 border-slate-300 dark:border-[#2C384D] text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-stone-500 outline-none focus:border-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] transition-colors resize-none"
+                />
+              </div>
+            </form>
+          )}
+
+        </div>
+
+        {/* ========================================================================= */}
+        {/* FOOTER BAR                                                                */}
+        {/* ========================================================================= */}
+        <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-t-2 border-slate-300 dark:border-[#263143] bg-[#DEE5EF] dark:bg-[#121824] flex items-center justify-between gap-3 shrink-0 shadow-[0_-2px_6px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.25)] pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))] sm:pb-4">
           <button
             type="button"
-            onClick={onClose}
+            onClick={selectedShow ? handleClearSelectedShow : onClose}
             className="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
           >
-            Cancel
+            {selectedShow ? 'Back' : 'Cancel'}
           </button>
           
           <button

@@ -144,56 +144,52 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
             {/* ========================================================================= */}
             <div className="flex items-center shrink-0 min-w-0 z-20">
               <div className="flex items-center gap-2.5 sm:gap-3.5">
-                
                 {/* TV Glyph Container */}
                 <Link
                   to="/tv-rater"
                   className="group flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#1F242B] border border-[#2C3440] hover:border-[#40bcf4]/50 hover:bg-[#252C35] text-stone-300 hover:text-[#40bcf4] shadow-inner transition-all duration-200 outline-none shrink-0"
                   title="Plot Twist Home"
                 >
-                  <Clapperboard size={18} strokeWidth={2.3} className="text-[#40bcf4] group-hover:scale-105 transition-transform" />                </Link>
+                  <Clapperboard size={18} strokeWidth={2.3} className="text-[#40bcf4] group-hover:scale-105 transition-transform" />
+                </Link>
 
-                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                {/* Responsive Container: Stacks vertically on mobile, horizontal row on sm+ */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 items-start justify-center">
                   
                   {/* Combined Option 3 & Option 12 Brand Lockup */}
                   <Link
                     to="/tv-rater"
-                    className="group/brand flex flex-col text-left outline-none"
+                    className="group/brand flex items-center gap-2 outline-none py-0.5"
                     title="Plot Twist — Screen Vault"
                   >
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-baseline leading-none">
-                        <span className="text-[17px] sm:text-[20px] font-[1000] tracking-[-0.03em] text-white">
-                          plot
-                        </span>
-                        <span className="text-[17px] sm:text-[20px] font-[1000] tracking-[-0.03em] text-[#40bcf4]">
-                          twist
-                        </span>
-                      </div>
-
-                      {/* Letterboxd Cinephile Tri-Dot Trio */}
-                      <div className="flex items-center gap-1 shrink-0 pb-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#ff8000] shadow-[0_0_6px_rgba(255,128,0,0.6)]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#00e054] shadow-[0_0_6px_rgba(0,224,84,0.6)]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#40bcf4] shadow-[0_0_6px_rgba(64,188,244,0.6)]" />
-                      </div>
+                    <div className="flex items-baseline leading-none">
+                      <span className="text-[17px] sm:text-[20px] font-[1000] tracking-[-0.03em] text-white">
+                        plot
+                      </span>
+                      <span className="text-[17px] sm:text-[20px] font-[1000] tracking-[-0.03em] text-[#40bcf4]">
+                        twist
+                      </span>
                     </div>
 
-                    <span className="text-[7.5px] font-mono tracking-[0.22em] uppercase text-stone-400 mt-1 leading-none font-bold">
-                      Cinematic Universe
-                    </span>
+                    {/* Letterboxd Cinephile Tri-Dot Trio */}
+                    <div className="flex items-center gap-1 shrink-0 pb-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#ff8000] shadow-[0_0_6px_rgba(255,128,0,0.6)]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#00e054] shadow-[0_0_6px_rgba(0,224,84,0.6)]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#40bcf4] shadow-[0_0_6px_rgba(64,188,244,0.6)]" />
+                    </div>
                   </Link>
 
+                  {/* Divider visible only on sm+ screens */}
                   <span className="hidden sm:inline text-stone-600 font-light select-none text-xs">
                     |
                   </span>
 
-                  {/* QUICK APP SWITCHER DROPDOWN TRIGGER */}
-                  <div className="relative" ref={dropdownRef}>
+                  {/* QUICK APP SWITCHER DROPDOWN TRIGGER (Below title on mobile) */}
+                  <div className="relative mt-0.5 sm:mt-0" ref={dropdownRef}>
                     <button
                       type="button"
                       onClick={() => setIsAppDropdownOpen((prev) => !prev)}
-                      className="group/switcher inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-sans font-medium text-stone-400 hover:text-white leading-tight sm:leading-none px-2 py-1 -mx-2 rounded-md hover:bg-white/5 transition-all cursor-pointer outline-none"
+                      className="group/switcher inline-flex items-center gap-1 text-[10px] sm:text-xs font-sans font-medium text-stone-400 hover:text-white leading-tight px-1.5 sm:px-2 py-0.5 -mx-1.5 sm:-mx-2 rounded-md hover:bg-white/5 transition-all cursor-pointer outline-none"
                       title="Switch Workspace Application"
                       aria-haspopup="true"
                       aria-expanded={isAppDropdownOpen}
@@ -202,7 +198,7 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
                         Show Rater
                       </span>
                       <ChevronDown
-                        size={12}
+                        size={11}
                         className={`text-stone-500 group-hover/switcher:text-white transition-transform duration-200 ${
                           isAppDropdownOpen ? 'rotate-180 text-white' : ''
                         }`}
@@ -211,7 +207,7 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
 
                     {/* APP DROPDOWN MENU */}
                     {isAppDropdownOpen && (
-                      <div className="absolute left-0 mt-2 w-56 rounded-xl bg-[#14181C]/98 backdrop-blur-xl border border-[#2C3440] shadow-[0_12px_36px_rgba(0,0,0,0.8)] p-1 z-50 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="absolute left-0 mt-1.5 w-56 rounded-xl bg-[#14181C]/98 backdrop-blur-xl border border-[#2C3440] shadow-[0_12px_36px_rgba(0,0,0,0.8)] p-1 z-50 animate-in fade-in zoom-in-95 duration-150">
                         <div className="px-2.5 py-1.5 text-[9px] font-mono tracking-wider uppercase text-stone-400 select-none">
                           Switch Workspace
                         </div>
