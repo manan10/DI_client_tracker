@@ -133,7 +133,7 @@ const HomeHeroBanner = ({
           </div>
 
           <h1 className="text-2xl sm:text-4xl lg:text-5xl font-[1000] uppercase tracking-tight text-slate-950 dark:text-white leading-[1.04]">
-            All-Time Show <span className="text-[#40bcf4]">Rankings</span>
+            The <span className="text-[#40bcf4]">Couch Hierarchy</span>
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-600 dark:text-stone-400 font-medium leading-relaxed max-w-2xl pt-0.5">
