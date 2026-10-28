@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  X, Check, Loader2, Heart, ChevronDown, 
-  Search, Film, Star, Minus, Plus, 
+  X, Check, Loader2, Heart, Search, Film, Minus, Plus, 
   CheckCircle2, PlayCircle, Clock, PauseCircle, XCircle,
-  RefreshCw, Clapperboard, Sparkles, Filter, ArrowUpRight
+  RefreshCw, Clapperboard, ArrowUpRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApi } from '../../../shared/hooks/useApi';
@@ -130,7 +129,6 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
     const term = searchQuery.toLowerCase().trim();
 
     return unratedShows.filter((s) => {
-      // Type/Format filter
       if (typeFilter !== 'ALL') {
         const sType = (s.type || '').toUpperCase();
         const sGenres = Array.isArray(s.genres) ? s.genres.map(g => g.toUpperCase()) : [];
@@ -146,7 +144,6 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
         }
       }
 
-      // Keyword search
       if (!term) return true;
       const titleMatch = s.title?.toLowerCase().includes(term);
       const genreMatch = Array.isArray(s.genres) && s.genres.some((g) => g.toLowerCase().includes(term));
@@ -230,7 +227,7 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
     }
   };
 
-  const heroImage = selectedShow?.bannerUrl || selectedShow?.backdropUrl || selectedShow?.posterUrl;
+  const posterImage = selectedShow?.posterUrl || selectedShow?.bannerUrl || selectedShow?.backdropUrl;
 
   return (
     <div 
@@ -244,101 +241,131 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
         <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#40bcf4] to-transparent pointer-events-none z-30" />
 
         {/* ========================================================================= */}
-        {/* VIEW A: AFTER SHOW SELECTION (FULL BLEED HERO PHOTO HEADER)                */}
+        {/* VIEW A: AFTER SHOW SELECTION (RE-ARCHITECTED CINEMATIC HERO SECTION)      */}
         {/* ========================================================================= */}
         {selectedShow ? (
-          <div className="relative w-full h-56 sm:h-64 bg-slate-900 shrink-0 overflow-hidden">
-            {heroImage ? (
-              <img 
-                src={heroImage} 
-                alt={selectedShow.title || 'Show photo'} 
-                className="w-full h-full object-cover object-center"
+          <div className="relative w-full bg-gradient-to-r from-[#0d131f] via-[#101726] to-[#0c121e] border-b-2 border-slate-300 dark:border-[#2C384D] shrink-0 overflow-hidden select-none">
+            
+            {/* Ambient Lighting & Horizon Glow */}
+            {posterImage && (
+              <div 
+                className="absolute -top-12 -left-12 w-80 h-80 bg-cover bg-center blur-3xl opacity-30 pointer-events-none"
+                style={{ backgroundImage: `url(${posterImage})` }}
               />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-slate-500">
-                <Film size={44} strokeWidth={1.5} />
-                <span className="text-xs font-mono uppercase tracking-widest mt-2">No Photo Available</span>
-              </div>
             )}
+            <div className="absolute top-0 right-0 w-72 h-full bg-gradient-to-l from-[#40bcf4]/10 via-transparent to-transparent pointer-events-none" />
 
-            <div className="absolute inset-0 bg-gradient-to-t from-[#151C28] via-[#151C28]/60 to-black/40" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#151C28]/80 via-transparent to-black/30" />
-
-            {/* Mobile Drag Handle */}
-            <div className="w-full flex sm:hidden items-center justify-center pt-2.5 pb-1 relative z-20">
-              <div className="w-12 h-1.5 bg-white/40 backdrop-blur-md rounded-full" />
-            </div>
-
-            {/* Top Toolbar */}
-            <div className="absolute top-3 sm:top-4 inset-x-4 sm:inset-x-5 flex items-center justify-between z-20">
+            {/* Top Utility Layer: Switch Show Action + Floating Close Button */}
+            <div className="relative z-20 flex items-center justify-between px-4 sm:px-5 pt-3 pb-1">
               <button
                 type="button"
                 onClick={handleClearSelectedShow}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white shadow-lg transition-all cursor-pointer active:scale-95"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 active:scale-95 text-slate-300 hover:text-white border border-white/15 text-[10px] font-mono font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"
                 title="Choose a different show"
               >
                 <RefreshCw size={11} className="text-[#40bcf4]" />
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-200">
-                  Change Show
-                </span>
+                <span>Change Show</span>
               </button>
-
+              
+              {/* Close Button cleanly positioned in top-right corner */}
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1.5 rounded-full bg-black/55 backdrop-blur-md text-white/80 hover:text-white hover:bg-black/80 border border-white/20 transition-all cursor-pointer shadow-lg active:scale-95"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-slate-300 hover:text-white border border-white/10 flex items-center justify-center transition-all cursor-pointer shadow-md"
                 title="Close"
               >
-                <X size={17} strokeWidth={2.4} />
+                <X size={15} strokeWidth={2.4} />
               </button>
             </div>
 
-            {/* Bottom Title & Details */}
-            <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 z-20 flex items-end justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <span className="text-[10px] font-mono font-black uppercase tracking-widest text-[#40bcf4] drop-shadow-sm block">
-                  {selectedShow.type?.replace('_', ' ') || 'SERIES'}
-                </span>
+            {/* Main Stage Grid */}
+            <div className="px-4 sm:px-5 pb-4.5 pt-0.5 flex items-center justify-between gap-4 relative z-20">
+              
+              {/* 1. Left: Poster with 3D Depth Elevation */}
+              <div className="relative shrink-0 group">
+                <div className="w-16 h-24 sm:w-20 sm:h-28 rounded-xl bg-slate-950 p-1 border border-white/20 shadow-[0_12px_28px_rgba(0,0,0,0.85),0_4px_10px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.3)] transition-transform duration-300 group-hover:scale-105">
+                  <div className="w-full h-full rounded-lg overflow-hidden bg-slate-900 relative">
+                    {posterImage ? (
+                      <img 
+                        src={posterImage} 
+                        alt={selectedShow.title} 
+                        className="w-full h-full object-cover object-top" 
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-500">
+                        <Film size={20} />
+                      </div>
+                    )}
+                    {/* Glass rim shine on image */}
+                    <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+                  </div>
+                </div>
+              </div>
 
-                <h1 className="text-xl sm:text-2xl font-[1000] text-white tracking-tight leading-tight line-clamp-2 drop-shadow-md">
-                  {selectedShow.title || 'Untitled Show'}
-                </h1>
-
-                <div className="flex items-center gap-2 text-[11px] font-mono text-stone-300 mt-1 drop-shadow-sm">
-                  <span>{selectedShow.releaseYear || '—'}</span>
-                  <span>•</span>
-                  {selectedShow.totalSeasons ? (
-                    <span>{selectedShow.totalSeasons} Season{selectedShow.totalSeasons > 1 ? 's' : ''}</span>
-                  ) : (
-                    <span>Single Run</span>
-                  )}
-                  {Array.isArray(selectedShow.genres) && selectedShow.genres.length > 0 && (
+              {/* 2. Middle Content Stack */}
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <div className="flex items-center gap-2 flex-wrap text-[10px] font-mono">
+                  <span className="font-black uppercase tracking-wider text-[#40bcf4]">
+                    {selectedShow.type?.replace('_', ' ') || 'SERIES'}
+                  </span>
+                  <span className="text-slate-500">•</span>
+                  <span className="font-bold text-slate-300">
+                    {selectedShow.releaseYear || '—'}
+                  </span>
+                  {selectedShow.totalSeasons && (
                     <>
-                      <span>•</span>
-                      <span className="text-[#40bcf4] font-semibold truncate max-w-[150px] sm:max-w-[200px]">
-                        {selectedShow.genres.slice(0, 2).join(', ')}
+                      <span className="text-slate-500">•</span>
+                      <span className="font-bold text-slate-300">
+                        {selectedShow.totalSeasons} Season{selectedShow.totalSeasons > 1 ? 's' : ''}
                       </span>
                     </>
                   )}
                 </div>
+
+                <h1 className="text-base sm:text-xl font-[1000] text-white tracking-tight leading-tight line-clamp-2 drop-shadow-sm">
+                  {selectedShow.title || 'Untitled Show'}
+                </h1>
+
+                {/* Genre Pills */}
+                {Array.isArray(selectedShow.genres) && selectedShow.genres.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                    {selectedShow.genres.slice(0, 3).map((g) => (
+                      <span 
+                        key={g} 
+                        className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-stone-300 shadow-2xs"
+                      >
+                        {g}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              <div className="shrink-0 px-2.5 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/15 text-right shadow-xl">
-                <span className="text-[9px] font-mono uppercase text-stone-400 block font-semibold leading-none">
-                  Entry
-                </span>
-                <span className="text-xs font-black font-mono text-[#00e054] leading-none mt-1 inline-block uppercase">
-                  Unrated
-                </span>
+              {/* 3. Right: Tactile 3D Live Score Badge */}
+              <div className="shrink-0 pl-1">
+                <div className="flex flex-col items-center justify-center px-3.5 py-2 rounded-xl bg-gradient-to-b from-[#1b2537] to-[#111824] border border-[#2e3e57] shadow-[0_8px_20px_rgba(0,0,0,0.6),0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)] ring-1 ring-black/40">
+                  <span className="text-[9px] font-mono font-black uppercase tracking-[0.2em] text-slate-400 leading-none">
+                    SCORE
+                  </span>
+                  <div className="flex items-baseline gap-0.5 mt-1">
+                    <span className="text-2xl sm:text-3xl font-[1000] font-mono tracking-tight text-[#40bcf4] leading-none drop-shadow-[0_2px_8px_rgba(64,188,244,0.4)]">
+                      {rating.toFixed(1)}
+                    </span>
+                    <span className="text-[10px] font-mono font-bold text-slate-500 leading-none">
+                      /10
+                    </span>
+                  </div>
+                </div>
               </div>
+
             </div>
+
           </div>
         ) : (
           /* ========================================================================= */
           /* VIEW B: PRE-SELECTION HEADER                                              */
           /* ========================================================================= */
           <div className="shrink-0 border-b-2 border-slate-300 dark:border-[#263143] bg-[#DEE5EF] dark:bg-[#121824] shadow-[0_2px_8px_rgba(0,0,0,0.05)] relative z-20">
-            {/* Mobile Grab Handle */}
             <div className="w-full flex sm:hidden items-center justify-center pt-2 pb-1">
               <div className="w-12 h-1.5 bg-slate-400 dark:bg-slate-600 rounded-full" />
             </div>
@@ -367,10 +394,10 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1.5 rounded-lg bg-white dark:bg-[#1E2838] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-300 dark:border-[#38465E] shadow-2xs active:scale-95 transition-all cursor-pointer"
+                className="w-8 h-8 rounded-full bg-white/80 dark:bg-[#1E2838] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-300 dark:border-[#38465E] shadow-2xs active:scale-95 transition-all flex items-center justify-center cursor-pointer"
                 title="Close"
               >
-                <X size={16} strokeWidth={2.4} />
+                <X size={15} strokeWidth={2.4} />
               </button>
             </div>
           </div>
