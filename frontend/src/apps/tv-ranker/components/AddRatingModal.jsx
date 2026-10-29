@@ -49,7 +49,7 @@ const FILTER_PILLS = [
   { id: 'MINISERIES', label: 'Miniseries' }
 ];
 
-const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
+const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
   const { request, loading } = useApi();
 
   const [catalogShows, setCatalogShows] = useState([]);
@@ -61,7 +61,7 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
 
-  // Rating State
+  // Rating Form State
   const [rating, setRating] = useState(8.5);
   const [status, setStatus] = useState('COMPLETED');
   const [review, setReview] = useState('');
@@ -75,8 +75,10 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
     const fetchShowsAndRatings = async () => {
       setLoadingCatalog(true);
       try {
-        const [showsRes, ratingsRes] = await Promise.allSettled([
-          request('/shows?limit=250'),
+        // Query both endpoints: /shows/ratings/my (your active backend route) and /shows/user/ratings as fallback
+        const [showsRes, myRatingsRes, userRatingsRes] = await Promise.allSettled([
+          request('/shows?limit=500'),
+          request('/shows/ratings/my'),
           request('/shows/user/ratings')
         ]);
 
@@ -89,17 +91,35 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
         }
 
         const ratedIds = new Set();
-        if (ratingsRes.status === 'fulfilled' && ratingsRes.value) {
-          const val = ratingsRes.value;
-          const ratingsList = Array.isArray(val) ? val : val.data || val.ratings || [];
+
+        const processRatingsList = (resObj) => {
+          if (!resObj) return;
+          const ratingsList = Array.isArray(resObj) ? resObj : resObj.data || resObj.ratings || [];
           ratingsList.forEach((r) => {
-            const sid = r.showId?._id || r.showId || r.show?._id || r.show;
-            if (sid) ratedIds.add(String(sid));
+            // Target show ID whether populated or raw ObjectId string
+            const sid = r.show?._id || r.show || r.showId?._id || r.showId;
+            if (sid) {
+              ratedIds.add(String(sid));
+            }
           });
+        };
+
+        if (myRatingsRes.status === 'fulfilled' && myRatingsRes.value) {
+          processRatingsList(myRatingsRes.value);
+        }
+        if (userRatingsRes.status === 'fulfilled' && userRatingsRes.value) {
+          processRatingsList(userRatingsRes.value);
         }
 
+        // Also check any embedded rating flags/objects attached directly to show models
         rawShows.forEach((s) => {
-          if (s.userRating || s.isRated || s.hasRated) {
+          if (
+            s.userRating || 
+            s.isRated || 
+            s.hasRated || 
+            (typeof s.rating === 'number' && s.rating > 0) ||
+            s.myRating
+          ) {
             ratedIds.add(String(s._id));
           }
         });
@@ -121,8 +141,13 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
     };
   }, [isOpen, request]);
 
+  // Exclude shows that are already in the user's rated list
   const unratedShows = useMemo(() => {
-    return catalogShows.filter((s) => !ratedShowIds.has(String(s._id)));
+    return catalogShows.filter((s) => {
+      if (!s?._id) return false;
+      const showIdStr = String(s._id);
+      return !ratedShowIds.has(showIdStr);
+    });
   }, [catalogShows, ratedShowIds]);
 
   const filteredUnratedShows = useMemo(() => {
@@ -131,7 +156,7 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
     return unratedShows.filter((s) => {
       if (typeFilter !== 'ALL') {
         const sType = (s.type || '').toUpperCase();
-        const sGenres = Array.isArray(s.genres) ? s.genres.map(g => g.toUpperCase()) : [];
+        const sGenres = Array.isArray(s.genres) ? s.genres.map((g) => g.toUpperCase()) : [];
         
         if (typeFilter === 'ANIME') {
           const isAnime = sType === 'ANIME' || sGenres.includes('ANIME');
@@ -216,6 +241,10 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
         toast.success('Rating saved successfully', {
           description: `${selectedShow.title} marked ${status} with ${parseFloat(rating).toFixed(1)}/10`
         });
+        
+        // Immediately add the new show's ID to ratedShowIds to avoid showing it again in this session
+        setRatedShowIds((prev) => new Set([...prev, String(selectedShow._id)]));
+
         if (typeof onCreated === 'function') onCreated();
         if (typeof onClose === 'function') onClose();
       } else {
@@ -240,13 +269,10 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
       >
         <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#40bcf4] to-transparent pointer-events-none z-30" />
 
-        {/* ========================================================================= */}
-        {/* VIEW A: AFTER SHOW SELECTION (RE-ARCHITECTED CINEMATIC HERO SECTION)      */}
-        {/* ========================================================================= */}
+        {/* VIEW A: AFTER SHOW SELECTION */}
         {selectedShow ? (
           <div className="relative w-full bg-gradient-to-r from-[#0d131f] via-[#101726] to-[#0c121e] border-b-2 border-slate-300 dark:border-[#2C384D] shrink-0 overflow-hidden select-none">
             
-            {/* Ambient Lighting & Horizon Glow */}
             {posterImage && (
               <div 
                 className="absolute -top-12 -left-12 w-80 h-80 bg-cover bg-center blur-3xl opacity-30 pointer-events-none"
@@ -255,7 +281,7 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
             )}
             <div className="absolute top-0 right-0 w-72 h-full bg-gradient-to-l from-[#40bcf4]/10 via-transparent to-transparent pointer-events-none" />
 
-            {/* Top Utility Layer: Switch Show Action + Floating Close Button */}
+            {/* Top Utility Controls */}
             <div className="relative z-20 flex items-center justify-between px-4 sm:px-5 pt-3 pb-1">
               <button
                 type="button"
@@ -267,7 +293,6 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                 <span>Change Show</span>
               </button>
               
-              {/* Close Button cleanly positioned in top-right corner */}
               <button
                 type="button"
                 onClick={onClose}
@@ -278,10 +303,8 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
               </button>
             </div>
 
-            {/* Main Stage Grid */}
+            {/* Main Show Info Header */}
             <div className="px-4 sm:px-5 pb-4.5 pt-0.5 flex items-center justify-between gap-4 relative z-20">
-              
-              {/* 1. Left: Poster with 3D Depth Elevation */}
               <div className="relative shrink-0 group">
                 <div className="w-16 h-24 sm:w-20 sm:h-28 rounded-xl bg-slate-950 p-1 border border-white/20 shadow-[0_12px_28px_rgba(0,0,0,0.85),0_4px_10px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.3)] transition-transform duration-300 group-hover:scale-105">
                   <div className="w-full h-full rounded-lg overflow-hidden bg-slate-900 relative">
@@ -296,13 +319,11 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                         <Film size={20} />
                       </div>
                     )}
-                    {/* Glass rim shine on image */}
                     <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
                   </div>
                 </div>
               </div>
 
-              {/* 2. Middle Content Stack */}
               <div className="min-w-0 flex-1 space-y-1.5">
                 <div className="flex items-center gap-2 flex-wrap text-[10px] font-mono">
                   <span className="font-black uppercase tracking-wider text-[#40bcf4]">
@@ -326,13 +347,12 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                   {selectedShow.title || 'Untitled Show'}
                 </h1>
 
-                {/* Genre Pills */}
                 {Array.isArray(selectedShow.genres) && selectedShow.genres.length > 0 && (
                   <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                     {selectedShow.genres.slice(0, 3).map((g) => (
                       <span 
                         key={g} 
-                        className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-stone-300 shadow-2xs"
+                        className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-stone-300"
                       >
                         {g}
                       </span>
@@ -341,7 +361,6 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                 )}
               </div>
 
-              {/* 3. Right: Tactile 3D Live Score Badge */}
               <div className="shrink-0 pl-1">
                 <div className="flex flex-col items-center justify-center px-3.5 py-2 rounded-xl bg-gradient-to-b from-[#1b2537] to-[#111824] border border-[#2e3e57] shadow-[0_8px_20px_rgba(0,0,0,0.6),0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)] ring-1 ring-black/40">
                   <span className="text-[9px] font-mono font-black uppercase tracking-[0.2em] text-slate-400 leading-none">
@@ -357,14 +376,10 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                   </div>
                 </div>
               </div>
-
             </div>
-
           </div>
         ) : (
-          /* ========================================================================= */
-          /* VIEW B: PRE-SELECTION HEADER                                              */
-          /* ========================================================================= */
+          /* VIEW B: PRE-SELECTION HEADER */
           <div className="shrink-0 border-b-2 border-slate-300 dark:border-[#263143] bg-[#DEE5EF] dark:bg-[#121824] shadow-[0_2px_8px_rgba(0,0,0,0.05)] relative z-20">
             <div className="w-full flex sm:hidden items-center justify-center pt-2 pb-1">
               <div className="w-12 h-1.5 bg-slate-400 dark:bg-slate-600 rounded-full" />
@@ -372,7 +387,7 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
 
             <div className="px-5 sm:px-6 pt-3 pb-3.5 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#40bcf4]/15 border border-[#40bcf4]/30 flex items-center justify-center text-[#0284c7] dark:text-[#40bcf4] shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-[#40bcf4]/15 border border-[#40bcf4]/30 flex items-center justify-center text-[#0284c7] dark:text-[#40bcf4]">
                   <Clapperboard size={18} strokeWidth={2.4} />
                 </div>
                 
@@ -381,12 +396,12 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                     <h2 className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-slate-900 dark:text-white leading-none">
                       Pick a Show
                     </h2>
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#0284c7] dark:text-[#40bcf4] bg-[#40bcf4]/10 border border-[#40bcf4]/30 px-2 py-0.5 rounded shadow-2xs">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#0284c7] dark:text-[#40bcf4] bg-[#40bcf4]/10 border border-[#40bcf4]/30 px-2 py-0.5 rounded">
                       {unratedShows.length} Pending
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                    Search and select any unrated show to score it
+                    Select any unrated show to score it
                   </p>
                 </div>
               </div>
@@ -394,7 +409,7 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="w-8 h-8 rounded-full bg-white/80 dark:bg-[#1E2838] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-300 dark:border-[#38465E] shadow-2xs active:scale-95 transition-all flex items-center justify-center cursor-pointer"
+                className="w-8 h-8 rounded-full bg-white/80 dark:bg-[#1E2838] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-300 dark:border-[#38465E] active:scale-95 transition-all flex items-center justify-center cursor-pointer"
                 title="Close"
               >
                 <X size={15} strokeWidth={2.4} />
@@ -403,18 +418,13 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
           </div>
         )}
 
-        {/* ========================================================================= */}
-        {/* BODY WORKSPACE                                                            */}
-        {/* ========================================================================= */}
+        {/* WORKSPACE BODY */}
         <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col text-left">
           
-          {/* ----------------------------------------------------------------------- */}
-          {/* SCREEN 1: PRE-SELECTION SHOW DIRECTORY                                  */}
-          {/* ----------------------------------------------------------------------- */}
+          {/* SCREEN 1: UNRATED DIRECTORY */}
           {!selectedShow ? (
             <div className="p-4 sm:p-5 space-y-3.5 flex-1 flex flex-col">
               
-              {/* Search Control */}
               <div className="relative flex items-center">
                 <Search size={16} className="absolute left-3.5 text-slate-400 dark:text-stone-400 pointer-events-none" />
                 <input
@@ -436,7 +446,6 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                 )}
               </div>
 
-              {/* Interactive Category Filter Pills */}
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
                 {FILTER_PILLS.map((pill) => {
                   const isSelected = typeFilter === pill.id;
@@ -461,7 +470,6 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                 </span>
               </div>
 
-              {/* Catalog Cards Grid */}
               <div className="flex-1 min-h-[300px] overflow-y-auto space-y-2 pr-0.5 no-scrollbar">
                 {loadingCatalog ? (
                   <div className="h-64 flex flex-col items-center justify-center gap-2 text-xs font-mono text-slate-400">
@@ -472,7 +480,7 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                   <div className="h-64 flex flex-col items-center justify-center text-center p-6 rounded-2xl bg-white dark:bg-[#101621] border-2 border-slate-300 dark:border-[#2C384D] shadow-sm">
                     <Film size={34} className="text-slate-400 dark:text-slate-600 mb-2 stroke-1" />
                     <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
-                      {searchQuery ? `No matches for "${searchQuery}"` : 'All database shows are rated'}
+                      {searchQuery ? `No unrated shows match "${searchQuery}"` : 'All database shows are already rated'}
                     </p>
                     <p className="text-[11px] text-slate-400 dark:text-stone-400 mt-1 max-w-xs">
                       {searchQuery ? 'Try another keyword or change your filter pill.' : 'Your backlog is completely up to date!'}
@@ -485,7 +493,6 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                       onClick={() => handleSelectShow(show)}
                       className="group flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-[#101621] border-2 border-slate-300 dark:border-[#253043] hover:border-[#40bcf4] dark:hover:border-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14] transition-all cursor-pointer text-left active:translate-y-[1px]"
                     >
-                      {/* Left: Poster + Content */}
                       <div className="flex items-center gap-3 min-w-0 pr-2">
                         <div className="w-11 h-15 rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0 overflow-hidden border border-slate-300 dark:border-white/10 shadow-xs relative">
                           {show.posterUrl ? (
@@ -530,7 +537,6 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                         </div>
                       </div>
 
-                      {/* Right: Action Chip */}
                       <div className="shrink-0 pl-1">
                         <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1A2332] group-hover:bg-[#40bcf4] text-slate-600 dark:text-slate-300 group-hover:text-[#0A1017] border border-slate-300 dark:border-[#2C384D] group-hover:border-[#40bcf4] text-[10px] font-mono font-black uppercase tracking-wider transition-all shadow-2xs">
                           <span>Rate</span>
@@ -543,12 +549,9 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
               </div>
             </div>
           ) : (
-            /* ----------------------------------------------------------------------- */
-            /* SCREEN 2: SCORING & LOGGING CONSOLE (AFTER SHOW IS SELECTED)            */
-            /* ----------------------------------------------------------------------- */
+            /* SCREEN 2: SCORING CONSOLE */
             <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-4.5">
               
-              {/* Rating Console */}
               <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#101621] border-2 border-slate-300 dark:border-[#2C384D] shadow-[0_3px_0_0_#CBD5E1] dark:shadow-[0_3px_0_0_#0F1520] space-y-3 sm:space-y-3.5 relative">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#222E42] pb-2.5 sm:pb-3">
                   <div>
@@ -584,7 +587,6 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                   </div>
                 </div>
 
-                {/* Score & Presets Display */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-[#F5F8FC] dark:bg-[#0A0E15] border border-slate-300 dark:border-[#232F42] shadow-inner">
                   <div className="flex items-baseline justify-between sm:justify-start gap-1">
                     <div className="flex items-baseline gap-1">
@@ -613,7 +615,6 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                   </div>
                 </div>
 
-                {/* Slider with Precision Steppers */}
                 <div className="flex items-center gap-2.5 sm:gap-3 pt-1">
                   <button
                     type="button"
@@ -645,7 +646,7 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                 </div>
               </div>
 
-              {/* Watch Status */}
+              {/* Status Selector */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
                   Watch Status
@@ -677,7 +678,7 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
                 </div>
               </div>
 
-              {/* Personal Review */}
+              {/* Review Input */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
                   Review & Notes
@@ -695,9 +696,7 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
 
         </div>
 
-        {/* ========================================================================= */}
-        {/* FOOTER BAR                                                                */}
-        {/* ========================================================================= */}
+        {/* MODAL FOOTER */}
         <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-t-2 border-slate-300 dark:border-[#263143] bg-[#DEE5EF] dark:bg-[#121824] flex items-center justify-between gap-3 shrink-0 shadow-[0_-2px_6px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.25)] pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))] sm:pb-4">
           <button
             type="button"
@@ -731,4 +730,4 @@ const CreateShowRatingModal = ({ isOpen, onClose, onCreated }) => {
   );
 };
 
-export default CreateShowRatingModal;
+export default AddRatingModal;

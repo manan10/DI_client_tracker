@@ -3,9 +3,9 @@ import { toast } from 'sonner';
 import { useApi } from '../../../shared/hooks/useApi';
 
 import ShowNavbar from '../components/ShowNavbar';
-import NotesImportModal from '../components/NotesImportModal';
+import BulkImportModal from '../components/BulkImportModal';
 import ScoreHistoryModal from '../components/ScoreHistoryModal';
-import CreateShowRatingModal from '../components/CreateShowRatingModal';
+import AddRatingModal from '../components/AddRatingModal';
 
 import HomeHeroBanner from '../components/Home/HomeHeroBanner';
 import HomeShowCatalog from '../components/Home/HomeShowCatalog';
@@ -209,13 +209,13 @@ const ShowRaterHome = () => {
       </main>
 
       {/* Modals */}
-      <NotesImportModal
+      <BulkImportModal
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
         onImportComplete={fetchRatings}
       />
 
-      <CreateShowRatingModal
+      <AddRatingModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onCreated={fetchRatings}

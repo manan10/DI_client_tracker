@@ -4,9 +4,9 @@ import { toast } from 'sonner';
 import { useApi } from '../../../shared/hooks/useApi';
 
 import ShowNavbar from '../components/ShowNavbar';
-import NotesImportModal from '../components/NotesImportModal';
+import BulkImportModal from '../components/BulkImportModal';
 import ScoreHistoryModal from '../components/ScoreHistoryModal';
-import CreateShowRatingModal from '../components/CreateShowRatingModal';
+import AddRatingModal from '../components/AddRatingModal';
 
 import StatsHeroDeck from '../components/Stats/StatsHeroDeck';
 import StatsKpiStrip from '../components/Stats/StatsKpiStrip';
@@ -346,13 +346,13 @@ const Stats = () => {
         )}
       </main>
 
-      <NotesImportModal
+      <BulkImportModal
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
         onImportComplete={fetchRatings}
       />
 
-      <CreateShowRatingModal
+      <AddRatingModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onCreated={fetchRatings}

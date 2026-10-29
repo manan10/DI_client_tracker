@@ -10,7 +10,7 @@ import { useApi } from '../../../shared/hooks/useApi';
 
 import ShowNavbar from '../components/ShowNavbar';
 import CreateShowModal from '../components/Lists/CreateShowModal';
-import NotesImportModal from '../components/NotesImportModal';
+import BulkImportModal from '../components/BulkImportModal';
 
 const DEFAULT_POSTERS = [
   'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=500&q=80',
@@ -624,7 +624,7 @@ const Lists = () => {
         editingShow={editingShow}
       />
 
-      <NotesImportModal
+      <BulkImportModal
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
         onImportComplete={fetchCatalog}
