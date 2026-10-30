@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { 
   Clapperboard, Heart, Loader2, 
-  ChevronLeft, ChevronRight, ChevronDown, Check
+  ChevronLeft, ChevronRight, ChevronDown, Check,
+  ListPlus, Plus, Bookmark, Layers, X
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useApi } from '../../../../shared/hooks/useApi';
 
 const DEFAULT_POSTERS = [
   'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=500&q=80',
@@ -21,17 +24,79 @@ const HomeShowCatalog = ({
   onSelectItem, 
   onToggleFavorite 
 }) => {
+  const { request } = useApi();
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   
+  // Add to List Popover State
+  const [activeListDropdownShowId, setActiveListDropdownShowId] = useState(null);
+  const [userLists, setUserLists] = useState([]);
+  const [isLoadingLists, setIsLoadingLists] = useState(false);
+  const [addingToListId, setAddingToListId] = useState(null);
+
   const pageSizeRef = useRef(null);
   const catalogTopRef = useRef(null);
+  const listDropdownRef = useRef(null);
   const isInitialMount = useRef(true);
+
+  // Fetch available lists once or when opened
+  const fetchUserLists = useCallback(async () => {
+    setIsLoadingLists(true);
+    try {
+      const res = await request('/lists', 'GET');
+      let data = [];
+      if (Array.isArray(res)) data = res;
+      else if (Array.isArray(res?.data)) data = res.data;
+      else if (Array.isArray(res?.lists)) data = res.lists;
+      // Filter out auto-managed system lists since items in system lists are derived from ratings/status
+      setUserLists(data.filter((l) => !l.isSystem));
+    } catch (err) {
+      console.error('Failed to load user lists:', err);
+    } finally {
+      setIsLoadingLists(false);
+    }
+  }, [request]);
+
+  useEffect(() => {
+    fetchUserLists();
+  }, [fetchUserLists]);
+
+  // Handle Add Show to Selected List
+  const handleAddShowToList = async (listId, showId, showTitle) => {
+    if (!listId || !showId) return;
+    setAddingToListId(listId);
+
+    try {
+      const res = await request(`/lists/${listId}/items`, 'POST', { showId });
+      if (res?.success) {
+        toast.success(`Added "${showTitle || 'Show'}" to list`);
+        // Update local list state to show checkmark immediately
+        setUserLists((prev) => 
+          prev.map((l) => {
+            if (l._id === listId) {
+              const updatedItems = [...(l.items || []), { show: showId }];
+              return { ...l, items: updatedItems };
+            }
+            return l;
+          })
+        );
+      } else {
+        toast.error(res?.message || 'Failed to add show to list');
+      }
+    } catch (err) {
+      console.error('Add to list error:', err);
+      toast.error(err.message || 'Error adding show to list');
+    } finally {
+      setAddingToListId(null);
+    }
+  };
 
   // Auto-reset to Page 1 when total shows change or layout changes
   useEffect(() => {
     setCurrentPage(1);
+    setActiveListDropdownShowId(null);
   }, [filteredShows.length, layoutView]);
 
   // Smooth Auto-Scroll to Top of Catalog on Page Change
@@ -49,11 +114,14 @@ const HomeShowCatalog = ({
     }
   }, [currentPage]);
 
-  // Click outside handler for page density selector
+  // Click outside handler for page density selector and list dropdowns
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (pageSizeRef.current && !pageSizeRef.current.contains(e.target)) {
         setIsPageSizeOpen(false);
+      }
+      if (listDropdownRef.current && !listDropdownRef.current.contains(e.target)) {
+        setActiveListDropdownShowId(null);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -137,6 +205,92 @@ const HomeShowCatalog = ({
     if (genres.length > 0) return genres[0];
     const category = categorizeShow ? categorizeShow(item) : 'HOLLYWOOD';
     return category === 'INDIAN' ? 'Desi' : category === 'ANIME' ? 'Anime' : 'Global';
+  };
+
+  // Reusable Add-to-List Dropdown Menu Component
+  const renderListDropdown = (rawShowId, showTitle, placement = 'bottom-right') => {
+    const showId = String(rawShowId);
+    const isOpen = activeListDropdownShowId === showId;
+    if (!isOpen) return null;
+
+    const placementClasses = placement === 'top-right'
+      ? 'bottom-[calc(100%+6px)] right-0'
+      : placement === 'bottom-left'
+      ? 'top-[calc(100%+6px)] left-0'
+      : 'top-[calc(100%+6px)] right-0';
+
+    return (
+      <div 
+        ref={listDropdownRef}
+        onClick={(e) => e.stopPropagation()}
+        className={`absolute ${placementClasses} w-52 sm:w-56 rounded-none bg-white dark:bg-[#121926] border-2 border-slate-900 dark:border-black shadow-2xl p-1 z-50 text-left select-none animate-in fade-in zoom-in-95 duration-100`}
+      >
+        <div className="px-2.5 py-1.5 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-stone-400">
+            <ListPlus size={11} className="text-[#40bcf4]" />
+            <span>Add to List</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveListDropdownShowId(null)}
+            className="text-slate-400 hover:text-slate-900 dark:hover:text-white"
+          >
+            <X size={11} />
+          </button>
+        </div>
+
+        <div className="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5 py-1">
+          {isLoadingLists ? (
+            <div className="py-4 flex items-center justify-center gap-2 text-xs font-mono text-slate-400">
+              <Loader2 size={13} className="animate-spin text-[#40bcf4]" />
+              <span>Loading lists...</span>
+            </div>
+          ) : userLists.length === 0 ? (
+            <div className="py-3 px-2 text-center text-[10px] font-mono text-slate-400">
+              No custom lists found.
+            </div>
+          ) : (
+            userLists.map((list) => {
+              const isAlreadyInList = Array.isArray(list.items) && list.items.some(
+                (it) => String(it.show?._id || it.show) === showId
+              );
+              const isAdding = addingToListId === list._id;
+
+              return (
+                <button
+                  key={list._id}
+                  type="button"
+                  disabled={isAlreadyInList || isAdding}
+                  onClick={() => handleAddShowToList(list._id, showId, showTitle)}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs font-mono text-left transition-colors cursor-pointer disabled:cursor-default ${
+                    isAlreadyInList
+                      ? 'bg-slate-50 dark:bg-white/5 text-slate-400 dark:text-stone-500'
+                      : 'text-slate-800 dark:text-stone-200 hover:bg-[#40bcf4]/10 hover:text-[#0284c7] dark:hover:text-[#40bcf4]'
+                  }`}
+                >
+                  <span className="truncate pr-2 font-bold text-[11px] uppercase">
+                    {list.title}
+                  </span>
+
+                  <div className="shrink-0 flex items-center gap-1">
+                    {isAdding ? (
+                      <Loader2 size={12} className="animate-spin text-[#40bcf4]" />
+                    ) : isAlreadyInList ? (
+                      <span className="flex items-center gap-0.5 text-[9px] font-bold text-[#00e054]">
+                        <Check size={11} strokeWidth={3} />
+                        In list
+                      </span>
+                    ) : (
+                      <Plus size={12} strokeWidth={2.5} className="text-slate-400" />
+                    )}
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -247,11 +401,13 @@ const HomeShowCatalog = ({
         )}
 
         {/* ========================================================================= */}
-        {/* VIEW 1: CARDS VIEW (Scaled Down Horizontal on Mobile)                    */}
+        {/* VIEW 1: CARDS VIEW                                                        */}
         {/* ========================================================================= */}
         {filteredShows.length > 0 && layoutView === 'CARDS' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-5">
             {currentShows.map((item, index) => {
+              const showId = item.show?._id || item.show || item._id;
+              const title = item.show?.title || item.title || 'Untitled Show';
               const poster = item.show?.posterUrl || DEFAULT_POSTERS[index % DEFAULT_POSTERS.length];
               const globalIndex = indexOfFirstRecord + index + 1;
               const format = getFormatLabel(item);
@@ -261,13 +417,13 @@ const HomeShowCatalog = ({
                 <div
                   key={item._id}
                   onClick={() => onSelectItem(item)}
-                  className="group relative rounded-xs bg-white dark:bg-[#0A0F16] border-2 border-slate-900 dark:border-[#1F2E42] hover:border-[#40bcf4] dark:hover:border-[#40bcf4] shadow-[2.5px_2.5px_0px_0px_rgba(15,23,42,1)] sm:shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.8)] sm:dark:shadow-[0_12px_28px_rgba(0,0,0,0.9),0_0_12px_rgba(64,188,244,0.15)] hover:shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] sm:hover:shadow-[6px_6px_0px_0px_rgba(15,23,42,1)] dark:hover:shadow-[0_16px_36px_rgba(0,0,0,1),0_0_24px_rgba(64,188,244,0.4)] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-row sm:flex-col justify-between overflow-hidden text-left"
+                  className="group relative rounded-xs bg-white dark:bg-[#0A0F16] border-2 border-slate-900 dark:border-[#1F2E42] hover:border-[#40bcf4] dark:hover:border-[#40bcf4] shadow-[2.5px_2.5px_0px_0px_rgba(15,23,42,1)] sm:shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.8)] sm:dark:shadow-[0_12px_28px_rgba(0,0,0,0.9),0_0_12px_rgba(64,188,244,0.15)] hover:shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] sm:hover:shadow-[6px_6px_0px_0px_rgba(15,23,42,1)] dark:hover:shadow-[0_16px_36px_rgba(0,0,0,1),0_0_24px_rgba(64,188,244,0.4)] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-row sm:flex-col justify-between overflow-visible text-left"
                 >
                   {/* Photo Container */}
                   <div className="relative w-20 xs:w-24 min-h-[105px] max-h-[125px] sm:min-h-0 sm:max-h-none sm:w-full sm:h-48 shrink-0 bg-slate-950 overflow-hidden border-r-2 sm:border-r-0 sm:border-b-2 border-slate-900 dark:border-[#1F2E42]">
                     <img
                       src={poster}
-                      alt={item.show?.title}
+                      alt={title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-95"
                       onError={(e) => { e.target.src = DEFAULT_POSTERS[0]; }}
                     />
@@ -301,7 +457,7 @@ const HomeShowCatalog = ({
                       </div>
 
                       <h4 className="text-xs sm:text-base font-[1000] uppercase text-slate-950 dark:text-white tracking-tight line-clamp-2 leading-tight">
-                        {item.show?.title}
+                        {title}
                       </h4>
                     </div>
 
@@ -313,25 +469,52 @@ const HomeShowCatalog = ({
                       </div>
                     </div>
 
-                    {/* Bottom Action Strip: Wishlist + Edit Score */}
-                    <div className="pt-1.5 sm:pt-2 border-t sm:border-t-2 border-slate-200 dark:border-[#1A2536] flex items-center justify-between gap-1.5 sm:gap-2">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onToggleFavorite(e, item._id);
-                        }}
-                        className={`p-1 sm:p-1.5 rounded-xs transition-colors cursor-pointer border ${
-                          item.isFavorite 
-                            ? 'text-rose-600 bg-rose-50 border-rose-300 dark:bg-rose-500/20 dark:border-rose-500/40' 
-                            : 'text-slate-500 border-slate-300 hover:text-rose-600 hover:border-rose-400 dark:border-slate-700 dark:text-slate-400'
-                        }`}
-                        title={item.isFavorite ? 'Remove from Wishlist' : 'Add to Wishlist'}
-                      >
-                        <Heart size={12} className="sm:hidden" fill={item.isFavorite ? 'currentColor' : 'none'} strokeWidth={2.5} />
-                        <Heart size={14} className="hidden sm:block" fill={item.isFavorite ? 'currentColor' : 'none'} strokeWidth={2.5} />
-                      </button>
+                    {/* Bottom Action Strip: Wishlist + Add To List + Edit Score */}
+                    <div className="pt-1.5 sm:pt-2 border-t sm:border-t-2 border-slate-200 dark:border-[#1A2536] flex items-center justify-between gap-1 sm:gap-1.5 relative">
+                      <div className="flex items-center gap-1">
+                        {/* Wishlist */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleFavorite(e, item._id);
+                          }}
+                          className={`p-1 sm:p-1.5 rounded-xs transition-colors cursor-pointer border ${
+                            item.isFavorite 
+                              ? 'text-rose-600 bg-rose-50 border-rose-300 dark:bg-rose-500/20 dark:border-rose-500/40' 
+                              : 'text-slate-500 border-slate-300 hover:text-rose-600 hover:border-rose-400 dark:border-slate-700 dark:text-slate-400'
+                          }`}
+                          title={item.isFavorite ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                        >
+                          <Heart size={12} className="sm:hidden" fill={item.isFavorite ? 'currentColor' : 'none'} strokeWidth={2.5} />
+                          <Heart size={14} className="hidden sm:block" fill={item.isFavorite ? 'currentColor' : 'none'} strokeWidth={2.5} />
+                        </button>
 
+                        {/* Add to List Trigger Button */}
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveListDropdownShowId((prev) => prev === String(showId) ? null : String(showId));
+                            }}
+                            className={`p-1 sm:p-1.5 rounded-xs transition-colors cursor-pointer border ${
+                              activeListDropdownShowId === String(showId)
+                                ? 'bg-[#40bcf4] text-slate-950 border-[#40bcf4]'
+                                : 'text-slate-500 border-slate-300 hover:text-[#40bcf4] hover:border-[#40bcf4] dark:border-slate-700 dark:text-slate-400'
+                            }`}
+                            title="Add to List"
+                          >
+                            <ListPlus size={12} className="sm:hidden" strokeWidth={2.5} />
+                            <ListPlus size={14} className="hidden sm:block" strokeWidth={2.5} />
+                          </button>
+
+                          {/* Popover Menu */}
+                          {renderListDropdown(showId, title, 'top-right')}
+                        </div>
+                      </div>
+
+                      {/* Edit Score Button */}
                       <button
                         type="button"
                         onClick={(e) => {
@@ -352,11 +535,13 @@ const HomeShowCatalog = ({
         )}
 
         {/* ========================================================================= */}
-        {/* VIEW 2: DENSE POSTER TILES (Scaled for Mobile Density)                    */}
+        {/* VIEW 2: DENSE POSTER TILES                                                */}
         {/* ========================================================================= */}
         {filteredShows.length > 0 && layoutView === 'COMPACT_TILES' && (
           <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3.5">
             {currentShows.map((item, index) => {
+              const showId = item.show?._id || item.show || item._id;
+              const title = item.show?.title || item.title || 'Untitled Show';
               const poster = item.show?.posterUrl || DEFAULT_POSTERS[index % DEFAULT_POSTERS.length];
               const globalIndex = indexOfFirstRecord + index + 1;
 
@@ -364,15 +549,15 @@ const HomeShowCatalog = ({
                 <div
                   key={item._id}
                   onClick={() => onSelectItem(item)}
-                  className="group relative aspect-2/3 rounded-xs bg-slate-950 border-2 border-slate-900 dark:border-[#1E2E42] hover:border-[#40bcf4] shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] sm:shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.8)] hover:-translate-y-0.5 sm:hover:-translate-y-1 overflow-hidden cursor-pointer text-left transition-all duration-200"
+                  className="group relative aspect-2/3 rounded-xs bg-slate-950 border-2 border-slate-900 dark:border-[#1E2E42] hover:border-[#40bcf4] shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] sm:shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.8)] hover:-translate-y-0.5 sm:hover:-translate-y-1 cursor-pointer text-left transition-all duration-200"
                 >
                   <img
                     src={poster}
-                    alt={item.show?.title}
+                    alt={title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-85"
                     onError={(e) => { e.target.src = DEFAULT_POSTERS[0]; }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none" />
 
                   {/* Top Index */}
                   <div className="absolute top-1 left-1 sm:top-1.5 sm:left-1.5 px-1 py-0.2 rounded-xs bg-black/85 text-white font-mono text-[8px] sm:text-[9px] font-black border border-white/25">
@@ -386,11 +571,28 @@ const HomeShowCatalog = ({
                     </div>
                   </div>
 
+                  {/* Hover Overlay: Add to List Action */}
+                  <div className="absolute top-8 right-1 sm:right-1.5 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveListDropdownShowId((prev) => prev === String(showId) ? null : String(showId));
+                      }}
+                      className="p-1 rounded-xs bg-black/80 hover:bg-[#40bcf4] text-white hover:text-black border border-white/30 transition-colors shadow-md"
+                      title="Add to List"
+                    >
+                      <ListPlus size={11} strokeWidth={2.5} />
+                    </button>
+
+                    {renderListDropdown(showId, title, 'bottom-right')}
+                  </div>
+
                   {/* Bottom Strip: Title & Wishlist */}
                   <div className="absolute bottom-1 sm:bottom-2 left-1 sm:left-2 right-1 sm:right-2">
                     <div className="flex items-end justify-between gap-1">
                       <p className="text-[10px] sm:text-xs font-[1000] uppercase text-white truncate leading-tight drop-shadow-md flex-1">
-                        {item.show?.title}
+                        {title}
                       </p>
                       {item.isFavorite && (
                         <Heart size={10} className="sm:hidden fill-rose-500 text-rose-500 shrink-0 mb-0.5" />
@@ -407,11 +609,13 @@ const HomeShowCatalog = ({
         )}
 
         {/* ========================================================================= */}
-        {/* VIEW 3: LIST VIEW (Scaled Down List Rows on Mobile)                      */}
+        {/* VIEW 3: LIST VIEW                                                         */}
         {/* ========================================================================= */}
         {filteredShows.length > 0 && layoutView === 'LIST' && (
-          <div className="flex flex-col divide-y-2 divide-slate-900 dark:divide-[#1E2E42] border-2 border-slate-900 dark:border-[#1E2E42] rounded-xs overflow-hidden bg-white dark:bg-[#0A0F16] shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] sm:shadow-[4px_4px_0px_0px_rgba(15,23,42,1)]">
+          <div className="flex flex-col divide-y-2 divide-slate-900 dark:divide-[#1E2E42] border-2 border-slate-900 dark:border-[#1E2E42] rounded-xs bg-white dark:bg-[#0A0F16] shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] sm:shadow-[4px_4px_0px_0px_rgba(15,23,42,1)]">
             {currentShows.map((item, index) => {
+              const showId = item.show?._id || item.show || item._id;
+              const title = item.show?.title || item.title || 'Untitled Show';
               const poster = item.show?.posterUrl || DEFAULT_POSTERS[index % DEFAULT_POSTERS.length];
               const globalIndex = indexOfFirstRecord + index + 1;
               const format = getFormatLabel(item);
@@ -421,7 +625,7 @@ const HomeShowCatalog = ({
                 <div
                   key={item._id}
                   onClick={() => onSelectItem(item)}
-                  className="p-2 sm:p-3.5 hover:bg-slate-100 dark:hover:bg-[#121A26] transition-colors cursor-pointer flex items-center justify-between gap-2.5 sm:gap-4 text-left"
+                  className="p-2 sm:p-3.5 hover:bg-slate-100 dark:hover:bg-[#121A26] transition-colors cursor-pointer flex items-center justify-between gap-2.5 sm:gap-4 text-left relative"
                 >
                   {/* Left Cluster: Index, Poster & Full Title Block */}
                   <div className="flex items-center gap-2 sm:gap-3.5 min-w-0 flex-1">
@@ -437,7 +641,7 @@ const HomeShowCatalog = ({
                     <div className="flex flex-col min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                         <h4 className="text-[11px] sm:text-sm font-[1000] uppercase text-slate-950 dark:text-white break-words leading-tight">
-                          {item.show?.title}
+                          {title}
                         </h4>
                         
                         <span className="px-1 sm:px-1.5 py-0.2 rounded-xs text-[8px] sm:text-[9px] font-mono font-black uppercase bg-[#40bcf4] text-slate-950 border border-[#0284c7] shrink-0">
@@ -451,8 +655,31 @@ const HomeShowCatalog = ({
                     </div>
                   </div>
 
-                  {/* Right Cluster: Wishlist & Rating */}
-                  <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+                  {/* Right Cluster: Add to List, Wishlist & Rating */}
+                  <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+                    {/* Add to List Trigger */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveListDropdownShowId((prev) => prev === String(showId) ? null : String(showId));
+                        }}
+                        className={`p-1 sm:p-1.5 rounded-xs transition-colors cursor-pointer border ${
+                          activeListDropdownShowId === String(showId)
+                            ? 'bg-[#40bcf4] text-slate-950 border-[#40bcf4]'
+                            : 'text-slate-400 border-slate-300 hover:text-[#40bcf4] dark:border-slate-700'
+                        }`}
+                        title="Add to List"
+                      >
+                        <ListPlus size={12} className="sm:hidden" strokeWidth={2.5} />
+                        <ListPlus size={14} className="hidden sm:block" strokeWidth={2.5} />
+                      </button>
+
+                      {renderListDropdown(showId, title, 'bottom-right')}
+                    </div>
+
+                    {/* Wishlist */}
                     <button
                       type="button"
                       onClick={(e) => {
@@ -470,6 +697,7 @@ const HomeShowCatalog = ({
                       <Heart size={14} className="hidden sm:block" fill={item.isFavorite ? 'currentColor' : 'none'} strokeWidth={2.5} />
                     </button>
 
+                    {/* Score */}
                     <div className={`px-1.5 sm:px-2.5 py-0.2 sm:py-0.5 rounded-xs text-[10px] sm:text-xs font-mono ${getScoreBadge(item.rating)}`}>
                       {item.rating ? item.rating.toFixed(1) : 'N/A'}
                     </div>
@@ -483,7 +711,7 @@ const HomeShowCatalog = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. DOCKED BOTTOM PAGINATION (Proportionally Scaled on Mobile)             */}
+      {/* 3. DOCKED BOTTOM PAGINATION                                               */}
       {/* ========================================================================= */}
       {filteredShows.length > 0 && (
         <div className="pt-3 sm:pt-4 border-t-2 border-slate-300 dark:border-[#262E3B] flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3 text-xs transition-colors duration-300">

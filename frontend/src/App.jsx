@@ -36,6 +36,7 @@ const ShowRaterHome = lazy(() => import("./apps/tv-ranker/pages/ShowRaterHome"))
 const Lists = lazy(() => import("./apps/tv-ranker/pages/Lists"));
 const Stats = lazy(() => import("./apps/tv-ranker/pages/Stats"));
 const Catalog = lazy(() => import("./apps/tv-ranker/pages/Catalog"));
+const ListDetail = lazy(() => import("./apps/tv-ranker/pages/ListDetail"));
 
 // Shared Pages
 const Auth = lazy(() => import("./shared/pages/Auth"));
@@ -221,6 +222,15 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Catalog />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/tv-rater/lists/:id"
+                element={
+                  <ProtectedRoute>
+                    <ListDetail />
                   </ProtectedRoute>
                 }
               />
