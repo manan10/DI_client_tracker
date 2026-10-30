@@ -5,7 +5,6 @@ import {
   List,
   BarChart3,
   Plus, 
-  UploadCloud,
   Sun, 
   Moon, 
   LogOut, 
@@ -14,7 +13,8 @@ import {
   ReceiptIndianRupee,
   Clapperboard,
   Check,
-  Grid
+  Grid,
+  Tv
 } from 'lucide-react';
 import { useAuth } from '../../../shared/hooks/useAuth';
 
@@ -40,7 +40,7 @@ const allApps = [
   },
 ];
 
-const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
+const ShowNavbar = ({ onOpenAddShow }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -110,11 +110,12 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
     navigate(path);
   };
 
-  // Navigation Links including Stats
+  // Navigation Links including Catalog & Stats
   const navItems = [
     { name: 'Home', path: '/tv-rater', icon: Home },
     { name: 'Lists', path: '/tv-rater/lists', icon: List },
-    { name: 'Stats', path: '/tv-rater/stats', icon: BarChart3 }
+    { name: 'Catalog', path: '/tv-rater/catalog', icon: List },
+    { name: 'Stats', path: '/tv-rater/stats', icon: BarChart3 },
   ];
 
   const userInitials = user?.name
@@ -140,7 +141,7 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
           <div className="relative flex justify-between items-center h-[72px]">
             
             {/* ========================================================================= */}
-            {/* LEFT: TV GLYPH & HYBRID PLOT TWIST LOGO LOCKUP (3 + 12 COMBINED)          */}
+            {/* LEFT: TV GLYPH & HYBRID PLOT TWIST LOGO LOCKUP                            */}
             {/* ========================================================================= */}
             <div className="flex items-center shrink-0 min-w-0 z-20">
               <div className="flex items-center gap-2.5 sm:gap-3.5">
@@ -156,7 +157,7 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
                 {/* Responsive Container: Stacks vertically on mobile, horizontal row on sm+ */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 items-start justify-center">
                   
-                  {/* Combined Option 3 & Option 12 Brand Lockup */}
+                  {/* Brand Lockup */}
                   <Link
                     to="/tv-rater"
                     className="group/brand flex items-center gap-2 outline-none py-0.5"
@@ -184,7 +185,7 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
                     |
                   </span>
 
-                  {/* QUICK APP SWITCHER DROPDOWN TRIGGER (Below title on mobile) */}
+                  {/* QUICK APP SWITCHER DROPDOWN TRIGGER */}
                   <div className="relative mt-0.5 sm:mt-0" ref={dropdownRef}>
                     <button
                       type="button"
@@ -268,7 +269,7 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
             </div>
 
             {/* ========================================================================= */}
-            {/* CENTER: DESKTOP TACTILE DECK RAIL (Home, Lists, Stats)                    */}
+            {/* CENTER: DESKTOP TACTILE DECK RAIL (Home, Lists, Stats, Catalog)           */}
             {/* ========================================================================= */}
             <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center rounded-xl p-1 shadow-inner z-10 bg-black/45 border border-[#2C3440] backdrop-blur-md">
               {navItems.map((item) => {
@@ -310,19 +311,6 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
                 >
                   <Plus size={14} strokeWidth={3} className="shrink-0 text-[#14181C]" />
                   <span>Add Rating</span>
-                </button>
-              )}
-
-              {/* Bulk Import Action */}
-              {onOpenImport && (
-                <button
-                  type="button"
-                  onClick={onOpenImport}
-                  className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-stone-300 hover:text-white text-[11px] font-sans font-medium transition-all active:scale-95 cursor-pointer outline-none shrink-0"
-                  title="Bulk Import Notes Archive"
-                >
-                  <UploadCloud size={13} className="text-[#40bcf4]" />
-                  <span>Bulk Import</span>
                 </button>
               )}
 
@@ -382,7 +370,7 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
       </header>
 
       {/* ========================================================================= */}
-      {/* MOBILE BOTTOM NAVIGATION BAR (Home, Lists, Stats, Rate New)                */}
+      {/* MOBILE BOTTOM NAVIGATION BAR (Home, Lists, Stats, Catalog, Rate New)      */}
       {/* ========================================================================= */}
       <div className="md:hidden fixed bottom-0 left-0 w-full z-40 pb-[env(safe-area-inset-bottom)] font-sans border-t bg-[#14181C]/95 border-[#2C3440] backdrop-blur-2xl transition-all shadow-[0_-8px_30px_rgba(0,0,0,0.7)]">
         <div className="flex items-center justify-around h-16 px-3 max-w-md mx-auto">
@@ -417,7 +405,7 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
             );
           })}
 
-          {/* Quick Mobile Action for "Rate New" */}
+          {/* Quick Mobile Action for "Add Rating" */}
           {onOpenAddShow && (
             <button
               type="button"
@@ -429,22 +417,6 @@ const ShowNavbar = ({ onOpenImport, onOpenAddShow }) => {
               </div>
               <span className="text-[10px] font-medium tracking-wide text-stone-300">
                 Add Rating
-              </span>
-            </button>
-          )}
-
-          {/* Mobile "Bulk Import" Trigger */}
-          {onOpenImport && (
-            <button
-              type="button"
-              onClick={onOpenImport}
-              className="relative flex flex-col items-center justify-center w-full h-full gap-1 outline-none select-none text-stone-400 hover:text-white cursor-pointer"
-            >
-              <div className="mt-0.5">
-                <UploadCloud size={19} strokeWidth={2} />
-              </div>
-              <span className="text-[10px] font-medium tracking-wide">
-                Bulk Import
               </span>
             </button>
           )}

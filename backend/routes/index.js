@@ -36,5 +36,5 @@ router.use("/wallets", require("../app-expense-tracker/routes/walletRoutes"));
 router.use("/categories", require("../app-expense-tracker/routes/categoryRoutes"));
 
 // Show Rater Routes
-router.use('/shows', require('../app-tv-ranker/routes/showRaterRoutes'));
+router.use('/shows', require('../app-tv-ranker/routes/showRoutes'));
 module.exports = router;
