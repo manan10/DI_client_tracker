@@ -15,6 +15,7 @@ import {
   Clapperboard,
   Check,
   Home,
+  UtensilsCrossed,
 } from "lucide-react";
 import { useAuth } from "../../../shared/hooks/useAuth";
 import Logo from "../../../assets/logo_nobrand.png";
@@ -38,6 +39,12 @@ const allApps = [
     title: "Show Rater",
     path: "/tv-rater",
     icon: Clapperboard,
+  },
+    {
+    id: 'SOUS_CHEF',
+    title: 'Sous Chef',
+    path: '/sous-chef/recipes',
+    icon: UtensilsCrossed,
   },
 ];
 

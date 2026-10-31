@@ -38,6 +38,11 @@ const Stats = lazy(() => import("./apps/tv-ranker/pages/Stats"));
 const Catalog = lazy(() => import("./apps/tv-ranker/pages/Catalog"));
 const ListDetail = lazy(() => import("./apps/tv-ranker/pages/ListDetail"));
 
+// Sous-Chef App Pages
+const Recipies = lazy(() => import("./apps/sous-chef/pages/Recipes"));
+const RecipeDetail = lazy(() => import("./apps/sous-chef/pages/RecipeDetail"));
+const CookMode = lazy(() => import("./apps/sous-chef/pages/CookMode"));
+
 // Shared Pages
 const Auth = lazy(() => import("./shared/pages/Auth"));
 const AppPicker = lazy(() => import("./shared/pages/AppPicker"));
@@ -234,6 +239,34 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+              <Route
+                path="/sous-chef/recipes"
+                element={
+                  <ProtectedRoute>
+                    <Recipies />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/sous-chef/recipes/cook-mode"
+                element={
+                  <ProtectedRoute>
+                    <CookMode />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route
+                path="/sous-chef/recipes/:id"
+                element={
+                  <ProtectedRoute>
+                    <RecipeDetail />
+                  </ProtectedRoute>
+                }
+              />
+
 
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>

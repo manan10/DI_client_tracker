@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   UserPlus, Key, X, Loader2, User, Trash2, Edit3, 
   ShieldCheck, AlertTriangle, Check, Clapperboard,
-  Mail, Phone, Shield, Search, ChevronRight, LayoutGrid
+  Mail, Phone, Shield, Search, ChevronRight, LayoutGrid,
+  UtensilsCrossed
 } from "lucide-react";
 import { toast } from "sonner";
 import { useApi } from "../../../hooks/useApi";
@@ -46,6 +47,19 @@ const APP_ENTITLEMENTS = [
       badge: "bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30",
       indicator: "bg-rose-600 dark:bg-rose-500",
       dot: "bg-rose-500"
+    }
+  },
+  { 
+    id: "SOUS_CHEF", 
+    label: "Sous Chef",
+    subtitle: "Culinary & Recipes",
+    icon: UtensilsCrossed,
+    theme: {
+      activeBorder: "border-amber-500/70 dark:border-amber-500/60",
+      activeBg: "bg-amber-50/80 dark:bg-amber-500/10 text-amber-950 dark:text-amber-200",
+      badge: "bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
+      indicator: "bg-amber-600 dark:bg-amber-500",
+      dot: "bg-amber-500"
     }
   }
 ];
@@ -664,7 +678,7 @@ const UserManagement = () => {
                 <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   Application Access
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
                   {APP_ENTITLEMENTS.map((app) => {
                     const hasAccess = formData.allowedApps?.includes(app.id);
                     const Icon = app.icon;

@@ -38,4 +38,8 @@ router.use("/categories", require("../app-expense-tracker/routes/categoryRoutes"
 // Show Rater Routes
 router.use('/shows', require('../app-tv-ranker/routes/showRoutes'));
 router.use('/lists', require('../app-tv-ranker/routes/showListRoutes'));
+
+// Sous Chef Routes
+router.use('/recipes', require('../app-sous-chef/routes/recipeRoutes'));
+
 module.exports = router;
