@@ -49,6 +49,7 @@ export const Step3CategorySelect = ({
   newSubName,
   setNewSubName,
   handleCreateSub,
+  setSelectedParent, // Used if parent modal still manages selectedParent state
 }) => {
   // Track which parent accordion is currently open
   const [expandedParentId, setExpandedParentId] = useState(() => {
@@ -84,6 +85,18 @@ export const Step3CategorySelect = ({
   const handlePickCategory = (subId) => {
     setExpenseData((prev) => ({ ...prev, category: subId }));
     onSelectCategory();
+  };
+
+  const handleTriggerAddSub = (parent) => {
+    if (setSelectedParent) setSelectedParent(parent);
+    setIsAddingSub(true);
+  };
+
+  const submitSub = (parentId) => {
+    // If the parent handler expects an argument, pass it; otherwise call directly
+    if (typeof handleCreateSub === "function") {
+      handleCreateSub(parentId);
+    }
   };
 
   return (
@@ -322,7 +335,7 @@ export const Step3CategorySelect = ({
                             {!isAddingSub ? (
                               <button
                                 type="button"
-                                onClick={() => setIsAddingSub(true)}
+                                onClick={() => handleTriggerAddSub(parent)}
                                 className="flex items-center justify-center gap-1.5 p-2.5 rounded-lg border border-dashed border-slate-300 dark:border-white/20 text-slate-500 hover:text-emerald-600 hover:border-emerald-500 transition-all font-sans text-xs font-bold uppercase tracking-wider outline-none cursor-pointer"
                               >
                                 <Plus size={13} strokeWidth={2.5} />
@@ -339,17 +352,17 @@ export const Step3CategorySelect = ({
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter") {
                                       e.preventDefault();
-                                      handleCreateSub();
+                                      submitSub(parent._id);
                                     } else if (e.key === "Escape") {
                                       setIsAddingSub(false);
                                     }
                                   }}
-                                  placeholder="New entry name..."
+                                  placeholder={`New sub in ${parent.label}...`}
                                   className="w-full bg-transparent px-2 py-1 font-sans text-xs font-semibold outline-none text-slate-900 dark:text-white"
                                 />
                                 <button
                                   type="button"
-                                  onClick={handleCreateSub}
+                                  onClick={() => submitSub(parent._id)}
                                   className="p-1 bg-emerald-600 text-white rounded-md ml-1 hover:bg-emerald-700 outline-none cursor-pointer font-sans"
                                 >
                                   <Check size={13} />
