@@ -2,29 +2,28 @@
 import React, { useState, useEffect } from "react";
 import {
   X,
-  Plus,
-  Trash2,
-  Clock,
-  Users,
-  Video,
-  Image,
-  UtensilsCrossed,
-  Sparkles,
-  Flame,
-  Check,
-  Timer,
-  Leaf,
-  Wand2,
-  Loader2,
+  ChefHat,
   ArrowRight,
-  ClipboardPaste,
+  ArrowLeft,
+  Check,
+  Loader2,
+  Wand2,
+  FileText,
+  Leaf,
+  ListOrdered,
 } from "lucide-react";
 import { useApi } from "../../../shared/hooks/useApi";
 import { toast } from "sonner";
 
-const CUISINE_OPTIONS = [
-  "Gujarati",
+import WizardProgressBar from "./wizard/WizardProgressBar";
+import SmartPasteStep from "./wizard/SmartPasteStep";
+import GeneralInfoStep from "./wizard/GeneralInfoStep";
+import IngredientsStep from "./wizard/IngredientsStep";
+import CookingStepsStep from "./wizard/CookingStepsStep";
+
+const CUISINES = [
   "North Indian",
+  "Gujarati",
   "South Indian",
   "Street Food",
   "Italian",
@@ -34,14 +33,27 @@ const CUISINE_OPTIONS = [
   "Other",
 ];
 
-const COURSE_TYPES = [
+const COURSES = [
   "Main Course",
-  "Appetizer / Snack",
-  "Dessert",
+  "Appetizer",
   "Breakfast",
-  "Beverage",
+  "Snack",
+  "Dessert",
+  "Drink",
   "Side Dish",
-  "Other",
+];
+
+const DIFFICULTIES = [
+  { label: "Easy", desc: "Simple and quick" },
+  { label: "Medium", desc: "Everyday cooking" },
+  { label: "Expert", desc: "More prep and steps" },
+];
+
+const WIZARD_STEPS = [
+  { id: 1, key: "smart-paste", title: "Import", subtitle: "Paste or start blank", icon: Wand2 },
+  { id: 2, key: "details", title: "Details", subtitle: "Name, cuisine & time", icon: FileText },
+  { id: 3, key: "ingredients", title: "Ingredients", subtitle: "Items & quantities", icon: Leaf },
+  { id: 4, key: "steps", title: "Steps", subtitle: "Instructions & timers", icon: ListOrdered },
 ];
 
 const INITIAL_FORM = {
@@ -64,7 +76,7 @@ const INITIAL_FORM = {
     isGlutenFree: false,
   },
   ingredients: [
-    { name: "", quantity: 1, unit: "pieces", isPantryStaple: false, notes: "" },
+    { name: "", quantity: 1, unit: "cup", isPantryStaple: false, notes: "" },
   ],
   instructions: [
     { stepNumber: 1, title: "", instruction: "", timerDurationSeconds: 0, chefTip: "" },
@@ -73,15 +85,16 @@ const INITIAL_FORM = {
 
 const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
   const { request } = useApi();
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
   const [isAiParsing, setIsAiParsing] = useState(false);
-  const [rawRecipeText, setRawRecipeText] = useState("");
-  const [activeTab, setActiveTab] = useState("magic-paste");
+  const [rawText, setRawText] = useState("");
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      setCurrentStep(1);
     } else {
       document.body.style.overflow = "unset";
     }
@@ -92,21 +105,28 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
 
   if (!isOpen) return null;
 
-  // --- Gemini AI Magic Parser Handler ---
+  // Validation rules per step
+  const validIngredients = formData.ingredients.filter(
+    (item) => item.name && item.name.trim().length > 0
+  );
+  const validInstructions = formData.instructions.filter(
+    (item) => item.instruction && item.instruction.trim().length > 0
+  );
+
+  const isStep2Valid = Boolean(formData.title.trim());
+  const isStep3Valid = validIngredients.length > 0;
+  const isStep4Valid = validInstructions.length > 0;
+
+  // AI Parse Handler
   const handleAiParse = async () => {
-    if (!rawRecipeText || !rawRecipeText.trim()) {
-      toast.error("Please paste the recipe text first");
+    if (!rawText.trim()) {
+      toast.error("Please paste your recipe text first");
       return;
     }
 
     setIsAiParsing(true);
     try {
-      // Corrected to useApi signature: request(endpoint, method, data)
-      const response = await request(
-        "/recipes/parse",
-        "POST",
-        { rawText: rawRecipeText }
-      );
+      const response = await request("/recipes/parse", "POST", { rawText });
 
       if (response && (response.success || response.data)) {
         const parsed = response.data || response;
@@ -133,36 +153,68 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
               : prev.instructions,
         }));
 
-        toast.success("Recipe parsed by Gemini!", {
-          description: `Extracted ${parsed.ingredients?.length || 0} ingredients and ${parsed.instructions?.length || 0} steps.`,
-        });
-
-        // Switch to overview to review extracted details
-        setActiveTab("overview");
+        toast.success("Recipe details extracted");
+        setCurrentStep(2);
       } else {
-        toast.error(response?.message || "Failed to parse recipe with AI");
+        toast.error(response?.message || "Could not read recipe text");
       }
     } catch (err) {
-      toast.error(err?.message || "Failed to connect to parser service");
+      toast.error(err?.message || "Failed to reach recipe service");
     } finally {
       setIsAiParsing(false);
     }
   };
 
-  // --- Handlers: Ingredients ---
+  // Step Navigation
+  const handleNextStep = () => {
+    if (currentStep === 2 && !isStep2Valid) {
+      toast.error("Please add a title for the recipe");
+      return;
+    }
+    if (currentStep === 3 && !isStep3Valid) {
+      toast.error("Add at least one ingredient to continue");
+      return;
+    }
+    if (currentStep < 4) {
+      setCurrentStep((prev) => prev + 1);
+    }
+  };
+
+  const handlePrevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep((prev) => prev - 1);
+    }
+  };
+
+  const handleJumpToStep = (stepNumber) => {
+    if (stepNumber === currentStep) return;
+    if (stepNumber > currentStep) {
+      if (currentStep === 2 && !isStep2Valid) {
+        toast.error("Please add a title first");
+        return;
+      }
+      if (currentStep === 3 && !isStep3Valid) {
+        toast.error("Add at least one ingredient first");
+        return;
+      }
+    }
+    setCurrentStep(stepNumber);
+  };
+
+  // Ingredients Actions
   const handleAddIngredient = () => {
     setFormData((prev) => ({
       ...prev,
       ingredients: [
         ...prev.ingredients,
-        { name: "", quantity: 1, unit: "", isPantryStaple: false, notes: "" },
+        { name: "", quantity: 1, unit: "cup", isPantryStaple: false, notes: "" },
       ],
     }));
   };
 
   const handleRemoveIngredient = (index) => {
     if (formData.ingredients.length === 1) {
-      toast.error("Recipe must contain at least one ingredient");
+      toast.error("Need at least one ingredient");
       return;
     }
     setFormData((prev) => ({
@@ -179,7 +231,7 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
     });
   };
 
-  // --- Handlers: Instructions ---
+  // Steps Actions
   const handleAddStep = () => {
     setFormData((prev) => ({
       ...prev,
@@ -198,13 +250,13 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
 
   const handleRemoveStep = (index) => {
     if (formData.instructions.length === 1) {
-      toast.error("Recipe must contain at least one instruction step");
+      toast.error("Need at least one step");
       return;
     }
     setFormData((prev) => {
       const filtered = prev.instructions.filter((_, i) => i !== index);
-      const reIndexed = filtered.map((step, idx) => ({
-        ...step,
+      const reIndexed = filtered.map((item, idx) => ({
+        ...item,
         stepNumber: idx + 1,
       }));
       return { ...prev, instructions: reIndexed };
@@ -219,7 +271,6 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
     });
   };
 
-  // --- Handlers: Dietary Toggles ---
   const handleToggleDietary = (flag) => {
     setFormData((prev) => ({
       ...prev,
@@ -230,45 +281,25 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
     }));
   };
 
-  // --- Final Submit ---
+  // Final Submit Handler
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.title.trim()) {
-      toast.error("Please provide a recipe title");
-      setActiveTab("overview");
+    if (!isStep2Valid) {
+      toast.error("Please add a recipe title");
+      setCurrentStep(2);
       return;
     }
 
-    const cleanedIngredients = formData.ingredients
-      .filter((ing) => ing.name && ing.name.trim() !== "")
-      .map((ing) => ({
-        name: ing.name.trim(),
-        quantity: Number(ing.quantity) || 1,
-        unit: ing.unit ? ing.unit.trim() : "",
-        isPantryStaple: Boolean(ing.isPantryStaple),
-        notes: ing.notes ? ing.notes.trim() : "",
-      }));
-
-    if (cleanedIngredients.length === 0) {
-      toast.error("Please add at least one valid ingredient");
-      setActiveTab("ingredients");
+    if (!isStep3Valid) {
+      toast.error("Please add at least one ingredient");
+      setCurrentStep(3);
       return;
     }
 
-    const cleanedInstructions = formData.instructions
-      .filter((step) => step.instruction && step.instruction.trim() !== "")
-      .map((step, idx) => ({
-        stepNumber: idx + 1,
-        title: step.title ? step.title.trim() : "",
-        instruction: step.instruction.trim(),
-        timerDurationSeconds: Number(step.timerDurationSeconds) || 0,
-        chefTip: step.chefTip ? step.chefTip.trim() : "",
-      }));
-
-    if (cleanedInstructions.length === 0) {
-      toast.error("Please enter instructions for at least one step");
-      setActiveTab("steps");
+    if (!isStep4Valid) {
+      toast.error("Please add instructions for at least one step");
+      setCurrentStep(4);
       return;
     }
 
@@ -282,8 +313,20 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
       prepTimeMinutes: Number(formData.prepTimeMinutes) || 0,
       cookTimeMinutes: Number(formData.cookTimeMinutes) || 0,
       dietaryFlags: formData.dietaryFlags,
-      ingredients: cleanedIngredients,
-      instructions: cleanedInstructions,
+      ingredients: validIngredients.map((ing) => ({
+        name: ing.name.trim(),
+        quantity: Number(ing.quantity) || 1,
+        unit: ing.unit ? ing.unit.trim() : "",
+        isPantryStaple: Boolean(ing.isPantryStaple),
+        notes: ing.notes ? ing.notes.trim() : "",
+      })),
+      instructions: validInstructions.map((step, idx) => ({
+        stepNumber: idx + 1,
+        title: step.title ? step.title.trim() : "",
+        instruction: step.instruction.trim(),
+        timerDurationSeconds: Number(step.timerDurationSeconds) || 0,
+        chefTip: step.chefTip ? step.chefTip.trim() : "",
+      })),
       videoUrl: formData.videoUrl.trim(),
       coverImage: formData.coverImage.trim(),
       tags: formData.tags
@@ -293,691 +336,190 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
 
     setLoading(true);
     try {
-      // Corrected to useApi signature: request(endpoint, method, data)
       const response = await request("/recipes", "POST", payload);
 
       if (response && (response.success || response.data)) {
-        toast.success("Recipe indexed into Royal Rasoi!", {
-          description: payload.title,
-        });
+        toast.success("Recipe saved");
         setFormData(INITIAL_FORM);
-        setRawRecipeText("");
+        setRawText("");
         if (onRecipeCreated) {
           onRecipeCreated(response.data || response);
         }
         onClose();
       } else {
-        toast.error(response?.message || "Failed to create recipe");
+        toast.error(response?.message || "Failed to save recipe");
       }
     } catch (err) {
-      toast.error(err?.message || "Server error while adding recipe");
+      toast.error(err?.message || "Error saving recipe");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 select-none font-sans text-left">
-      <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col rounded-3xl bg-[#140F0A] border-2 border-amber-500/40 shadow-[0_25px_70px_rgba(0,0,0,0.9)] overflow-hidden text-stone-100">
-        
-        {/* MODAL HEADER */}
-        <header className="px-6 py-4 border-b border-[#2C1F15] bg-[#1C140D] flex items-center justify-between gap-4 shrink-0">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs transition-opacity duration-300">
+      {/* Backdrop */}
+      <div className="absolute inset-0" onClick={onClose} />
+
+      {/* Main Container: Mobile Bottom-Drawer / Desktop Slide-Drawer */}
+      <div
+        className="relative z-10 w-full sm:w-[600px] max-h-[92vh] sm:max-h-full h-[90vh] sm:h-full flex flex-col rounded-t-2xl sm:rounded-none sm:rounded-l-2xl bg-white dark:bg-[#0F141C] border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 shadow-2xl transition-all duration-300 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* ========================================================= */}
+        {/* CLEAN, SOPHISTICATED MODAL HEADER                         */}
+        {/* ========================================================= */}
+        <header className="px-5 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131924] flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0 shadow-inner">
-              <UtensilsCrossed size={19} strokeWidth={2.4} />
+            <div className="w-9 h-9 rounded-lg bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <ChefHat size={18} strokeWidth={2.4} />
             </div>
+
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                  Royal Rasoi Registry
-                </span>
-                <span className="text-stone-600">•</span>
-                <span className="text-xs font-mono text-stone-400">Sous Chef</span>
-              </div>
-              <h2 className="text-lg sm:text-xl font-serif font-bold text-white tracking-tight truncate mt-0.5">
-                Add Recipe
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight truncate">
+                {formData.title.trim() ? formData.title : "Add Recipe"}
               </h2>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                {WIZARD_STEPS[currentStep - 1].title} • {WIZARD_STEPS[currentStep - 1].subtitle}
+              </p>
             </div>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-stone-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+            aria-label="Close"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </header>
 
-        {/* TABS CONTROLLER */}
-        <nav className="flex items-center px-6 border-b border-[#2C1F15] bg-[#17100B] gap-4 sm:gap-6 text-xs font-bold uppercase tracking-wider shrink-0 overflow-x-auto no-scrollbar">
-          <button
-            type="button"
-            onClick={() => setActiveTab("magic-paste")}
-            className={`py-3.5 border-b-2 flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === "magic-paste"
-                ? "border-amber-400 text-amber-300 font-black shadow-[0_2px_10px_rgba(245,158,11,0.3)]"
-                : "border-transparent text-stone-400 hover:text-stone-200"
-            }`}
-          >
-            <Wand2 size={13} className="text-amber-400" />
-            <span>Magic Paste (AI)</span>
-          </button>
+        {/* PROGRESS BAR STRIP */}
+        <WizardProgressBar
+          steps={WIZARD_STEPS}
+          currentStep={currentStep}
+          onJumpToStep={handleJumpToStep}
+        />
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("overview")}
-            className={`py-3.5 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === "overview"
-                ? "border-amber-400 text-amber-300 font-black shadow-[0_2px_10px_rgba(245,158,11,0.3)]"
-                : "border-transparent text-stone-400 hover:text-stone-200"
-            }`}
-          >
-            Overview & Diet
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("ingredients")}
-            className={`py-3.5 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === "ingredients"
-                ? "border-amber-400 text-amber-300 font-black shadow-[0_2px_10px_rgba(245,158,11,0.3)]"
-                : "border-transparent text-stone-400 hover:text-stone-200"
-            }`}
-          >
-            Ingredients ({formData.ingredients.length})
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("steps")}
-            className={`py-3.5 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === "steps"
-                ? "border-amber-400 text-amber-300 font-black shadow-[0_2px_10px_rgba(245,158,11,0.3)]"
-                : "border-transparent text-stone-400 hover:text-stone-200"
-            }`}
-          >
-            Steps ({formData.instructions.length})
-          </button>
-        </nav>
-
-        {/* SCROLLABLE FORM BODY */}
-        <form
-          id="add-recipe-form"
-          onSubmit={handleSubmit}
-          className="flex-1 overflow-y-auto px-6 py-5 space-y-6 text-xs no-scrollbar"
-        >
-          {/* TAB 0: MAGIC PASTE TAB */}
-          {activeTab === "magic-paste" && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-[#23170E] to-[#17100B] border border-amber-500/30 flex items-start gap-3">
-                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 shrink-0">
-                  <Sparkles size={18} />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="font-serif font-bold text-sm text-white">
-                    Paste Any Raw Recipe Text
-                  </h3>
-                  <p className="text-[11px] text-stone-300 leading-relaxed">
-                    Paste descriptions from YouTube, Sanjeev Kapoor/Ranveer Brar recipes, WhatsApp forwards, or messy bilingual Hindi/English cooking steps. Gemini will structure portions, ingredients, steps, and dietary tags automatically.
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-stone-300 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                    <ClipboardPaste size={13} className="text-amber-500" />
-                    <span>Raw Recipe Text / Transcript</span>
-                  </label>
-                  {rawRecipeText && (
-                    <button
-                      type="button"
-                      onClick={() => setRawRecipeText("")}
-                      className="text-[10px] text-stone-400 hover:text-rose-400 font-bold cursor-pointer"
-                    >
-                      Clear Text
-                    </button>
-                  )}
-                </div>
-
-                <textarea
-                  rows={10}
-                  value={rawRecipeText}
-                  onChange={(e) => setRawRecipeText(e.target.value)}
-                  placeholder={`Paste full text here, e.g.:
-
-Full written recipe for Dal khichdi
-Prep time: 20-25 minutes
-Serves: 2-3 people
-Ingredients:
-Split pigeon peas | तूर दाल 1/2 cup
-Ghee | घी 1 tsp
-Method:
-Wash & soak all the dals...`}
-                  className="w-full bg-[#18110B] border border-[#3A281A] rounded-2xl p-4 text-xs font-mono text-stone-200 placeholder:text-stone-600 focus:outline-none focus:border-amber-500 leading-relaxed resize-none shadow-inner"
-                />
-              </div>
-
-              <div className="flex justify-end pt-1">
-                <button
-                  type="button"
-                  disabled={isAiParsing || !rawRecipeText.trim()}
-                  onClick={handleAiParse}
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] disabled:opacity-40 text-[#140F0A] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
-                >
-                  {isAiParsing ? (
-                    <>
-                      <Loader2 size={15} className="animate-spin" />
-                      <span>Gemini is Parsing Recipe...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 size={15} />
-                      <span>Parse with Gemini</span>
-                      <ArrowRight size={14} />
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
+        {/* SCROLLABLE STEP BODY */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs no-scrollbar bg-slate-50/40 dark:bg-transparent">
+          {currentStep === 1 && (
+            <SmartPasteStep
+              rawText={rawText}
+              setRawText={setRawText}
+              isAiParsing={isAiParsing}
+              onAiParse={handleAiParse}
+              onSkipToManual={() => setCurrentStep(2)}
+            />
           )}
 
-          {/* TAB 1: OVERVIEW & DIETARY */}
-          {activeTab === "overview" && (
-            <div className="space-y-5 animate-in fade-in duration-150">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="sm:col-span-2 space-y-1.5">
-                  <label className="font-bold text-stone-300 uppercase tracking-wider text-[11px]">
-                    Recipe Title *
-                  </label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="e.g. Restaurant Style Dal Khichdi"
-                    value={formData.title}
-                    onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
-                    }
-                    className="w-full bg-[#1A120B] border border-[#3A281A] rounded-xl px-3.5 py-2.5 text-sm font-semibold text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-bold text-stone-300 uppercase tracking-wider text-[11px]">
-                    Cuisine *
-                  </label>
-                  <select
-                    value={formData.cuisine}
-                    onChange={(e) =>
-                      setFormData({ ...formData, cuisine: e.target.value })
-                    }
-                    className="w-full bg-[#1A120B] border border-[#3A281A] rounded-xl px-3 py-2.5 text-xs font-bold text-amber-200 focus:outline-none focus:border-amber-500 cursor-pointer"
-                  >
-                    {CUISINE_OPTIONS.map((c) => (
-                      <option key={c} value={c} className="bg-[#140F0A]">
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-1.5">
-                  <label className="font-bold text-stone-300 uppercase tracking-wider text-[11px]">
-                    Course Type
-                  </label>
-                  <select
-                    value={formData.courseType}
-                    onChange={(e) =>
-                      setFormData({ ...formData, courseType: e.target.value })
-                    }
-                    className="w-full bg-[#1A120B] border border-[#3A281A] rounded-xl px-3 py-2.5 text-xs font-semibold text-stone-200 focus:outline-none focus:border-amber-500 cursor-pointer"
-                  >
-                    {COURSE_TYPES.map((ct) => (
-                      <option key={ct} value={ct} className="bg-[#140F0A]">
-                        {ct}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-bold text-stone-300 uppercase tracking-wider text-[11px]">
-                    Difficulty Level
-                  </label>
-                  <select
-                    value={formData.difficulty}
-                    onChange={(e) =>
-                      setFormData({ ...formData, difficulty: e.target.value })
-                    }
-                    className="w-full bg-[#1A120B] border border-[#3A281A] rounded-xl px-3 py-2.5 text-xs font-semibold text-stone-200 focus:outline-none focus:border-amber-500 cursor-pointer"
-                  >
-                    <option value="Easy">Easy (Beginner Friendly)</option>
-                    <option value="Medium">Medium (Regular Cook)</option>
-                    <option value="Expert">Expert (Elaborate Prep)</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-bold text-stone-300 uppercase tracking-wider text-[11px] flex items-center gap-1">
-                    <Users size={12} className="text-amber-500" />
-                    <span>Base Portions</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={formData.baseServings}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        baseServings: Math.max(1, parseInt(e.target.value) || 1),
-                      })
-                    }
-                    className="w-full bg-[#1A120B] border border-[#3A281A] rounded-xl px-3 py-2.5 text-xs font-bold text-amber-300 text-center focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="font-bold text-stone-300 uppercase tracking-wider text-[11px] flex items-center gap-1">
-                    <Clock size={12} className="text-amber-500" />
-                    <span>Prep Time (Minutes)</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.prepTimeMinutes}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        prepTimeMinutes: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    className="w-full bg-[#1A120B] border border-[#3A281A] rounded-xl px-3 py-2 text-xs font-semibold text-stone-200 focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-bold text-stone-300 uppercase tracking-wider text-[11px] flex items-center gap-1">
-                    <Flame size={12} className="text-orange-500" />
-                    <span>Cook Time (Minutes)</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.cookTimeMinutes}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        cookTimeMinutes: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    className="w-full bg-[#1A120B] border border-[#3A281A] rounded-xl px-3 py-2 text-xs font-semibold text-stone-200 focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[#1C140D] border border-amber-500/20 space-y-2.5">
-                <div className="flex items-center gap-1.5 text-amber-300 font-bold uppercase tracking-wider text-[11px]">
-                  <Leaf size={14} className="text-emerald-400" />
-                  <span>Dietary Compatibility Flags</span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {[
-                    { key: "isVegetarian", label: "Vegetarian" },
-                    { key: "isJain", label: "Jain Friendly (No Root Veg)" },
-                    { key: "isSwaminarayan", label: "Swaminarayan (No Onion/Garlic)" },
-                    { key: "isVegan", label: "Vegan (No Dairy)" },
-                    { key: "isGlutenFree", label: "Gluten Free" },
-                  ].map(({ key, label }) => {
-                    const isChecked = formData.dietaryFlags[key];
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => handleToggleDietary(key)}
-                        className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                          isChecked
-                            ? "bg-emerald-950/40 border-emerald-500/60 text-emerald-300 shadow-xs"
-                            : "bg-[#140F0A] border-[#332215] text-stone-400 hover:border-stone-600"
-                        }`}
-                      >
-                        <span className="font-semibold text-[11px]">{label}</span>
-                        <div
-                          className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
-                            isChecked
-                              ? "bg-emerald-500 text-black border-emerald-400"
-                              : "border-stone-600"
-                          }`}
-                        >
-                          {isChecked && <Check size={11} strokeWidth={3} />}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <label className="font-bold text-stone-300 uppercase tracking-wider text-[11px] flex items-center gap-1">
-                    <Video size={13} className="text-rose-400" />
-                    <span>Video Link (YouTube Watch, Short, or Instagram Reel)</span>
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://www.youtube.com/watch?v=... or https://instagram.com/reel/..."
-                    value={formData.videoUrl}
-                    onChange={(e) =>
-                      setFormData({ ...formData, videoUrl: e.target.value })
-                    }
-                    className="w-full bg-[#1A120B] border border-[#3A281A] rounded-xl px-3 py-2 text-xs font-mono text-stone-300 focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-bold text-stone-300 uppercase tracking-wider text-[11px] flex items-center gap-1">
-                    <Image size={13} className="text-sky-400" />
-                    <span>Cover Photo Image URL</span>
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://images.unsplash.com/..."
-                    value={formData.coverImage}
-                    onChange={(e) =>
-                      setFormData({ ...formData, coverImage: e.target.value })
-                    }
-                    className="w-full bg-[#1A120B] border border-[#3A281A] rounded-xl px-3 py-2 text-xs font-mono text-stone-300 focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-bold text-stone-300 uppercase tracking-wider text-[11px]">
-                    Tags (Comma separated)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Comfort Food, Khichdi, Tadka"
-                    value={formData.tags}
-                    onChange={(e) =>
-                      setFormData({ ...formData, tags: e.target.value })
-                    }
-                    className="w-full bg-[#1A120B] border border-[#3A281A] rounded-xl px-3 py-2 text-xs text-stone-300 focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-              </div>
-            </div>
+          {currentStep === 2 && (
+            <GeneralInfoStep
+              formData={formData}
+              setFormData={setFormData}
+              cuisines={CUISINES}
+              courses={COURSES}
+              difficulties={DIFFICULTIES}
+              isValid={isStep2Valid}
+              onToggleDietary={handleToggleDietary}
+            />
           )}
 
-          {/* TAB 2: INGREDIENTS LIST */}
-          {activeTab === "ingredients" && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <div className="flex items-center justify-between pb-1">
-                <div>
-                  <h4 className="font-bold text-sm text-amber-200">
-                    Ingredients List ({formData.ingredients.length})
-                  </h4>
-                  <p className="text-[11px] text-stone-400">
-                    Pantry staples are auto-flagged so they won't count as missing in the Matcher.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAddIngredient}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all cursor-pointer"
-                >
-                  <Plus size={13} strokeWidth={2.5} />
-                  <span>Add Item</span>
-                </button>
-              </div>
-
-              <div className="space-y-2.5">
-                {formData.ingredients.map((ing, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 rounded-xl bg-[#1C140D] border border-[#332215] flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5"
-                  >
-                    <div className="flex-1">
-                      <input
-                        required
-                        type="text"
-                        placeholder="Ingredient name"
-                        value={ing.name}
-                        onChange={(e) =>
-                          handleIngredientChange(idx, "name", e.target.value)
-                        }
-                        className="w-full bg-[#140F0A] border border-[#3A281A] rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-500 font-semibold"
-                      />
-                    </div>
-
-                    <div className="w-20">
-                      <input
-                        required
-                        type="number"
-                        step="0.05"
-                        min="0"
-                        placeholder="Qty"
-                        value={ing.quantity}
-                        onChange={(e) =>
-                          handleIngredientChange(idx, "quantity", e.target.value)
-                        }
-                        className="w-full bg-[#140F0A] border border-[#3A281A] rounded-lg px-2 py-1.5 text-xs text-amber-300 text-center font-bold focus:outline-none focus:border-amber-500"
-                      />
-                    </div>
-
-                    <div className="w-24">
-                      <input
-                        type="text"
-                        placeholder="Unit"
-                        value={ing.unit}
-                        onChange={(e) =>
-                          handleIngredientChange(idx, "unit", e.target.value)
-                        }
-                        className="w-full bg-[#140F0A] border border-[#3A281A] rounded-lg px-2 py-1.5 text-xs text-stone-300 focus:outline-none focus:border-amber-500"
-                      />
-                    </div>
-
-                    <label className="flex items-center gap-1.5 px-2 py-1 rounded bg-[#140F0A] border border-[#3A281A] cursor-pointer shrink-0">
-                      <input
-                        type="checkbox"
-                        checked={ing.isPantryStaple}
-                        onChange={(e) =>
-                          handleIngredientChange(
-                            idx,
-                            "isPantryStaple",
-                            e.target.checked
-                          )
-                        }
-                        className="accent-amber-500 rounded"
-                      />
-                      <span className="text-[10px] text-stone-400 font-medium">
-                        Staple
-                      </span>
-                    </label>
-
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveIngredient(idx)}
-                      className="p-1.5 text-stone-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer shrink-0"
-                      title="Remove ingredient"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {currentStep === 3 && (
+            <IngredientsStep
+              ingredients={formData.ingredients}
+              validCount={validIngredients.length}
+              onAddIngredient={handleAddIngredient}
+              onRemoveIngredient={handleRemoveIngredient}
+              onIngredientChange={handleIngredientChange}
+            />
           )}
 
-          {/* TAB 3: STEP-BY-STEP INSTRUCTIONS */}
-          {activeTab === "steps" && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <div className="flex items-center justify-between pb-1">
-                <div>
-                  <h4 className="font-bold text-sm text-amber-200">
-                    Step-by-Step Cooking Guide ({formData.instructions.length})
-                  </h4>
-                  <p className="text-[11px] text-stone-400">
-                    Numbered stages extracted from the recipe.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAddStep}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all cursor-pointer"
-                >
-                  <Plus size={13} strokeWidth={2.5} />
-                  <span>Add Step</span>
-                </button>
-              </div>
-
-              <div className="space-y-3.5">
-                {formData.instructions.map((step, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 rounded-xl bg-[#1C140D] border border-[#332215] space-y-2.5 relative"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold font-mono text-xs flex items-center justify-center">
-                          {idx + 1}
-                        </span>
-                        <input
-                          type="text"
-                          placeholder="Step Heading"
-                          value={step.title}
-                          onChange={(e) =>
-                            handleStepChange(idx, "title", e.target.value)
-                          }
-                          className="bg-[#140F0A] border border-[#3A281A] rounded-lg px-2.5 py-1 text-xs text-amber-200 font-bold focus:outline-none focus:border-amber-500 sm:w-64"
-                        />
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 bg-[#140F0A] border border-[#3A281A] px-2 py-0.5 rounded-lg">
-                          <Timer size={12} className="text-amber-400" />
-                          <input
-                            type="number"
-                            min="0"
-                            step="30"
-                            placeholder="Secs"
-                            value={step.timerDurationSeconds || ""}
-                            onChange={(e) =>
-                              handleStepChange(
-                                idx,
-                                "timerDurationSeconds",
-                                parseInt(e.target.value) || 0
-                              )
-                            }
-                            className="w-14 bg-transparent text-[11px] font-mono text-amber-300 text-center focus:outline-none"
-                            title="Timer in seconds"
-                          />
-                          <span className="text-[10px] text-stone-500">sec</span>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveStep(idx)}
-                          className="p-1 text-stone-500 hover:text-rose-400 transition-colors cursor-pointer"
-                          title="Remove step"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-
-                    <textarea
-                      required
-                      rows={2}
-                      placeholder="Detailed instructions for this step..."
-                      value={step.instruction}
-                      onChange={(e) =>
-                        handleStepChange(idx, "instruction", e.target.value)
-                      }
-                      className="w-full bg-[#140F0A] border border-[#3A281A] rounded-lg p-2.5 text-xs text-stone-200 placeholder:text-stone-500 focus:outline-none focus:border-amber-500 resize-none leading-relaxed"
-                    />
-
-                    <input
-                      type="text"
-                      placeholder="Chef's Tip / Note (Optional)"
-                      value={step.chefTip || ""}
-                      onChange={(e) =>
-                        handleStepChange(idx, "chefTip", e.target.value)
-                      }
-                      className="w-full bg-[#140F0A]/60 border border-[#2E2015] rounded-lg px-2.5 py-1 text-[11px] text-stone-400 italic focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+          {currentStep === 4 && (
+            <CookingStepsStep
+              instructions={formData.instructions}
+              validCount={validInstructions.length}
+              onAddStep={handleAddStep}
+              onRemoveStep={handleRemoveStep}
+              onStepChange={handleStepChange}
+              recipeTitle={formData.title}
+              totalIngredients={validIngredients.length}
+            />
           )}
-        </form>
+        </div>
 
-        {/* FOOTER ACTIONS */}
-        <footer className="px-6 py-4 border-t border-[#2C1F15] bg-[#1C140D] flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-2">
-            {activeTab !== "magic-paste" && (
+        {/* ========================================================= */}
+        {/* PREMIUM UNIFIED FOOTER                                    */}
+        {/* ========================================================= */}
+        <footer className="px-5 sm:px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131924] flex items-center justify-between gap-3 shrink-0">
+          {/* Left Controls */}
+          <div>
+            {currentStep > 1 ? (
               <button
                 type="button"
-                onClick={() => {
-                  if (activeTab === "steps") setActiveTab("ingredients");
-                  else if (activeTab === "ingredients") setActiveTab("overview");
-                  else if (activeTab === "overview") setActiveTab("magic-paste");
-                }}
-                className="px-3 py-1.5 rounded-lg border border-[#3A281A] text-stone-400 hover:text-white text-xs font-semibold cursor-pointer"
+                onClick={handlePrevStep}
+                className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                Back
+                <ArrowLeft size={13} strokeWidth={2.2} />
+                <span>Back</span>
               </button>
-            )}
-
-            {activeTab !== "steps" && activeTab !== "magic-paste" && (
+            ) : (
               <button
                 type="button"
-                onClick={() =>
-                  setActiveTab(activeTab === "overview" ? "ingredients" : "steps")
-                }
-                className="px-3.5 py-1.5 rounded-lg bg-[#2B1D12] border border-amber-500/30 text-amber-200 hover:text-white text-xs font-semibold cursor-pointer"
+                disabled={loading || isAiParsing}
+                onClick={onClose}
+                className="h-9 px-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-40"
               >
-                Next Section &rarr;
+                Cancel
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              disabled={loading || isAiParsing}
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-stone-400 hover:text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              form="add-recipe-form"
-              disabled={loading || isAiParsing}
-              className="px-5 py-2 rounded-xl bg-[#f59e0b] hover:bg-[#d97706] text-[#140F0A] font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-            >
-              {loading ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-stone-900 border-t-transparent rounded-full animate-spin" />
-                  <span>Saving to Vault...</span>
-                </>
-              ) : (
-                <>
-                  <Check size={14} strokeWidth={3} />
-                  <span>Index Recipe</span>
-                </>
-              )}
-            </button>
+          {/* Right Action */}
+          <div className="flex items-center gap-2">
+            {currentStep > 1 && (
+              <button
+                type="button"
+                disabled={loading || isAiParsing}
+                onClick={onClose}
+                className="hidden sm:inline-flex h-9 px-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-40 items-center"
+              >
+                Cancel
+              </button>
+            )}
+
+            {currentStep < 4 ? (
+              <button
+                type="button"
+                onClick={handleNextStep}
+                className="h-9 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
+              >
+                <span>Next</span>
+                <ArrowRight size={13} strokeWidth={2.4} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading || isAiParsing || !isStep4Valid}
+                className="h-9 px-4 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer disabled:opacity-40 flex items-center gap-1.5 shadow-xs active:scale-95"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin text-slate-950" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check size={14} strokeWidth={2.6} />
+                    <span>Save Recipe</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </footer>
-
       </div>
     </div>
   );
