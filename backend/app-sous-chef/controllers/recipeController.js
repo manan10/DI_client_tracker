@@ -35,7 +35,7 @@ const parseVideoUrl = (rawUrl) => {
   }
 
   // Instagram Reel / Post match
-  const instaMatch = trimmed.match(/instagram\.com\/(?:reel|p)\/([a-zA-Z0-9_-]+)/);
+  const instaMatch = trimmed.match(/instagram\.com\/(?:reel|p|tv)\/([a-zA-Z0-9_-]+)/);
   if (instaMatch) {
     return {
       rawUrl: trimmed,
@@ -158,9 +158,7 @@ const runGeminiRecipeParser = async (rawText) => {
 };
 
 /**
- * Helper: Extract YouTube Description and Title WITHOUT Video Captions
- * 1. Checks YouTube oEmbed for official Title
- * 2. Fetches the page HTML to read ytInitialData or OpenGraph/Schema description tags
+ * Helper: Extract YouTube Description and Title
  */
 const fetchYouTubeDescription = async (videoId) => {
   const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
@@ -194,7 +192,7 @@ const fetchYouTubeDescription = async (videoId) => {
       const html = await pageRes.text();
       const $ = cheerio.load(html);
 
-      // Attempt A: Extract from ytInitialData / ytInitialPlayerResponse JSON payload
+      // Attempt A: Extract from ytInitialData payload
       const descMatch = html.match(/"shortDescription":"(.*?)"(?:,"isCrawlable"|,"thumbnail")/s);
       if (descMatch && descMatch[1]) {
         try {
@@ -232,35 +230,104 @@ const fetchYouTubeDescription = async (videoId) => {
 };
 
 /**
- * Helper: Extract Instagram Reel/Post caption using OpenGraph meta tags
+ * Helper: Extract Instagram Reel/Post caption
+ * 1. Strips tracking query params and requests clean GraphQL shortcode JSON
+ * 2. Employs social crawler headers (Facebook/WhatsApp User-Agent) to read OpenGraph meta & JSON-LD
  */
-const fetchInstagramContent = async (url) => {
+const fetchInstagramContent = async (rawUrl, postId) => {
+  let caption = '';
+
+  // Extract clean shortcode without trailing queries
+  const cleanPostId =
+    postId ||
+    rawUrl.match(/instagram\.com\/(?:reel|p|tv)\/([a-zA-Z0-9_-]+)/)?.[1];
+
+  const canonicalUrl = cleanPostId
+    ? `https://www.instagram.com/reel/${cleanPostId}/`
+    : rawUrl.split('?')[0];
+
+  // STRATEGY 1: Internal Mobile Web JSON API
+  if (cleanPostId) {
+    try {
+      const jsonRes = await fetch(
+        `https://www.instagram.com/p/${cleanPostId}/?__a=1&__d=dis`,
+        {
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 301.0.0.27.111',
+            'Accept': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'X-IG-App-ID': '936619743392459',
+            'Sec-Fetch-Mode': 'cors',
+          },
+        }
+      );
+
+      const contentType = jsonRes.headers.get('content-type') || '';
+      if (jsonRes.ok && contentType.includes('application/json')) {
+        const data = await jsonRes.json();
+        const graphqlCaption =
+          data?.graphql?.shortcode_media?.edge_media_to_caption?.edges?.[0]?.node?.text;
+        const itemCaption = data?.items?.[0]?.caption?.text;
+
+        caption = graphqlCaption || itemCaption || '';
+        if (caption.trim()) {
+          return caption.trim();
+        }
+      }
+    } catch (err) {
+      console.warn('Instagram ?__a=1 internal skipped:', err.message);
+    }
+  }
+
+  // STRATEGY 2: Social Media Crawler Impersonation (Bypasses Login Challenge)
   try {
-    const response = await fetch(url, {
+    const crawlerRes = await fetch(canonicalUrl, {
       headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+        'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.9',
       },
     });
 
-    if (!response.ok) {
-      throw new Error(`Instagram returned HTTP status ${response.status}`);
+    if (crawlerRes.ok) {
+      const html = await crawlerRes.text();
+      const $ = cheerio.load(html);
+
+      // Attempt A: OpenGraph / Twitter meta tags
+      const ogDesc = $('meta[property="og:description"]').attr('content') || '';
+      const twitterDesc = $('meta[name="twitter:description"]').attr('content') || '';
+      const ogTitle = $('meta[property="og:title"]').attr('content') || '';
+
+      // Instagram meta descriptions often take the format: "1,200 likes, 45 comments - username on Date: 'Caption here...'"
+      let extractedMeta = ogDesc || twitterDesc || ogTitle;
+      const quoteMatch = extractedMeta.match(/:\s*["“'](.*)["”']$/s);
+      if (quoteMatch && quoteMatch[1]) {
+        extractedMeta = quoteMatch[1];
+      }
+
+      if (extractedMeta.trim()) {
+        return extractedMeta.trim();
+      }
+
+      // Attempt B: Embedded JSON-LD schema
+      $('script[type="application/ld+json"]').each((_, el) => {
+        try {
+          const ldData = JSON.parse($(el).html());
+          const articleBody = ldData.articleBody || ldData.caption || ldData.description;
+          if (articleBody && articleBody.trim()) {
+            caption = articleBody.trim();
+          }
+        } catch {}
+      });
+
+      if (caption.trim()) return caption.trim();
     }
-
-    const html = await response.text();
-    const $ = cheerio.load(html);
-
-    const ogDesc = $('meta[property="og:description"]').attr('content') || '';
-    const ogTitle = $('meta[property="og:title"]').attr('content') || '';
-    const twitterDesc = $('meta[name="twitter:description"]').attr('content') || '';
-
-    const caption = ogDesc || twitterDesc || ogTitle;
-    return caption.trim();
   } catch (err) {
-    console.warn('Instagram scrape error:', err.message);
-    return '';
+    console.warn('Crawler fetch fallback skipped:', err.message);
   }
+
+  return caption.trim();
 };
 
 /**
@@ -304,7 +371,7 @@ exports.parseRecipeUrl = async (req, res) => {
         });
       }
     } else if (videoData.platform === 'INSTAGRAM') {
-      extractedText = await fetchInstagramContent(targetUrl);
+      extractedText = await fetchInstagramContent(targetUrl, videoData.postId);
 
       if (!extractedText) {
         return res.status(422).json({
