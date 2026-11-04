@@ -10,6 +10,8 @@ router.use(protect);
 router.post('/suggest', recipeController.suggestRecipes);
 // Ai Integration
 router.post('/parse', recipeController.parseRawRecipe);
+// Parse Recipe URL
+router.post('/parse-url', protect, recipeController.parseRecipeUrl);
 
 // Standard CRUD & Portion Scaler
 router.get('/', recipeController.getRecipes);

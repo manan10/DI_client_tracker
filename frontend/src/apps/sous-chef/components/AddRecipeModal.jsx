@@ -9,8 +9,7 @@ import {
   Loader2,
   Wand2,
   FileText,
-  Leaf,
-  ListOrdered,
+  CheckCircle2,
 } from "lucide-react";
 import { useApi } from "../../../shared/hooks/useApi";
 import { toast } from "sonner";
@@ -18,8 +17,7 @@ import { toast } from "sonner";
 import WizardProgressBar from "./wizard/WizardProgressBar";
 import SmartPasteStep from "./wizard/SmartPasteStep";
 import GeneralInfoStep from "./wizard/GeneralInfoStep";
-import IngredientsStep from "./wizard/IngredientsStep";
-import CookingStepsStep from "./wizard/CookingStepsStep";
+import ReviewStep from "./wizard/ReviewStep";
 
 const CUISINES = [
   "North Indian",
@@ -50,10 +48,9 @@ const DIFFICULTIES = [
 ];
 
 const WIZARD_STEPS = [
-  { id: 1, key: "smart-paste", title: "Import", subtitle: "Paste or start blank", icon: Wand2 },
+  { id: 1, key: "smart-paste", title: "Import", subtitle: "Paste or video link", icon: Wand2 },
   { id: 2, key: "details", title: "Details", subtitle: "Name, cuisine & time", icon: FileText },
-  { id: 3, key: "ingredients", title: "Ingredients", subtitle: "Items & quantities", icon: Leaf },
-  { id: 4, key: "steps", title: "Steps", subtitle: "Instructions & timers", icon: ListOrdered },
+  { id: 3, key: "review", title: "Review", subtitle: "Confirm & publish", icon: CheckCircle2 },
 ];
 
 const INITIAL_FORM = {
@@ -105,22 +102,38 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
 
   if (!isOpen) return null;
 
-  // Validation rules per step
-  const validIngredients = formData.ingredients.filter(
-    (item) => item.name && item.name.trim().length > 0
-  );
-  const validInstructions = formData.instructions.filter(
-    (item) => item.instruction && item.instruction.trim().length > 0
-  );
-
   const isStep2Valid = Boolean(formData.title.trim());
-  const isStep3Valid = validIngredients.length > 0;
-  const isStep4Valid = validInstructions.length > 0;
 
-  // AI Parse Handler
+  // Shared state population helper
+  const applyExtractedRecipe = (parsed, overrideVideoUrl = null) => {
+    setFormData((prev) => ({
+      ...prev,
+      title: parsed.title || prev.title,
+      description: parsed.description || prev.description,
+      cuisine: parsed.cuisine || prev.cuisine,
+      courseType: parsed.courseType || prev.courseType,
+      difficulty: parsed.difficulty || prev.difficulty,
+      baseServings: parsed.baseServings || prev.baseServings,
+      prepTimeMinutes: parsed.prepTimeMinutes || prev.prepTimeMinutes,
+      cookTimeMinutes: parsed.cookTimeMinutes || prev.cookTimeMinutes,
+      tags: Array.isArray(parsed.tags) ? parsed.tags.join(", ") : prev.tags,
+      dietaryFlags: parsed.dietaryFlags || prev.dietaryFlags,
+      videoUrl: overrideVideoUrl || prev.videoUrl,
+      ingredients:
+        Array.isArray(parsed.ingredients) && parsed.ingredients.length > 0
+          ? parsed.ingredients
+          : prev.ingredients,
+      instructions:
+        Array.isArray(parsed.instructions) && parsed.instructions.length > 0
+          ? parsed.instructions
+          : prev.instructions,
+    }));
+  };
+
+  // AI Parse Handler (Raw Text)
   const handleAiParse = async () => {
     if (!rawText.trim()) {
-      toast.error("Please paste your recipe text first");
+      toast.error("Please paste recipe text first");
       return;
     }
 
@@ -130,30 +143,8 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
 
       if (response && (response.success || response.data)) {
         const parsed = response.data || response;
-
-        setFormData((prev) => ({
-          ...prev,
-          title: parsed.title || prev.title,
-          description: parsed.description || prev.description,
-          cuisine: parsed.cuisine || prev.cuisine,
-          courseType: parsed.courseType || prev.courseType,
-          difficulty: parsed.difficulty || prev.difficulty,
-          baseServings: parsed.baseServings || prev.baseServings,
-          prepTimeMinutes: parsed.prepTimeMinutes || prev.prepTimeMinutes,
-          cookTimeMinutes: parsed.cookTimeMinutes || prev.cookTimeMinutes,
-          tags: Array.isArray(parsed.tags) ? parsed.tags.join(", ") : prev.tags,
-          dietaryFlags: parsed.dietaryFlags || prev.dietaryFlags,
-          ingredients:
-            Array.isArray(parsed.ingredients) && parsed.ingredients.length > 0
-              ? parsed.ingredients
-              : prev.ingredients,
-          instructions:
-            Array.isArray(parsed.instructions) && parsed.instructions.length > 0
-              ? parsed.instructions
-              : prev.instructions,
-        }));
-
-        toast.success("Recipe details extracted");
+        applyExtractedRecipe(parsed);
+        toast.success("Recipe extracted! Moving to overview.");
         setCurrentStep(2);
       } else {
         toast.error(response?.message || "Could not read recipe text");
@@ -165,17 +156,43 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
     }
   };
 
+  // Direct URL Parse Handler (YouTube / Instagram)
+  const handleUrlParse = async (targetUrl) => {
+    if (!targetUrl || !targetUrl.trim()) {
+      toast.error("Please provide a valid YouTube or Instagram link");
+      return;
+    }
+
+    setIsAiParsing(true);
+    try {
+      const response = await request("/recipes/parse-url", "POST", {
+        url: targetUrl.trim(),
+      });
+
+      if (response && (response.success || response.data)) {
+        const parsed = response.data || response;
+        applyExtractedRecipe(parsed, response.videoUrl || targetUrl.trim());
+        toast.success("Recipe extracted from video successfully!");
+        setCurrentStep(2);
+      } else {
+        toast.error(response?.message || "Could not extract details from link");
+      }
+    } catch (err) {
+      toast.error(
+        err?.message || "Could not read video link. You can paste the description manually."
+      );
+    } finally {
+      setIsAiParsing(false);
+    }
+  };
+
   // Step Navigation
   const handleNextStep = () => {
     if (currentStep === 2 && !isStep2Valid) {
       toast.error("Please add a title for the recipe");
       return;
     }
-    if (currentStep === 3 && !isStep3Valid) {
-      toast.error("Add at least one ingredient to continue");
-      return;
-    }
-    if (currentStep < 4) {
+    if (currentStep < 3) {
       setCurrentStep((prev) => prev + 1);
     }
   };
@@ -188,87 +205,11 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
 
   const handleJumpToStep = (stepNumber) => {
     if (stepNumber === currentStep) return;
-    if (stepNumber > currentStep) {
-      if (currentStep === 2 && !isStep2Valid) {
-        toast.error("Please add a title first");
-        return;
-      }
-      if (currentStep === 3 && !isStep3Valid) {
-        toast.error("Add at least one ingredient first");
-        return;
-      }
+    if (stepNumber === 3 && !isStep2Valid) {
+      toast.error("Please add a title first");
+      return;
     }
     setCurrentStep(stepNumber);
-  };
-
-  // Ingredients Actions
-  const handleAddIngredient = () => {
-    setFormData((prev) => ({
-      ...prev,
-      ingredients: [
-        ...prev.ingredients,
-        { name: "", quantity: 1, unit: "cup", isPantryStaple: false, notes: "" },
-      ],
-    }));
-  };
-
-  const handleRemoveIngredient = (index) => {
-    if (formData.ingredients.length === 1) {
-      toast.error("Need at least one ingredient");
-      return;
-    }
-    setFormData((prev) => ({
-      ...prev,
-      ingredients: prev.ingredients.filter((_, i) => i !== index),
-    }));
-  };
-
-  const handleIngredientChange = (index, field, value) => {
-    setFormData((prev) => {
-      const updated = [...prev.ingredients];
-      updated[index] = { ...updated[index], [field]: value };
-      return { ...prev, ingredients: updated };
-    });
-  };
-
-  // Steps Actions
-  const handleAddStep = () => {
-    setFormData((prev) => ({
-      ...prev,
-      instructions: [
-        ...prev.instructions,
-        {
-          stepNumber: prev.instructions.length + 1,
-          title: "",
-          instruction: "",
-          timerDurationSeconds: 0,
-          chefTip: "",
-        },
-      ],
-    }));
-  };
-
-  const handleRemoveStep = (index) => {
-    if (formData.instructions.length === 1) {
-      toast.error("Need at least one step");
-      return;
-    }
-    setFormData((prev) => {
-      const filtered = prev.instructions.filter((_, i) => i !== index);
-      const reIndexed = filtered.map((item, idx) => ({
-        ...item,
-        stepNumber: idx + 1,
-      }));
-      return { ...prev, instructions: reIndexed };
-    });
-  };
-
-  const handleStepChange = (index, field, value) => {
-    setFormData((prev) => {
-      const updated = [...prev.instructions];
-      updated[index] = { ...updated[index], [field]: value };
-      return { ...prev, instructions: updated };
-    });
   };
 
   const handleToggleDietary = (flag) => {
@@ -291,17 +232,26 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
       return;
     }
 
-    if (!isStep3Valid) {
-      toast.error("Please add at least one ingredient");
-      setCurrentStep(3);
-      return;
-    }
+    // Sanitize ingredients & instructions extracted by AI
+    const validIngredients = (formData.ingredients || [])
+      .filter((ing) => ing.name && ing.name.trim().length > 0)
+      .map((ing) => ({
+        name: ing.name.trim(),
+        quantity: Number(ing.quantity) || 1,
+        unit: ing.unit ? ing.unit.trim() : "",
+        isPantryStaple: Boolean(ing.isPantryStaple),
+        notes: ing.notes ? ing.notes.trim() : "",
+      }));
 
-    if (!isStep4Valid) {
-      toast.error("Please add instructions for at least one step");
-      setCurrentStep(4);
-      return;
-    }
+    const validInstructions = (formData.instructions || [])
+      .filter((step) => step.instruction && step.instruction.trim().length > 0)
+      .map((step, idx) => ({
+        stepNumber: idx + 1,
+        title: step.title ? step.title.trim() : "",
+        instruction: step.instruction.trim(),
+        timerDurationSeconds: Number(step.timerDurationSeconds) || 0,
+        chefTip: step.chefTip ? step.chefTip.trim() : "",
+      }));
 
     const payload = {
       title: formData.title.trim(),
@@ -313,20 +263,8 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
       prepTimeMinutes: Number(formData.prepTimeMinutes) || 0,
       cookTimeMinutes: Number(formData.cookTimeMinutes) || 0,
       dietaryFlags: formData.dietaryFlags,
-      ingredients: validIngredients.map((ing) => ({
-        name: ing.name.trim(),
-        quantity: Number(ing.quantity) || 1,
-        unit: ing.unit ? ing.unit.trim() : "",
-        isPantryStaple: Boolean(ing.isPantryStaple),
-        notes: ing.notes ? ing.notes.trim() : "",
-      })),
-      instructions: validInstructions.map((step, idx) => ({
-        stepNumber: idx + 1,
-        title: step.title ? step.title.trim() : "",
-        instruction: step.instruction.trim(),
-        timerDurationSeconds: Number(step.timerDurationSeconds) || 0,
-        chefTip: step.chefTip ? step.chefTip.trim() : "",
-      })),
+      ingredients: validIngredients,
+      instructions: validInstructions,
       videoUrl: formData.videoUrl.trim(),
       coverImage: formData.coverImage.trim(),
       tags: formData.tags
@@ -339,7 +277,7 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
       const response = await request("/recipes", "POST", payload);
 
       if (response && (response.success || response.data)) {
-        toast.success("Recipe saved");
+        toast.success("Recipe published successfully!");
         setFormData(INITIAL_FORM);
         setRawText("");
         if (onRecipeCreated) {
@@ -363,12 +301,10 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
 
       {/* Main Container: Mobile Bottom-Drawer / Desktop Slide-Drawer */}
       <div
-        className="relative z-10 w-full sm:w-[600px] max-h-[92vh] sm:max-h-full h-[90vh] sm:h-full flex flex-col rounded-t-2xl sm:rounded-none sm:rounded-l-2xl bg-white dark:bg-[#0F141C] border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 shadow-2xl transition-all duration-300 overflow-hidden"
+        className="relative z-10 w-full sm:w-[580px] max-h-[92vh] sm:max-h-full h-[90vh] sm:h-full flex flex-col rounded-t-2xl sm:rounded-none sm:rounded-l-2xl bg-white dark:bg-[#0F141C] border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 shadow-2xl transition-all duration-300 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ========================================================= */}
-        {/* CLEAN, SOPHISTICATED MODAL HEADER                         */}
-        {/* ========================================================= */}
+        {/* Header */}
         <header className="px-5 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131924] flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-lg bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
@@ -380,7 +316,7 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
                 {formData.title.trim() ? formData.title : "Add Recipe"}
               </h2>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                {WIZARD_STEPS[currentStep - 1].title} • {WIZARD_STEPS[currentStep - 1].subtitle}
+                Step {currentStep} of 3: {WIZARD_STEPS[currentStep - 1].title} • {WIZARD_STEPS[currentStep - 1].subtitle}
               </p>
             </div>
           </div>
@@ -395,14 +331,14 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
           </button>
         </header>
 
-        {/* PROGRESS BAR STRIP */}
+        {/* 3-Step Progress Rail */}
         <WizardProgressBar
           steps={WIZARD_STEPS}
           currentStep={currentStep}
           onJumpToStep={handleJumpToStep}
         />
 
-        {/* SCROLLABLE STEP BODY */}
+        {/* Scrollable Viewport */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs no-scrollbar bg-slate-50/40 dark:bg-transparent">
           {currentStep === 1 && (
             <SmartPasteStep
@@ -410,6 +346,7 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
               setRawText={setRawText}
               isAiParsing={isAiParsing}
               onAiParse={handleAiParse}
+              onUrlParse={handleUrlParse}
               onSkipToManual={() => setCurrentStep(2)}
             />
           )}
@@ -427,33 +364,12 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
           )}
 
           {currentStep === 3 && (
-            <IngredientsStep
-              ingredients={formData.ingredients}
-              validCount={validIngredients.length}
-              onAddIngredient={handleAddIngredient}
-              onRemoveIngredient={handleRemoveIngredient}
-              onIngredientChange={handleIngredientChange}
-            />
-          )}
-
-          {currentStep === 4 && (
-            <CookingStepsStep
-              instructions={formData.instructions}
-              validCount={validInstructions.length}
-              onAddStep={handleAddStep}
-              onRemoveStep={handleRemoveStep}
-              onStepChange={handleStepChange}
-              recipeTitle={formData.title}
-              totalIngredients={validIngredients.length}
-            />
+            <ReviewStep formData={formData} />
           )}
         </div>
 
-        {/* ========================================================= */}
-        {/* PREMIUM UNIFIED FOOTER                                    */}
-        {/* ========================================================= */}
+        {/* Action Footer */}
         <footer className="px-5 sm:px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131924] flex items-center justify-between gap-3 shrink-0">
-          {/* Left Controls */}
           <div>
             {currentStep > 1 ? (
               <button
@@ -476,7 +392,6 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
             )}
           </div>
 
-          {/* Right Action */}
           <div className="flex items-center gap-2">
             {currentStep > 1 && (
               <button
@@ -489,20 +404,20 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
               </button>
             )}
 
-            {currentStep < 4 ? (
+            {currentStep < 3 ? (
               <button
                 type="button"
                 onClick={handleNextStep}
                 className="h-9 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
               >
-                <span>Next</span>
+                <span>Continue</span>
                 <ArrowRight size={13} strokeWidth={2.4} />
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={loading || isAiParsing || !isStep4Valid}
+                disabled={loading || isAiParsing || !isStep2Valid}
                 className="h-9 px-4 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer disabled:opacity-40 flex items-center gap-1.5 shadow-xs active:scale-95"
               >
                 {loading ? (
