@@ -3,7 +3,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const cheerio = require('cheerio');
 const Recipe = require('../models/Recipe');
 
-// Initialize Gemini SDK with your environment key
+// Initialize Gemini SDK
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
@@ -53,7 +53,10 @@ const parseVideoUrl = (rawUrl) => {
 };
 
 /**
- * Helper: Extract YouTube Description and Title with Cloud Fallbacks
+ * Helper: Extract YouTube Description and Title
+ * Priority 1: Official YouTube Data API v3 (Bypasses Render 429 completely)
+ * Priority 2: Direct Scrape & Meta Fallback (Localhost)
+ * Priority 3: Public API Mirrors
  */
 const fetchYouTubeDescription = async (videoId) => {
   const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
@@ -61,25 +64,57 @@ const fetchYouTubeDescription = async (videoId) => {
   let title = '';
   let description = '';
 
-  // 1. Fetch title from oEmbed (Reliable on all IPs)
+  const ytApiKey = process.env.YOUTUBE_API_KEY || process.env.GEMINI_API_KEY;
+
+  // PRIORITY 1: Official YouTube Data API v3
+  if (ytApiKey) {
+    try {
+      console.log('[YOUTUBE API] Querying official YouTube Data API v3...');
+      const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${ytApiKey}`;
+      const apiRes = await fetch(apiUrl);
+
+      if (apiRes.ok) {
+        const apiData = await apiRes.json();
+        const snippet = apiData?.items?.[0]?.snippet;
+        if (snippet) {
+          title = snippet.title || '';
+          description = snippet.description || '';
+          console.log(`[YOUTUBE API SUCCESS] Title: "${title}" | Description length: ${description.length}`);
+          
+          if (description.trim()) {
+            const combined = [
+              title ? `Video Title: ${title}` : '',
+              `Video Description:\n${description}`,
+            ].filter(Boolean).join('\n\n');
+
+            return { text: combined.trim(), title, description };
+          }
+        }
+      } else {
+        const errBody = await apiRes.text();
+        console.warn(`[YOUTUBE API WARN] Status: ${apiRes.status}. Message: ${errBody}`);
+      }
+    } catch (err) {
+      console.warn('[YOUTUBE API ERROR] Fallback to scrape:', err.message);
+    }
+  }
+
+  // PRIORITY 2: oEmbed Lookup (Title)
   try {
     const oembedRes = await fetch(
       `https://www.youtube.com/oembed?url=${encodeURIComponent(watchUrl)}&format=json`
     );
     if (oembedRes.ok) {
       const oembedData = await oembedRes.json();
-      title = oembedData.title || '';
-      console.log(`[YOUTUBE OEMBED] Extracted title: "${title}"`);
-    } else {
-      console.warn(`[YOUTUBE OEMBED] HTTP status ${oembedRes.status}`);
+      if (!title) title = oembedData.title || '';
     }
   } catch (err) {
     console.warn('[YOUTUBE OEMBED] Skipped:', err.message);
   }
 
-  // 2. Fetch page HTML to extract full video description
+  // PRIORITY 3: Direct Web Scraping (Localhost / Residential IPs)
   try {
-    console.log('[YOUTUBE HTML] Fetching page for description scrape...');
+    console.log('[YOUTUBE SCRAPE] Attempting direct page fetch...');
     const pageRes = await fetch(watchUrl, {
       headers: {
         'User-Agent':
@@ -88,14 +123,10 @@ const fetchYouTubeDescription = async (videoId) => {
       },
     });
 
-    console.log(`[YOUTUBE HTML] Response status: ${pageRes.status}`);
-
     if (pageRes.ok) {
       const html = await pageRes.text();
-      console.log(`[YOUTUBE HTML] Document length: ${html.length} characters`);
       const $ = cheerio.load(html);
 
-      // Attempt A: Extract from ytInitialData payload
       const descMatch = html.match(/"shortDescription":"(.*?)"(?:,"isCrawlable"|,"thumbnail")/s);
       if (descMatch && descMatch[1]) {
         try {
@@ -103,17 +134,14 @@ const fetchYouTubeDescription = async (videoId) => {
         } catch {
           description = descMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
         }
-        console.log(`[YOUTUBE SCRAPE] Match A succeeded. Length: ${description.length}`);
       }
 
-      // Attempt B: Fallback to Meta / Schema tags
       if (!description.trim()) {
         const metaDesc =
           $('meta[name="description"]').attr('content') ||
           $('meta[property="og:description"]').attr('content') ||
           '';
         description = metaDesc.trim();
-        console.log(`[YOUTUBE SCRAPE] Match B (meta tags) length: ${description.length}`);
       }
 
       if (!title) {
@@ -121,19 +149,19 @@ const fetchYouTubeDescription = async (videoId) => {
       }
     }
   } catch (err) {
-    console.warn('[YOUTUBE HTML] Page fetch error:', err.message);
+    console.warn('[YOUTUBE SCRAPE] Direct page fetch error:', err.message);
   }
 
-  // 3. Fallback: If YouTube returned 429/blocked datacenter IP, try public API mirrors
+  // PRIORITY 4: Invidious Instances Fallback
   if (!description.trim()) {
-    console.log('[YOUTUBE FALLBACK] Direct scrape empty or blocked (429). Querying API mirrors...');
-    const invidiousInstances = [
+    console.log('[YOUTUBE FALLBACK] Querying Invidious mirrors...');
+    const instances = [
       'https://inv.tux.pizza',
       'https://invidious.nerdvpn.de',
       'https://invidious.flokinet.to',
     ];
 
-    for (const host of invidiousInstances) {
+    for (const host of instances) {
       try {
         const mirrorRes = await fetch(`${host}/api/v1/videos/${videoId}?fields=title,description`, {
           signal: AbortSignal.timeout(3500),
@@ -143,13 +171,10 @@ const fetchYouTubeDescription = async (videoId) => {
           if (mirrorData.description) {
             description = mirrorData.description;
             if (!title && mirrorData.title) title = mirrorData.title;
-            console.log(`[YOUTUBE MIRROR SUCCESS] Extracted from ${host}. Length: ${description.length}`);
             break;
           }
         }
-      } catch {
-        // Continue to next mirror
-      }
+      } catch {}
     }
   }
 
@@ -160,7 +185,6 @@ const fetchYouTubeDescription = async (videoId) => {
     .filter(Boolean)
     .join('\n\n');
 
-  console.log(`[YOUTUBE SUMMARY] Combined text length: ${combined.length} characters`);
   return { text: combined.trim(), title, description };
 };
 
@@ -413,15 +437,14 @@ exports.parseRecipeUrl = async (req, res) => {
     if (videoData.platform === 'YOUTUBE') {
       const ytResult = await fetchYouTubeDescription(videoData.videoId);
 
-      // Guard: Do not proceed to Gemini if the description body is missing
       if (!ytResult.description || ytResult.description.trim().length < 20) {
-        console.warn('[parseRecipeUrl] 422: YouTube description was empty or blocked by rate limit.');
+        console.warn('[parseRecipeUrl] 422: YouTube description empty or rate-limited.');
         return res.status(422).json({
           success: false,
           platform: 'YOUTUBE',
           videoUrl: targetUrl,
           message:
-            'Could not extract the recipe description from YouTube (rate-limited by YouTube). Please copy the video description and paste it manually into the text tab.',
+            'Could not extract the recipe description from YouTube. Please ensure YOUTUBE_API_KEY is configured in your production environment.',
         });
       }
 
