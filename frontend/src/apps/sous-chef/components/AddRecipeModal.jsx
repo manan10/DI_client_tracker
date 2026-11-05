@@ -130,26 +130,37 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
     }));
   };
 
-  // AI Parse Handler (Raw Text)
+// AI Parse Handler (Raw Text)
   const handleAiParse = async () => {
     if (!rawText.trim()) {
       toast.error("Please paste recipe text first");
       return;
     }
 
+    console.log("[AI-PARSE] Starting raw text parse. Character count:", rawText.trim().length);
     setIsAiParsing(true);
     try {
       const response = await request("/recipes/parse", "POST", { rawText });
+      console.log("[AI-PARSE] Raw response received:", response);
 
       if (response && (response.success || response.data)) {
         const parsed = response.data || response;
+        console.log("[AI-PARSE] Extracted recipe payload:", {
+          title: parsed.title,
+          ingredientsCount: Array.isArray(parsed.ingredients) ? parsed.ingredients.length : "NOT_AN_ARRAY",
+          instructionsCount: Array.isArray(parsed.instructions) ? parsed.instructions.length : "NOT_AN_ARRAY",
+          stepsCount: Array.isArray(parsed.steps) ? parsed.steps.length : "NOT_AN_ARRAY",
+        });
+
         applyExtractedRecipe(parsed);
         toast.success("Recipe extracted! Moving to overview.");
         setCurrentStep(2);
       } else {
+        console.warn("[AI-PARSE] Response did not indicate success:", response);
         toast.error(response?.message || "Could not read recipe text");
       }
     } catch (err) {
+      console.error("[AI-PARSE] Request failed:", err);
       toast.error(err?.message || "Failed to reach recipe service");
     } finally {
       setIsAiParsing(false);
@@ -163,21 +174,31 @@ const AddRecipeModal = ({ isOpen, onClose, onRecipeCreated }) => {
       return;
     }
 
+    const cleanUrl = targetUrl.trim();
+    console.log("[URL-PARSE] Starting URL parse for:", cleanUrl);
     setIsAiParsing(true);
     try {
-      const response = await request("/recipes/parse-url", "POST", {
-        url: targetUrl.trim(),
-      });
+      const response = await request("/recipes/parse-url", "POST", { url: cleanUrl });
+      console.log("[URL-PARSE] Raw response received:", response);
 
       if (response && (response.success || response.data)) {
         const parsed = response.data || response;
-        applyExtractedRecipe(parsed, response.videoUrl || targetUrl.trim());
+        console.log("[URL-PARSE] Extracted recipe payload:", {
+          title: parsed.title,
+          ingredientsCount: Array.isArray(parsed.ingredients) ? parsed.ingredients.length : "NOT_AN_ARRAY",
+          instructionsCount: Array.isArray(parsed.instructions) ? parsed.instructions.length : "NOT_AN_ARRAY",
+          stepsCount: Array.isArray(parsed.steps) ? parsed.steps.length : "NOT_AN_ARRAY",
+        });
+
+        applyExtractedRecipe(parsed, response.videoUrl || cleanUrl);
         toast.success("Recipe extracted from video successfully!");
         setCurrentStep(2);
       } else {
+        console.warn("[URL-PARSE] Server reported non-success:", response);
         toast.error(response?.message || "Could not extract details from link");
       }
     } catch (err) {
+      console.error("[URL-PARSE] Request failed:", err);
       toast.error(
         err?.message || "Could not read video link. You can paste the description manually."
       );

@@ -53,9 +53,13 @@ const parseVideoUrl = (rawUrl) => {
 };
 
 /**
- * Core Helper: Invokes Gemini 2.5 Flash with resilient retry logic
+ * Core Helper: Invokes Gemini 2.5 Flash with detailed diagnostic logging
  */
 const runGeminiRecipeParser = async (rawText) => {
+  console.log('--- [GEMINI PARSER START] ---');
+  console.log(`[GEMINI] Input text length: ${rawText?.length || 0} characters`);
+  console.log(`[GEMINI] Snippet preview:\n${rawText?.slice(0, 200)}...`);
+
   const model = genAI.getGenerativeModel({
     model: 'gemini-2.5-flash',
     generationConfig: {
@@ -132,9 +136,19 @@ const runGeminiRecipeParser = async (rawText) => {
   let lastError = null;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
+      console.log(`[GEMINI] Dispatching request (Attempt ${attempt}/3)...`);
       const result = await model.generateContent(prompt);
       const response = await result.response;
-      return JSON.parse(response.text().trim());
+      const rawOutput = response.text().trim();
+      const parsedJson = JSON.parse(rawOutput);
+
+      console.log('[GEMINI SUCCESS] Parsed JSON metrics:', {
+        title: parsedJson.title,
+        ingredientsCount: Array.isArray(parsedJson.ingredients) ? parsedJson.ingredients.length : 'NOT_ARRAY',
+        instructionsCount: Array.isArray(parsedJson.instructions) ? parsedJson.instructions.length : 'NOT_ARRAY',
+      });
+
+      return parsedJson;
     } catch (err) {
       lastError = err;
       const isTemporary =
@@ -142,11 +156,11 @@ const runGeminiRecipeParser = async (rawText) => {
         err.status === 429 ||
         (err.message && (err.message.includes('503') || err.message.includes('429')));
 
+      console.warn(`[GEMINI ERROR] Attempt ${attempt} failed. Status: ${err.status || 'unknown'}. Message: ${err.message}`);
+
       if (isTemporary && attempt < 3) {
         const delay = attempt * 2500;
-        console.warn(
-          `Gemini 2.5 Flash busy (503/429). Retrying in ${delay / 1000}s (Attempt ${attempt}/3)...`
-        );
+        console.warn(`[GEMINI RETRY] Backing off for ${delay}ms...`);
         await wait(delay);
         continue;
       }
@@ -154,6 +168,7 @@ const runGeminiRecipeParser = async (rawText) => {
     }
   }
 
+  console.error('[GEMINI FATAL] All retry attempts exhausted.');
   throw lastError;
 };
 
@@ -162,6 +177,7 @@ const runGeminiRecipeParser = async (rawText) => {
  */
 const fetchYouTubeDescription = async (videoId) => {
   const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+  console.log(`[YOUTUBE FETCH] Video ID: ${videoId} | URL: ${watchUrl}`);
   let title = '';
   let description = '';
 
@@ -173,13 +189,17 @@ const fetchYouTubeDescription = async (videoId) => {
     if (oembedRes.ok) {
       const oembedData = await oembedRes.json();
       title = oembedData.title || '';
+      console.log(`[YOUTUBE OEMBED] Extracted title: "${title}"`);
+    } else {
+      console.warn(`[YOUTUBE OEMBED] HTTP status ${oembedRes.status}`);
     }
   } catch (err) {
-    console.warn('YouTube oEmbed skipped:', err.message);
+    console.warn('[YOUTUBE OEMBED] Skipped:', err.message);
   }
 
   // 2. Fetch page HTML to extract full video description
   try {
+    console.log('[YOUTUBE HTML] Fetching page for description scrape...');
     const pageRes = await fetch(watchUrl, {
       headers: {
         'User-Agent':
@@ -188,8 +208,11 @@ const fetchYouTubeDescription = async (videoId) => {
       },
     });
 
+    console.log(`[YOUTUBE HTML] Response status: ${pageRes.status}`);
+
     if (pageRes.ok) {
       const html = await pageRes.text();
+      console.log(`[YOUTUBE HTML] Document length: ${html.length} characters`);
       const $ = cheerio.load(html);
 
       // Attempt A: Extract from ytInitialData payload
@@ -200,6 +223,7 @@ const fetchYouTubeDescription = async (videoId) => {
         } catch {
           description = descMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
         }
+        console.log(`[YOUTUBE SCRAPE] Match A (shortDescription) succeeded. Length: ${description.length}`);
       }
 
       // Attempt B: Fallback to Meta / Schema tags
@@ -209,6 +233,7 @@ const fetchYouTubeDescription = async (videoId) => {
           $('meta[property="og:description"]').attr('content') ||
           '';
         description = metaDesc.trim();
+        console.log(`[YOUTUBE SCRAPE] Match B (meta tags) result length: ${description.length}`);
       }
 
       if (!title) {
@@ -216,7 +241,7 @@ const fetchYouTubeDescription = async (videoId) => {
       }
     }
   } catch (err) {
-    console.warn('YouTube page fetch error:', err.message);
+    console.warn('[YOUTUBE HTML] Page fetch error:', err.message);
   }
 
   const combined = [
@@ -226,45 +251,35 @@ const fetchYouTubeDescription = async (videoId) => {
     .filter(Boolean)
     .join('\n\n');
 
+  console.log(`[YOUTUBE SUMMARY] Combined text length: ${combined.length} characters`);
   return { text: combined.trim(), title, description };
 };
 
 /**
  * Helper: Extract Instagram Reel/Post caption
- * 1. Strips tracking query params and requests clean GraphQL shortcode JSON
- * 2. Employs social crawler headers (Facebook/WhatsApp User-Agent) to read OpenGraph meta & JSON-LD
  */
-const fetchInstagramContent = async (rawUrl, postId) => {
+const fetchInstagramContent = async (url, postId) => {
+  console.log(`[INSTAGRAM FETCH] Post ID: ${postId || 'N/A'} | URL: ${url}`);
   let caption = '';
 
-  // Extract clean shortcode without trailing queries
-  const cleanPostId =
-    postId ||
-    rawUrl.match(/instagram\.com\/(?:reel|p|tv)\/([a-zA-Z0-9_-]+)/)?.[1];
-
-  const canonicalUrl = cleanPostId
-    ? `https://www.instagram.com/reel/${cleanPostId}/`
-    : rawUrl.split('?')[0];
-
-  // STRATEGY 1: Internal Mobile Web JSON API
-  if (cleanPostId) {
+  // STRATEGY 1: Instagram internal JSON endpoint (?__a=1&__d=dis)
+  if (postId) {
     try {
-      const jsonRes = await fetch(
-        `https://www.instagram.com/p/${cleanPostId}/?__a=1&__d=dis`,
-        {
-          headers: {
-            'User-Agent':
-              'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 301.0.0.27.111',
-            'Accept': 'application/json',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'X-IG-App-ID': '936619743392459',
-            'Sec-Fetch-Mode': 'cors',
-          },
-        }
-      );
+      const jsonUrl = `https://www.instagram.com/p/${postId}/?__a=1&__d=dis`;
+      console.log('[INSTAGRAM STRATEGY 1] Requesting internal JSON endpoint...');
+      const jsonRes = await fetch(jsonUrl, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Mobile Safari/537.36 Instagram 219.0.0.12.117',
+          'Accept': 'application/json',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'X-IG-App-ID': '936619743392459',
+          'Sec-Fetch-Mode': 'cors',
+        },
+      });
 
-      const contentType = jsonRes.headers.get('content-type') || '';
-      if (jsonRes.ok && contentType.includes('application/json')) {
+      console.log(`[INSTAGRAM STRATEGY 1] Status: ${jsonRes.status}`);
+      if (jsonRes.ok) {
         const data = await jsonRes.json();
         const graphqlCaption =
           data?.graphql?.shortcode_media?.edge_media_to_caption?.edges?.[0]?.node?.text;
@@ -272,59 +287,65 @@ const fetchInstagramContent = async (rawUrl, postId) => {
 
         caption = graphqlCaption || itemCaption || '';
         if (caption.trim()) {
+          console.log(`[INSTAGRAM STRATEGY 1] Found caption. Length: ${caption.length}`);
           return caption.trim();
         }
       }
     } catch (err) {
-      console.warn('Instagram ?__a=1 internal skipped:', err.message);
+      console.warn('[INSTAGRAM STRATEGY 1] Skipped:', err.message);
     }
   }
 
-  // STRATEGY 2: Social Media Crawler Impersonation (Bypasses Login Challenge)
+  // STRATEGY 2: Instagram Public oEmbed API endpoint
   try {
-    const crawlerRes = await fetch(canonicalUrl, {
+    const oembedUrl = `https://api.instagram.com/oembed/?url=${encodeURIComponent(url)}`;
+    console.log('[INSTAGRAM STRATEGY 2] Requesting oEmbed API...');
+    const oembedRes = await fetch(oembedUrl, {
       headers: {
-        'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+      },
+    });
+
+    console.log(`[INSTAGRAM STRATEGY 2] Status: ${oembedRes.status}`);
+    if (oembedRes.ok) {
+      const oembedData = await oembedRes.json();
+      if (oembedData?.title) {
+        caption = oembedData.title.trim();
+        console.log(`[INSTAGRAM STRATEGY 2] Found title/caption. Length: ${caption.length}`);
+        if (caption) return caption;
+      }
+    }
+  } catch (err) {
+    console.warn('[INSTAGRAM STRATEGY 2] Skipped:', err.message);
+  }
+
+  // STRATEGY 3: OpenGraph & Meta Tag Fallback
+  try {
+    console.log('[INSTAGRAM STRATEGY 3] Requesting page HTML for meta tags...');
+    const htmlRes = await fetch(url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',
       },
     });
 
-    if (crawlerRes.ok) {
-      const html = await crawlerRes.text();
+    console.log(`[INSTAGRAM STRATEGY 3] Status: ${htmlRes.status}`);
+    if (htmlRes.ok) {
+      const html = await htmlRes.text();
       const $ = cheerio.load(html);
 
-      // Attempt A: OpenGraph / Twitter meta tags
       const ogDesc = $('meta[property="og:description"]').attr('content') || '';
       const twitterDesc = $('meta[name="twitter:description"]').attr('content') || '';
       const ogTitle = $('meta[property="og:title"]').attr('content') || '';
 
-      // Instagram meta descriptions often take the format: "1,200 likes, 45 comments - username on Date: 'Caption here...'"
-      let extractedMeta = ogDesc || twitterDesc || ogTitle;
-      const quoteMatch = extractedMeta.match(/:\s*["“'](.*)["”']$/s);
-      if (quoteMatch && quoteMatch[1]) {
-        extractedMeta = quoteMatch[1];
-      }
-
-      if (extractedMeta.trim()) {
-        return extractedMeta.trim();
-      }
-
-      // Attempt B: Embedded JSON-LD schema
-      $('script[type="application/ld+json"]').each((_, el) => {
-        try {
-          const ldData = JSON.parse($(el).html());
-          const articleBody = ldData.articleBody || ldData.caption || ldData.description;
-          if (articleBody && articleBody.trim()) {
-            caption = articleBody.trim();
-          }
-        } catch {}
-      });
-
-      if (caption.trim()) return caption.trim();
+      caption = ogDesc || twitterDesc || ogTitle;
+      console.log(`[INSTAGRAM STRATEGY 3] Fallback caption length: ${caption.length}`);
     }
   } catch (err) {
-    console.warn('Crawler fetch fallback skipped:', err.message);
+    console.warn('[INSTAGRAM STRATEGY 3] Skipped:', err.message);
   }
 
   return caption.trim();
@@ -335,10 +356,15 @@ const fetchInstagramContent = async (rawUrl, postId) => {
  * @desc    Extract description only from YouTube/Instagram URL and parse into structured recipe
  */
 exports.parseRecipeUrl = async (req, res) => {
+  console.log('\n==============================');
+  console.log('[POST /api/recipes/parse-url] Request received');
+  console.log('Incoming payload:', req.body);
+
   try {
     const { url } = req.body;
 
     if (!url || typeof url !== 'string' || !url.trim()) {
+      console.warn('[parseRecipeUrl] 400 Bad Request: missing URL');
       return res.status(400).json({
         success: false,
         message: 'Please provide a valid YouTube or Instagram link.',
@@ -347,8 +373,10 @@ exports.parseRecipeUrl = async (req, res) => {
 
     const targetUrl = url.trim();
     const videoData = parseVideoUrl(targetUrl);
+    console.log('[parseRecipeUrl] Parsed video details:', videoData);
 
     if (videoData.platform === 'NONE') {
+      console.warn('[parseRecipeUrl] 400 Bad Request: unsupported link format');
       return res.status(400).json({
         success: false,
         message: 'Unsupported link. Please paste a valid YouTube or Instagram URL.',
@@ -362,6 +390,7 @@ exports.parseRecipeUrl = async (req, res) => {
       extractedText = ytResult.text;
 
       if (!extractedText || (!ytResult.description && !ytResult.title)) {
+        console.warn('[parseRecipeUrl] 422 Unprocessable: YouTube scraper extracted no text');
         return res.status(422).json({
           success: false,
           platform: 'YOUTUBE',
@@ -374,6 +403,7 @@ exports.parseRecipeUrl = async (req, res) => {
       extractedText = await fetchInstagramContent(targetUrl, videoData.postId);
 
       if (!extractedText) {
+        console.warn('[parseRecipeUrl] 422 Unprocessable: Instagram scraper extracted no text');
         return res.status(422).json({
           success: false,
           platform: 'INSTAGRAM',
@@ -384,9 +414,11 @@ exports.parseRecipeUrl = async (req, res) => {
       }
     }
 
-    // Process the extracted description with Gemini
+    console.log(`[parseRecipeUrl] Extracted text ready (${extractedText.length} chars). Sending to Gemini...`);
     const parsedRecipe = await runGeminiRecipeParser(extractedText);
 
+    console.log('[parseRecipeUrl] 200 OK. Returning recipe to client.');
+    console.log('==============================\n');
     return res.status(200).json({
       success: true,
       platform: videoData.platform,
@@ -411,8 +443,11 @@ exports.parseRecipeUrl = async (req, res) => {
  * @desc    Parse raw, free-form recipe text into structured recipe format via Gemini
  */
 exports.parseRawRecipe = async (req, res) => {
+  console.log('\n==============================');
+  console.log('[POST /api/recipes/parse] Request received');
   try {
     const { rawText } = req.body;
+    console.log(`[parseRawRecipe] Raw text length: ${rawText?.length || 0}`);
 
     if (!rawText || !rawText.trim()) {
       return res.status(400).json({
@@ -423,6 +458,8 @@ exports.parseRawRecipe = async (req, res) => {
 
     const parsedJson = await runGeminiRecipeParser(rawText);
 
+    console.log('[parseRawRecipe] 200 OK. Returning recipe to client.');
+    console.log('==============================\n');
     return res.status(200).json({
       success: true,
       data: parsedJson,
@@ -528,6 +565,16 @@ exports.getRecipeById = async (req, res) => {
  * @desc    Create a new recipe
  */
 exports.createRecipe = async (req, res) => {
+  console.log('\n==============================');
+  console.log('[POST /api/recipes] createRecipe called');
+  console.log('Incoming recipe body keys:', Object.keys(req.body));
+  console.log('Counts in payload:', {
+    title: req.body.title,
+    ingredientsCount: Array.isArray(req.body.ingredients) ? req.body.ingredients.length : 'NOT_ARRAY',
+    instructionsCount: Array.isArray(req.body.instructions) ? req.body.instructions.length : 'NOT_ARRAY',
+    stepsCount: Array.isArray(req.body.steps) ? req.body.steps.length : 'NOT_ARRAY',
+  });
+
   try {
     const {
       title,
@@ -541,12 +588,20 @@ exports.createRecipe = async (req, res) => {
       dietaryFlags,
       ingredients,
       instructions,
+      steps,
       videoUrl,
       coverImage,
       tags,
     } = req.body;
 
     const videoData = parseVideoUrl(videoUrl);
+
+    // Guard against property name mismatch (instructions vs steps)
+    const normalizedInstructions = Array.isArray(instructions)
+      ? instructions
+      : Array.isArray(steps)
+      ? steps
+      : [];
 
     const newRecipe = await Recipe.create({
       title,
@@ -559,18 +614,26 @@ exports.createRecipe = async (req, res) => {
       cookTimeMinutes: cookTimeMinutes || 0,
       dietaryFlags: dietaryFlags || {},
       ingredients: Array.isArray(ingredients) ? ingredients : [],
-      instructions: Array.isArray(instructions) ? instructions : [],
+      instructions: normalizedInstructions,
       video: videoData,
       coverImage: coverImage || '',
       tags: Array.isArray(tags) ? tags : [],
       createdBy: req.user._id,
     });
 
+    console.log('[createRecipe] Document successfully created in Mongo:', newRecipe._id);
+    console.log('Saved document counts:', {
+      ingredients: newRecipe.ingredients.length,
+      instructions: newRecipe.instructions.length,
+    });
+    console.log('==============================\n');
+
     return res.status(201).json({
       success: true,
       data: newRecipe,
     });
   } catch (error) {
+    console.error('[createRecipe ERROR]:', error);
     return res.status(400).json({ success: false, message: error.message });
   }
 };
