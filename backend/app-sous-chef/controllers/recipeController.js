@@ -53,7 +53,213 @@ const parseVideoUrl = (rawUrl) => {
 };
 
 /**
- * Core Helper: Invokes Gemini 2.5 Flash with detailed diagnostic logging
+ * Helper: Extract YouTube Description and Title with Cloud Fallbacks
+ */
+const fetchYouTubeDescription = async (videoId) => {
+  const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+  console.log(`[YOUTUBE FETCH] Video ID: ${videoId} | URL: ${watchUrl}`);
+  let title = '';
+  let description = '';
+
+  // 1. Fetch title from oEmbed (Reliable on all IPs)
+  try {
+    const oembedRes = await fetch(
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(watchUrl)}&format=json`
+    );
+    if (oembedRes.ok) {
+      const oembedData = await oembedRes.json();
+      title = oembedData.title || '';
+      console.log(`[YOUTUBE OEMBED] Extracted title: "${title}"`);
+    } else {
+      console.warn(`[YOUTUBE OEMBED] HTTP status ${oembedRes.status}`);
+    }
+  } catch (err) {
+    console.warn('[YOUTUBE OEMBED] Skipped:', err.message);
+  }
+
+  // 2. Fetch page HTML to extract full video description
+  try {
+    console.log('[YOUTUBE HTML] Fetching page for description scrape...');
+    const pageRes = await fetch(watchUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+    });
+
+    console.log(`[YOUTUBE HTML] Response status: ${pageRes.status}`);
+
+    if (pageRes.ok) {
+      const html = await pageRes.text();
+      console.log(`[YOUTUBE HTML] Document length: ${html.length} characters`);
+      const $ = cheerio.load(html);
+
+      // Attempt A: Extract from ytInitialData payload
+      const descMatch = html.match(/"shortDescription":"(.*?)"(?:,"isCrawlable"|,"thumbnail")/s);
+      if (descMatch && descMatch[1]) {
+        try {
+          description = JSON.parse(`"${descMatch[1]}"`);
+        } catch {
+          description = descMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+        }
+        console.log(`[YOUTUBE SCRAPE] Match A succeeded. Length: ${description.length}`);
+      }
+
+      // Attempt B: Fallback to Meta / Schema tags
+      if (!description.trim()) {
+        const metaDesc =
+          $('meta[name="description"]').attr('content') ||
+          $('meta[property="og:description"]').attr('content') ||
+          '';
+        description = metaDesc.trim();
+        console.log(`[YOUTUBE SCRAPE] Match B (meta tags) length: ${description.length}`);
+      }
+
+      if (!title) {
+        title = $('meta[property="og:title"]').attr('content') || $('title').text() || '';
+      }
+    }
+  } catch (err) {
+    console.warn('[YOUTUBE HTML] Page fetch error:', err.message);
+  }
+
+  // 3. Fallback: If YouTube returned 429/blocked datacenter IP, try public API mirrors
+  if (!description.trim()) {
+    console.log('[YOUTUBE FALLBACK] Direct scrape empty or blocked (429). Querying API mirrors...');
+    const invidiousInstances = [
+      'https://inv.tux.pizza',
+      'https://invidious.nerdvpn.de',
+      'https://invidious.flokinet.to',
+    ];
+
+    for (const host of invidiousInstances) {
+      try {
+        const mirrorRes = await fetch(`${host}/api/v1/videos/${videoId}?fields=title,description`, {
+          signal: AbortSignal.timeout(3500),
+        });
+        if (mirrorRes.ok) {
+          const mirrorData = await mirrorRes.json();
+          if (mirrorData.description) {
+            description = mirrorData.description;
+            if (!title && mirrorData.title) title = mirrorData.title;
+            console.log(`[YOUTUBE MIRROR SUCCESS] Extracted from ${host}. Length: ${description.length}`);
+            break;
+          }
+        }
+      } catch {
+        // Continue to next mirror
+      }
+    }
+  }
+
+  const combined = [
+    title ? `Video Title: ${title}` : '',
+    description ? `Video Description:\n${description}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+
+  console.log(`[YOUTUBE SUMMARY] Combined text length: ${combined.length} characters`);
+  return { text: combined.trim(), title, description };
+};
+
+/**
+ * Helper: Extract Instagram Reel/Post caption
+ */
+const fetchInstagramContent = async (rawUrl, postId) => {
+  let caption = '';
+
+  const cleanPostId =
+    postId || rawUrl.match(/instagram\.com\/(?:reel|p|tv)\/([a-zA-Z0-9_-]+)/)?.[1];
+
+  const canonicalUrl = cleanPostId
+    ? `https://www.instagram.com/reel/${cleanPostId}/`
+    : rawUrl.split('?')[0];
+
+  // STRATEGY 1: Internal Mobile Web JSON API
+  if (cleanPostId) {
+    try {
+      const jsonRes = await fetch(
+        `https://www.instagram.com/p/${cleanPostId}/?__a=1&__d=dis`,
+        {
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 301.0.0.27.111',
+            'Accept': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'X-IG-App-ID': '936619743392459',
+            'Sec-Fetch-Mode': 'cors',
+          },
+        }
+      );
+
+      const contentType = jsonRes.headers.get('content-type') || '';
+      if (jsonRes.ok && contentType.includes('application/json')) {
+        const data = await jsonRes.json();
+        const graphqlCaption =
+          data?.graphql?.shortcode_media?.edge_media_to_caption?.edges?.[0]?.node?.text;
+        const itemCaption = data?.items?.[0]?.caption?.text;
+
+        caption = graphqlCaption || itemCaption || '';
+        if (caption.trim()) {
+          return caption.trim();
+        }
+      }
+    } catch (err) {
+      console.warn('Instagram ?__a=1 skipped:', err.message);
+    }
+  }
+
+  // STRATEGY 2: Social Media Crawler Impersonation
+  try {
+    const crawlerRes = await fetch(canonicalUrl, {
+      headers: {
+        'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+    });
+
+    if (crawlerRes.ok) {
+      const html = await crawlerRes.text();
+      const $ = cheerio.load(html);
+
+      const ogDesc = $('meta[property="og:description"]').attr('content') || '';
+      const twitterDesc = $('meta[name="twitter:description"]').attr('content') || '';
+      const ogTitle = $('meta[property="og:title"]').attr('content') || '';
+
+      let extractedMeta = ogDesc || twitterDesc || ogTitle;
+      const quoteMatch = extractedMeta.match(/:\s*["“'](.*)["”']$/s);
+      if (quoteMatch && quoteMatch[1]) {
+        extractedMeta = quoteMatch[1];
+      }
+
+      if (extractedMeta.trim()) {
+        return extractedMeta.trim();
+      }
+
+      $('script[type="application/ld+json"]').each((_, el) => {
+        try {
+          const ldData = JSON.parse($(el).html());
+          const articleBody = ldData.articleBody || ldData.caption || ldData.description;
+          if (articleBody && articleBody.trim()) {
+            caption = articleBody.trim();
+          }
+        } catch {}
+      });
+
+      if (caption.trim()) return caption.trim();
+    }
+  } catch (err) {
+    console.warn('Crawler fetch fallback skipped:', err.message);
+  }
+
+  return caption.trim();
+};
+
+/**
+ * Core Helper: Invokes Gemini with retry & structured output
  */
 const runGeminiRecipeParser = async (rawText) => {
   console.log('--- [GEMINI PARSER START] ---');
@@ -173,185 +379,6 @@ const runGeminiRecipeParser = async (rawText) => {
 };
 
 /**
- * Helper: Extract YouTube Description and Title
- */
-const fetchYouTubeDescription = async (videoId) => {
-  const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
-  console.log(`[YOUTUBE FETCH] Video ID: ${videoId} | URL: ${watchUrl}`);
-  let title = '';
-  let description = '';
-
-  // 1. Fetch title from oEmbed
-  try {
-    const oembedRes = await fetch(
-      `https://www.youtube.com/oembed?url=${encodeURIComponent(watchUrl)}&format=json`
-    );
-    if (oembedRes.ok) {
-      const oembedData = await oembedRes.json();
-      title = oembedData.title || '';
-      console.log(`[YOUTUBE OEMBED] Extracted title: "${title}"`);
-    } else {
-      console.warn(`[YOUTUBE OEMBED] HTTP status ${oembedRes.status}`);
-    }
-  } catch (err) {
-    console.warn('[YOUTUBE OEMBED] Skipped:', err.message);
-  }
-
-  // 2. Fetch page HTML to extract full video description
-  try {
-    console.log('[YOUTUBE HTML] Fetching page for description scrape...');
-    const pageRes = await fetch(watchUrl, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-    });
-
-    console.log(`[YOUTUBE HTML] Response status: ${pageRes.status}`);
-
-    if (pageRes.ok) {
-      const html = await pageRes.text();
-      console.log(`[YOUTUBE HTML] Document length: ${html.length} characters`);
-      const $ = cheerio.load(html);
-
-      // Attempt A: Extract from ytInitialData payload
-      const descMatch = html.match(/"shortDescription":"(.*?)"(?:,"isCrawlable"|,"thumbnail")/s);
-      if (descMatch && descMatch[1]) {
-        try {
-          description = JSON.parse(`"${descMatch[1]}"`);
-        } catch {
-          description = descMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
-        }
-        console.log(`[YOUTUBE SCRAPE] Match A (shortDescription) succeeded. Length: ${description.length}`);
-      }
-
-      // Attempt B: Fallback to Meta / Schema tags
-      if (!description.trim()) {
-        const metaDesc =
-          $('meta[name="description"]').attr('content') ||
-          $('meta[property="og:description"]').attr('content') ||
-          '';
-        description = metaDesc.trim();
-        console.log(`[YOUTUBE SCRAPE] Match B (meta tags) result length: ${description.length}`);
-      }
-
-      if (!title) {
-        title = $('meta[property="og:title"]').attr('content') || $('title').text() || '';
-      }
-    }
-  } catch (err) {
-    console.warn('[YOUTUBE HTML] Page fetch error:', err.message);
-  }
-
-  const combined = [
-    title ? `Video Title: ${title}` : '',
-    description ? `Video Description:\n${description}` : '',
-  ]
-    .filter(Boolean)
-    .join('\n\n');
-
-  console.log(`[YOUTUBE SUMMARY] Combined text length: ${combined.length} characters`);
-  return { text: combined.trim(), title, description };
-};
-
-/**
- * Helper: Extract Instagram Reel/Post caption
- */
-const fetchInstagramContent = async (url, postId) => {
-  console.log(`[INSTAGRAM FETCH] Post ID: ${postId || 'N/A'} | URL: ${url}`);
-  let caption = '';
-
-  // STRATEGY 1: Instagram internal JSON endpoint (?__a=1&__d=dis)
-  if (postId) {
-    try {
-      const jsonUrl = `https://www.instagram.com/p/${postId}/?__a=1&__d=dis`;
-      console.log('[INSTAGRAM STRATEGY 1] Requesting internal JSON endpoint...');
-      const jsonRes = await fetch(jsonUrl, {
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Mobile Safari/537.36 Instagram 219.0.0.12.117',
-          'Accept': 'application/json',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'X-IG-App-ID': '936619743392459',
-          'Sec-Fetch-Mode': 'cors',
-        },
-      });
-
-      console.log(`[INSTAGRAM STRATEGY 1] Status: ${jsonRes.status}`);
-      if (jsonRes.ok) {
-        const data = await jsonRes.json();
-        const graphqlCaption =
-          data?.graphql?.shortcode_media?.edge_media_to_caption?.edges?.[0]?.node?.text;
-        const itemCaption = data?.items?.[0]?.caption?.text;
-
-        caption = graphqlCaption || itemCaption || '';
-        if (caption.trim()) {
-          console.log(`[INSTAGRAM STRATEGY 1] Found caption. Length: ${caption.length}`);
-          return caption.trim();
-        }
-      }
-    } catch (err) {
-      console.warn('[INSTAGRAM STRATEGY 1] Skipped:', err.message);
-    }
-  }
-
-  // STRATEGY 2: Instagram Public oEmbed API endpoint
-  try {
-    const oembedUrl = `https://api.instagram.com/oembed/?url=${encodeURIComponent(url)}`;
-    console.log('[INSTAGRAM STRATEGY 2] Requesting oEmbed API...');
-    const oembedRes = await fetch(oembedUrl, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
-      },
-    });
-
-    console.log(`[INSTAGRAM STRATEGY 2] Status: ${oembedRes.status}`);
-    if (oembedRes.ok) {
-      const oembedData = await oembedRes.json();
-      if (oembedData?.title) {
-        caption = oembedData.title.trim();
-        console.log(`[INSTAGRAM STRATEGY 2] Found title/caption. Length: ${caption.length}`);
-        if (caption) return caption;
-      }
-    }
-  } catch (err) {
-    console.warn('[INSTAGRAM STRATEGY 2] Skipped:', err.message);
-  }
-
-  // STRATEGY 3: OpenGraph & Meta Tag Fallback
-  try {
-    console.log('[INSTAGRAM STRATEGY 3] Requesting page HTML for meta tags...');
-    const htmlRes = await fetch(url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-    });
-
-    console.log(`[INSTAGRAM STRATEGY 3] Status: ${htmlRes.status}`);
-    if (htmlRes.ok) {
-      const html = await htmlRes.text();
-      const $ = cheerio.load(html);
-
-      const ogDesc = $('meta[property="og:description"]').attr('content') || '';
-      const twitterDesc = $('meta[name="twitter:description"]').attr('content') || '';
-      const ogTitle = $('meta[property="og:title"]').attr('content') || '';
-
-      caption = ogDesc || twitterDesc || ogTitle;
-      console.log(`[INSTAGRAM STRATEGY 3] Fallback caption length: ${caption.length}`);
-    }
-  } catch (err) {
-    console.warn('[INSTAGRAM STRATEGY 3] Skipped:', err.message);
-  }
-
-  return caption.trim();
-};
-
-/**
  * @route   POST /api/recipes/parse-url
  * @desc    Extract description only from YouTube/Instagram URL and parse into structured recipe
  */
@@ -364,7 +391,6 @@ exports.parseRecipeUrl = async (req, res) => {
     const { url } = req.body;
 
     if (!url || typeof url !== 'string' || !url.trim()) {
-      console.warn('[parseRecipeUrl] 400 Bad Request: missing URL');
       return res.status(400).json({
         success: false,
         message: 'Please provide a valid YouTube or Instagram link.',
@@ -376,7 +402,6 @@ exports.parseRecipeUrl = async (req, res) => {
     console.log('[parseRecipeUrl] Parsed video details:', videoData);
 
     if (videoData.platform === 'NONE') {
-      console.warn('[parseRecipeUrl] 400 Bad Request: unsupported link format');
       return res.status(400).json({
         success: false,
         message: 'Unsupported link. Please paste a valid YouTube or Instagram URL.',
@@ -387,23 +412,25 @@ exports.parseRecipeUrl = async (req, res) => {
 
     if (videoData.platform === 'YOUTUBE') {
       const ytResult = await fetchYouTubeDescription(videoData.videoId);
-      extractedText = ytResult.text;
 
-      if (!extractedText || (!ytResult.description && !ytResult.title)) {
-        console.warn('[parseRecipeUrl] 422 Unprocessable: YouTube scraper extracted no text');
+      // Guard: Do not proceed to Gemini if the description body is missing
+      if (!ytResult.description || ytResult.description.trim().length < 20) {
+        console.warn('[parseRecipeUrl] 422: YouTube description was empty or blocked by rate limit.');
         return res.status(422).json({
           success: false,
           platform: 'YOUTUBE',
           videoUrl: targetUrl,
           message:
-            'Could not find a recipe description in this YouTube video. Please paste the recipe text manually using the text tab.',
+            'Could not extract the recipe description from YouTube (rate-limited by YouTube). Please copy the video description and paste it manually into the text tab.',
         });
       }
+
+      extractedText = ytResult.text;
     } else if (videoData.platform === 'INSTAGRAM') {
       extractedText = await fetchInstagramContent(targetUrl, videoData.postId);
 
-      if (!extractedText) {
-        console.warn('[parseRecipeUrl] 422 Unprocessable: Instagram scraper extracted no text');
+      if (!extractedText || extractedText.trim().length < 20) {
+        console.warn('[parseRecipeUrl] 422: Instagram caption was empty or login-walled.');
         return res.status(422).json({
           success: false,
           platform: 'INSTAGRAM',
@@ -596,7 +623,6 @@ exports.createRecipe = async (req, res) => {
 
     const videoData = parseVideoUrl(videoUrl);
 
-    // Guard against property name mismatch (instructions vs steps)
     const normalizedInstructions = Array.isArray(instructions)
       ? instructions
       : Array.isArray(steps)
