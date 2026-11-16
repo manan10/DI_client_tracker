@@ -1,5 +1,5 @@
 // src/apps/recipes/pages/Recipies.jsx
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ChefHat,
@@ -7,11 +7,14 @@ import {
   Search,
   Flame,
   Play,
-  X,
   ArrowUpDown,
   Clock,
   LayoutGrid,
   Sparkles,
+  Layers,
+  ChevronDown,
+  Check,
+  Utensils,
 } from "lucide-react";
 import ChefNavbar from "../components/ChefNavbar";
 import AddRecipeModal from "../components/AddRecipeModal";
@@ -49,16 +52,115 @@ const PANTRY_STAPLES = new Set([
 ]);
 
 const GROUP_OPTIONS = [
-  { id: "CUISINE", label: "By Cuisine" },
-  { id: "INGREDIENT", label: "By Ingredient" },
+  { id: "CUISINE", label: "Cuisine" },
+  { id: "INGREDIENT", label: "Ingredient" },
   { id: "NONE", label: "All Dishes" },
 ];
 
 const SORT_OPTIONS = [
   { id: "title-asc", label: "A–Z" },
+  { id: "title-desc", label: "Z–A" },
   { id: "time-asc", label: "Fastest" },
   { id: "time-desc", label: "Slowest" },
 ];
+
+// Sharp architectural editorial select matching the menu's print broadsheet geometry
+const EditorialSelect = ({
+  icon: Icon,
+  prefix,
+  value,
+  options,
+  onChange,
+  className = "",
+  align = "left",
+}) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handleOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    if (open) {
+      document.addEventListener("mousedown", handleOutside);
+      document.addEventListener("touchstart", handleOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("touchstart", handleOutside);
+    };
+  }, [open]);
+
+  const current = options.find((o) => o.id === value) || options[0];
+  const isFiltered = value !== "ALL" && prefix === "Cuisine";
+
+  return (
+    <div ref={ref} className={`relative ${className}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className={`w-full h-9 px-3 border text-xs font-mono flex items-center justify-between gap-2 transition-colors cursor-pointer outline-none ${
+          isFiltered
+            ? "border-stone-900 dark:border-amber-400 bg-amber-500/15 dark:bg-amber-500/20 text-stone-900 dark:text-amber-300"
+            : "border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] hover:border-stone-900 dark:hover:border-stone-500 text-stone-900 dark:text-white"
+        }`}
+      >
+        <div className="flex items-center gap-1.5 min-w-0 truncate">
+          {Icon && (
+            <Icon
+              size={12}
+              className="text-amber-700 dark:text-amber-400 shrink-0"
+            />
+          )}
+          {prefix && (
+            <span className="text-stone-400 dark:text-stone-500 font-bold uppercase text-[10px] shrink-0">
+              {prefix}:
+            </span>
+          )}
+          <span className="font-extrabold uppercase tracking-wider truncate text-[11px]">
+            {current?.label}
+          </span>
+        </div>
+        <ChevronDown
+          size={12}
+          className={`text-stone-500 dark:text-stone-400 shrink-0 transition-transform duration-150 ${
+            open ? "rotate-180 text-amber-600 dark:text-amber-400" : ""
+          }`}
+        />
+      </button>
+
+      {open && (
+        <div
+          className={`absolute ${
+            align === "right" ? "right-0" : "left-0"
+          } mt-1 w-48 border-2 border-stone-900 dark:border-stone-600 bg-[#FAF9F6] dark:bg-[#14110E] shadow-lg divide-y divide-stone-200 dark:divide-stone-800 z-30 max-h-64 overflow-y-auto`}
+        >
+          {options.map((opt) => {
+            const active = opt.id === value;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => {
+                  onChange(opt.id);
+                  setOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2 text-[11px] font-mono uppercase tracking-wider transition-colors cursor-pointer text-left ${
+                  active
+                    ? "bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 font-extrabold"
+                    : "text-stone-700 dark:text-stone-300 hover:bg-stone-200/70 dark:hover:bg-white/5 font-bold"
+                }`}
+              >
+                <span className="truncate">{opt.label}</span>
+                {active && <Check size={12} strokeWidth={2.8} className="shrink-0 ml-2" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Recipies = () => {
   const navigate = useNavigate();
@@ -71,6 +173,7 @@ const Recipies = () => {
 
   // Filter & Grouping State
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCuisine, setSelectedCuisine] = useState("ALL");
   const [groupBy, setGroupBy] = useState("CUISINE"); // "CUISINE" | "INGREDIENT" | "NONE"
   const [sortBy, setSortBy] = useState("title-asc");
 
@@ -116,6 +219,21 @@ const Recipies = () => {
     setRecipes((prev) => [newRecipe, ...prev]);
   };
 
+  // Dynamically derive available cuisines from the recipe catalog
+  const cuisineOptions = useMemo(() => {
+    const uniqueCuisines = new Set();
+    recipes.forEach((r) => {
+      if (r.cuisine && r.cuisine.trim()) {
+        uniqueCuisines.add(r.cuisine.trim());
+      }
+    });
+    const sorted = Array.from(uniqueCuisines).sort((a, b) => a.localeCompare(b));
+    return [
+      { id: "ALL", label: "All Cuisines" },
+      ...sorted.map((c) => ({ id: c, label: c })),
+    ];
+  }, [recipes]);
+
   const detectMainIngredientGroup = useCallback((recipe) => {
     const title = (recipe.title || "").toLowerCase();
     const ingredients = (recipe.ingredients || [])
@@ -135,6 +253,13 @@ const Recipies = () => {
   // Filtered & Sorted Recipes
   const processedRecipes = useMemo(() => {
     let list = recipes.filter((item) => {
+      // 1. Cuisine Filter
+      if (selectedCuisine !== "ALL") {
+        const itemCuisine = (item.cuisine || "").trim();
+        if (itemCuisine !== selectedCuisine) return false;
+      }
+
+      // 2. Search Filter
       if (searchTerm.trim()) {
         const query = searchTerm.toLowerCase().trim();
         const matchesTitle = item.title?.toLowerCase().includes(query);
@@ -155,6 +280,7 @@ const Recipies = () => {
           return false;
         }
       }
+
       return true;
     });
 
@@ -177,7 +303,7 @@ const Recipies = () => {
     });
 
     return list;
-  }, [recipes, searchTerm, sortBy]);
+  }, [recipes, selectedCuisine, searchTerm, sortBy]);
 
   // Grouped Sections
   const groupedSections = useMemo(() => {
@@ -271,18 +397,12 @@ const Recipies = () => {
     return `${total} mins`;
   };
 
-  const cycleSort = () => {
-    setSortBy((prev) =>
-      prev === "title-asc"
-        ? "time-asc"
-        : prev === "time-asc"
-        ? "time-desc"
-        : "title-asc"
-    );
-  };
+  const hasActiveFilters = searchTerm.trim() !== "" || selectedCuisine !== "ALL";
 
-  const currentSortLabel =
-    SORT_OPTIONS.find((s) => s.id === sortBy)?.label || "A–Z";
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setSelectedCuisine("ALL");
+  };
 
   const openDetails = (id) => navigate(`/sous-chef/recipes/${id}`);
   const openCookMode = (e, id) => {
@@ -300,19 +420,19 @@ const Recipies = () => {
       <main className="w-full max-w-[120rem] mx-auto px-4 sm:px-8 lg:px-12 2xl:px-16 pt-6 sm:pt-10">
         
         {/* ========================================================================= */}
-        {/* RESTAURANT MASTHEAD & ARCHITECTURAL LEDGER FILTER BAR                     */}
+        {/* RESTAURANT MASTHEAD & SHARP ARCHITECTURAL FILTER BAR                      */}
         {/* ========================================================================= */}
-        <header className="mb-8 sm:mb-10">
+        <header className="mb-7 sm:mb-9">
           {/* Top Double-Rule Architectural Header */}
           <div className="border-t-4 border-stone-900 dark:border-stone-200 pt-1">
             <div className="border-t border-stone-900 dark:border-stone-200 pt-4 pb-5 border-b-2 border-stone-900 dark:border-stone-200 flex flex-col md:flex-row md:items-end justify-between gap-4">
               <div>
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/15 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 dark:border-amber-400/40">
+                  <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/15 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 dark:border-amber-400/40">
                     शाही रसोई • House Repertoire
                   </span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-stone-200 dark:bg-[#2A2520] text-stone-800 dark:text-stone-100 border border-stone-300 dark:border-stone-600 tabular-nums">
-                    {processedRecipes.length} Selections
+                  <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider bg-stone-200 dark:bg-[#2A2520] text-stone-800 dark:text-stone-100 border border-stone-300 dark:border-stone-600 tabular-nums">
+                    {processedRecipes.length} {processedRecipes.length === 1 ? "Selection" : "Selections"}
                   </span>
                 </div>
 
@@ -339,12 +459,12 @@ const Recipies = () => {
           </div>
 
           {/* ===================================================================== */}
-          {/* CLEAN PRINT-STYLE LEDGER TOOLBAR BAR                                  */}
+          {/* SHARP-CORNERED EDITORIAL CONTROL ROW (MATCHES MENU GEOMETRY)          */}
           {/* ===================================================================== */}
-          <div className="mt-4 border-y border-stone-300 dark:border-stone-700 bg-white dark:bg-[#14110E] py-2 px-3 sm:px-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 font-mono text-xs shadow-2xs">
+          <div className="pt-4 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2.5 font-mono">
             
-            {/* Left: Search Bar */}
-            <div className="relative w-full lg:w-80">
+            {/* Left: Crisp Sharp-Cornered Search Input */}
+            <div className="relative w-full xl:w-80 2xl:w-96 shrink-0">
               <Search
                 size={14}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500 pointer-events-none"
@@ -353,86 +473,83 @@ const Recipies = () => {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search menu..."
-                className="w-full h-8 pl-9 pr-14 rounded border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-[#1A1612] text-xs font-mono text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:border-stone-900 dark:focus:border-amber-400 transition-colors"
+                placeholder="Search dishes, ingredients, or tags..."
+                className="w-full h-9 pl-9 pr-14 border border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] text-xs font-mono text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:border-stone-900 dark:focus:border-amber-400 transition-colors"
               />
               {searchTerm && (
                 <button
                   type="button"
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-500 hover:text-stone-900 dark:hover:text-white cursor-pointer"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
                 >
                   Clear
                 </button>
               )}
             </div>
 
-            {/* Right: Index Grouping + Sort + Edition Switcher */}
-            <div className="flex flex-wrap items-center justify-between lg:justify-end gap-3 sm:gap-4">
+            {/* Right: Cuisine Filter + Index Group + Sort + Sharp View Toggle */}
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap xl:flex-nowrap items-center gap-2">
               
-              {/* 1. Group Index Tabs */}
-              <div className="flex items-center gap-1">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500 mr-1 hidden sm:inline">
-                  Index:
-                </span>
-                <div className="inline-flex items-center rounded bg-stone-100 dark:bg-[#1A1612] p-0.5 border border-stone-300 dark:border-stone-700">
-                  {GROUP_OPTIONS.map((g) => {
-                    const active = groupBy === g.id;
-                    return (
-                      <button
-                        key={g.id}
-                        type="button"
-                        onClick={() => setGroupBy(g.id)}
-                        className={`px-2.5 py-1 rounded text-[10px] font-mono uppercase tracking-wider transition-all cursor-pointer ${
-                          active
-                            ? "bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 font-extrabold shadow-2xs"
-                            : "text-stone-600 dark:text-stone-400 font-bold hover:text-stone-900 dark:hover:text-white"
-                        }`}
-                      >
-                        {g.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              {/* 1. Cuisine Filter Dropdown */}
+              <EditorialSelect
+                icon={Utensils}
+                prefix="Cuisine"
+                value={selectedCuisine}
+                options={cuisineOptions}
+                onChange={setSelectedCuisine}
+                className="w-full sm:w-48"
+              />
 
-              {/* 2. Sort Button */}
-              <button
-                type="button"
-                onClick={cycleSort}
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded border border-stone-300 dark:border-stone-700 bg-stone-100 dark:bg-[#1A1612] text-[10px] font-mono font-extrabold uppercase tracking-wider text-stone-800 dark:text-stone-200 hover:border-stone-500 dark:hover:border-stone-500 transition-colors cursor-pointer"
-                title="Cycle Sort Order"
-              >
-                <ArrowUpDown size={12} className="text-amber-600 dark:text-amber-400" />
-                <span>Sort: {currentSortLabel}</span>
-              </button>
+              {/* 2. Section Grouping Dropdown */}
+              <EditorialSelect
+                icon={Layers}
+                prefix="Group"
+                value={groupBy}
+                options={GROUP_OPTIONS}
+                onChange={setGroupBy}
+                className="w-full sm:w-44"
+              />
 
-              <span className="hidden sm:inline text-stone-300 dark:text-stone-700">|</span>
+              {/* 3. Sort Dropdown */}
+              <EditorialSelect
+                icon={ArrowUpDown}
+                prefix="Sort"
+                value={sortBy}
+                options={SORT_OPTIONS}
+                onChange={setSortBy}
+                align="right"
+                className="w-full sm:w-36"
+              />
 
-              {/* 3. Menu View Edition Switcher (Bistro vs Banquet) */}
-              <div className="inline-flex items-center h-8 p-0.5 rounded border border-stone-300 dark:border-stone-700 bg-stone-100 dark:bg-[#1A1612]">
-                {[
-                  { id: "BISTRO", label: "Bistro", icon: LayoutGrid },
-                  { id: "SHAHI_HYBRID", label: "Banquet", icon: Sparkles },
-                ].map((ed) => {
-                  const Icon = ed.icon;
-                  const active = menuStyle === ed.id;
-                  return (
-                    <button
-                      key={ed.id}
-                      type="button"
-                      onClick={() => handleSelectMenuStyle(ed.id)}
-                      className={`inline-flex items-center gap-1.5 h-full px-2.5 rounded text-[10px] font-mono uppercase tracking-wider transition-all cursor-pointer ${
-                        active
-                          ? "bg-stone-900 dark:bg-[#f59e0b] text-white dark:text-[#140F0A] font-extrabold shadow-2xs"
-                          : "text-stone-600 dark:text-stone-400 font-bold hover:text-stone-900 dark:hover:text-white"
-                      }`}
-                    >
-                      <Icon size={12} />
-                      <span>{ed.label}</span>
-                    </button>
-                  );
-                })}
+              {/* 4. Sharp Editorial Edition Toggle (Bistro vs Shahi Banquet) */}
+              <div className="w-full sm:w-auto inline-flex items-center h-9 border border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] divide-x divide-stone-900/30 dark:divide-stone-700 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleSelectMenuStyle("BISTRO")}
+                  className={`flex-1 sm:flex-initial h-full px-3 inline-flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
+                    menuStyle === "BISTRO"
+                      ? "bg-stone-900 dark:bg-[#f59e0b] text-white dark:text-[#140F0A] font-extrabold"
+                      : "text-stone-600 dark:text-stone-400 font-bold hover:text-stone-900 dark:hover:text-white"
+                  }`}
+                  title="Bistro Course Boxes"
+                >
+                  <LayoutGrid size={12} />
+                  <span>Bistro</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectMenuStyle("SHAHI_HYBRID")}
+                  className={`flex-1 sm:flex-initial h-full px-3 inline-flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
+                    menuStyle === "SHAHI_HYBRID"
+                      ? "bg-stone-900 dark:bg-[#f59e0b] text-white dark:text-[#140F0A] font-extrabold"
+                      : "text-stone-600 dark:text-stone-400 font-bold hover:text-stone-900 dark:hover:text-white"
+                  }`}
+                  title="Shahi Banquet Broadsheet"
+                >
+                  <Sparkles size={12} />
+                  <span>Banquet</span>
+                </button>
               </div>
 
             </div>
@@ -450,14 +567,23 @@ const Recipies = () => {
             </p>
           </div>
         ) : processedRecipes.length === 0 ? (
-          <div className="py-20 text-center border-y-2 border-dashed border-stone-300 dark:border-stone-700 max-w-lg mx-auto">
+          <div className="py-20 text-center border-2 border-dashed border-stone-300 dark:border-stone-700 p-8 max-w-lg mx-auto">
             <ChefHat size={38} className="mx-auto text-stone-400 mb-3" />
             <h3 className="font-sans font-[1000] uppercase tracking-tighter text-xl text-stone-900 dark:text-white">
               Nothing on the Menu Matches
             </h3>
             <p className="text-xs font-mono text-stone-600 dark:text-stone-300 mt-2">
-              Try clearing your search filter or adding a new dish to the kitchen archive.
+              Try clearing your active filters or adding a new dish to the kitchen archive.
             </p>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="mt-4 px-4 py-2 border border-stone-900 dark:border-amber-400 bg-stone-900 dark:bg-[#f59e0b] text-white dark:text-[#140F0A] text-xs font-mono font-extrabold uppercase tracking-wider cursor-pointer"
+              >
+                Reset Filters
+              </button>
+            )}
           </div>
         ) : (
           <>
@@ -517,7 +643,7 @@ const Recipies = () => {
                               )}
                             </div>
 
-                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/15 dark:bg-amber-500/20 border border-amber-500/30 dark:border-amber-400/40 text-amber-800 dark:text-amber-300 font-mono font-extrabold text-[11px] tabular-nums shrink-0">
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/15 dark:bg-amber-500/20 border border-amber-500/30 dark:border-amber-400/40 text-amber-800 dark:text-amber-300 font-mono font-extrabold text-[11px] tabular-nums shrink-0">
                               <Clock size={11} className="text-amber-600 dark:text-amber-400 shrink-0" />
                               <span>{formatDuration(item)}</span>
                             </div>
@@ -604,7 +730,7 @@ const Recipies = () => {
                             </div>
 
                             <div className="mt-3 inline-flex flex-wrap items-center justify-center gap-2 text-[11px] font-mono">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/15 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 dark:border-amber-400/40 font-extrabold tabular-nums">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/15 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 dark:border-amber-400/40 font-extrabold tabular-nums">
                                 <Clock size={11} className="text-amber-600 dark:text-amber-400" />
                                 {formatDuration(item)}
                               </span>
