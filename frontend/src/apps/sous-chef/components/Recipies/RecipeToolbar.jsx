@@ -29,33 +29,32 @@ const RecipeToolbar = ({
 }) => {
   return (
     <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 sm:gap-3 w-full">
-      {/* Search Input - Standalone without outer wrapper */}
+      {/* Search Input */}
       <div className="relative flex-1 min-w-0">
         <Search
-          size={16}
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500 pointer-events-none"
+          size={15}
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-500 dark:text-stone-400 pointer-events-none"
         />
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search recipes, ingredients, or tags..."
-          className="w-full pl-9 pr-14 py-2 sm:py-2.5 rounded-xl border border-stone-200/90 dark:border-[#2C241E] bg-white dark:bg-[#151311] text-xs sm:text-sm text-stone-900 dark:text-stone-100 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-2xs transition-all"
+          placeholder="Search dishes, ingredients, or dietary tags..."
+          className="w-full pl-9 pr-16 py-2 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-[#151311] text-xs sm:text-sm font-mono text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 transition-colors"
         />
         {searchTerm && (
           <button
             type="button"
             onClick={onClearSearch}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 cursor-pointer px-1 py-0.5"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-700 dark:text-stone-200 bg-stone-200 dark:bg-[#2A2520] border border-stone-300 dark:border-stone-600 cursor-pointer px-2 py-0.5 rounded hover:bg-stone-300 dark:hover:bg-stone-700 transition-colors"
           >
             Clear
           </button>
         )}
       </div>
 
-      {/* Controls: Compact single line on mobile (Group + Sort + Icon View Switcher) */}
-      <div className="flex items-center gap-2 shrink-0">
-        {/* Custom Group Dropdown */}
+      {/* Controls: Group + Sort + View Switcher */}
+      <div className="flex items-center gap-2 shrink-0 font-mono">
         <CustomSelect
           label="Group"
           icon={Layers}
@@ -65,7 +64,6 @@ const RecipeToolbar = ({
           className="flex-1 sm:w-36 md:w-40"
         />
 
-        {/* Custom Sort Dropdown */}
         <CustomSelect
           label="Sort"
           icon={ArrowUpDown}
@@ -75,34 +73,34 @@ const RecipeToolbar = ({
           className="flex-1 sm:w-38 md:w-42"
         />
 
-        {/* Icon-Only View Switcher */}
-        <div className="flex items-center bg-white dark:bg-[#151311] p-1 rounded-xl border border-stone-200/90 dark:border-[#2C241E] shadow-2xs shrink-0">
+        {/* View Switcher (Menu Ledger vs Illustrated Gallery) */}
+        <div className="flex items-center bg-stone-200/70 dark:bg-[#2A2520] p-0.5 rounded-lg border border-stone-300 dark:border-stone-600 shrink-0">
           <button
             type="button"
             onClick={() => onViewModeChange("DENSE_LIST")}
-            className={`p-2 rounded-lg text-xs transition-all cursor-pointer ${
+            className={`p-1.5 rounded-md text-xs transition-all cursor-pointer ${
               viewMode === "DENSE_LIST"
-                ? "bg-[#f59e0b] text-[#151311] shadow-2xs font-bold"
-                : "text-stone-400 hover:text-stone-800 dark:hover:text-stone-200"
+                ? "bg-[#f59e0b] text-[#140F0A] font-bold shadow-2xs"
+                : "text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
             }`}
-            title="Dense List View"
-            aria-label="Dense List View"
+            title="Menu Ledger View"
+            aria-label="Menu Ledger View"
           >
-            <List size={16} strokeWidth={2.3} />
+            <List size={16} strokeWidth={2.4} />
           </button>
 
           <button
             type="button"
             onClick={() => onViewModeChange("CARDS")}
-            className={`p-2 rounded-lg text-xs transition-all cursor-pointer ${
+            className={`p-1.5 rounded-md text-xs transition-all cursor-pointer ${
               viewMode === "CARDS"
-                ? "bg-[#f59e0b] text-[#151311] shadow-2xs font-bold"
-                : "text-stone-400 hover:text-stone-800 dark:hover:text-stone-200"
+                ? "bg-[#f59e0b] text-[#140F0A] font-bold shadow-2xs"
+                : "text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
             }`}
-            title="Card Grid View"
-            aria-label="Card Grid View"
+            title="Illustrated Plate View"
+            aria-label="Illustrated Plate View"
           >
-            <LayoutGrid size={16} strokeWidth={2.3} />
+            <LayoutGrid size={16} strokeWidth={2.4} />
           </button>
         </div>
       </div>

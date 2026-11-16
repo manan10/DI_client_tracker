@@ -1,103 +1,130 @@
 // src/apps/recipes/components/Recipies/RecipeCardItem.jsx
 import React from "react";
-import { Clock, Play, UtensilsCrossed, ChevronRight } from "lucide-react";
+import { ChefHat, Play, Flame, ArrowUpRight } from "lucide-react";
 
-const RecipeCardItem = ({ item, onOpenCookMode, onViewDetails }) => {
-  const totalTime = (item.prepTimeMinutes || 0) + (item.cookTimeMinutes || 0);
+const RecipeCardItem = ({ item, dishNumber = "01", onOpenCookMode, onViewDetails }) => {
+  const prepTime = item.prepTimeMinutes || 0;
+  const cookTime = item.cookTimeMinutes || 0;
+  const totalTime = prepTime + cookTime;
+  const dietaryFlags = item.dietaryFlags || {};
+
+  const ingredientNames = (item.ingredients || [])
+    .slice(0, 5)
+    .map((ing) => (typeof ing === "string" ? ing : ing.name))
+    .filter(Boolean);
 
   return (
-    <div className="group relative flex flex-col justify-between rounded-2xl bg-white dark:bg-[#151311] border border-stone-200/90 dark:border-[#2C241E] shadow-2xs hover:shadow-md transition-all duration-200 overflow-hidden">
-      {/* Banner Thumbnail */}
-      <div className="relative h-44 sm:h-48 w-full bg-stone-100 dark:bg-[#1E1915] overflow-hidden">
-        {item.coverImage ? (
-          <img
-            src={item.coverImage}
-            alt={item.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-stone-400">
-            <UtensilsCrossed size={32} />
-          </div>
-        )}
+    <article
+      onClick={onViewDetails}
+      className="group flex flex-col justify-between border-b-2 border-stone-200 dark:border-stone-800 hover:border-amber-500/60 dark:hover:border-amber-400/60 pb-4 transition-colors cursor-pointer select-none"
+    >
+      <div>
+        {/* Framed Dish Photograph */}
+        <div className="relative h-48 sm:h-52 w-full rounded-xl overflow-hidden border border-stone-300 dark:border-stone-600 bg-stone-900 shadow-sm mb-3.5">
+          {item.coverImage ? (
+            <img
+              src={item.coverImage}
+              alt={item.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center text-amber-400 gap-1 p-2">
+              <ChefHat size={26} />
+              <span className="text-[9px] uppercase tracking-widest text-stone-300 text-center font-mono">
+                No Photo
+              </span>
+            </div>
+          )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent pointer-events-none" />
 
-        {item.video?.embedUrl && (
-          <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-600 text-white shadow-xs backdrop-blur-xs">
-            <Play size={10} fill="currentColor" />
-            Video
+          {/* Top Left Plate Number */}
+          <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded text-[10px] font-mono font-extrabold tabular-nums bg-black/80 text-amber-300 border border-amber-400/30 backdrop-blur-xs">
+            NO. {dishNumber}
           </span>
-        )}
 
-        <span className="absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-black/65 text-white backdrop-blur-xs">
-          {item.cuisine || "General"}
-        </span>
-      </div>
-
-      {/* Details Body */}
-      <div className="p-4 sm:p-4.5 space-y-3 flex-1 flex flex-col justify-between">
-        <div>
-          <h3
-            onClick={onViewDetails}
-            className="font-serif font-bold text-base sm:text-lg text-stone-900 dark:text-stone-100 group-hover:text-[#f59e0b] transition-colors line-clamp-1 cursor-pointer"
-          >
-            {item.title}
-          </h3>
-
-          <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500 dark:text-stone-400 mt-2">
-            <span className="inline-flex items-center gap-1 font-medium">
-              <Clock size={12} className="text-amber-600 dark:text-amber-500" />
-              {totalTime} mins
+          {/* Top Right Video Badge */}
+          {item.video?.embedUrl && (
+            <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-rose-600 text-white shadow-xs">
+              <Play size={9} fill="currentColor" />
+              Video
             </span>
-            <span>•</span>
-            <span className="capitalize">{item.difficulty || "Easy"}</span>
-            <span>•</span>
-            <span>{item.ingredients?.length || 0} ingredients</span>
+          )}
+
+          {/* Bottom Image Tags */}
+          <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-black/80 text-white border border-stone-600 backdrop-blur-xs">
+                {item.courseType || item.cuisine || "Main"}
+              </span>
+              {dietaryFlags.isJain && (
+                <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-950/90 text-emerald-300 border border-emerald-400/40">
+                  Jain
+                </span>
+              )}
+              {dietaryFlags.isSwaminarayan && (
+                <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-950/90 text-amber-300 border border-amber-400/40">
+                  Swaminarayan
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Scaled Ingredients Snapshot */}
-        {item.ingredients && item.ingredients.length > 0 && (
-          <div className="pt-2.5 border-t border-stone-100 dark:border-[#2C241E] flex flex-wrap gap-1">
-            {item.ingredients.slice(0, 3).map((ing, idx) => (
-              <span
-                key={idx}
-                className="text-[11px] px-2 py-0.5 rounded-md bg-stone-100 dark:bg-white/5 text-stone-700 dark:text-stone-300 font-medium"
-              >
-                {typeof ing === "string" ? ing : ing.name}
-              </span>
-            ))}
-            {item.ingredients.length > 3 && (
-              <span className="text-[10px] text-stone-400 self-center font-medium">
-                +{item.ingredients.length - 3} more
-              </span>
-            )}
-          </div>
-        )}
+        {/* Title + Dotted Menu Leader + Total Time */}
+        <div className="flex items-baseline gap-2">
+          <h3 className="font-sans font-[1000] uppercase tracking-tighter text-lg sm:text-xl text-stone-900 dark:text-white group-hover:text-amber-700 dark:group-hover:text-[#f59e0b] transition-colors truncate leading-tight">
+            {item.title}
+          </h3>
+
+          <div className="flex-1 border-b border-dotted border-stone-400 dark:border-stone-600 min-w-[16px] relative -top-1" />
+
+          <span className="font-mono font-extrabold text-xs sm:text-sm text-amber-700 dark:text-amber-300 tabular-nums shrink-0">
+            {totalTime} mins
+          </span>
+        </div>
+
+        {/* Monospace Ingredient Notes */}
+        <p className="text-xs font-mono text-stone-700 dark:text-stone-200 mt-1.5 line-clamp-2 leading-relaxed">
+          {ingredientNames.length > 0
+            ? ingredientNames.join(" • ")
+            : item.description || "Signature house preparation."}
+        </p>
       </div>
 
-      {/* Action Footer */}
-      <div className="p-3 bg-stone-50/70 dark:bg-white/[0.02] border-t border-stone-100 dark:border-[#2C241E] flex items-center justify-between gap-2">
-        <button
-          type="button"
-          onClick={onOpenCookMode}
-          className="text-xs font-serif italic text-amber-800 dark:text-[#f59e0b] hover:underline font-bold py-1.5 px-1 cursor-pointer"
-        >
-          Cook Mode
-        </button>
+      {/* Mini Telemetry Strip & Cook Mode Trigger */}
+      <div className="flex items-center justify-between gap-2 mt-3.5 pt-2.5 border-t border-stone-200/80 dark:border-stone-800 text-[11px] font-mono">
+        <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400">
+          <span>
+            Prep:{" "}
+            <strong className="font-extrabold text-stone-900 dark:text-white tabular-nums">
+              {prepTime}m
+            </strong>
+          </span>
+          <span>•</span>
+          <span>
+            Level:{" "}
+            <strong className="font-extrabold text-stone-900 dark:text-white capitalize">
+              {item.difficulty || "Medium"}
+            </strong>
+          </span>
+        </div>
 
         <button
           type="button"
-          onClick={onViewDetails}
-          className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-[#f59e0b] transition-all cursor-pointer active:scale-95"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenCookMode();
+          }}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-mono font-extrabold uppercase tracking-wider bg-amber-500/15 dark:bg-amber-500/20 hover:bg-[#f59e0b] text-amber-800 dark:text-amber-300 hover:text-[#140F0A] border border-amber-500/30 dark:border-amber-400/40 transition-colors cursor-pointer"
         >
-          <span>View Recipe</span>
-          <ChevronRight size={13} strokeWidth={2.5} />
+          <Flame size={11} />
+          <span>Cook Mode</span>
+          <ArrowUpRight size={11} />
         </button>
       </div>
-    </div>
+    </article>
   );
 };
 

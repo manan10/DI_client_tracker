@@ -10,11 +10,9 @@ import {
   Check,
   Fingerprint,
   ArrowRight,
-  ShieldCheck,
   Users,
   ReceiptIndianRupee,
   Clapperboard,
-  Sparkles,
 } from "lucide-react";
 import { startAuthentication } from "@simplewebauthn/browser";
 
@@ -158,13 +156,6 @@ const AuthForm = ({
 
       {/* --- FORM HEADER --- */}
       <div className="relative z-10 mb-6 lg:mb-8 text-left">
-        {/* <div className="flex items-center gap-2 mb-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse" />
-          <span className="font-serif italic text-xs lg:text-sm font-semibold text-indigo-800 dark:text-indigo-300">
-            Dalal Investment Internal Portal
-          </span>
-        </div> */}
-
         <h3 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-serif font-bold tracking-tight text-slate-900 dark:text-white">
           Welcome
         </h3>
@@ -240,7 +231,7 @@ const AuthForm = ({
             />
           </button>
 
-          {/* SOLID ELEVATED DROPDOWN MENU */}
+          {/* SOLID ELEVATED DROPDOWN MENU: Opens upwards on mobile, downwards on desktop */}
           {isOpen && (
             <>
               {/* Invisible touch backdrop catcher */}
@@ -249,7 +240,9 @@ const AuthForm = ({
                 onClick={() => setIsOpen(false)} 
               />
               
-              <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 rounded-2xl border-2 border-indigo-300 dark:border-indigo-500/50 bg-white dark:bg-[#0B1120] shadow-[0_22px_50px_rgba(0,0,0,0.3)] p-2 max-h-64 overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+              <div
+                className="absolute left-0 right-0 bottom-[calc(100%+8px)] lg:bottom-auto lg:top-[calc(100%+8px)] z-50 rounded-2xl border-2 border-indigo-300 dark:border-indigo-500/50 bg-white dark:bg-[#0B1120] shadow-[0_-20px_50px_rgba(0,0,0,0.25)] lg:shadow-[0_22px_50px_rgba(0,0,0,0.3)] p-2 max-h-[42dvh] lg:max-h-64 overflow-y-auto overscroll-contain animate-in fade-in zoom-in-95 duration-150"
+              >
                 {users.map((u) => {
                   const isSelected = selectedUser?._id === u._id;
                   const userApps = u.allowedApps || [];
