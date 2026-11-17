@@ -1,94 +1,99 @@
 // src/apps/recipes/components/wizard/CustomDropdown.jsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown, Check } from "lucide-react";
 
-const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select option" }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef(null);
+const CustomDropdown = ({ label, value, options, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setIsOpen(false);
+    const handleOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpen(false);
       }
     };
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("touchstart", handleClickOutside);
+    if (open) {
+      document.addEventListener("mousedown", handleOutside);
+      document.addEventListener("touchstart", handleOutside);
     }
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("touchstart", handleOutside);
     };
-  }, [isOpen]);
+  }, [open]);
 
-  const selectedItem = typeof options[0] === "string" 
-    ? options.find((opt) => opt === value) 
-    : options.find((opt) => opt.label === value);
+  const normalizedOptions = (options || []).map((opt) =>
+    typeof opt === "string"
+      ? { value: opt, label: opt, desc: null }
+      : { value: opt.label, label: opt.label, desc: opt.desc }
+  );
 
-  const displayLabel = typeof selectedItem === "string" 
-    ? selectedItem 
-    : selectedItem?.label || value || placeholder;
+  const selected =
+    normalizedOptions.find((o) => o.value === value) || normalizedOptions[0];
 
   return (
-    <div className="relative w-full space-y-1.5" ref={containerRef}>
+    <div className="space-y-1.5 relative font-mono" ref={dropdownRef}>
       {label && (
-        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+        <label className="block text-[10px] font-mono font-extrabold uppercase tracking-wider text-stone-700 dark:text-stone-300">
           {label}
         </label>
       )}
 
       <button
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer outline-none shadow-xs ${
-          isOpen
-            ? "bg-white dark:bg-[#1E2533] border-amber-500 ring-2 ring-amber-500/20 text-slate-900 dark:text-slate-100"
-            : "bg-white dark:bg-[#161B26] border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700"
+        onClick={() => setOpen((p) => !p)}
+        className={`w-full h-10 px-3 border text-xs font-mono flex items-center justify-between gap-2 transition-colors cursor-pointer outline-none ${
+          open
+            ? "border-stone-900 dark:border-amber-400 bg-amber-500/10 dark:bg-amber-500/15 text-stone-900 dark:text-amber-300"
+            : "border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] hover:border-stone-900 dark:hover:border-stone-500 text-stone-900 dark:text-white"
         }`}
       >
-        <span className="truncate">{displayLabel}</span>
+        <span className="font-extrabold uppercase tracking-wider truncate text-[11px]">
+          {selected?.label || value}
+        </span>
         <ChevronDown
-          size={14}
-          strokeWidth={2.5}
-          className={`shrink-0 ml-2 text-slate-400 dark:text-slate-500 transition-transform duration-200 ${
-            isOpen ? "rotate-180 text-amber-500" : ""
+          size={13}
+          className={`text-stone-500 dark:text-stone-400 shrink-0 transition-transform duration-150 ${
+            open ? "rotate-180 text-amber-700 dark:text-amber-400" : ""
           }`}
         />
       </button>
 
-      {isOpen && (
-        <div className="absolute z-50 w-full mt-1.5 bg-white dark:bg-[#1A202C] border border-slate-200 dark:border-slate-700/80 rounded-xl shadow-xl shadow-slate-900/10 dark:shadow-black/60 overflow-hidden animate-in fade-in zoom-in-95 duration-100 max-h-56 overflow-y-auto no-scrollbar p-1.5">
-          {options.map((opt) => {
-            const optVal = typeof opt === "string" ? opt : opt.label;
-            const optDesc = typeof opt === "string" ? null : opt.desc;
-            const isSelected = value === optVal;
-
+      {open && (
+        <div className="absolute left-0 right-0 mt-1 border-2 border-stone-900 dark:border-stone-600 bg-[#FAF9F6] dark:bg-[#14110E] shadow-lg divide-y divide-stone-200 dark:divide-stone-800 z-40 max-h-60 overflow-y-auto no-scrollbar">
+          {normalizedOptions.map((opt) => {
+            const active = opt.value === value;
             return (
               <button
-                key={optVal}
+                key={opt.value}
                 type="button"
                 onClick={() => {
-                  onChange(optVal);
-                  setIsOpen(false);
+                  onChange(opt.value);
+                  setOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs text-left transition-colors cursor-pointer mb-0.5 last:mb-0 ${
-                  isSelected
-                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold"
-                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 font-medium"
+                className={`w-full flex items-center justify-between px-3 py-2.5 text-left transition-colors cursor-pointer ${
+                  active
+                    ? "bg-stone-900 dark:bg-[#f59e0b] text-white dark:text-[#140F0A]"
+                    : "text-stone-800 dark:text-stone-200 hover:bg-stone-200/70 dark:hover:bg-white/5"
                 }`}
               >
-                <div className="flex flex-col min-w-0 pr-2">
-                  <span className="truncate">{optVal}</span>
-                  {optDesc && (
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
-                      {optDesc}
-                    </span>
+                <div className="min-w-0 pr-2">
+                  <div className="text-[11px] font-mono font-extrabold uppercase tracking-wider truncate">
+                    {opt.label}
+                  </div>
+                  {opt.desc && (
+                    <div
+                      className={`text-[10px] font-mono truncate mt-0.5 ${
+                        active
+                          ? "text-stone-300 dark:text-stone-900"
+                          : "text-stone-500 dark:text-stone-400"
+                      }`}
+                    >
+                      {opt.desc}
+                    </div>
                   )}
                 </div>
-                {isSelected && (
-                  <Check size={14} strokeWidth={2.5} className="shrink-0 text-amber-600 dark:text-amber-400 ml-1.5" />
-                )}
+                {active && <Check size={13} strokeWidth={2.8} className="shrink-0" />}
               </button>
             );
           })}
