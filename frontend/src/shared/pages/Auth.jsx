@@ -1,6 +1,6 @@
 // src/pages/Auth.jsx
 import React, { useState, useEffect, useCallback } from "react";
-import { Sun, Moon, ArrowUpRight } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useApi } from "../hooks/useApi";
@@ -104,7 +104,6 @@ const Auth = () => {
 
   return (
     <div className="h-[100dvh] w-screen bg-[#FDFBF7] dark:bg-[#080C16] text-slate-900 dark:text-slate-100 flex flex-col font-serif overflow-hidden relative selection:bg-indigo-600 selection:text-white transition-colors duration-300">
-      
       {/* ========================================================================= */}
       {/* 1. ARTISTIC INVESTMENT & FINANCIAL GEOMETRIC VECTOR BACKDROP             */}
       {/* ========================================================================= */}
@@ -134,7 +133,7 @@ const Auth = () => {
           {/* Coordinate financial graph mesh */}
           <rect width="100%" height="100%" fill="url(#fin-coord-grid)" />
 
-          {/* Upward Compounding Yield Curve (Geometric vector) */}
+          {/* Upward Compounding Yield Curve */}
           <path
             d="M 0 520 C 300 510, 500 460, 750 330 C 950 220, 1150 160, 1500 40"
             fill="none"
@@ -148,7 +147,7 @@ const Auth = () => {
             strokeDasharray="6 8"
           />
 
-          {/* Precision Asset Growth Candlestick / Bar Linework (Bottom Left) */}
+          {/* Precision Asset Growth Candlestick Linework (Bottom Left) */}
           <g className="hidden lg:block opacity-60">
             <line x1="80" y1="620" x2="80" y2="700" strokeWidth="0.8" />
             <rect x="74" y="640" width="12" height="40" fill="none" strokeWidth="0.8" />
@@ -172,8 +171,12 @@ const Auth = () => {
           <circle cx="24%" cy="46%" r="500" fill="none" strokeWidth="0.75" />
 
           {/* Micro Coordinate Financial Data Labels */}
-          <text x="30" y="80" className="text-[10px] font-mono fill-current opacity-50">PORTFOLIO // YIELD-INDEX</text>
-          <text x="30" y="100" className="text-[9px] font-mono fill-current opacity-40">MUTUAL FUNDS • ASSETS • EQUITY</text>
+          <text x="30" y="80" className="text-[10px] font-mono fill-current opacity-50">
+            PORTFOLIO // YIELD-INDEX
+          </text>
+          <text x="30" y="100" className="text-[9px] font-mono fill-current opacity-40">
+            MUTUAL FUNDS • ASSETS • EQUITY
+          </text>
         </svg>
       </div>
 
@@ -198,35 +201,39 @@ const Auth = () => {
       {/* ========================================================================= */}
       {/* 3. MAIN WORKSPACE (RESPONSIVE ZERO-SCROLL)                                */}
       {/* ========================================================================= */}
-      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between lg:justify-center px-4 sm:px-8 lg:px-12 py-3 lg:py-6 gap-3 lg:gap-16 min-h-0">
-        
-        {/* --- LEFT: PROMINENT BRANDING & PURPOSE-DRIVEN TEXT --- */}
-        <div className="w-full lg:w-[50%] flex flex-col items-center lg:items-start text-center lg:text-left shrink-0 mt-1 sm:mt-3 lg:mt-0">
-          
-          {/* Large containerless blended logo */}
-          <div className="mb-2 sm:mb-4 lg:mb-8 select-none transition-transform duration-300 hover:scale-105">
+      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between lg:justify-center px-4 sm:px-8 lg:px-12 py-3 lg:py-6 gap-3 lg:gap-12 xl:gap-16 min-h-0">
+        {/* --- LEFT: UNIFIED-AXIS BRANDING & PURPOSE-DRIVEN TEXT --- */}
+        <div className="w-full lg:w-[50%] flex flex-col items-center lg:items-start text-center lg:text-left shrink-0 mt-1 sm:mt-3 lg:mt-0 min-w-0">
+          {/* Logo aligned strictly to the left axis on desktop */}
+          <div className="mb-3 sm:mb-4 lg:mb-7 select-none transition-transform duration-300 hover:scale-105">
             <img
               src={Logo}
-              alt="Dalal Central Logo"
-              className="h-16 sm:h-24 lg:h-56 xl:h-64 2xl:h-72 w-auto object-contain drop-shadow-[0_14px_30px_rgba(79,70,229,0.18)] dark:drop-shadow-[0_14px_30px_rgba(79,70,229,0.28)]"
+              alt="Dalal Studio Logo"
+              className="h-16 sm:h-24 lg:h-48 xl:h-56 w-auto object-contain drop-shadow-[0_14px_30px_rgba(79,70,229,0.18)] dark:drop-shadow-[0_14px_30px_rgba(79,70,229,0.28)]"
             />
           </div>
 
           {/* Signature Brand Badge */}
-          <div className="flex items-center gap-2 lg:gap-3 mb-2 sm:mb-3 lg:mb-4">
-            <div className="h-0.5 sm:h-1 w-5 sm:w-8 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
+          <div className="flex items-center gap-2.5 lg:gap-3 mb-2.5 sm:mb-3.5">
+            <div className="h-0.5 sm:h-1 w-6 sm:w-8 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
             <p className="text-[10px] sm:text-xs lg:text-sm font-sans font-bold uppercase tracking-[0.25em] text-slate-500 dark:text-slate-400">
               Wealth • Heritage • Growth
             </p>
           </div>
 
-          {/* Large title typography */}
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-serif tracking-tight text-slate-900 dark:text-slate-100 leading-[0.98] mb-2 sm:mb-4">
-            Dalal{" "}
-            <span className="italic font-normal text-indigo-800 dark:text-indigo-400">
-              Central
-            </span>
-          </h1>
+          {/* Unified-Width Title Lockup: DALAL & STUDIO rule span the exact same width */}
+          <div className="w-fit max-w-full flex flex-col items-stretch mb-3.5 sm:mb-5">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl 2xl:text-[82px] font-serif font-semibold uppercase tracking-[0.26em] sm:tracking-[0.3em] lg:tracking-[0.28em] text-slate-900 dark:text-slate-100 leading-none text-center lg:text-left lg:-mr-[0.28em] pl-[0.26em] sm:pl-[0.3em] lg:pl-0">
+              Dalal
+            </h1>
+            <div className="w-full flex items-center gap-3 sm:gap-4 mt-2.5 sm:mt-3.5">
+              <span className="h-px flex-1 bg-gradient-to-r from-amber-500/80 dark:from-amber-400/80 to-amber-500/30 dark:to-amber-400/30 lg:from-amber-500/90 lg:to-transparent" />
+              <span className="font-mono text-xs sm:text-sm lg:text-base xl:text-lg font-bold uppercase tracking-[0.42em] text-indigo-800 dark:text-indigo-400 pl-[0.42em] shrink-0">
+                Studio
+              </span>
+              <span className="h-px flex-1 bg-gradient-to-l from-amber-500/80 dark:from-amber-400/80 to-amber-500/30 dark:to-amber-400/30 lg:from-transparent lg:to-amber-500/80" />
+            </div>
+          </div>
 
           {/* Refined Filler Text for Family Business */}
           <p className="font-serif text-xs sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 max-w-md lg:max-w-lg leading-relaxed mb-4">
@@ -234,12 +241,12 @@ const Auth = () => {
           </p>
 
           {/* Desktop Mini App Indicators */}
-          <div className="hidden lg:flex items-center gap-3 w-full max-w-md pt-2">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-white/10 bg-white/60 dark:bg-slate-900/60 text-xs font-sans font-medium text-slate-700 dark:text-slate-300">
+          <div className="hidden lg:flex items-center gap-3 w-full max-w-md pt-1">
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 text-xs font-sans font-medium text-slate-700 dark:text-slate-300">
               <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
               <span>Mutual Fund CRM</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-white/10 bg-white/60 dark:bg-slate-900/60 text-xs font-sans font-medium text-slate-700 dark:text-slate-300">
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 text-xs font-sans font-medium text-slate-700 dark:text-slate-300">
               <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
               <span>Daily Accounts</span>
             </div>
@@ -257,7 +264,6 @@ const Auth = () => {
             request={request}
           />
         </div>
-
       </main>
 
       {/* ========================================================================= */}
@@ -266,7 +272,6 @@ const Auth = () => {
       <footer className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-2 flex items-center justify-center text-xs font-sans text-slate-400 dark:text-slate-500 shrink-0">
         <p>© 2026 Dalal Investment. All rights reserved.</p>
       </footer>
-
     </div>
   );
 };

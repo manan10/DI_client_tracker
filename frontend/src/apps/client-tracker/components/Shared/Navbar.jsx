@@ -9,7 +9,6 @@ import {
   SettingsIcon,
   Menu,
   BarChart3,
-  Grid,
   ListTodo,
   ChevronDown,
   ReceiptIndianRupee,
@@ -25,7 +24,7 @@ import Logo from "../../../../assets/logo_nobrand.png";
 const allApps = [
   {
     id: "CLIENT_TRACKER",
-    title: "Distributor Portal",
+    title: "CRM Portal",
     path: "/dashboard",
     icon: Users,
   },
@@ -37,14 +36,14 @@ const allApps = [
   },
   {
     id: "SHOW_RATER",
-    title: "Show Rater",
+    title: "Plot Twist",
     path: "/tv-rater",
     icon: Clapperboard,
   },
-    {
-    id: 'SOUS_CHEF',
-    title: 'Sous Chef',
-    path: '/sous-chef/recipes',
+  {
+    id: "SOUS_CHEF",
+    title: "Sous Chef",
+    path: "/sous-chef/recipes",
     icon: UtensilsCrossed,
   },
 ];
@@ -134,29 +133,54 @@ const Navbar = () => {
       {/* ========================================= */}
       {/* TOP NAVIGATION BAR (Desktop & Mobile Top)  */}
       {/* ========================================= */}
-      <nav className="sticky top-0 z-40 bg-[#232730]/95 dark:bg-[#16181D]/95 backdrop-blur-2xl border-b border-stone-400/20 dark:border-white/10 text-white shadow-md dark:shadow-[0_10px_35px_rgba(0,0,0,0.5)] transition-all duration-300 font-sans">
+      <nav className="sticky top-0 z-40 w-full bg-[#232730]/95 dark:bg-[#16181D]/95 backdrop-blur-2xl border-b border-stone-400/20 dark:border-white/10 text-white shadow-md dark:shadow-[0_10px_35px_rgba(0,0,0,0.5)] transition-all duration-300 font-sans">
         {/* Subtle horizon line */}
         <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-linear-to-r from-transparent via-stone-400/40 to-transparent pointer-events-none" />
 
-        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 2xl:px-16">
-          <div className="relative flex justify-between items-center h-[72px]">
-            {/* --- LEFT: LOGO, BRAND TITLE & MINIMAL APP SWITCHER --- */}
-            <div className="flex items-center shrink-0 min-w-0 z-20">
-              <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="w-full mx-auto px-3 sm:px-6 lg:px-8 2xl:px-16">
+          <div className="relative flex justify-between items-center h-[72px] gap-2">
+            {/* --- LEFT: LOGO, BRAND WORDMARK & CRM PORTAL SWITCHER --- */}
+            <div className="flex items-center min-w-0 z-20">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 <Link to="/dashboard" className="group outline-none shrink-0">
                   <img
                     src={Logo}
-                    alt="Dalal Investments"
-                    className="h-8 sm:h-8.5 w-auto transition-transform duration-300 group-hover:scale-105 shrink-0"
+                    alt="Dalal Investments Co-Pilot"
+                    className="h-7.5 sm:h-9 w-auto transition-transform duration-300 group-hover:scale-105 shrink-0"
                   />
                 </Link>
 
-                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2.5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2.5 items-start min-w-0">
+                  {/* Option 5: Approved "Dalal Investments" Serif + Refined "Co-Pilot" Pill */}
                   <Link
                     to="/dashboard"
-                    className="text-[13px] sm:text-base font-serif font-bold text-white tracking-tight leading-tight sm:leading-none hover:text-stone-200 transition-colors"
+                    className="outline-none hover:opacity-95 transition-opacity max-w-full"
                   >
-                    Dalal Investments
+                    <div className="flex items-center gap-1.5 sm:gap-2.5 leading-none select-none">
+                      <div className="flex flex-col text-left min-w-0">
+                        <span className="font-serif font-bold text-[13px] sm:text-base text-white tracking-tight leading-tight sm:leading-none truncate">
+                          Dalal Investments
+                        </span>
+                        <div className="hidden sm:flex items-center gap-1.5 mt-1">
+                          <div className="h-[1.5px] w-8 bg-gradient-to-r from-amber-400 to-emerald-400" />
+                          <span className="text-[7.5px] font-mono font-bold tracking-[0.2em] text-stone-400 uppercase">
+                            PRIVATE WEALTH DESK
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Bridge + Caliper Pill with Sans-Serif Typography */}
+                      <div className="relative px-1.5 py-0.5 sm:px-2.5 sm:py-1.5 flex items-center gap-1 sm:gap-1.5 bg-emerald-500/[0.07] shrink-0">
+                        <span className="absolute top-0 left-0 w-1.5 h-1.5 border-t border-l border-amber-400" />
+                        <span className="absolute bottom-0 right-0 w-1.5 h-1.5 border-b border-r border-emerald-400" />
+                        <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-amber-400" />
+                        <span className="hidden sm:inline-block w-2 h-[1px] bg-emerald-400/70" />
+                        <span className="hidden sm:inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className="font-sans font-extrabold text-[10px] sm:text-[12px] tracking-wide text-emerald-300">
+                          Co-Pilot
+                        </span>
+                      </div>
+                    </div>
                   </Link>
 
                   <span className="hidden sm:inline text-stone-500 font-light select-none text-xs">
@@ -164,16 +188,16 @@ const Navbar = () => {
                   </span>
 
                   {/* QUICK APP SWITCHER DROPDOWN TRIGGER */}
-                  <div className="relative" ref={dropdownRef}>
+                  <div className="relative mt-0.5 sm:mt-0" ref={dropdownRef}>
                     <button
                       type="button"
                       onClick={() => setIsAppDropdownOpen((prev) => !prev)}
-                      className="group/switcher inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-sans font-medium text-stone-400 hover:text-white leading-tight sm:leading-none tracking-wide sm:tracking-normal px-2 py-1 -mx-2 rounded-md hover:bg-white/5 transition-all cursor-pointer outline-none"
+                      className="group/switcher inline-flex items-center gap-1 text-[10px] sm:text-xs font-sans font-medium text-stone-400 hover:text-white leading-tight sm:leading-none tracking-wide sm:tracking-normal px-1.5 py-0.5 -mx-1.5 rounded-md hover:bg-white/5 transition-all cursor-pointer outline-none"
                       title="Switch Application"
                       aria-haspopup="true"
                       aria-expanded={isAppDropdownOpen}
                     >
-                      <span>Distributor Portal</span>
+                      <span>CRM Portal</span>
                       <ChevronDown
                         size={11}
                         className={`text-stone-400 group-hover/switcher:text-white transition-transform duration-200 ${
@@ -203,7 +227,9 @@ const Navbar = () => {
                                 (app.id === "EXPENSE_TRACKER" &&
                                   location.pathname.startsWith("/expenses")) ||
                                 (app.id === "SHOW_RATER" &&
-                                  location.pathname.startsWith("/shows"));
+                                  location.pathname.startsWith("/tv-rater")) ||
+                                (app.id === "SOUS_CHEF" &&
+                                  location.pathname.startsWith("/sous-chef"));
 
                               return (
                                 <button
@@ -220,7 +246,9 @@ const Navbar = () => {
                                     <AppIcon
                                       size={14}
                                       className={
-                                        isCurrent ? "text-white" : "text-stone-400"
+                                        isCurrent
+                                          ? "text-white"
+                                          : "text-stone-400"
                                       }
                                       strokeWidth={isCurrent ? 2.5 : 2}
                                     />
@@ -274,16 +302,16 @@ const Navbar = () => {
             </div>
 
             {/* --- RIGHT: ACTIONS & DISCRETE GLYPH USER PROFILE --- */}
-            <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0 z-20 font-sans">
+            <div className="flex items-center gap-1.5 sm:gap-3.5 shrink-0 z-20 font-sans">
               {/* Utility Dock (App Switcher & Theme Toggle) */}
               <div className="flex items-center p-0.5 rounded-lg bg-black/25 border border-white/10">
                 <Link
                   to="/app-picker"
-                  className="flex items-center justify-center w-8 h-8 rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-all outline-none"
+                  className="flex items-center justify-center w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-all outline-none"
                   aria-label="App Switcher"
                   title="App Switcher"
                 >
-                  <Home size={16} strokeWidth={2.2} />
+                  <Home size={15} strokeWidth={2.2} />
                 </Link>
 
                 <div className="w-px h-4 bg-white/10 mx-0.5" />
@@ -291,14 +319,16 @@ const Navbar = () => {
                 <button
                   type="button"
                   onClick={() => setIsDark(!isDark)}
-                  className="flex items-center justify-center w-8 h-8 rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-all outline-none cursor-pointer"
+                  className="flex items-center justify-center w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-all outline-none cursor-pointer"
                   aria-label="Toggle Theme"
-                  title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                  title={
+                    isDark ? "Switch to Light Mode" : "Switch to Dark Mode"
+                  }
                 >
                   {isDark ? (
-                    <Sun size={16} strokeWidth={2.2} />
+                    <Sun size={15} strokeWidth={2.2} />
                   ) : (
-                    <Moon size={16} strokeWidth={2.2} />
+                    <Moon size={15} strokeWidth={2.2} />
                   )}
                 </button>
               </div>
@@ -307,9 +337,9 @@ const Navbar = () => {
               <div className="hidden sm:block w-px h-6 bg-white/15 mx-0.5" />
 
               {/* User Profile Glyph & Logout */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <div
-                  className="w-8 h-8 rounded-full bg-white/15 text-white border border-white/30 flex items-center justify-center font-bold text-xs select-none shadow-xs"
+                  className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white/15 text-white border border-white/30 flex items-center justify-center font-bold text-xs select-none shadow-xs"
                   title={
                     user?.name
                       ? `${user.name} (${user?.isAdmin ? "Admin" : "Staff"})`
@@ -325,7 +355,7 @@ const Navbar = () => {
                   className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer outline-none"
                   title="Sign Out"
                 >
-                  <LogOut size={16} />
+                  <LogOut size={15} />
                 </button>
               </div>
             </div>
