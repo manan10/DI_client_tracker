@@ -18,10 +18,13 @@ import {
   ListOrdered,
   Wheat,
   Milk,
+  Pencil,
+  Video,
 } from "lucide-react";
 import ChefNavbar from "../components/ChefNavbar";
 import RecipeCommandBar from "../components/RecipeDetails/RecipeCommandBar";
 import RecipeTitleHero from "../components/RecipeDetails/RecipeTitleHero";
+import RecipeEditDrawer from "../components/RecipeDetails/RecipeEditDrawer";
 import { useApi } from "../../../shared/hooks/useApi";
 import { toast } from "sonner";
 
@@ -35,8 +38,10 @@ const INGREDIENT_CATEGORIES = [
     subtitle: "Chop, slice & prep",
     Icon: Leaf,
     iconColor: "text-emerald-600 dark:text-emerald-400",
-    headerBg: "bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500/25 dark:border-emerald-400/30 text-emerald-900 dark:text-emerald-200",
-    qtyBadge: "bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-500/30 dark:border-emerald-400/40",
+    headerBg:
+      "bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500/25 dark:border-emerald-400/30 text-emerald-900 dark:text-emerald-200",
+    qtyBadge:
+      "bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-500/30 dark:border-emerald-400/40",
   },
   {
     id: "MAIN_BASE",
@@ -44,8 +49,10 @@ const INGREDIENT_CATEGORIES = [
     subtitle: "Core components",
     Icon: Wheat,
     iconColor: "text-amber-600 dark:text-amber-400",
-    headerBg: "bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/25 dark:border-amber-400/30 text-amber-900 dark:text-amber-200",
-    qtyBadge: "bg-amber-500/15 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/30 dark:border-amber-400/40",
+    headerBg:
+      "bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/25 dark:border-amber-400/30 text-amber-900 dark:text-amber-200",
+    qtyBadge:
+      "bg-amber-500/15 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/30 dark:border-amber-400/40",
   },
   {
     id: "FATS_DAIRY",
@@ -53,8 +60,10 @@ const INGREDIENT_CATEGORIES = [
     subtitle: "Cooking fats & richness",
     Icon: Milk,
     iconColor: "text-sky-600 dark:text-sky-400",
-    headerBg: "bg-sky-500/10 dark:bg-sky-500/15 border-sky-500/25 dark:border-sky-400/30 text-sky-900 dark:text-sky-200",
-    qtyBadge: "bg-sky-500/15 dark:bg-sky-500/20 text-sky-800 dark:text-sky-300 border-sky-500/30 dark:border-sky-400/40",
+    headerBg:
+      "bg-sky-500/10 dark:bg-sky-500/15 border-sky-500/25 dark:border-sky-400/30 text-sky-900 dark:text-sky-200",
+    qtyBadge:
+      "bg-sky-500/15 dark:bg-sky-500/20 text-sky-800 dark:text-sky-300 border-sky-500/30 dark:border-sky-400/40",
   },
   {
     id: "SPICES_MASALAS",
@@ -62,8 +71,10 @@ const INGREDIENT_CATEGORIES = [
     subtitle: "Whole & powdered spices",
     Icon: Flame,
     iconColor: "text-orange-600 dark:text-orange-400",
-    headerBg: "bg-orange-500/10 dark:bg-orange-500/15 border-orange-500/25 dark:border-orange-400/30 text-orange-900 dark:text-orange-200",
-    qtyBadge: "bg-orange-500/15 dark:bg-orange-500/20 text-orange-800 dark:text-orange-300 border-orange-500/30 dark:border-orange-400/40",
+    headerBg:
+      "bg-orange-500/10 dark:bg-orange-500/15 border-orange-500/25 dark:border-orange-400/30 text-orange-900 dark:text-orange-200",
+    qtyBadge:
+      "bg-orange-500/15 dark:bg-orange-500/20 text-orange-800 dark:text-orange-300 border-orange-500/30 dark:border-orange-400/40",
   },
   {
     id: "SAUCES_LIQUIDS",
@@ -71,8 +82,10 @@ const INGREDIENT_CATEGORIES = [
     subtitle: "Condiments, stock & water",
     Icon: Droplets,
     iconColor: "text-rose-600 dark:text-rose-400",
-    headerBg: "bg-rose-500/10 dark:bg-rose-500/15 border-rose-500/25 dark:border-rose-400/30 text-rose-900 dark:text-rose-200",
-    qtyBadge: "bg-rose-500/15 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-500/30 dark:border-rose-400/40",
+    headerBg:
+      "bg-rose-500/10 dark:bg-rose-500/15 border-rose-500/25 dark:border-rose-400/30 text-rose-900 dark:text-rose-200",
+    qtyBadge:
+      "bg-rose-500/15 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-500/30 dark:border-rose-400/40",
   },
   {
     id: "PANTRY_STAPLES",
@@ -80,8 +93,10 @@ const INGREDIENT_CATEGORIES = [
     subtitle: "Salt, sweeteners & staples",
     Icon: Package,
     iconColor: "text-stone-600 dark:text-stone-300",
-    headerBg: "bg-stone-200/80 dark:bg-[#2A2520] border-stone-300 dark:border-stone-600 text-stone-800 dark:text-stone-200",
-    qtyBadge: "bg-stone-200 dark:bg-[#2A2520] text-stone-800 dark:text-stone-200 border-stone-300 dark:border-stone-600",
+    headerBg:
+      "bg-stone-200/80 dark:bg-[#2A2520] border-stone-300 dark:border-stone-600 text-stone-800 dark:text-stone-200",
+    qtyBadge:
+      "bg-stone-200 dark:bg-[#2A2520] text-stone-800 dark:text-stone-200 border-stone-300 dark:border-stone-600",
   },
 ];
 
@@ -89,9 +104,7 @@ const INGREDIENT_CATEGORIES = [
 const classifyIngredientCategory = (ing) => {
   const name = (ing.name || "").toLowerCase();
   const notes = (ing.notes || "").toLowerCase();
-  const combined = `${name} ${notes}`;
 
-  // 1. Oils, Ghee, Butter & Dairy
   if (
     /\b(oil|ghee|butter|makhan|cream|malai|milk|doodh|curd|dahi|yogurt|yoghurt|cheese|cheddar|mozzarella|buttermilk|chaas|condensed milk)\b/.test(
       name
@@ -100,7 +113,6 @@ const classifyIngredientCategory = (ing) => {
     return "FATS_DAIRY";
   }
 
-  // 2. Sauces, Pastes, Condiments & Liquids (Checked before veggies so "chilli sauce" or "chilli paste" lands here)
   if (
     /\b(sauce|soy|soya|vinegar|ketchup|schezwan|paste|puree|stock|broth|water|pani|syrup|honey|mayo|mayonnaise|tamarind|imli|coconut milk)\b/.test(
       name
@@ -109,7 +121,6 @@ const classifyIngredientCategory = (ing) => {
     return "SAUCES_LIQUIDS";
   }
 
-  // 3. Spices, Masalas & Whole Tempering
   if (
     /\b(masala|powder|turmeric|haldi|cumin|jeera|mustard|rai|coriander powder|dhaniya powder|chilli powder|mirch powder|kashmiri|garam|hing|asafoetida|kasuri|fenugreek|pepper|kali mirch|cardamom|elaichi|clove|laung|cinnamon|dalchini|bay leaf|tej patta|star anise|nutmeg|jaiphal|mace|javitri|saffron|kesar|sesame|til|poppy|khus|ajwain|carom|fennel|saunf|amchur|mango powder|chaat|tandoori|oregano|chilli flakes|paprika|sumac|thyme|rosemary|dry red|whole red|curry leaves|kadi patta)\b/.test(
       name
@@ -118,9 +129,8 @@ const classifyIngredientCategory = (ing) => {
     return "SPICES_MASALAS";
   }
 
-  // 4. Veggies, Herbs & Aromatics (Fresh produce & items to chop/slice)
   if (
-    /\b(onion|pyaz|garlic|lehsun|lasun|ginger|adrak|tomato|tameta|chilli|chillies|mirch|coriander|dhaniya|cilantro|mint|pudina|capsicum|bell pepper|shimla|cabbage|gobhi|gobi|cauliflower|carrot|gajar|beans|peas|matar|spinach|palak|methi|brinjal|baingan|eggplant|okra|bhindi|Gourd|lauki|dudhi|karela|tinda|parwal|mushroom|corn|baby corn|broccoli|zucchini|lettuce|celery|leek|scallion|spring onion|lemon|lime|nimbu|avocado|cucumber|kakdi|beetroot|radish|mooli|birista)\b/.test(
+    /\b(onion|pyaz|garlic|lehsun|lasun|ginger|adrak|tomato|tameta|chilli|chillies|mirch|coriander|dhaniya|cilantro|mint|pudina|capsicum|bell pepper|shimla|cabbage|gobhi|gobi|cauliflower|carrot|gajar|beans|peas|matar|spinach|palak|methi|brinjal|baingan|eggplant|okra|bhindi|gourd|lauki|dudhi|karela|tinda|parwal|mushroom|corn|baby corn|broccoli|zucchini|lettuce|celery|leek|scallion|spring onion|lemon|lime|nimbu|avocado|cucumber|kakdi|beetroot|radish|mooli|birista)\b/.test(
       name
     ) ||
     /\b(chopped|finely|sliced|diced|minced|julienne|grated|slit|cubed|shredded|florets)\b/.test(
@@ -130,7 +140,6 @@ const classifyIngredientCategory = (ing) => {
     return "VEGGIES_HERBS";
   }
 
-  // 5. Main Base: Grains, Pulses, Paneer, Potato, Flour, Noodles, Nuts
   if (
     /\b(rice|chawal|basmati|dal|daal|lentil|toor|arhar|moong|masoor|chana|urad|rajma|chickpea|chole|kabuli|lobia|paneer|cottage cheese|tofu|soya chunks|potato|aloo|batata|sweet potato|shakarkandi|raw banana|kela|besan|gram flour|flour|atta|maida|cornflour|cornstarch|semolina|rava|sooji|poha|aval|oats|quinoa|noodle|hakka|pasta|macaroni|spaghetti|vermicelli|seviyan|bread|pav|bun|roti|paratha|sev|boondi|papad|cashew|kaju|almond|badam|peanut|singdana|raisin|kishmish|walnut|akhrot|pistachio|pista)\b/.test(
       name
@@ -139,11 +148,9 @@ const classifyIngredientCategory = (ing) => {
     return "MAIN_BASE";
   }
 
-  // 6. Default to Seasoning & Pantry Essentials (Salt, Sugar, Jaggery, Baking Soda, Eno, etc.)
   return "PANTRY_STAPLES";
 };
 
-// Retrieve visual meta for any individual ingredient (used in both left list and right step chips)
 const getIngredientMeta = (ing) => {
   const catId = classifyIngredientCategory(ing);
   const found =
@@ -157,7 +164,6 @@ const getIngredientMeta = (ing) => {
   };
 };
 
-// High-visibility semantic classification badge for each cooking step
 const getStepClassification = (text = "") => {
   const t = text.toLowerCase();
   if (
@@ -215,7 +221,6 @@ const getStepClassification = (text = "") => {
   };
 };
 
-// Formats seconds into a clean static readout (e.g. "5 mins" or "1m 30s")
 const formatStaticDuration = (secs) => {
   if (!secs || secs <= 0) return null;
   const m = Math.floor(secs / 60);
@@ -232,6 +237,9 @@ const RecipeDetail = () => {
 
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Active slide-over edit drawer ('photo' | 'video' | 'details' | 'stats' | 'ingredients' | 'steps' | 'import' | null)
+  const [activeEditSection, setActiveEditSection] = useState(null);
 
   // Portion Scaling
   const [servings, setServings] = useState(4);
@@ -266,12 +274,18 @@ const RecipeDetail = () => {
     toast.success("Link copied to clipboard!");
   };
 
+  const handleRecipeUpdated = (updatedRecipe) => {
+    setRecipe(updatedRecipe);
+    if (updatedRecipe.baseServings) {
+      setServings(updatedRecipe.baseServings);
+    }
+  };
+
   const scaleRatio = useMemo(() => {
     if (!recipe?.baseServings || recipe.baseServings === 0) return 1;
     return servings / recipe.baseServings;
   }, [servings, recipe?.baseServings]);
 
-  // Group and sort ingredients by culinary category
   const groupedIngredients = useMemo(() => {
     const rawList = recipe?.ingredients || [];
     const buckets = {};
@@ -285,14 +299,12 @@ const RecipeDetail = () => {
       buckets[catId].push({ ...ing, originalIdx: idx });
     });
 
-    // Return only categories that have at least 1 ingredient
     return INGREDIENT_CATEGORIES.map((cat) => ({
       ...cat,
       items: buckets[cat.id] || [],
     })).filter((group) => group.items.length > 0);
   }, [recipe?.ingredients]);
 
-  // Detect ingredients mentioned inside a step's instruction text
   const getStepIngredients = (instructionText = "") => {
     if (!recipe?.ingredients || !instructionText) return [];
     const lower = instructionText.toLowerCase();
@@ -350,7 +362,6 @@ const RecipeDetail = () => {
 
   return (
     <div className="min-h-screen w-full bg-[#FAF9F6] dark:bg-[#181512] text-stone-900 dark:text-stone-100 transition-colors duration-200 pb-28 relative font-mono overflow-x-hidden">
-      
       {/* SUBTLE WARM AMBIENT ATMOSPHERE */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute -top-36 left-1/3 w-[550px] h-[350px] bg-amber-500/[0.05] dark:bg-amber-500/[0.06] blur-[130px] rounded-full" />
@@ -360,22 +371,24 @@ const RecipeDetail = () => {
       <ChefNavbar />
 
       <main className="relative z-10 w-full px-4 sm:px-8 xl:px-12 py-3 sm:py-5 space-y-6">
-        
-        {/* 1. LOCKED TOP COMMAND BAR */}
+        {/* 1. TOP COMMAND BAR */}
         <RecipeCommandBar
           onBack={() => navigate("/sous-chef/recipes")}
           onShare={handleCopyLink}
+          onOpenImport={() => setActiveEditSection("import")}
           cookModeUrl={`/sous-chef/recipes/cook-mode?recipeId=${recipe._id}`}
         />
 
-        {/* 2. LOCKED TITLE HERO SECTION */}
-        <RecipeTitleHero recipe={recipe} />
+        {/* 2. TITLE HERO SECTION */}
+        <RecipeTitleHero
+          recipe={recipe}
+          onEditSection={(sec) => setActiveEditSection(sec)}
+        />
 
         {/* ========================================================================= */}
-        {/* 3. EDITORIAL PUBLICATION LAYOUT (Sorted Ingredients & Unified Fonts)      */}
+        {/* 3. EDITORIAL PUBLICATION LAYOUT                                           */}
         {/* ========================================================================= */}
         <section className="pt-1">
-          
           {/* STICKY MOBILE NAVIGATION BAR */}
           <div className="sticky top-0 z-30 flex lg:hidden bg-[#FAF9F6]/95 dark:bg-[#181512]/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-700 mb-6 text-xs font-mono font-bold uppercase tracking-wider">
             {[
@@ -405,7 +418,6 @@ const RecipeDetail = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
-            
             {/* ================================================================= */}
             {/* LEFT RAIL: FRAMED VIDEO IFRAME + CATEGORIZED INGREDIENTS (4 Cols) */}
             {/* ================================================================= */}
@@ -414,9 +426,9 @@ const RecipeDetail = () => {
                 mobileSection === "steps" ? "hidden lg:block" : "block"
               }`}
             >
-              {/* PURE VIDEO IFRAME WITH DEFINED BORDER */}
-              {recipe.video?.embedUrl && (
-                <div className="p-1.5 rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-[#24201C] shadow-md">
+              {/* VIDEO SECTION */}
+              {recipe.video?.embedUrl ? (
+                <div className="p-1.5 rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-[#24201C] shadow-md space-y-1.5">
                   <div className="w-full aspect-video rounded-lg overflow-hidden bg-black border border-stone-200 dark:border-stone-700">
                     <iframe
                       src={recipe.video.embedUrl}
@@ -426,15 +438,36 @@ const RecipeDetail = () => {
                       allowFullScreen
                     />
                   </div>
+                  <div className="flex justify-end px-1">
+                    <button
+                      type="button"
+                      onClick={() => setActiveEditSection("video")}
+                      className="inline-flex items-center gap-1 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 hover:text-amber-700 dark:hover:text-amber-300 cursor-pointer"
+                    >
+                      <Pencil size={10} />
+                      <span>Change Video Link</span>
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setActiveEditSection("video")}
+                  className="w-full py-2.5 px-3 rounded-lg border border-dashed border-stone-300 dark:border-stone-600 text-[11px] font-mono font-bold uppercase tracking-wider text-stone-500 dark:text-stone-300 hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-300 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Video size={13} />
+                  <span>Add Video Link</span>
+                </button>
               )}
 
-              {/* INGREDIENTS EDITORIAL LEDGER (Sorted by Prep Type) */}
+              {/* INGREDIENTS EDITORIAL LEDGER */}
               <div className="space-y-4">
-                {/* Heavy Impact Section Header */}
                 <div className="pb-3 border-b-2 border-stone-900 dark:border-stone-200 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <Scale size={16} className="text-amber-500 dark:text-amber-400 shrink-0" />
+                    <Scale
+                      size={16}
+                      className="text-amber-500 dark:text-amber-400 shrink-0"
+                    />
                     <h2 className="text-base sm:text-lg font-sans font-[1000] uppercase tracking-tighter text-stone-900 dark:text-white leading-none">
                       Ingredients
                     </h2>
@@ -443,32 +476,39 @@ const RecipeDetail = () => {
                     </span>
                   </div>
 
-                  {/* Portion Scaler */}
-                  <div className="inline-flex items-center gap-1.5 text-xs font-mono">
-                    <span className="text-[10px] uppercase font-bold text-stone-500 dark:text-stone-300">
-                      Servings:
-                    </span>
-                    <div className="inline-flex items-center rounded-md border border-stone-300 dark:border-stone-600 bg-white dark:bg-[#24201C] shadow-2xs">
+                  <div className="flex items-center gap-2">
+                    {/* Portion Scaler */}
+                    <div className="inline-flex items-center rounded-md border border-stone-300 dark:border-stone-600 bg-white dark:bg-[#24201C] shadow-2xs text-xs">
                       <button
                         type="button"
                         onClick={() => setServings((s) => Math.max(1, s - 1))}
-                        className="px-2 py-1 text-stone-700 dark:text-stone-200 hover:bg-amber-500 hover:text-stone-950 rounded-l-md transition-colors cursor-pointer"
+                        className="px-1.5 py-1 text-stone-700 dark:text-stone-200 hover:bg-amber-500 hover:text-stone-950 rounded-l-md transition-colors cursor-pointer"
                         title="Decrease Servings"
                       >
                         <Minus size={10} strokeWidth={3} />
                       </button>
-                      <span className="px-2.5 py-0.5 font-mono font-extrabold text-amber-700 dark:text-amber-300 tabular-nums border-x border-stone-200 dark:border-stone-600">
-                        {servings}
+                      <span className="px-2 py-0.5 font-mono font-extrabold text-amber-700 dark:text-amber-300 tabular-nums border-x border-stone-200 dark:border-stone-600">
+                        {servings}p
                       </span>
                       <button
                         type="button"
                         onClick={() => setServings((s) => s + 1)}
-                        className="px-2 py-1 text-stone-700 dark:text-stone-200 hover:bg-amber-500 hover:text-stone-950 rounded-r-md transition-colors cursor-pointer"
+                        className="px-1.5 py-1 text-stone-700 dark:text-stone-200 hover:bg-amber-500 hover:text-stone-950 rounded-r-md transition-colors cursor-pointer"
                         title="Increase Servings"
                       >
                         <Plus size={10} strokeWidth={3} />
                       </button>
                     </div>
+
+                    {/* Edit Ingredients Drawer Trigger */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveEditSection("ingredients")}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-stone-300 dark:border-stone-600 bg-white dark:bg-[#24201C] text-[10px] font-mono font-bold uppercase tracking-wider text-stone-700 dark:text-stone-200 hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-300 transition-colors cursor-pointer"
+                    >
+                      <Pencil size={10} />
+                      <span>Edit</span>
+                    </button>
                   </div>
                 </div>
 
@@ -495,12 +535,14 @@ const RecipeDetail = () => {
 
                     return (
                       <div key={group.id} className="space-y-1.5">
-                        {/* Category Group Header */}
                         <div
                           className={`flex items-center justify-between px-2.5 py-1.5 rounded-md border ${group.headerBg}`}
                         >
                           <div className="flex items-center gap-2 min-w-0">
-                            <GroupIcon size={13} className={`shrink-0 ${group.iconColor}`} />
+                            <GroupIcon
+                              size={13}
+                              className={`shrink-0 ${group.iconColor}`}
+                            />
                             <span className="text-[11px] font-sans font-[1000] uppercase tracking-tight truncate">
                               {group.title}
                             </span>
@@ -510,7 +552,6 @@ const RecipeDetail = () => {
                           </span>
                         </div>
 
-                        {/* Items Within This Category */}
                         <div className="divide-y divide-stone-200/80 dark:divide-stone-700/70 border-b border-stone-200 dark:border-stone-700/80">
                           {group.items.map((ing) => {
                             const qty = formatScaledQty(ing.quantity);
@@ -568,15 +609,29 @@ const RecipeDetail = () => {
               {/* Preparation Section Header */}
               <div className="pb-3 border-b-2 border-stone-900 dark:border-stone-200 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
-                  <ListOrdered size={17} className="text-amber-500 dark:text-amber-400 shrink-0" />
+                  <ListOrdered
+                    size={17}
+                    className="text-amber-500 dark:text-amber-400 shrink-0"
+                  />
                   <h2 className="text-base sm:text-lg font-sans font-[1000] uppercase tracking-tighter text-stone-900 dark:text-white leading-none">
                     Preparation
                   </h2>
                 </div>
 
-                <span className="px-2.5 py-0.5 rounded bg-stone-200 dark:bg-[#2A2520] text-stone-800 dark:text-stone-100 border border-stone-300 dark:border-stone-600 text-[10px] font-mono font-bold uppercase tracking-wider">
-                  {totalSteps} {totalSteps === 1 ? "Step" : "Steps"}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded bg-stone-200 dark:bg-[#2A2520] text-stone-800 dark:text-stone-100 border border-stone-300 dark:border-stone-600 text-[10px] font-mono font-bold uppercase tracking-wider">
+                    {totalSteps} {totalSteps === 1 ? "Step" : "Steps"}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveEditSection("steps")}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-stone-300 dark:border-stone-600 bg-white dark:bg-[#24201C] text-[10px] font-mono font-bold uppercase tracking-wider text-stone-700 dark:text-stone-200 hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-300 transition-colors cursor-pointer"
+                  >
+                    <Pencil size={10} />
+                    <span>Edit Steps</span>
+                  </button>
+                </div>
               </div>
 
               {/* Read-Only Editorial Steps Stream */}
@@ -599,7 +654,7 @@ const RecipeDetail = () => {
                       key={idx}
                       className="py-6 first:pt-2 flex flex-col sm:flex-row gap-4 sm:gap-7"
                     >
-                      {/* Left Step Meta Column (Number, Action Badge, Static Duration) */}
+                      {/* Left Step Meta Column */}
                       <div className="sm:w-36 shrink-0 flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-2">
                         <div className="flex items-center gap-2">
                           <span className="w-6 h-6 rounded flex items-center justify-center text-[11px] font-mono font-extrabold bg-stone-900 text-white dark:bg-amber-400 dark:text-stone-950 shadow-2xs">
@@ -616,7 +671,10 @@ const RecipeDetail = () => {
 
                         {durationLabel && (
                           <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-stone-200 dark:bg-[#26211D] border border-stone-300 dark:border-stone-600 text-[11px] font-mono font-bold text-stone-800 dark:text-stone-100">
-                            <Clock size={11} className="text-amber-600 dark:text-amber-400" />
+                            <Clock
+                              size={11}
+                              className="text-amber-600 dark:text-amber-400"
+                            />
                             <span className="tabular-nums">{durationLabel}</span>
                           </div>
                         )}
@@ -634,7 +692,6 @@ const RecipeDetail = () => {
                           {step.instruction}
                         </p>
 
-                        {/* High-Contrast Step Ingredient Reference Chips */}
                         {stepIngredients.length > 0 && (
                           <div className="pt-1 flex flex-wrap items-center gap-1.5">
                             <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-300 mr-0.5">
@@ -663,7 +720,6 @@ const RecipeDetail = () => {
                           </div>
                         )}
 
-                        {/* High-Contrast Chef's Note Callout */}
                         {step.chefTip && (
                           <div className="mt-2.5 p-3 rounded-lg bg-amber-500/10 dark:bg-[#282118] border border-amber-500/25 dark:border-amber-500/35 border-l-4 border-l-amber-500 flex items-start gap-2.5 text-xs font-mono text-stone-800 dark:text-stone-100">
                             <Lightbulb
@@ -683,12 +739,35 @@ const RecipeDetail = () => {
                   );
                 })}
               </div>
-            </div>
 
+              {/* Tags Strip */}
+              {recipe.tags && recipe.tags.length > 0 && (
+                <div className="pt-4 border-t border-stone-200 dark:border-stone-700/80 flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-500 dark:text-stone-300 mr-1">
+                    Tags:
+                  </span>
+                  {recipe.tags.map((tag, i) => (
+                    <span
+                      key={i}
+                      className="px-2 py-0.5 rounded text-[11px] font-mono bg-stone-200/70 dark:bg-[#24201C] text-stone-700 dark:text-stone-300 border border-stone-300 dark:border-stone-600"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </section>
-
       </main>
+
+      {/* FOCUSED SLIDE-OVER DRAWER FOR EACH INDIVIDUAL SECTION & AI EXTRACT */}
+      <RecipeEditDrawer
+        section={activeEditSection}
+        recipe={recipe}
+        onClose={() => setActiveEditSection(null)}
+        onSaved={handleRecipeUpdated}
+      />
     </div>
   );
 };
