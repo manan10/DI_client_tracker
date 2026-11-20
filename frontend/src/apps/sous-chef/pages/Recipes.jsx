@@ -5,19 +5,24 @@ import {
   ChefHat,
   Loader2,
   Search,
-  Flame,
-  Play,
   ArrowUpDown,
-  Clock,
   LayoutGrid,
-  Sparkles,
+  BookOpen,
   Layers,
   ChevronDown,
   Check,
   Utensils,
+  ConciergeBell,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
 import ChefNavbar from "../components/ChefNavbar";
 import AddRecipeModal from "../components/AddRecipeModal";
+import BistroMenuView from "../components/Recipies/BistroMenuView";
+import CarteMenuView from "../components/Recipies/CarteMenuView";
+import { slugifySection } from "../components/Recipies/recipeMenuUtils";
 import { useApi } from "../../../shared/hooks/useApi";
 import { toast } from "sonner";
 
@@ -31,25 +36,6 @@ const MAIN_INGREDIENT_RULES = [
   { label: "Artisanal Pasta & Noodles", keywords: ["pasta", "spaghetti", "penne", "noodle", "macaroni"] },
   { label: "Mithai & Desserts", keywords: ["halwa", "kheer", "laddoo", "sweet", "dessert", "mithai", "cake"] },
 ];
-
-const PANTRY_STAPLES = new Set([
-  "water",
-  "warm water",
-  "hot water",
-  "cold water",
-  "salt",
-  "rock salt",
-  "black salt",
-  "oil",
-  "cooking oil",
-  "vegetable oil",
-  "sunflower oil",
-  "refined oil",
-  "butter",
-  "ghee",
-  "sugar",
-  "ice",
-]);
 
 const GROUP_OPTIONS = [
   { id: "CUISINE", label: "Cuisine" },
@@ -92,14 +78,15 @@ const EditorialSelect = ({
   }, [open]);
 
   const current = options.find((o) => o.id === value) || options[0];
-  const isFiltered = value !== "ALL" && prefix === "Cuisine";
+  const isFiltered =
+    value !== "ALL" && (prefix === "Cuisine" || prefix === "Course");
 
   return (
     <div ref={ref} className={`relative ${className}`}>
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
-        className={`w-full h-9 px-3 border text-xs font-mono flex items-center justify-between gap-2 transition-colors cursor-pointer outline-none ${
+        className={`w-full h-9 px-2.5 sm:px-3 border text-xs font-mono flex items-center justify-between gap-1.5 transition-colors cursor-pointer outline-none ${
           isFiltered
             ? "border-stone-900 dark:border-amber-400 bg-amber-500/15 dark:bg-amber-500/20 text-stone-900 dark:text-amber-300"
             : "border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] hover:border-stone-900 dark:hover:border-stone-500 text-stone-900 dark:text-white"
@@ -152,7 +139,9 @@ const EditorialSelect = ({
                 }`}
               >
                 <span className="truncate">{opt.label}</span>
-                {active && <Check size={12} strokeWidth={2.8} className="shrink-0 ml-2" />}
+                {active && (
+                  <Check size={12} strokeWidth={2.8} className="shrink-0 ml-2" />
+                )}
               </button>
             );
           })}
@@ -174,13 +163,18 @@ const Recipies = () => {
   // Filter & Grouping State
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCuisine, setSelectedCuisine] = useState("ALL");
+  const [selectedCourse, setSelectedCourse] = useState("ALL");
   const [groupBy, setGroupBy] = useState("CUISINE"); // "CUISINE" | "INGREDIENT" | "NONE"
   const [sortBy, setSortBy] = useState("title-asc");
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
-  // Persisted 2-View Switcher State
+  // Collapsible Sections State
+  const [collapsedSections, setCollapsedSections] = useState({});
+
+  // Persisted 2-View Switcher State ("BISTRO" | "INDEX")
   const [menuStyle, setMenuStyle] = useState(() => {
     const saved = localStorage.getItem("sous-chef-menu-edition");
-    return saved === "BISTRO" || saved === "SHAHI_HYBRID" ? saved : "BISTRO";
+    return saved === "BISTRO" || saved === "INDEX" ? saved : "BISTRO";
   });
 
   const handleSelectMenuStyle = (styleId) => {
@@ -234,6 +228,21 @@ const Recipies = () => {
     ];
   }, [recipes]);
 
+  // Dynamically derive available course types from the recipe catalog
+  const courseOptions = useMemo(() => {
+    const uniqueCourses = new Set();
+    recipes.forEach((r) => {
+      if (r.courseType && r.courseType.trim()) {
+        uniqueCourses.add(r.courseType.trim());
+      }
+    });
+    const sorted = Array.from(uniqueCourses).sort((a, b) => a.localeCompare(b));
+    return [
+      { id: "ALL", label: "All Courses" },
+      ...sorted.map((c) => ({ id: c, label: c })),
+    ];
+  }, [recipes]);
+
   const detectMainIngredientGroup = useCallback((recipe) => {
     const title = (recipe.title || "").toLowerCase();
     const ingredients = (recipe.ingredients || [])
@@ -259,12 +268,19 @@ const Recipies = () => {
         if (itemCuisine !== selectedCuisine) return false;
       }
 
-      // 2. Search Filter
+      // 2. Course Type Filter
+      if (selectedCourse !== "ALL") {
+        const itemCourse = (item.courseType || "").trim();
+        if (itemCourse !== selectedCourse) return false;
+      }
+
+      // 3. Search Filter
       if (searchTerm.trim()) {
         const query = searchTerm.toLowerCase().trim();
         const matchesTitle = item.title?.toLowerCase().includes(query);
         const matchesDescription = item.description?.toLowerCase().includes(query);
         const matchesCuisine = item.cuisine?.toLowerCase().includes(query);
+        const matchesCourse = item.courseType?.toLowerCase().includes(query);
         const matchesTags = item.tags?.some((t) => t.toLowerCase().includes(query));
         const matchesIngredients = item.ingredients?.some((ing) => {
           const name = typeof ing === "string" ? ing : ing.name || "";
@@ -274,6 +290,7 @@ const Recipies = () => {
           !matchesTitle &&
           !matchesDescription &&
           !matchesCuisine &&
+          !matchesCourse &&
           !matchesTags &&
           !matchesIngredients
         ) {
@@ -303,7 +320,7 @@ const Recipies = () => {
     });
 
     return list;
-  }, [recipes, selectedCuisine, searchTerm, sortBy]);
+  }, [recipes, selectedCuisine, selectedCourse, searchTerm, sortBy]);
 
   // Grouped Sections
   const groupedSections = useMemo(() => {
@@ -332,76 +349,67 @@ const Recipies = () => {
       }));
   }, [processedRecipes, groupBy, detectMainIngredientGroup]);
 
-  // Primary: Dish Subtext (description). Fallback: Hero ingredients with pantry staples stripped out.
-  const getDishSubtext = (item) => {
-    if (item.description && item.description.trim()) {
-      return item.description.trim();
+  // Collapse / Expand Helpers
+  const toggleSection = (groupName) => {
+    setCollapsedSections((prev) => ({
+      ...prev,
+      [groupName]: !prev[groupName],
+    }));
+  };
+
+  const areAllCollapsed = useMemo(() => {
+    if (groupedSections.length === 0) return false;
+    return groupedSections.every((sec) => Boolean(collapsedSections[sec.groupName]));
+  }, [groupedSections, collapsedSections]);
+
+  const handleToggleCollapseAll = () => {
+    if (areAllCollapsed) {
+      setCollapsedSections({});
+    } else {
+      const next = {};
+      groupedSections.forEach((sec) => {
+        next[sec.groupName] = true;
+      });
+      setCollapsedSections(next);
     }
-
-    const heroIngredients = (item.ingredients || [])
-      .map((ing) => (typeof ing === "string" ? ing : ing.name || "").trim())
-      .filter((name) => name && !PANTRY_STAPLES.has(name.toLowerCase()))
-      .slice(0, 5);
-
-    if (heroIngredients.length > 0) {
-      return `Prepared with ${heroIngredients.join(", ")}.`;
-    }
-
-    return "Signature house preparation.";
   };
 
-  // Helper to render compact dietary codes
-  const renderDietaryCodes = (item) => {
-    const flags = item.dietaryFlags || {};
-    return (
-      <span className="inline-flex items-center gap-1 ml-1.5 align-middle">
-        {flags.isJain && (
-          <span
-            className="px-1 py-0.2 rounded text-[9px] font-mono font-extrabold uppercase bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30"
-            title="Jain Preparation"
-          >
-            J
-          </span>
-        )}
-        {flags.isSwaminarayan && (
-          <span
-            className="px-1 py-0.2 rounded text-[9px] font-mono font-extrabold uppercase bg-amber-500/15 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30"
-            title="Swaminarayan"
-          >
-            SW
-          </span>
-        )}
-        {flags.isVegan && (
-          <span
-            className="px-1 py-0.2 rounded text-[9px] font-mono font-extrabold uppercase bg-lime-500/15 dark:bg-lime-500/20 text-lime-800 dark:text-lime-300 border border-lime-500/30"
-            title="Vegan"
-          >
-            VG
-          </span>
-        )}
-        {flags.isGlutenFree && (
-          <span
-            className="px-1 py-0.2 rounded text-[9px] font-mono font-extrabold uppercase bg-sky-500/15 dark:bg-sky-500/20 text-sky-800 dark:text-sky-300 border border-sky-500/30"
-            title="Gluten-Free"
-          >
-            GF
-          </span>
-        )}
-      </span>
-    );
+  const handleJumpToSection = (groupName) => {
+    setCollapsedSections((prev) => {
+      if (!prev[groupName]) return prev;
+      const next = { ...prev };
+      delete next[groupName];
+      return next;
+    });
+
+    requestAnimationFrame(() => {
+      const el = document.getElementById(slugifySection(groupName));
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
   };
 
-  const formatDuration = (item) => {
-    const total = (item.prepTimeMinutes || 0) + (item.cookTimeMinutes || 0);
-    if (total <= 0) return "Quick Prep";
-    return `${total} mins`;
-  };
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (selectedCuisine !== "ALL") count++;
+    if (selectedCourse !== "ALL") count++;
+    if (groupBy !== "CUISINE") count++;
+    if (sortBy !== "title-asc") count++;
+    return count;
+  }, [selectedCuisine, selectedCourse, groupBy, sortBy]);
 
-  const hasActiveFilters = searchTerm.trim() !== "" || selectedCuisine !== "ALL";
+  const hasActiveFilters =
+    searchTerm.trim() !== "" ||
+    selectedCuisine !== "ALL" ||
+    selectedCourse !== "ALL";
 
   const clearAllFilters = () => {
     setSearchTerm("");
     setSelectedCuisine("ALL");
+    setSelectedCourse("ALL");
+    setGroupBy("CUISINE");
+    setSortBy("title-asc");
   };
 
   const openDetails = (id) => navigate(`/sous-chef/recipes/${id}`);
@@ -417,35 +425,33 @@ const Recipies = () => {
       {/* ========================================================================= */}
       {/* FULL WIDESCREEN MENU CANVAS                                               */}
       {/* ========================================================================= */}
-      <main className="w-full max-w-[120rem] mx-auto px-4 sm:px-8 lg:px-12 2xl:px-16 pt-6 sm:pt-10">
+      <main className="w-full max-w-[120rem] mx-auto px-3.5 sm:px-8 lg:px-12 2xl:px-16 pt-4 sm:pt-9">
         
         {/* ========================================================================= */}
-        {/* RESTAURANT MASTHEAD & SHARP ARCHITECTURAL FILTER BAR                      */}
+        {/* COMPACT RESTAURANT MASTHEAD & ARCHITECTURAL FILTER BAR                    */}
         {/* ========================================================================= */}
-        <header className="mb-7 sm:mb-9">
+        <header className="mb-4 sm:mb-7">
           {/* Top Double-Rule Architectural Header */}
-          <div className="border-t-4 border-stone-900 dark:border-stone-200 pt-1">
-            <div className="border-t border-stone-900 dark:border-stone-200 pt-4 pb-5 border-b-2 border-stone-900 dark:border-stone-200 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="border-t-2 sm:border-t-4 border-stone-900 dark:border-stone-200 pt-0.5 sm:pt-1">
+            <div className="border-t border-stone-900 dark:border-stone-200 pt-2.5 pb-3 sm:pt-4 sm:pb-5 border-b-2 border-stone-900 dark:border-stone-200 flex flex-col md:flex-row md:items-end justify-between gap-2 sm:gap-4">
               <div>
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/15 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 dark:border-amber-400/40">
-                    शाही रसोई • House Repertoire
-                  </span>
-                  <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider bg-stone-200 dark:bg-[#2A2520] text-stone-800 dark:text-stone-100 border border-stone-300 dark:border-stone-600 tabular-nums">
-                    {processedRecipes.length} {processedRecipes.length === 1 ? "Selection" : "Selections"}
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
+                  <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/15 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 dark:border-amber-400/40">
+                    शाही रसोई • House Menu
                   </span>
                 </div>
 
-                <h1 className="text-4xl sm:text-6xl lg:text-7xl font-sans font-[1000] uppercase tracking-tighter text-stone-900 dark:text-white leading-[0.9]">
-                  Off The <span className="text-amber-700 dark:text-[#f59e0b]">Menu</span>
+                <h1 className="text-3xl sm:text-6xl lg:text-7xl font-sans font-[1000] uppercase tracking-tighter text-stone-900 dark:text-white leading-[0.9]">
+                  Off The{" "}
+                  <span className="text-amber-700 dark:text-[#f59e0b]">Menu</span>
                 </h1>
               </div>
 
-              <div className="md:text-right space-y-1.5">
-                <p className="text-xs sm:text-sm font-mono font-bold text-stone-800 dark:text-stone-200">
+              <div className="md:text-right space-y-1">
+                <p className="hidden sm:block text-xs sm:text-sm font-mono font-bold text-stone-800 dark:text-stone-200">
                   An exhaustive list of things we swear we know how to cook.
                 </p>
-                <div className="flex flex-wrap md:justify-end items-center gap-2.5 sm:gap-3 text-[10px] font-mono uppercase tracking-widest text-stone-500 dark:text-stone-400">
+                <div className="flex flex-wrap md:justify-end items-center gap-2 sm:gap-3 text-[9px] sm:text-[10px] font-mono uppercase tracking-widest text-stone-500 dark:text-stone-400">
                   <span>[J] Jain</span>
                   <span>•</span>
                   <span>[SW] Swaminarayan</span>
@@ -459,37 +465,103 @@ const Recipies = () => {
           </div>
 
           {/* ===================================================================== */}
-          {/* SHARP-CORNERED EDITORIAL CONTROL ROW (MATCHES MENU GEOMETRY)          */}
+          {/* UNIFIED CONTROL ROW (SINGLE ROW ON MOBILE, INLINE ON DESKTOP)         */}
           {/* ===================================================================== */}
-          <div className="pt-4 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2.5 font-mono">
+          <div className="pt-3 sm:pt-4 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2 font-mono">
             
-            {/* Left: Crisp Sharp-Cornered Search Input */}
-            <div className="relative w-full xl:w-80 2xl:w-96 shrink-0">
-              <Search
-                size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500 pointer-events-none"
-              />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search dishes, ingredients, or tags..."
-                className="w-full h-9 pl-9 pr-14 border border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] text-xs font-mono text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:border-stone-900 dark:focus:border-amber-400 transition-colors"
-              />
-              {searchTerm && (
+            {/* Primary Strip: Search + Mobile Filter Trigger + View Switcher */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
+              {/* Crisp Sharp-Cornered Search Input */}
+              <div className="relative flex-1 xl:max-w-96 min-w-0">
+                <Search
+                  size={14}
+                  className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500 pointer-events-none"
+                />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search dishes, ingredients..."
+                  className="w-full h-9 pl-8 sm:pl-9 pr-8 sm:pr-14 border border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] text-xs font-mono text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:border-stone-900 dark:focus:border-amber-400 transition-colors"
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm("")}
+                    aria-label="Clear search"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-amber-700 dark:hover:text-amber-400 cursor-pointer p-0.5"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+
+              {/* Mobile / Tablet Expandable Filters Drawer Trigger (< xl) */}
+              <button
+                type="button"
+                onClick={() => setIsMobileFiltersOpen((prev) => !prev)}
+                className={`xl:hidden h-9 px-2.5 sm:px-3 border inline-flex items-center justify-center gap-1.5 text-[10px] font-mono font-extrabold uppercase tracking-wider transition-colors cursor-pointer shrink-0 ${
+                  isMobileFiltersOpen || activeFilterCount > 0
+                    ? "border-stone-900 dark:border-amber-400 bg-amber-500/15 dark:bg-amber-500/20 text-stone-900 dark:text-amber-300"
+                    : "border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] text-stone-800 dark:text-stone-200 hover:border-stone-900 dark:hover:border-stone-500"
+                }`}
+                aria-expanded={isMobileFiltersOpen}
+                aria-label="Toggle Menu Filters"
+              >
+                <SlidersHorizontal
+                  size={13}
+                  className="text-amber-700 dark:text-amber-400 shrink-0"
+                />
+                <span className="hidden xs:inline">Filters</span>
+                {activeFilterCount > 0 && (
+                  <span className="px-1.5 py-0.2 bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 text-[9px] font-black tabular-nums">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Mobile / Tablet Icon-Only 2-Edition Toggle (< xl) */}
+              <div className="xl:hidden inline-flex items-center h-9 border border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] divide-x divide-stone-900/30 dark:divide-stone-700 shrink-0">
                 <button
                   type="button"
-                  onClick={() => setSearchTerm("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                  onClick={() => handleSelectMenuStyle("BISTRO")}
+                  className={`h-full px-2.5 sm:px-3 inline-flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
+                    menuStyle === "BISTRO"
+                      ? "bg-stone-900 dark:bg-[#f59e0b] text-white dark:text-[#140F0A] font-extrabold"
+                      : "text-stone-600 dark:text-stone-400 font-bold hover:text-stone-900 dark:hover:text-white"
+                  }`}
+                  title="Bistro Course Boxes"
+                  aria-label="Bistro Course Boxes"
                 >
-                  Clear
+                  <LayoutGrid size={13} />
+                  <span className="hidden sm:inline">Bistro</span>
                 </button>
-              )}
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectMenuStyle("INDEX")}
+                  className={`h-full px-2.5 sm:px-3 inline-flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
+                    menuStyle === "INDEX"
+                      ? "bg-stone-900 dark:bg-[#f59e0b] text-white dark:text-[#140F0A] font-extrabold"
+                      : "text-stone-600 dark:text-stone-400 font-bold hover:text-stone-900 dark:hover:text-white"
+                  }`}
+                  title="Chef's Tasting Carte"
+                  aria-label="Chef's Tasting Carte"
+                >
+                  <BookOpen size={13} />
+                  <span className="hidden sm:inline">Carte</span>
+                </button>
+              </div>
             </div>
 
-            {/* Right: Cuisine Filter + Index Group + Sort + Sharp View Toggle */}
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap xl:flex-nowrap items-center gap-2">
-              
+            {/* Expandable Filter Tray on Mobile/Tablet; Always Inline on Desktop (xl+) */}
+            <div
+              className={`${
+                isMobileFiltersOpen
+                  ? "grid grid-cols-2 sm:flex sm:flex-wrap p-2.5 border border-stone-900/30 dark:border-stone-700 bg-stone-100/70 dark:bg-[#14110E]/90"
+                  : "hidden"
+              } xl:flex xl:flex-nowrap xl:p-0 xl:border-0 xl:bg-transparent items-center gap-2 shrink-0`}
+            >
               {/* 1. Cuisine Filter Dropdown */}
               <EditorialSelect
                 icon={Utensils}
@@ -497,20 +569,30 @@ const Recipies = () => {
                 value={selectedCuisine}
                 options={cuisineOptions}
                 onChange={setSelectedCuisine}
-                className="w-full sm:w-48"
+                className="w-full sm:w-44"
               />
 
-              {/* 2. Section Grouping Dropdown */}
+              {/* 2. Course Filter Dropdown */}
+              <EditorialSelect
+                icon={ConciergeBell}
+                prefix="Course"
+                value={selectedCourse}
+                options={courseOptions}
+                onChange={setSelectedCourse}
+                className="w-full sm:w-44"
+              />
+
+              {/* 3. Section Grouping Dropdown */}
               <EditorialSelect
                 icon={Layers}
                 prefix="Group"
                 value={groupBy}
                 options={GROUP_OPTIONS}
                 onChange={setGroupBy}
-                className="w-full sm:w-44"
+                className="w-full sm:w-40"
               />
 
-              {/* 3. Sort Dropdown */}
+              {/* 4. Sort Dropdown */}
               <EditorialSelect
                 icon={ArrowUpDown}
                 prefix="Sort"
@@ -518,15 +600,45 @@ const Recipies = () => {
                 options={SORT_OPTIONS}
                 onChange={setSortBy}
                 align="right"
-                className="w-full sm:w-36"
+                className="w-full sm:w-32"
               />
 
-              {/* 4. Sharp Editorial Edition Toggle (Bistro vs Shahi Banquet) */}
-              <div className="w-full sm:w-auto inline-flex items-center h-9 border border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] divide-x divide-stone-900/30 dark:divide-stone-700 shrink-0">
+              {/* 5. Collapse / Expand All Sections Button */}
+              {groupedSections.length > 1 && (
+                <button
+                  type="button"
+                  onClick={handleToggleCollapseAll}
+                  className="col-span-2 sm:col-span-1 w-full sm:w-auto h-9 px-2.5 border border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] hover:border-stone-900 dark:hover:border-stone-500 text-stone-700 dark:text-stone-300 inline-flex items-center justify-center gap-1.5 text-[10px] font-mono font-extrabold uppercase tracking-wider transition-colors cursor-pointer shrink-0"
+                  title={
+                    areAllCollapsed ? "Expand All Sections" : "Collapse All Sections"
+                  }
+                >
+                  {areAllCollapsed ? (
+                    <>
+                      <ChevronsUpDown
+                        size={13}
+                        className="text-amber-700 dark:text-amber-400"
+                      />
+                      <span>Expand All</span>
+                    </>
+                  ) : (
+                    <>
+                      <ChevronsDownUp
+                        size={13}
+                        className="text-amber-700 dark:text-amber-400"
+                      />
+                      <span>Collapse All</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* 6. Desktop Sharp 2-Edition Toggle (Bistro vs Carte) */}
+              <div className="hidden xl:inline-flex items-center h-9 border border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] divide-x divide-stone-900/30 dark:divide-stone-700 shrink-0">
                 <button
                   type="button"
                   onClick={() => handleSelectMenuStyle("BISTRO")}
-                  className={`flex-1 sm:flex-initial h-full px-3 inline-flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
+                  className={`h-full px-3 inline-flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
                     menuStyle === "BISTRO"
                       ? "bg-stone-900 dark:bg-[#f59e0b] text-white dark:text-[#140F0A] font-extrabold"
                       : "text-stone-600 dark:text-stone-400 font-bold hover:text-stone-900 dark:hover:text-white"
@@ -539,21 +651,54 @@ const Recipies = () => {
 
                 <button
                   type="button"
-                  onClick={() => handleSelectMenuStyle("SHAHI_HYBRID")}
-                  className={`flex-1 sm:flex-initial h-full px-3 inline-flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
-                    menuStyle === "SHAHI_HYBRID"
+                  onClick={() => handleSelectMenuStyle("INDEX")}
+                  className={`h-full px-3 inline-flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
+                    menuStyle === "INDEX"
                       ? "bg-stone-900 dark:bg-[#f59e0b] text-white dark:text-[#140F0A] font-extrabold"
                       : "text-stone-600 dark:text-stone-400 font-bold hover:text-stone-900 dark:hover:text-white"
                   }`}
-                  title="Shahi Banquet Broadsheet"
+                  title="Chef's Tasting Carte"
                 >
-                  <Sparkles size={12} />
-                  <span>Banquet</span>
+                  <BookOpen size={12} />
+                  <span>Carte</span>
                 </button>
               </div>
-
             </div>
           </div>
+
+          {/* ===================================================================== */}
+          {/* STICKY SECTION JUMP-TO INDEX RAIL                                     */}
+          {/* ===================================================================== */}
+          {!loading && groupedSections.length > 1 && (
+            <nav
+              aria-label="Menu Sections"
+              className="sticky top-0 z-20 mt-2.5 sm:mt-3.5 -mx-3.5 px-3.5 sm:mx-0 sm:px-3 py-1.5 sm:py-2 bg-[#FAF9F6]/95 dark:bg-[#0E0C0A]/95 backdrop-blur-md border-y border-stone-900/25 dark:border-stone-700/80 flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar font-mono"
+            >
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-stone-400 dark:text-stone-500 shrink-0 pr-0.5">
+                Jump:
+              </span>
+              {groupedSections.map(({ groupName, items }) => {
+                const isCollapsed = Boolean(collapsedSections[groupName]);
+                return (
+                  <button
+                    key={groupName}
+                    type="button"
+                    onClick={() => handleJumpToSection(groupName)}
+                    className={`px-2 py-0.5 border text-[10px] uppercase tracking-wider whitespace-nowrap transition-colors cursor-pointer shrink-0 flex items-center gap-1 ${
+                      isCollapsed
+                        ? "border-stone-300 dark:border-stone-800 bg-stone-100 dark:bg-[#14110E] text-stone-500 dark:text-stone-500"
+                        : "border-stone-900/30 dark:border-stone-700 bg-white dark:bg-[#181410] text-stone-800 dark:text-stone-200 hover:border-amber-600 dark:hover:border-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-bold"
+                    }`}
+                  >
+                    <span>{groupName}</span>
+                    <span className="text-amber-700 dark:text-amber-400 font-extrabold tabular-nums">
+                      ({items.length})
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+          )}
         </header>
 
         {/* ========================================================================= */}
@@ -587,178 +732,25 @@ const Recipies = () => {
           </div>
         ) : (
           <>
-            {/* ===================================================================== */}
-            {/* VIEW 1: BISTRO COURSE BOXES                                           */}
-            {/* ===================================================================== */}
             {menuStyle === "BISTRO" && (
-              <div
-                className={
-                  groupedSections.length === 1
-                    ? "w-full"
-                    : "grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6 sm:gap-8 items-start"
-                }
-              >
-                {groupedSections.map(({ groupName, items }) => (
-                  <section
-                    key={groupName}
-                    className="border-2 border-stone-900 dark:border-stone-700 bg-[#FAF9F6] dark:bg-[#14110E] p-5 sm:p-6 lg:p-7 shadow-sm"
-                  >
-                    {/* Boxed Bistro Course Header */}
-                    <div className="border-b-2 border-stone-900 dark:border-stone-700 pb-3 mb-5 flex items-baseline justify-between gap-2">
-                      <h2 className="font-sans font-[1000] uppercase tracking-tighter text-2xl sm:text-3xl text-stone-900 dark:text-white leading-none">
-                        {groupName}
-                      </h2>
-                      <span className="font-mono font-bold text-[11px] text-stone-500 dark:text-stone-400 uppercase tracking-wider shrink-0">
-                        {items.length} {items.length === 1 ? "Dish" : "Dishes"}
-                      </span>
-                    </div>
-
-                    {/* Dish List */}
-                    <div
-                      className={
-                        groupedSections.length === 1
-                          ? "grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-x-10 gap-y-6"
-                          : "space-y-5"
-                      }
-                    >
-                      {items.map((item) => (
-                        <article
-                          key={item._id}
-                          onClick={() => openDetails(item._id)}
-                          className="group cursor-pointer pb-4 border-b border-stone-200 dark:border-stone-800 last:border-b-0 last:pb-0"
-                        >
-                          {/* Top Row: Title + Duration */}
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <h3 className="font-sans font-[1000] uppercase tracking-tighter text-base sm:text-lg text-stone-900 dark:text-white group-hover:text-amber-700 dark:group-hover:text-[#f59e0b] transition-colors leading-snug inline">
-                                {item.title}
-                              </h3>
-                              {renderDietaryCodes(item)}
-                              {item.video?.embedUrl && (
-                                <Play
-                                  size={10}
-                                  fill="currentColor"
-                                  className="inline text-rose-500 ml-1.5 align-middle"
-                                />
-                              )}
-                            </div>
-
-                            <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/15 dark:bg-amber-500/20 border border-amber-500/30 dark:border-amber-400/40 text-amber-800 dark:text-amber-300 font-mono font-extrabold text-[11px] tabular-nums shrink-0">
-                              <Clock size={11} className="text-amber-600 dark:text-amber-400 shrink-0" />
-                              <span>{formatDuration(item)}</span>
-                            </div>
-                          </div>
-
-                          {/* Dish Subtext */}
-                          <p className="text-xs font-mono text-stone-600 dark:text-stone-300 mt-1.5 leading-relaxed line-clamp-2">
-                            {getDishSubtext(item)}
-                          </p>
-
-                          {/* Footer */}
-                          <div className="flex items-center justify-between mt-2 text-[10px] font-mono uppercase tracking-wider text-stone-400 dark:text-stone-500">
-                            <span>
-                              {item.courseType || "Main"} • {item.difficulty || "Medium"}
-                            </span>
-
-                            <button
-                              type="button"
-                              onClick={(e) => openCookMode(e, item._id)}
-                              className="inline-flex items-center gap-1 font-extrabold text-amber-700 dark:text-amber-300 hover:underline cursor-pointer"
-                            >
-                              <Flame size={10} />
-                              <span>Cook Mode ↗</span>
-                            </button>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </section>
-                ))}
-              </div>
+              <BistroMenuView
+                groupedSections={groupedSections}
+                collapsedSections={collapsedSections}
+                onToggleSection={toggleSection}
+                onOpenDetails={openDetails}
+                onOpenCookMode={openCookMode}
+              />
             )}
 
-            {/* ===================================================================== */}
-            {/* VIEW 2: SHAHI + BRASSERIE HYBRID                                      */}
-            {/* ===================================================================== */}
-            {menuStyle === "SHAHI_HYBRID" && (
-              <div className="border-2 border-stone-900 dark:border-stone-700 p-1 sm:p-1.5 bg-[#FAF9F6] dark:bg-[#14110E] shadow-sm">
-                <div className="border border-stone-400 dark:border-stone-700 px-4 py-8 sm:px-8 sm:py-12 lg:px-12 space-y-14">
-                  {groupedSections.map(({ groupName, items }) => (
-                    <section key={groupName} className="space-y-8">
-                      
-                      {/* Centered Royal Section Header */}
-                      <div className="relative flex items-center justify-center">
-                        <div className="w-full h-[1px] bg-stone-300 dark:bg-stone-700" />
-                        <div className="px-5 sm:px-8 bg-[#FAF9F6] dark:bg-[#14110E] shrink-0 text-center space-y-1">
-                          <span className="block text-amber-600 dark:text-amber-400 text-[10px] tracking-[0.35em]">
-                            ✦ ✦ ✦
-                          </span>
-                          <h2 className="font-sans font-[1000] uppercase tracking-tighter text-2xl sm:text-4xl text-stone-900 dark:text-white leading-none">
-                            {groupName}
-                          </h2>
-                          <div className="w-16 h-0.5 bg-amber-500/60 mx-auto pt-0.5" />
-                        </div>
-                        <div className="w-full h-[1px] bg-stone-300 dark:bg-stone-700" />
-                      </div>
-
-                      {/* Centered Symmetrical Dish Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-12 gap-y-9">
-                        {items.map((item) => (
-                          <article
-                            key={item._id}
-                            onClick={() => openDetails(item._id)}
-                            className="group text-center flex flex-col items-center justify-between px-3 cursor-pointer"
-                          >
-                            <div className="flex flex-col items-center">
-                              <div className="inline-flex items-center justify-center gap-1.5 flex-wrap">
-                                <h3 className="font-sans font-[1000] uppercase tracking-tighter text-lg sm:text-xl text-stone-900 dark:text-white group-hover:text-amber-700 dark:group-hover:text-[#f59e0b] transition-colors leading-tight">
-                                  {item.title}
-                                </h3>
-                                {renderDietaryCodes(item)}
-                                {item.video?.embedUrl && (
-                                  <Play
-                                    size={10}
-                                    fill="currentColor"
-                                    className="text-rose-500 shrink-0"
-                                  />
-                                )}
-                              </div>
-
-                              <p className="text-xs font-mono text-stone-600 dark:text-stone-300 mt-1.5 max-w-md leading-relaxed line-clamp-2">
-                                {getDishSubtext(item)}
-                              </p>
-                            </div>
-
-                            <div className="mt-3 inline-flex flex-wrap items-center justify-center gap-2 text-[11px] font-mono">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/15 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 dark:border-amber-400/40 font-extrabold tabular-nums">
-                                <Clock size={11} className="text-amber-600 dark:text-amber-400" />
-                                {formatDuration(item)}
-                              </span>
-
-                              <span className="text-stone-300 dark:text-stone-700">•</span>
-
-                              <span className="font-bold uppercase text-stone-500 dark:text-stone-400">
-                                {item.difficulty || "Medium"}
-                              </span>
-
-                              <span className="text-stone-300 dark:text-stone-700">•</span>
-
-                              <button
-                                type="button"
-                                onClick={(e) => openCookMode(e, item._id)}
-                                className="inline-flex items-center gap-1 font-extrabold uppercase text-amber-700 dark:text-amber-300 hover:text-stone-900 dark:hover:text-white underline cursor-pointer"
-                              >
-                                <Flame size={11} />
-                                <span>Cook Mode</span>
-                              </button>
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    </section>
-                  ))}
-                </div>
-              </div>
+            {menuStyle === "INDEX" && (
+              <CarteMenuView
+                groupedSections={groupedSections}
+                collapsedSections={collapsedSections}
+                onToggleSection={toggleSection}
+                onOpenDetails={openDetails}
+                onOpenCookMode={openCookMode}
+                groupBy={groupBy}
+              />
             )}
           </>
         )}
