@@ -18,6 +18,7 @@ const Operations = () => {
     { id: "submissions", name: "Submissions", icon: Send, isLocked: false },
     { id: "dashboard", name: "Task Board", icon: Kanban, isLocked: false },
     { id: "forms", name: "Forms Vault", icon: FileText, isLocked: false },
+    { id: "Calculator", name: "Calculator", icon: FileText, isLocked: false },
     // { id: "folio", name: "Folio Reconciler", icon: Send, isLocked: false },
     // { id: "arn", name: "ARN Reconciler", icon: Mail, isLocked: false },
     // { id: "brokerage", name: "Brokerage Auditor", icon: Mail, isLocked: false },

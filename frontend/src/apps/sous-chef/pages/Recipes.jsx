@@ -658,7 +658,6 @@ const Recipies = () => {
                   title="Bistro Course Boxes"
                 >
                   <LayoutGrid size={12} />
-                  <span>Bistro</span>
                 </button>
 
                 <button
@@ -672,7 +671,6 @@ const Recipies = () => {
                   title="Chef's Tasting Carte"
                 >
                   <BookOpen size={12} />
-                  <span>Carte</span>
                 </button>
               </div>
             </div>
