@@ -1,11 +1,13 @@
 // src/apps/recipes/components/Recipies/CarteMenuView.jsx
 import React from "react";
-import { Flame, Play, ChevronDown, ChevronUp } from "lucide-react";
+import { Flame, Play, ChevronDown, ChevronUp, Printer } from "lucide-react";
 import {
   slugifySection,
   formatDurationCompact,
   renderDietaryCodes,
 } from "./recipeMenuUtils";
+import { printRecipeMenu } from "./printMenuUtils";
+import { toast } from "sonner";
 
 const CarteMenuView = ({
   groupedSections,
@@ -14,7 +16,20 @@ const CarteMenuView = ({
   onOpenDetails,
   onOpenCookMode,
   groupBy,
+  activeFiltersLabel,
 }) => {
+  const handlePrintCarte = () => {
+    const ok = printRecipeMenu({
+      mode: "CARTE",
+      groupedSections,
+      groupBy,
+      activeFiltersLabel,
+    });
+    if (!ok) {
+      toast.error("Please allow popups to open the print preview.");
+    }
+  };
+
   const renderDishRow = (item) => (
     <article
       key={item._id}
@@ -65,7 +80,25 @@ const CarteMenuView = ({
   );
 
   return (
-    <div className="w-full pt-1 sm:pt-2">
+    <div className="w-full space-y-4">
+      {/* Subtle Edition Action Strip with Clean Print Trigger */}
+      <div className="flex items-center justify-between gap-2 font-mono">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500">
+          Chef&apos;s Tasting Carte • {groupedSections.length}{" "}
+          {groupedSections.length === 1 ? "Chapter" : "Chapters"}
+        </span>
+
+        <button
+          type="button"
+          onClick={handlePrintCarte}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-stone-900/35 dark:border-stone-700 bg-white dark:bg-[#14110E] hover:border-stone-900 dark:hover:border-amber-400 text-stone-800 dark:text-stone-200 hover:text-amber-700 dark:hover:text-amber-300 text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer"
+          title="Print Chef's Tasting Carte"
+        >
+          <Printer size={11} className="text-amber-700 dark:text-amber-400" />
+          <span>Print Carte</span>
+        </button>
+      </div>
+
       {/* Wide 2-Column Omakase Layout */}
       <div
         className={

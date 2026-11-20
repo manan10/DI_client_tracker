@@ -399,6 +399,14 @@ const Recipies = () => {
     return count;
   }, [selectedCuisine, selectedCourse, groupBy, sortBy]);
 
+  const activeFiltersLabel = useMemo(() => {
+    const parts = [];
+    if (selectedCuisine !== "ALL") parts.push(selectedCuisine);
+    if (selectedCourse !== "ALL") parts.push(selectedCourse);
+    if (searchTerm.trim()) parts.push(`"${searchTerm.trim()}"`);
+    return parts.join(" • ");
+  }, [selectedCuisine, selectedCourse, searchTerm]);
+
   const hasActiveFilters =
     searchTerm.trim() !== "" ||
     selectedCuisine !== "ALL" ||
@@ -437,7 +445,11 @@ const Recipies = () => {
               <div>
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
                   <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/15 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 dark:border-amber-400/40">
-                    शाही रसोई • House Menu
+                    शाही रसोई • House Repertoire
+                  </span>
+                  <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider bg-stone-200 dark:bg-[#2A2520] text-stone-800 dark:text-stone-100 border border-stone-300 dark:border-stone-600 tabular-nums">
+                    {processedRecipes.length}{" "}
+                    {processedRecipes.length === 1 ? "Selection" : "Selections"}
                   </span>
                 </div>
 
@@ -739,6 +751,8 @@ const Recipies = () => {
                 onToggleSection={toggleSection}
                 onOpenDetails={openDetails}
                 onOpenCookMode={openCookMode}
+                groupBy={groupBy}
+                activeFiltersLabel={activeFiltersLabel}
               />
             )}
 
@@ -750,6 +764,7 @@ const Recipies = () => {
                 onOpenDetails={openDetails}
                 onOpenCookMode={openCookMode}
                 groupBy={groupBy}
+                activeFiltersLabel={activeFiltersLabel}
               />
             )}
           </>
