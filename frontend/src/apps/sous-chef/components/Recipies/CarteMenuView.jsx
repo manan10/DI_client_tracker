@@ -18,8 +18,6 @@ import {
 import { printRecipeMenu } from "./printMenuUtils";
 import { toast } from "sonner";
 
-const SUBGROUP_PREVIEW_LIMIT = 7;
-
 const CarteMenuView = ({
   groupedSections,
   collapsedSections,
@@ -30,14 +28,6 @@ const CarteMenuView = ({
   activeFiltersLabel,
 }) => {
   const [copied, setCopied] = useState(false);
-  const [expandedSubGroups, setExpandedSubGroups] = useState({});
-
-  const toggleSubGroupExpand = (subKey) => {
-    setExpandedSubGroups((prev) => ({
-      ...prev,
-      [subKey]: !prev[subKey],
-    }));
-  };
 
   const handlePrintCarte = () => {
     const ok = printRecipeMenu({
@@ -228,64 +218,30 @@ const CarteMenuView = ({
 
               {!isCollapsed && (
                 <div className={hasMultipleSubGroups ? "space-y-5 pt-1" : ""}>
-                  {subGroups.map(({ subGroupName, items: subItems }, idx) => {
-                    const subKey = `${groupName}::${subGroupName || idx}`;
-                    const isExpanded = Boolean(expandedSubGroups[subKey]);
-                    const canExpand =
-                      Boolean(subGroupName) &&
-                      subItems.length > SUBGROUP_PREVIEW_LIMIT;
-                    const visibleItems =
-                      canExpand && !isExpanded
-                        ? subItems.slice(0, SUBGROUP_PREVIEW_LIMIT)
-                        : subItems;
-                    const remainingCount =
-                      subItems.length - SUBGROUP_PREVIEW_LIMIT;
-
-                    return (
-                      <div key={subGroupName || idx}>
-                        {subGroupName && (
-                          <div className="flex items-center justify-between gap-2 pb-1 mb-1 border-b border-dashed border-stone-300 dark:border-stone-700 font-mono">
-                            <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-400">
-                              {subGroupName}
-                            </span>
-                            <span className="text-[9px] font-bold text-stone-400 dark:text-stone-500 tabular-nums">
-                              {String(subItems.length).padStart(2, "0")}
-                            </span>
-                          </div>
-                        )}
-
-                        <div
-                          className={
-                            groupedSections.length === 1
-                              ? "grid grid-cols-1 lg:grid-cols-2 gap-x-14 xl:gap-x-20"
-                              : "divide-y divide-stone-200/75 dark:divide-stone-800/75"
-                          }
-                        >
-                          {visibleItems.map((item) => renderDishRow(item))}
+                  {subGroups.map(({ subGroupName, items: subItems }, idx) => (
+                    <div key={subGroupName || idx}>
+                      {subGroupName && (
+                        <div className="flex items-center justify-between gap-2 pb-1 mb-1 border-b border-dashed border-stone-300 dark:border-stone-700 font-mono">
+                          <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-400">
+                            {subGroupName}
+                          </span>
+                          <span className="text-[9px] font-bold text-stone-400 dark:text-stone-500 tabular-nums">
+                            {String(subItems.length).padStart(2, "0")}
+                          </span>
                         </div>
+                      )}
 
-                        {canExpand && (
-                          <button
-                            type="button"
-                            onClick={() => toggleSubGroupExpand(subKey)}
-                            className="mt-2 w-full py-1.5 border border-dashed border-stone-300 dark:border-stone-700 hover:border-amber-600 dark:hover:border-amber-400 bg-stone-100/60 dark:bg-white/[0.02] hover:bg-amber-500/10 text-[10px] font-mono font-extrabold uppercase tracking-wider text-stone-600 dark:text-stone-300 hover:text-amber-700 dark:hover:text-amber-300 inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
-                          >
-                            {isExpanded ? (
-                              <>
-                                <span>Show less</span>
-                                <ChevronUp size={11} />
-                              </>
-                            ) : (
-                              <>
-                                <span>See all (+{remainingCount} more)</span>
-                                <ChevronDown size={11} />
-                              </>
-                            )}
-                          </button>
-                        )}
+                      <div
+                        className={
+                          groupedSections.length === 1
+                            ? "grid grid-cols-1 lg:grid-cols-2 gap-x-14 xl:gap-x-20"
+                            : "divide-y divide-stone-200/75 dark:divide-stone-800/75"
+                        }
+                      >
+                        {subItems.map((item) => renderDishRow(item))}
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               )}
             </section>
