@@ -13,6 +13,7 @@ import {
   slugifySection,
   formatDurationCompact,
   renderDietaryCodes,
+  buildSubGroups,
 } from "./recipeMenuUtils";
 import { printRecipeMenu } from "./printMenuUtils";
 import { toast } from "sonner";
@@ -43,8 +44,24 @@ const CarteMenuView = ({
   const handleCopyMenuText = async () => {
     const formattedText = groupedSections
       .map(({ groupName, items }) => {
-        const titles = items.map((item) => `- ${item.title}`).join("\n");
-        return `${groupName}\n${titles}`;
+        const subGroups = buildSubGroups(items, groupBy);
+        const hasSubGroups = subGroups.some((sg) => sg.subGroupName);
+
+        if (!hasSubGroups) {
+          const titles = items.map((item) => `- ${item.title}`).join("\n");
+          return `${groupName}\n${titles}`;
+        }
+
+        const subBlocks = subGroups
+          .map(({ subGroupName, items: subItems }) => {
+            const titles = subItems
+              .map((item) => `  - ${item.title}`)
+              .join("\n");
+            return subGroupName ? `  [${subGroupName}]\n${titles}` : titles;
+          })
+          .join("\n");
+
+        return `${groupName}\n${subBlocks}`;
       })
       .join("\n\n");
 
@@ -134,7 +151,7 @@ const CarteMenuView = ({
             ) : (
               <>
                 <Copy
-                  size={11}
+                  size={14}
                   className="text-amber-700 dark:text-amber-400"
                 />
               </>
@@ -147,7 +164,7 @@ const CarteMenuView = ({
             className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-stone-900/35 dark:border-stone-700 bg-white dark:bg-[#14110E] hover:border-stone-900 dark:hover:border-amber-400 text-stone-800 dark:text-stone-200 hover:text-amber-700 dark:hover:text-amber-300 text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer"
             title="Print Chef's Tasting Carte"
           >
-            <Printer size={11} className="text-amber-700 dark:text-amber-400" />
+            <Printer size={14} className="text-amber-700 dark:text-amber-400" />
           </button>
         </div>
       </div>
@@ -162,6 +179,8 @@ const CarteMenuView = ({
       >
         {groupedSections.map(({ groupName, items }) => {
           const isCollapsed = Boolean(collapsedSections[groupName]);
+          const subGroups = buildSubGroups(items, groupBy);
+          const hasMultipleSubGroups = subGroups.some((sg) => sg.subGroupName);
 
           return (
             <section
@@ -196,14 +215,31 @@ const CarteMenuView = ({
               </button>
 
               {!isCollapsed && (
-                <div
-                  className={
-                    groupedSections.length === 1
-                      ? "grid grid-cols-1 lg:grid-cols-2 gap-x-14 xl:gap-x-20"
-                      : "divide-y divide-stone-200/75 dark:divide-stone-800/75"
-                  }
-                >
-                  {items.map((item) => renderDishRow(item))}
+                <div className={hasMultipleSubGroups ? "space-y-5 pt-1" : ""}>
+                  {subGroups.map(({ subGroupName, items: subItems }, idx) => (
+                    <div key={subGroupName || idx}>
+                      {subGroupName && (
+                        <div className="flex items-center justify-between gap-2 pb-1 mb-1 border-b border-dashed border-stone-300 dark:border-stone-700 font-mono">
+                          <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-400">
+                            {subGroupName}
+                          </span>
+                          <span className="text-[9px] font-bold text-stone-400 dark:text-stone-500 tabular-nums">
+                            {String(subItems.length).padStart(2, "0")}
+                          </span>
+                        </div>
+                      )}
+
+                      <div
+                        className={
+                          groupedSections.length === 1
+                            ? "grid grid-cols-1 lg:grid-cols-2 gap-x-14 xl:gap-x-20"
+                            : "divide-y divide-stone-200/75 dark:divide-stone-800/75"
+                        }
+                      >
+                        {subItems.map((item) => renderDishRow(item))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </section>

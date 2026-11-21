@@ -22,22 +22,24 @@ import ChefNavbar from "../components/ChefNavbar";
 import AddRecipeModal from "../components/AddRecipeModal";
 import BistroMenuView from "../components/Recipies/BistroMenuView";
 import CarteMenuView from "../components/Recipies/CarteMenuView";
-import { slugifySection } from "../components/Recipies/recipeMenuUtils";
+import { classifyMenuSection } from "../components/Recipies/recipeMenuUtils";
 import { useApi } from "../../../shared/hooks/useApi";
 import { toast } from "sonner";
 
 const MAIN_INGREDIENT_RULES = [
-  { label: "Paneer Specialties", keywords: ["paneer", "cottage cheese"] },
-  { label: "Rice, Biryani & Khichdi", keywords: ["rice", "chawal", "khichdi", "biryani", "pulao", "basmati"] },
-  { label: "Dal & Lentil Preparations", keywords: ["dal", "lentil", "toor", "moong", "masoor", "chana", "urad"] },
-  { label: "Potato (Aloo) Creations", keywords: ["aloo", "potato", "batata"] },
-  { label: "Farsan & Besan Snacks", keywords: ["besan", "gram flour", "dhokla", "khaman", "flour", "atta", "maida"] },
-  { label: "Seasonal Vegetables (Shaak)", keywords: ["bhindi", "tameta", "tomato", "gobi", "cauliflower", "palak", "spinach", "methi", "baingan", "brinjal"] },
-  { label: "Artisanal Pasta & Noodles", keywords: ["pasta", "spaghetti", "penne", "noodle", "macaroni"] },
-  { label: "Mithai & Desserts", keywords: ["halwa", "kheer", "laddoo", "sweet", "dessert", "mithai", "cake"] },
+  { label: "Paneer & Cheese Specialties", keywords: ["paneer", "cottage cheese", "cheese angoori"] },
+  { label: "Rice, Biryani & Khichdi", keywords: ["rice", "chawal", "khichdi", "biryani", "pulao", "basmati", "bhaat"] },
+  { label: "Dal, Chole & Pulses", keywords: ["dal", "lentil", "toor", "moong", "masoor", "chana", "urad", "chole", "rajma", "usal"] },
+  { label: "Artisanal Pasta & Noodles", keywords: ["pasta", "spaghetti", "penne", "noodle", "macaroni", "hakka", "maggi"] },
+  { label: "Bread, Pav, Wraps & Burgers", keywords: ["pav", "bread", "toast", "frankie", "burger", "sandwich", "burrito", "taco", "quesadilla", "dabeli", "puff"] },
+  { label: "Potato (Aloo) Creations", keywords: ["aloo", "potato", "batata", "fries"] },
+  { label: "Farsan, Chilla & Besan", keywords: ["besan", "gram flour", "dhokla", "khaman", "khandvi", "locho", "idla", "chilla", "poha", "oats"] },
+  { label: "Seasonal Vegetables (Shaak)", keywords: ["bhindi", "tameta", "tomato", "gobi", "cauliflower", "palak", "spinach", "methi", "baingan", "brinjal", "cabbage", "lauki", "mix veg", "mushroom"] },
+  { label: "Mithai, Waffles & Desserts", keywords: ["halwa", "kheer", "laddoo", "sweet", "dessert", "mithai", "cake", "waffle", "pancake", "nutella"] },
 ];
 
 const GROUP_OPTIONS = [
+  { id: "SECTION", label: "Menu Section" },
   { id: "CUISINE", label: "Cuisine" },
   { id: "INGREDIENT", label: "Ingredient" },
   { id: "NONE", label: "All Dishes" },
@@ -164,7 +166,7 @@ const Recipies = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCuisine, setSelectedCuisine] = useState("ALL");
   const [selectedCourse, setSelectedCourse] = useState("ALL");
-  const [groupBy, setGroupBy] = useState("CUISINE"); // "CUISINE" | "INGREDIENT" | "NONE"
+  const [groupBy, setGroupBy] = useState("SECTION"); // "SECTION" | "CUISINE" | "INGREDIENT" | "NONE"
   const [sortBy, setSortBy] = useState("title-asc");
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
@@ -331,7 +333,9 @@ const Recipies = () => {
     const groups = {};
     processedRecipes.forEach((recipe) => {
       let key = "General";
-      if (groupBy === "CUISINE") {
+      if (groupBy === "SECTION") {
+        key = classifyMenuSection(recipe);
+      } else if (groupBy === "CUISINE") {
         key = recipe.cuisine || "House Classics";
       } else if (groupBy === "INGREDIENT") {
         key = detectMainIngredientGroup(recipe);
@@ -374,27 +378,11 @@ const Recipies = () => {
     }
   };
 
-  const handleJumpToSection = (groupName) => {
-    setCollapsedSections((prev) => {
-      if (!prev[groupName]) return prev;
-      const next = { ...prev };
-      delete next[groupName];
-      return next;
-    });
-
-    requestAnimationFrame(() => {
-      const el = document.getElementById(slugifySection(groupName));
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    });
-  };
-
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (selectedCuisine !== "ALL") count++;
     if (selectedCourse !== "ALL") count++;
-    if (groupBy !== "CUISINE") count++;
+    if (groupBy !== "SECTION") count++;
     if (sortBy !== "title-asc") count++;
     return count;
   }, [selectedCuisine, selectedCourse, groupBy, sortBy]);
@@ -416,7 +404,7 @@ const Recipies = () => {
     setSearchTerm("");
     setSelectedCuisine("ALL");
     setSelectedCourse("ALL");
-    setGroupBy("CUISINE");
+    setGroupBy("SECTION");
     setSortBy("title-asc");
   };
 
@@ -434,11 +422,10 @@ const Recipies = () => {
       {/* FULL WIDESCREEN MENU CANVAS                                               */}
       {/* ========================================================================= */}
       <main className="w-full max-w-[120rem] mx-auto px-3.5 sm:px-8 lg:px-12 2xl:px-16 pt-4 sm:pt-9">
-        
         {/* ========================================================================= */}
         {/* COMPACT RESTAURANT MASTHEAD & ARCHITECTURAL FILTER BAR                    */}
         {/* ========================================================================= */}
-        <header className="mb-4 sm:mb-7">
+        <header className="mb-5 sm:mb-8">
           {/* Top Double-Rule Architectural Header */}
           <div className="border-t-2 sm:border-t-4 border-stone-900 dark:border-stone-200 pt-0.5 sm:pt-1">
             <div className="border-t border-stone-900 dark:border-stone-200 pt-2.5 pb-3 sm:pt-4 sm:pb-5 border-b-2 border-stone-900 dark:border-stone-200 flex flex-col md:flex-row md:items-end justify-between gap-2 sm:gap-4">
@@ -480,7 +467,6 @@ const Recipies = () => {
           {/* UNIFIED CONTROL ROW (SINGLE ROW ON MOBILE, INLINE ON DESKTOP)         */}
           {/* ===================================================================== */}
           <div className="pt-3 sm:pt-4 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2 font-mono">
-            
             {/* Primary Strip: Search + Mobile Filter Trigger + View Switcher */}
             <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
               {/* Crisp Sharp-Cornered Search Input */}
@@ -601,7 +587,7 @@ const Recipies = () => {
                 value={groupBy}
                 options={GROUP_OPTIONS}
                 onChange={setGroupBy}
-                className="w-full sm:w-40"
+                className="w-full sm:w-44"
               />
 
               {/* 4. Sort Dropdown */}
@@ -675,40 +661,6 @@ const Recipies = () => {
               </div>
             </div>
           </div>
-
-          {/* ===================================================================== */}
-          {/* STICKY SECTION JUMP-TO INDEX RAIL                                     */}
-          {/* ===================================================================== */}
-          {!loading && groupedSections.length > 1 && (
-            <nav
-              aria-label="Menu Sections"
-              className="sticky top-0 z-20 mt-2.5 sm:mt-3.5 -mx-3.5 px-3.5 sm:mx-0 sm:px-3 py-1.5 sm:py-2 bg-[#FAF9F6]/95 dark:bg-[#0E0C0A]/95 backdrop-blur-md border-y border-stone-900/25 dark:border-stone-700/80 flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar font-mono"
-            >
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-stone-400 dark:text-stone-500 shrink-0 pr-0.5">
-                Jump:
-              </span>
-              {groupedSections.map(({ groupName, items }) => {
-                const isCollapsed = Boolean(collapsedSections[groupName]);
-                return (
-                  <button
-                    key={groupName}
-                    type="button"
-                    onClick={() => handleJumpToSection(groupName)}
-                    className={`px-2 py-0.5 border text-[10px] uppercase tracking-wider whitespace-nowrap transition-colors cursor-pointer shrink-0 flex items-center gap-1 ${
-                      isCollapsed
-                        ? "border-stone-300 dark:border-stone-800 bg-stone-100 dark:bg-[#14110E] text-stone-500 dark:text-stone-500"
-                        : "border-stone-900/30 dark:border-stone-700 bg-white dark:bg-[#181410] text-stone-800 dark:text-stone-200 hover:border-amber-600 dark:hover:border-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-bold"
-                    }`}
-                  >
-                    <span>{groupName}</span>
-                    <span className="text-amber-700 dark:text-amber-400 font-extrabold tabular-nums">
-                      ({items.length})
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
-          )}
         </header>
 
         {/* ========================================================================= */}
