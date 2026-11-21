@@ -1,6 +1,14 @@
 // src/apps/recipes/components/Recipies/CarteMenuView.jsx
-import React from "react";
-import { Flame, Play, ChevronDown, ChevronUp, Printer } from "lucide-react";
+import React, { useState } from "react";
+import {
+  Flame,
+  Play,
+  ChevronDown,
+  ChevronUp,
+  Printer,
+  Copy,
+  Check,
+} from "lucide-react";
 import {
   slugifySection,
   formatDurationCompact,
@@ -18,6 +26,8 @@ const CarteMenuView = ({
   groupBy,
   activeFiltersLabel,
 }) => {
+  const [copied, setCopied] = useState(false);
+
   const handlePrintCarte = () => {
     const ok = printRecipeMenu({
       mode: "CARTE",
@@ -27,6 +37,24 @@ const CarteMenuView = ({
     });
     if (!ok) {
       toast.error("Please allow popups to open the print preview.");
+    }
+  };
+
+  const handleCopyMenuText = async () => {
+    const formattedText = groupedSections
+      .map(({ groupName, items }) => {
+        const titles = items.map((item) => `- ${item.title}`).join("\n");
+        return `${groupName}\n${titles}`;
+      })
+      .join("\n\n");
+
+    try {
+      await navigator.clipboard.writeText(formattedText);
+      setCopied(true);
+      toast.success("Menu copied to clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy menu to clipboard");
     }
   };
 
@@ -81,22 +109,47 @@ const CarteMenuView = ({
 
   return (
     <div className="w-full space-y-4">
-      {/* Subtle Edition Action Strip with Clean Print Trigger */}
+      {/* Subtle Edition Action Strip with Copy & Print Triggers */}
       <div className="flex items-center justify-between gap-2 font-mono">
         <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500">
           Chef&apos;s Tasting Carte • {groupedSections.length}{" "}
           {groupedSections.length === 1 ? "Chapter" : "Chapters"}
         </span>
 
-        <button
-          type="button"
-          onClick={handlePrintCarte}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-stone-900/35 dark:border-stone-700 bg-white dark:bg-[#14110E] hover:border-stone-900 dark:hover:border-amber-400 text-stone-800 dark:text-stone-200 hover:text-amber-700 dark:hover:text-amber-300 text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer"
-          title="Print Chef's Tasting Carte"
-        >
-          <Printer size={11} className="text-amber-700 dark:text-amber-400" />
-          <span>Print Carte</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCopyMenuText}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-stone-900/35 dark:border-stone-700 bg-white dark:bg-[#14110E] hover:border-stone-900 dark:hover:border-amber-400 text-stone-800 dark:text-stone-200 hover:text-amber-700 dark:hover:text-amber-300 text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer"
+            title="Copy Group Names and Dish Titles"
+          >
+            {copied ? (
+              <>
+                <Check
+                  size={11}
+                  className="text-emerald-600 dark:text-emerald-400"
+                />
+                <span>Copied</span>
+              </>
+            ) : (
+              <>
+                <Copy
+                  size={11}
+                  className="text-amber-700 dark:text-amber-400"
+                />
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePrintCarte}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-stone-900/35 dark:border-stone-700 bg-white dark:bg-[#14110E] hover:border-stone-900 dark:hover:border-amber-400 text-stone-800 dark:text-stone-200 hover:text-amber-700 dark:hover:text-amber-300 text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer"
+            title="Print Chef's Tasting Carte"
+          >
+            <Printer size={11} className="text-amber-700 dark:text-amber-400" />
+          </button>
+        </div>
       </div>
 
       {/* Wide 2-Column Omakase Layout */}
