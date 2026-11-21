@@ -18,6 +18,8 @@ import {
 import { printRecipeMenu } from "./printMenuUtils";
 import { toast } from "sonner";
 
+const SUBGROUP_PREVIEW_LIMIT = 7;
+
 const getColumnCount = (width) => {
   if (width >= 1536) return 4; // 2xl
   if (width >= 1280) return 3; // xl
@@ -37,6 +39,14 @@ const BistroMenuView = ({
   const [columnCount, setColumnCount] = useState(() =>
     typeof window !== "undefined" ? getColumnCount(window.innerWidth) : 3
   );
+  const [expandedSubGroups, setExpandedSubGroups] = useState({});
+
+  const toggleSubGroupExpand = (subKey) => {
+    setExpandedSubGroups((prev) => ({
+      ...prev,
+      [subKey]: !prev[subKey],
+    }));
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -56,11 +66,24 @@ const BistroMenuView = ({
 
     groupedSections.forEach((sec) => {
       const isCollapsed = Boolean(collapsedSections[sec.groupName]);
-      const subGroups = buildSubGroups(sec.items, groupBy);
+      const subGroups = buildSubGroups(sec.items, groupBy, sec.groupName);
       const subHeaderCount = subGroups.filter((sg) => sg.subGroupName).length;
+
+      const visibleDishCount = subGroups.reduce((sum, sg, idx) => {
+        const subKey = `${sec.groupName}::${sg.subGroupName || idx}`;
+        const isExpanded = Boolean(expandedSubGroups[subKey]);
+        const count =
+          sg.subGroupName &&
+          sg.items.length > SUBGROUP_PREVIEW_LIMIT &&
+          !isExpanded
+            ? SUBGROUP_PREVIEW_LIMIT
+            : sg.items.length;
+        return sum + count;
+      }, 0);
+
       const weight = isCollapsed
         ? 2
-        : 3 + sec.items.length * 2.2 + subHeaderCount * 1.1;
+        : 3 + visibleDishCount * 2.2 + subHeaderCount * 1.1;
 
       let shortestColIdx = 0;
       for (let i = 1; i < effectiveCols; i++) {
@@ -74,7 +97,13 @@ const BistroMenuView = ({
     });
 
     return cols;
-  }, [groupedSections, collapsedSections, columnCount, groupBy]);
+  }, [
+    groupedSections,
+    collapsedSections,
+    columnCount,
+    groupBy,
+    expandedSubGroups,
+  ]);
 
   const handlePrintBistro = () => {
     const ok = printRecipeMenu({
@@ -148,7 +177,7 @@ const BistroMenuView = ({
 
   const renderSectionCard = ({ groupName, items }) => {
     const isCollapsed = Boolean(collapsedSections[groupName]);
-    const subGroups = buildSubGroups(items, groupBy);
+    const subGroups = buildSubGroups(items, groupBy, groupName);
     const hasMultipleSubGroups = subGroups.some((sg) => sg.subGroupName);
     const isSingleSection = groupedSections.length === 1;
 
@@ -185,35 +214,68 @@ const BistroMenuView = ({
           </div>
         </button>
 
-        {/* Dense Dish List (with Automatic Sub-Groups for large sections) */}
+        {/* Dense Dish List (with Automatic Sub-Groups & >7 See All Toggle) */}
         {!isCollapsed && (
           <div className={hasMultipleSubGroups ? "space-y-4" : ""}>
-            {subGroups.map(({ subGroupName, items: subItems }, idx) => (
-              <div key={subGroupName || idx}>
-                {subGroupName && (
-                  <div className="flex items-center justify-between gap-2 pb-1 mb-2 border-b border-dashed border-stone-300 dark:border-stone-700 font-mono">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-700 dark:text-amber-400">
-                      {subGroupName}
-                    </span>
-                    <span className="text-[9px] font-bold text-stone-400 dark:text-stone-500 tabular-nums">
-                      {subItems.length}
-                    </span>
-                  </div>
-                )}
+            {subGroups.map(({ subGroupName, items: subItems }, idx) => {
+              const subKey = `${groupName}::${subGroupName || idx}`;
+              const isExpanded = Boolean(expandedSubGroups[subKey]);
+              const canExpand =
+                Boolean(subGroupName) &&
+                subItems.length > SUBGROUP_PREVIEW_LIMIT;
+              const visibleItems =
+                canExpand && !isExpanded
+                  ? subItems.slice(0, SUBGROUP_PREVIEW_LIMIT)
+                  : subItems;
+              const remainingCount = subItems.length - SUBGROUP_PREVIEW_LIMIT;
 
-                <div
-                  className={
-                    isSingleSection
-                      ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-6 gap-y-2.5"
-                      : "divide-y divide-stone-200/80 dark:divide-stone-800/80"
-                  }
-                >
-                  {subItems.map((item) =>
-                    renderDishCard(item, isSingleSection)
+              return (
+                <div key={subGroupName || idx}>
+                  {subGroupName && (
+                    <div className="flex items-center justify-between gap-2 pb-1 mb-2 border-b border-dashed border-stone-300 dark:border-stone-700 font-mono">
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-700 dark:text-amber-400">
+                        {subGroupName}
+                      </span>
+                      <span className="text-[9px] font-bold text-stone-400 dark:text-stone-500 tabular-nums">
+                        {subItems.length}
+                      </span>
+                    </div>
+                  )}
+
+                  <div
+                    className={
+                      isSingleSection
+                        ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-6 gap-y-2.5"
+                        : "divide-y divide-stone-200/80 dark:divide-stone-800/80"
+                    }
+                  >
+                    {visibleItems.map((item) =>
+                      renderDishCard(item, isSingleSection)
+                    )}
+                  </div>
+
+                  {canExpand && (
+                    <button
+                      type="button"
+                      onClick={() => toggleSubGroupExpand(subKey)}
+                      className="mt-2 w-full py-1.5 border border-dashed border-stone-300 dark:border-stone-700 hover:border-amber-600 dark:hover:border-amber-400 bg-stone-100/60 dark:bg-white/[0.02] hover:bg-amber-500/10 text-[10px] font-mono font-extrabold uppercase tracking-wider text-stone-600 dark:text-stone-300 hover:text-amber-700 dark:hover:text-amber-300 inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                    >
+                      {isExpanded ? (
+                        <>
+                          <span>Show less</span>
+                          <ChevronUp size={11} />
+                        </>
+                      ) : (
+                        <>
+                          <span>See all (+{remainingCount} more)</span>
+                          <ChevronDown size={11} />
+                        </>
+                      )}
+                    </button>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
@@ -235,7 +297,8 @@ const BistroMenuView = ({
           className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-stone-900/35 dark:border-stone-700 bg-white dark:bg-[#14110E] hover:border-stone-900 dark:hover:border-amber-400 text-stone-800 dark:text-stone-200 hover:text-amber-700 dark:hover:text-amber-300 text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer"
           title="Print Bistro Menu Sheet"
         >
-          <Printer size={14} className="text-amber-700 dark:text-amber-400" />
+          <Printer size={11} className="text-amber-700 dark:text-amber-400" />
+          <span>Print Menu</span>
         </button>
       </div>
 

@@ -97,181 +97,211 @@ export const renderDietaryCodes = (item) => {
   );
 };
 
-// Classifies a recipe into granular restaurant Menu Sections
+// Classifies a recipe strictly by dish identity (title first, cuisine fallback)
 export const classifyMenuSection = (recipe) => {
-  const title = (recipe.title || "").toLowerCase();
-  const cuisine = (recipe.cuisine || "").toLowerCase();
-  const course = (recipe.courseType || "").toLowerCase();
-  const tags = (recipe.tags || []).join(" ").toLowerCase();
-  const text = `${title} ${cuisine} ${course} ${tags}`;
+  const title = (recipe.title || "").toLowerCase().trim();
+  const cuisine = (recipe.cuisine || "").toLowerCase().trim();
 
-  // 1. Frankies & Wraps
-  if (/\b(frankie|wrap|roll)\b/.test(title)) {
+  // 1. Frankies & Wraps (Exclude main curries served "with ... roll")
+  if (
+    /\b(frankie|wrap)\b/.test(title) ||
+    (!/\bwith\b/.test(title) && /\broll\b/.test(title))
+  ) {
     return "Frankies & Wraps";
   }
 
-  // 2. Sandwiches & Loaded Toasts (Dedicated category)
+  // 2. Sandwiches & Loaded Toasts
   if (/\b(sandwich|sandwiches|sandwitches|toast)\b/.test(title)) {
     return "Sandwiches & Loaded Toasts";
   }
 
   // 3. Burgers, Puffs & Bakes
-  if (/\b(burger|puff|garlic bread|baked|au gratin)\b/.test(text)) {
+  if (/\b(burger|puff|garlic bread|au gratin)\b/.test(title)) {
     return "Burgers, Puffs & Bakes";
   }
 
   // 4. Italian & Pasta (Separate from Continental)
   if (
-    /\b(italian|pasta|spaghetti|spagetti|penne|macaroni|arrabiata|marinara|pesto|lasagna|risotto)\b/.test(
-      text
-    )
+    /\b(pasta|spaghetti|spagetti|penne|macaroni|arrabiata|marinara|pesto|lasagna|risotto)\b/.test(
+      title
+    ) ||
+    cuisine === "italian"
   ) {
     return "Italian & Pasta";
   }
 
-  // 5. Continental & Sizzlers (Separate from Italian)
+  // 5. Continental & Sizzlers
   if (
-    /\b(continental|paprika sauce|tandoori sauce|sizzler|fondue)\b/.test(text)
+    /\b(paprika sauce|tandoori sauce|sizzler|fondue)\b/.test(title) ||
+    cuisine === "continental"
   ) {
     return "Continental & Sizzlers";
   }
 
   // 6. Indo-Chinese & Asian
   if (
-    /\b(asian|chinese|manchurian|schezwan|hakka|noodle|fried rice|burnt garlic|burnt chilli|paneer chilli|chilli paneer|spring roll|momos)\b/.test(
-      text
-    )
+    /\b(manchurian|schezwan|hakka|noodle|noodles|fried rice|burnt garlic|burnt chilli|paneer chilli|chilli paneer|spring roll|momos)\b/.test(
+      title
+    ) ||
+    cuisine === "asian" ||
+    cuisine === "chinese" ||
+    cuisine === "indo-chinese"
   ) {
     return "Indo-Chinese & Asian";
   }
 
   // 7. Mexican
-  if (/\b(mexican|burrito|nachos|taco|quesadilla|enchilada)\b/.test(text)) {
+  if (
+    /\b(mexican|burrito|nachos|taco|tacos|quesadilla|enchilada)\b/.test(title) ||
+    cuisine === "mexican"
+  ) {
     return "Mexican";
   }
 
   // 8. South Indian
   if (
-    /\b(south indian|dosa|idli|uttapam|sambhar|sambar|medu vada|appe|appam)\b/.test(
-      text
-    )
+    /\b(dosa|idli|uttapam|sambhar|sambar|medu vada|appe|appam)\b/.test(title) ||
+    cuisine === "south indian"
   ) {
     return "South Indian";
   }
 
-  // 9. Breakfast, Chilla & Waffles
-  if (
-    /\b(breakfast|poha|waffle|pancake|chilla|oats|bread butter|nutella|paratha|parantha|upma|thepla)\b/.test(
-      text
-    )
-  ) {
-    return "Breakfast, Chilla & Waffles";
-  }
-
-  // 10. Gujarati Farsan & Steamed Snacks
+  // 9. Gujarati Farsan & Steamed Snacks
   if (
     /\b(dhokla|khaman|khandvi|locho|idla|patra|handvo|muthiya|farsan)\b/.test(
-      text
+      title
     )
   ) {
     return "Gujarati Farsan & Steamed Snacks";
   }
 
-  // 11. Mumbai Street Food & Pav
+  // 10. Mumbai Street Food & Pav
   if (
     /\b(pav bhaji|pav bhaaji|vadapav|vada pav|dabeli|thecha|masala pav|misal pav)\b/.test(
-      text
+      title
     )
   ) {
     return "Mumbai Street Food & Pav";
   }
 
-  // 12. Chaat & Quick Tiffin
+  // 11. Chaat & Quick Tiffin
   if (
     /\b(chaat|pani puri|aloopuri|aloo puri|sev puri|bhel|dahi puri|ragda|maggi|fries|collegian|chapata chana|chana dal)\b/.test(
-      text
+      title
     )
   ) {
     return "Chaat & Quick Tiffin";
   }
 
+  // 12. Breakfast, Chilla & Waffles
+  if (
+    /\b(poha|waffle|waffles|pancake|pancakes|chilla|oats|bread butter|nutella|paratha|parantha|upma|thepla)\b/.test(
+      title
+    )
+  ) {
+    return "Breakfast, Chilla & Waffles";
+  }
+
   // 13. Mithai & Desserts
   if (
     /\b(halwa|kheer|laddoo|ladoo|sweet|dessert|mithai|cake|shrikhand|basundi|gulab jamun|rasmalai)\b/.test(
-      text
+      title
     )
   ) {
     return "Mithai & Desserts";
   }
 
-  // 14. Ghar Nu Shaak (Daily Home Vegetable Sabjis)
+  // 14. Rice, Pulao & Khichdi (Checked BEFORE Dals so "Dal Khichdi" goes into Khichdi/Rice, while "Dal Tadka Aur Jeera Rice" stays in Dals)
   if (
-    /\b(shaak|sabji|bhindi|kanda bataka|sev tameta|cauliflower|cabbage|lauki|dudhi|mix veg|baingan|gobi|methi|tinda|parwal|karela|valor|tuvar)\b/.test(
-      text
+    /\b(khichdi|pulao|biryani|vagharelo bhaat|bhaat|rice)\b/.test(title) &&
+    !/\bdal tadka\b/.test(title)
+  ) {
+    return "Rice, Pulao & Khichdi";
+  }
+
+  // 15. Dals (Pure Dal section without Kadhi)
+  if (/\b(dal|daal)\b/.test(title)) {
+    return "Dals";
+  }
+
+  // 16. North Indian Curries
+  if (
+    /\b(paneer|curry|masala|makhani|lababdar|angara|changezi|lasooni|methi malai|patiala|tikka|shahi|hyderabadi|ghotalo|bhurji|kofta|angoori|kaju|mushroom|handi|kadai)\b/.test(
+      title
     )
   ) {
-    return "Ghar Nu Shaak (Daily Sabjis)";
+    return "North Indian Curries";
   }
 
-  // 15. Dal & Kadhi (Separate from Rice & Pulses)
-  if (/\b(dal|daal|kadhi)\b/.test(title)) {
-    return "Dal & Kadhi";
-  }
-
-  // 16. Chole, Rajma & Pulses
+  // 17. Chole, Rajma & Pulses
   if (
     /\b(chole|chana masala|pindi chole|rajma|moong|sev usal|sprout|lobia|kathol)\b/.test(
-      text
+      title
     )
   ) {
     return "Chole, Rajma & Pulses";
   }
 
-  // 17. Rice, Pulao & Khichdi
+  // 18. Ghar Nu Shaak (Daily Home Vegetable Sabjis)
   if (
-    /\b(khichdi|pulao|biryani|jeera rice|vagharelo bhaat|bhaat|rice)\b/.test(
+    /\b(shaak|sabji|bhindi|kanda bataka|sev tameta|cauliflower|cabbage|lauki|dudhi|mix veg|baingan|gobi|methi|tinda|parwal|karela|valor|tuvar)\b/.test(
       title
     )
   ) {
-    return "Rice, Pulao & Khichdi";
-  }
-
-  // 18. North Indian Curries (Rich restaurant gravies, paneer curries, kofta, kaju, mushroom)
-  if (
-    /\b(north indian|paneer|curry|masala|makhani|lababdar|angara|changezi|lasooni|methi malai|patiala|tikka|shahi|hyderabadi|ghotalo|bhurji|kofta|angoori|kaju|mushroom|handi|kadai)\b/.test(
-      text
-    )
-  ) {
-    return "North Indian Curries";
+    return "Ghar Nu Shaak (Daily Sabjis)";
   }
 
   return "House Specialties";
 };
 
 // Sub-group classifier used automatically when a single group has >= SUBGROUP_THRESHOLD dishes
-const getSubGroupLabel = (recipe, groupBy) => {
-  const title = (recipe.title || "").toLowerCase();
+const getSubGroupLabel = (recipe, groupBy, parentGroupName = "") => {
+  const title = (recipe.title || "").toLowerCase().trim();
+  const cuisine = (recipe.cuisine || "").toLowerCase().trim();
 
   if (groupBy === "CUISINE") {
+    // 1. Format checks FIRST (so "Pav Bhaji Masala Toast" & "Paneer Chilli" don't leak into North Indian Curries!)
+    if (/\b(sandwich|sandwiches|sandwitches|toast)\b/.test(title)) {
+      return "Sandwiches & Loaded Toasts";
+    }
+    if (/\b(frankie|wrap)\b/.test(title)) {
+      return "Frankies & Wraps";
+    }
+    if (/\b(burger|puff)\b/.test(title)) {
+      return "Burgers & Puffs";
+    }
+    if (/\b(pav|dabeli|vadapav|vada pav)\b/.test(title)) {
+      return "Mumbai Street & Pav";
+    }
     if (
-      /\b(paneer|cheese angoori|malai kofta|mushroom|kaju|curry|masala|makhani|lababdar|angara|changezi|lasooni|shahi|hyderabadi|ghotalo|bhurji)\b/.test(
-        title
-      )
+      cuisine === "asian" ||
+      cuisine === "chinese" ||
+      cuisine === "indo-chinese"
     ) {
-      return "North Indian & Paneer Curries";
+      if (/\b(fried rice|rice)\b/.test(title)) return "Fried Rice";
+      if (/\b(noodle|noodles|hakka)\b/.test(title)) return "Noodles";
+      return "Wok Starters & Gravy";
     }
-    if (/\b(dal|daal|kadhi)\b/.test(title)) {
-      return "Dal & Kadhi";
-    }
-    if (/\b(chole|rajma|moong|usal|chana)\b/.test(title)) {
-      return "Chole, Rajma & Pulses";
-    }
-    if (/\b(khichdi|rice|pulao|biryani|bhaat)\b/.test(title)) {
+
+    // 2. Rice & Khichdi (checked before Dals so Dal Khichdi lands here)
+    if (
+      /\b(khichdi|rice|pulao|biryani|bhaat)\b/.test(title) &&
+      !/\bdal tadka\b/.test(title)
+    ) {
       return "Rice, Pulao & Khichdi";
     }
-    if (/\b(dhokla|khaman|khandvi|locho|idla|dhokli)\b/.test(title)) {
-      return "Farsan & Steamed Classics";
+
+    // 3. Dals
+    if (/\b(dal|daal)\b/.test(title)) {
+      return cuisine === "north indian" ? "North Indian Dals" : "Dals & One-Pot Meals";
     }
+
+    // 4. Gujarati Farsan & Steamed
+    if (/\b(dhokla|khaman|khandvi|locho|idla)\b/.test(title)) {
+      return "Gujarati Farsan & Steamed";
+    }
+
+    // 5. Ghar Nu Shaak
     if (
       /\b(bhindi|bataka|tameta|cauliflower|cabbage|lauki|mix veg|shaak)\b/.test(
         title
@@ -279,46 +309,81 @@ const getSubGroupLabel = (recipe, groupBy) => {
     ) {
       return "Ghar Nu Shaak (Daily Sabjis)";
     }
-    if (/\b(sandwich|toast)\b/.test(title)) {
-      return "Sandwiches & Toasts";
+
+    // 6. Chole, Rajma & Pulses
+    if (/\b(chole|rajma|moong|usal|chana)\b/.test(title)) {
+      return "Chole, Rajma & Pulses";
     }
-    if (/\b(pav|dabeli|vadapav|vada pav)\b/.test(title)) {
-      return "Mumbai Street & Pav";
+
+    // 7. North Indian & Paneer Curries
+    if (
+      /\b(paneer|cheese angoori|malai kofta|mushroom|kaju|curry|masala|makhani|lababdar|angara|changezi|lasooni|shahi|hyderabadi|ghotalo|bhurji)\b/.test(
+        title
+      )
+    ) {
+      return "Paneer & Rich Curries";
     }
+
     return recipe.courseType || "Signature Mains";
   }
 
   if (groupBy === "SECTION" || groupBy === "INGREDIENT") {
-    if (/\b(paneer)\b/.test(title) && /\b(curries|curry|masala|makhani|lababdar|angara|changezi|lasooni|shahi|hyderabadi|ghotalo|bhurji|tikka|patiala|methi malai)\b/.test(title)) {
-      return "Paneer Gravies & Tawa";
+    // Context-aware sub-grouping for "Dals" -> North Indian Dals vs Other Dals
+    if (parentGroupName === "Dals" || /\b(dal|daal)\b/.test(title)) {
+      if (/\b(dhokli)\b/.test(title) || (cuisine && cuisine !== "north indian")) {
+        return "Other Dals";
+      }
+      return "North Indian Dals";
     }
-    if (/\b(kofta|angoori|kaju|mushroom|chana|curry)\b/.test(title)) {
-      return "Kofta, Kaju & Veg Curries";
-    }
-    if (/\b(fried rice|rice|khichdi|pulao|biryani|bhaat)\b/.test(title)) {
-      return "Rice & Khichdi";
-    }
-    if (/\b(noodle|hakka|spaghetti|spagetti)\b/.test(title)) {
-      return "Noodles & Spaghetti";
-    }
-    if (/\b(pasta|penne|arrabiata|marinara|pesto)\b/.test(title)) {
-      return "Penne & Classic Pasta";
-    }
-    if (/\b(manchurian|chilli|starter)\b/.test(title)) {
+
+    // Context-aware sub-grouping for "Indo-Chinese & Asian" -> Fried Rice, Noodles, Wok Starters
+    if (
+      parentGroupName === "Indo-Chinese & Asian" ||
+      cuisine === "asian" ||
+      cuisine === "chinese" ||
+      cuisine === "indo-chinese"
+    ) {
+      if (/\b(fried rice|rice)\b/.test(title)) {
+        return "Fried Rice";
+      }
+      if (/\b(noodle|noodles|hakka)\b/.test(title)) {
+        return "Noodles";
+      }
       return "Wok Starters & Gravy";
     }
+
+    // Context-aware sub-grouping for "Italian & Pasta"
+    if (parentGroupName === "Italian & Pasta" || cuisine === "italian") {
+      if (/\b(spaghetti|spagetti)\b/.test(title)) {
+        return "Spaghetti";
+      }
+      return "Penne & Classic Pasta";
+    }
+
+    // Context-aware sub-grouping for "North Indian Curries"
+    if (/\b(paneer)\b/.test(title)) {
+      return "Paneer Curries & Tawa";
+    }
+    if (/\b(kofta|angoori|kaju|mushroom|curry|masala)\b/.test(title)) {
+      return "Kaju, Kofta & Veg Curries";
+    }
+
+    // Sandwiches & Toasts
     if (/\b(sandwich)\b/.test(title)) {
       return "Sandwiches";
     }
     if (/\b(toast)\b/.test(title)) {
       return "Loaded Toasts";
     }
-    if (/\b(paneer)\b/.test(title) && /\b(frankie)\b/.test(title)) {
+
+    // Frankies & Wraps
+    if (/\b(paneer)\b/.test(title) && /\b(frankie|wrap)\b/.test(title)) {
       return "Paneer Frankies";
     }
-    if (/\b(frankie)\b/.test(title)) {
+    if (/\b(frankie|wrap)\b/.test(title)) {
       return "Veg & Noodle Frankies";
     }
+
     return recipe.cuisine || recipe.courseType || "House Selection";
   }
 
@@ -329,14 +394,14 @@ const getSubGroupLabel = (recipe, groupBy) => {
  * Splits a section's items into sub-groups if items.length >= SUBGROUP_THRESHOLD
  * and at least 2 distinct sub-groups emerge. Otherwise returns a single unnamed sub-group.
  */
-export const buildSubGroups = (items, groupBy) => {
+export const buildSubGroups = (items, groupBy, parentGroupName = "") => {
   if (!items || items.length < SUBGROUP_THRESHOLD) {
     return [{ subGroupName: null, items }];
   }
 
   const buckets = {};
   items.forEach((item) => {
-    const label = getSubGroupLabel(item, groupBy);
+    const label = getSubGroupLabel(item, groupBy, parentGroupName);
     if (!buckets[label]) buckets[label] = [];
     buckets[label].push(item);
   });

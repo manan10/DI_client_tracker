@@ -1,5 +1,4 @@
 // src/apps/recipes/components/Recipies/printMenuUtils.js
-import { formatDurationCompact } from "./recipeMenuUtils";
 
 const WRITE_IN_SLOTS_PER_CATEGORY = 5;
 
@@ -10,20 +9,9 @@ const escapeHtml = (str) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
-const getDietaryBadgesHtml = (item) => {
-  const flags = item.dietaryFlags || {};
-  const badges = [];
-  if (flags.isJain) badges.push(`<span class="badge badge-j">J</span>`);
-  if (flags.isSwaminarayan) badges.push(`<span class="badge badge-sw">SW</span>`);
-  if (flags.isVegan) badges.push(`<span class="badge badge-vg">VG</span>`);
-  if (flags.isGlutenFree) badges.push(`<span class="badge badge-gf">GF</span>`);
-  return badges.length ? `<span class="badges">${badges.join("")}</span>` : "";
-};
-
 export const printRecipeMenu = ({
   mode = "BISTRO", // "BISTRO" | "CARTE"
   groupedSections = [],
-  groupBy = "CUISINE",
   activeFiltersLabel = "",
 }) => {
   const dateStr = new Date().toLocaleDateString("en-IN", {
@@ -40,13 +28,6 @@ export const printRecipeMenu = ({
       const printedDishesHtml = items
         .map((item, idx) => {
           const title = escapeHtml(item.title);
-          const duration = escapeHtml(formatDurationCompact(item));
-          const course = escapeHtml(item.courseType || "Main");
-          const cuisinePrefix =
-            groupBy !== "CUISINE" && item.cuisine
-              ? `${escapeHtml(item.cuisine)} · `
-              : "";
-          const badges = getDietaryBadgesHtml(item);
 
           if (isCarte) {
             return `
@@ -54,11 +35,6 @@ export const printRecipeMenu = ({
                 <div class="carte-left">
                   <span class="carte-num">${String(idx + 1).padStart(2, "0")}.</span>
                   <span class="carte-title">${title}</span>
-                  ${badges}
-                </div>
-                <div class="carte-right">
-                  <span class="carte-course">${cuisinePrefix}${course}</span>
-                  <span class="carte-time">${duration}</span>
                 </div>
               </div>
             `;
@@ -68,9 +44,7 @@ export const printRecipeMenu = ({
             <div class="bistro-item">
               <div class="bistro-title-wrap">
                 <span class="bistro-title">${title}</span>
-                ${badges}
               </div>
-              <span class="bistro-time">${duration}</span>
             </div>
           `;
         })
@@ -88,9 +62,6 @@ export const printRecipeMenu = ({
                   <span class="carte-num">${nextNum}.</span>
                   <span class="carte-blank-space">&nbsp;</span>
                 </div>
-                <div class="carte-right">
-                  <span class="carte-blank-time">____m</span>
-                </div>
               </div>
             `;
           }
@@ -100,7 +71,6 @@ export const printRecipeMenu = ({
               <div class="bistro-title-wrap">
                 <span class="bistro-blank-space">&nbsp;</span>
               </div>
-              <span class="bistro-blank-time">____m</span>
             </div>
           `;
         }
@@ -279,27 +249,8 @@ export const printRecipeMenu = ({
       color: #B45309;
     }
 
-    .masthead-sub {
-      margin-top: 6px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 7px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 7.5px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-      color: #57534E;
-    }
-
-    .masthead-sep {
-      color: #D6D3D1;
-    }
-
     .filter-note {
-      margin-top: 4px;
+      margin-top: 5px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 7.5px;
       font-weight: 800;
@@ -308,31 +259,8 @@ export const printRecipeMenu = ({
       letter-spacing: 0.12em;
     }
 
-    /* DIETARY BADGES */
-    .badges {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      margin-left: 5px;
-      vertical-align: middle;
-    }
-
-    .badge {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 6.8px;
-      font-weight: 800;
-      padding: 0.5px 3.5px;
-      border-radius: 2px;
-      border: 1px solid #A8A29E;
-    }
-
-    .badge-j { background: #ECFDF5; border-color: #6EE7B7; color: #065F46; }
-    .badge-sw { background: #FFFBEB; border-color: #FCD34D; color: #92400E; }
-    .badge-vg { background: #F7FEE7; border-color: #BEF264; color: #3F6212; }
-    .badge-gf { background: #F0F9FF; border-color: #7DD3FC; color: #075985; }
-
     /* ============================================================ */
-    /* BISTRO PRINT ARCHITECTURE (UNIFIED FULL-WIDTH ROW DIVIDERS)  */
+    /* BISTRO PRINT ARCHITECTURE (TITLE ONLY + WRITE-IN ROWS)       */
     /* ============================================================ */
     .bistro-columns {
       column-count: ${groupedSections.length === 1 ? 1 : 2};
@@ -374,9 +302,7 @@ export const printRecipeMenu = ({
 
     .bistro-item {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 8px;
       min-height: 24px;
       padding: 5px 0;
       border-bottom: 1px solid #D6D3D1;
@@ -400,19 +326,6 @@ export const printRecipeMenu = ({
       color: #14110E;
     }
 
-    .bistro-time {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 7.5px;
-      font-weight: 800;
-      padding: 1px 5px;
-      background: #FEF3C7;
-      border: 1px solid #F59E0B;
-      color: #92400E;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    /* Bistro Empty Write-In Row — Identical Full-Width Row Line */
     .bistro-blank-item {
       align-items: flex-end;
       padding: 7px 0 4px;
@@ -424,19 +337,8 @@ export const printRecipeMenu = ({
       line-height: 1.2;
     }
 
-    .bistro-blank-time {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 7.5px;
-      font-weight: 700;
-      color: #A8A29E;
-      letter-spacing: 0.04em;
-      line-height: 1;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
     /* ============================================================ */
-    /* CARTE PRINT ARCHITECTURE (UNIFIED FULL-WIDTH ROW DIVIDERS)   */
+    /* CARTE PRINT ARCHITECTURE (TITLE ONLY + WRITE-IN ROWS)        */
     /* ============================================================ */
     .carte-columns {
       column-count: ${groupedSections.length === 1 ? 1 : 2};
@@ -488,9 +390,7 @@ export const printRecipeMenu = ({
 
     .carte-row {
       display: flex;
-      justify-content: space-between;
       align-items: baseline;
-      gap: 10px;
       min-height: 23px;
       padding: 5px 0;
       border-bottom: 1px solid #E7E5E4;
@@ -526,29 +426,6 @@ export const printRecipeMenu = ({
       color: #14110E;
     }
 
-    .carte-right {
-      display: flex;
-      align-items: baseline;
-      gap: 7px;
-      flex-shrink: 0;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    }
-
-    .carte-course {
-      font-size: 7px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #78716C;
-    }
-
-    .carte-time {
-      font-size: 8.6px;
-      font-weight: 800;
-      color: #92400E;
-    }
-
-    /* Carte Empty Write-In Row — Identical Full-Width Row Line */
     .carte-blank-row {
       align-items: flex-end;
       padding: 7px 0 4px;
@@ -558,17 +435,6 @@ export const printRecipeMenu = ({
       display: inline-block;
       font-size: 9.6px;
       line-height: 1.2;
-    }
-
-    .carte-blank-time {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 7.5px;
-      font-weight: 700;
-      color: #A8A29E;
-      letter-spacing: 0.04em;
-      line-height: 1;
-      white-space: nowrap;
-      flex-shrink: 0;
     }
 
     /* REPEATING PAGE FOOTER */
@@ -602,15 +468,6 @@ export const printRecipeMenu = ({
             <header class="masthead">
               <div class="eyebrow">शाही रसोई • ${editionTitle}</div>
               <h1>Off The <span>Menu</span></h1>
-              <div class="masthead-sub">
-                <span>[J] Jain</span>
-                <span class="masthead-sep">•</span>
-                <span>[SW] Swaminarayan</span>
-                <span class="masthead-sep">•</span>
-                <span>[VG] Vegan</span>
-                <span class="masthead-sep">•</span>
-                <span>[GF] Gluten-Free</span>
-              </div>
               ${
                 activeFiltersLabel
                   ? `<div class="filter-note">${escapeHtml(activeFiltersLabel)}</div>`
