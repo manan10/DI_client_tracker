@@ -79,12 +79,12 @@ const CarteMenuView = ({
     <article
       key={item._id}
       onClick={() => onOpenDetails(item._id)}
-      className="group cursor-pointer py-3 px-2.5 -mx-2.5 border-b border-stone-200/75 dark:border-stone-800/75 last:border-b-0 hover:bg-stone-900/[0.03] dark:hover:bg-white/[0.03] transition-colors"
+      className="group cursor-pointer py-2.5 sm:py-3 px-2 -mx-2 sm:px-2.5 sm:-mx-2.5 border-b border-stone-200/75 dark:border-stone-800/75 last:border-b-0 hover:bg-stone-900/[0.03] dark:hover:bg-white/[0.03] transition-colors"
     >
-      <div className="flex items-baseline justify-between gap-4">
-        {/* Left: Dish Title + Dietary Flags + Video Indicator */}
-        <div className="min-w-0 flex items-baseline">
-          <h3 className="font-sans font-medium uppercase tracking-[0.08em] text-xs sm:text-sm text-stone-900 dark:text-stone-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors truncate">
+      <div className="flex items-start sm:items-baseline justify-between gap-2.5 sm:gap-4">
+        {/* Left: Full Wrapping Dish Title + Dietary Flags + Video Indicator */}
+        <div className="min-w-0 flex-1">
+          <h3 className="font-sans font-semibold sm:font-medium uppercase tracking-[0.04em] sm:tracking-[0.08em] text-[13px] sm:text-sm text-stone-900 dark:text-stone-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors leading-snug inline">
             {item.title}
           </h3>
 
@@ -94,26 +94,32 @@ const CarteMenuView = ({
             <Play
               size={9}
               fill="currentColor"
-              className="inline text-rose-500 ml-1.5 shrink-0 self-center"
+              className="inline text-rose-500 ml-1.5 shrink-0 align-middle"
             />
           )}
+
+          {/* Subtle Mobile-Only Course/Cuisine Micro-Tag */}
+          <div className="sm:hidden mt-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+            {groupBy !== "CUISINE" && item.cuisine ? `${item.cuisine} · ` : ""}
+            {item.courseType || "Main"}
+          </div>
         </div>
 
-        {/* Right: Course/Cuisine Tag + Duration + Hover Cook Trigger */}
-        <div className="flex items-center gap-3 shrink-0 font-mono text-[11px]">
+        {/* Right: Desktop Course/Cuisine Tag + Duration + Cook Trigger */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 font-mono text-[10px] sm:text-[11px] pt-0.5 sm:pt-0">
           <span className="hidden sm:inline text-[9px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500">
             {groupBy !== "CUISINE" && item.cuisine ? `${item.cuisine} · ` : ""}
             {item.courseType || "Main"}
           </span>
 
-          <span className="font-normal text-stone-600 dark:text-stone-400 tabular-nums">
+          <span className="font-semibold sm:font-normal text-stone-600 dark:text-stone-400 tabular-nums">
             {formatDurationCompact(item)}
           </span>
 
           <button
             type="button"
             onClick={(e) => onOpenCookMode(e, item._id)}
-            className="inline-flex items-center gap-0.5 px-1.5 py-0.2 border border-amber-600/40 dark:border-amber-400/40 bg-amber-500/10 text-[9px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300 opacity-85 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-amber-500 hover:text-stone-950 cursor-pointer"
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 sm:py-0.2 border border-amber-600/40 dark:border-amber-400/40 bg-amber-500/10 text-[9px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-amber-500 hover:text-stone-950 cursor-pointer"
             title="Launch Cook Mode"
           >
             <Flame size={9} />
@@ -125,36 +131,37 @@ const CarteMenuView = ({
   );
 
   return (
-    <div className="w-full space-y-4">
-      {/* Subtle Edition Action Strip with Copy & Print Triggers */}
+    <div className="w-full space-y-3 sm:space-y-4">
+      {/* Compact Single-Line Edition Action Strip with Copy & Print Triggers */}
       <div className="flex items-center justify-between gap-2 font-mono">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500">
-          Chef&apos;s Tasting Carte • {groupedSections.length}{" "}
+        <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider sm:tracking-widest text-stone-400 dark:text-stone-500 truncate">
+          <span className="hidden xs:inline">Chef&apos;s Tasting </span>Carte •{" "}
+          {groupedSections.length}{" "}
           {groupedSections.length === 1 ? "Chapter" : "Chapters"}
         </span>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             type="button"
             onClick={handleCopyMenuText}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-stone-900/35 dark:border-stone-700 bg-white dark:bg-[#14110E] hover:border-stone-900 dark:hover:border-amber-400 text-stone-800 dark:text-stone-200 hover:text-amber-700 dark:hover:text-amber-300 text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer"
+            className="h-7 px-2 sm:px-2.5 border border-stone-900/35 dark:border-stone-700 bg-white dark:bg-[#14110E] hover:border-stone-900 dark:hover:border-amber-400 text-stone-800 dark:text-stone-200 hover:text-amber-700 dark:hover:text-amber-300 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1 whitespace-nowrap"
             title="Copy Group Names and Dish Titles"
           >
             {copied ? (
               <>
                 <Check
-                  size={11}
-                  className="text-emerald-600 dark:text-emerald-400"
+                  size={10}
+                  className="text-emerald-600 dark:text-emerald-400 shrink-0"
                 />
                 <span>Copied</span>
               </>
             ) : (
               <>
                 <Copy
-                  size={11}
-                  className="text-amber-700 dark:text-amber-400"
+                  size={10}
+                  className="text-amber-700 dark:text-amber-400 shrink-0"
                 />
-                <span>Copy Menu</span>
+                <span>Copy</span>
               </>
             )}
           </button>
@@ -162,11 +169,14 @@ const CarteMenuView = ({
           <button
             type="button"
             onClick={handlePrintCarte}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-stone-900/35 dark:border-stone-700 bg-white dark:bg-[#14110E] hover:border-stone-900 dark:hover:border-amber-400 text-stone-800 dark:text-stone-200 hover:text-amber-700 dark:hover:text-amber-300 text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer"
+            className="h-7 px-2 sm:px-2.5 border border-stone-900/35 dark:border-stone-700 bg-white dark:bg-[#14110E] hover:border-stone-900 dark:hover:border-amber-400 text-stone-800 dark:text-stone-200 hover:text-amber-700 dark:hover:text-amber-300 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1 whitespace-nowrap"
             title="Print Chef's Tasting Carte"
           >
-            <Printer size={11} className="text-amber-700 dark:text-amber-400" />
-            <span>Print Carte</span>
+            <Printer
+              size={10}
+              className="text-amber-700 dark:text-amber-400 shrink-0"
+            />
+            <span>Print</span>
           </button>
         </div>
       </div>
@@ -188,23 +198,25 @@ const CarteMenuView = ({
             <section
               id={slugifySection(groupName)}
               key={groupName}
-              className="break-inside-avoid-column mb-9 sm:mb-11 last:mb-0 scroll-mt-14"
+              className="break-inside-avoid-column mb-6 sm:mb-11 last:mb-0 scroll-mt-14"
             >
               <button
                 type="button"
                 onClick={() => onToggleSection(groupName)}
-                className="w-full flex items-center justify-between pb-2.5 mb-2 border-b-2 border-stone-900 dark:border-stone-200 text-left cursor-pointer group"
+                className="w-full flex items-center justify-between gap-2 pb-2 sm:pb-2.5 mb-1.5 sm:mb-2 border-b-2 border-stone-900 dark:border-stone-200 text-left cursor-pointer group"
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="text-amber-700 dark:text-amber-400 font-mono text-xs shrink-0">
+                <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+                  <span className="text-amber-700 dark:text-amber-400 font-mono text-[11px] sm:text-xs shrink-0">
                     おまかせ
                   </span>
-                  <span className="text-stone-300 dark:text-stone-700">•</span>
-                  <h2 className="font-sans font-light uppercase tracking-[0.25em] text-sm sm:text-base text-stone-900 dark:text-white group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors truncate">
+                  <span className="text-stone-300 dark:text-stone-700 shrink-0">
+                    •
+                  </span>
+                  <h2 className="font-sans font-semibold sm:font-light uppercase tracking-[0.12em] sm:tracking-[0.25em] text-xs sm:text-base text-stone-900 dark:text-white group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors truncate">
                     {groupName}
                   </h2>
                 </div>
-                <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-stone-500 dark:text-stone-400 shrink-0">
+                <div className="flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] font-bold text-stone-500 dark:text-stone-400 shrink-0">
                   <span className="tabular-nums">
                     {String(items.length).padStart(2, "0")}
                   </span>
@@ -217,12 +229,18 @@ const CarteMenuView = ({
               </button>
 
               {!isCollapsed && (
-                <div className={hasMultipleSubGroups ? "space-y-5 pt-1" : ""}>
+                <div
+                  className={
+                    hasMultipleSubGroups
+                      ? "space-y-3.5 sm:space-y-5 pt-1"
+                      : ""
+                  }
+                >
                   {subGroups.map(({ subGroupName, items: subItems }, idx) => (
                     <div key={subGroupName || idx}>
                       {subGroupName && (
-                        <div className="flex items-center justify-between gap-2 pb-1 mb-1 border-b border-dashed border-stone-300 dark:border-stone-700 font-mono">
-                          <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-400">
+                        <div className="flex items-center justify-between gap-2 pb-1 mb-0.5 sm:mb-1 border-b border-dashed border-stone-300 dark:border-stone-700 font-mono">
+                          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-[0.14em] sm:tracking-[0.18em] text-amber-700 dark:text-amber-400">
                             {subGroupName}
                           </span>
                           <span className="text-[9px] font-bold text-stone-400 dark:text-stone-500 tabular-nums">

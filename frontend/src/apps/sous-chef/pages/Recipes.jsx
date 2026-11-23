@@ -8,6 +8,7 @@ import {
   ArrowUpDown,
   LayoutGrid,
   BookOpen,
+  BookMarked,
   Layers,
   ChevronDown,
   Check,
@@ -22,6 +23,7 @@ import ChefNavbar from "../components/ChefNavbar";
 import AddRecipeModal from "../components/AddRecipeModal";
 import BistroMenuView from "../components/Recipies/BistroMenuView";
 import CarteMenuView from "../components/Recipies/CarteMenuView";
+import BookMenuView from "../components/Recipies/BookMenuView";
 import { classifyMenuSection } from "../components/Recipies/recipeMenuUtils";
 import { useApi } from "../../../shared/hooks/useApi";
 import { toast } from "sonner";
@@ -173,10 +175,12 @@ const Recipies = () => {
   // Collapsible Sections State
   const [collapsedSections, setCollapsedSections] = useState({});
 
-  // Persisted 2-View Switcher State ("BISTRO" | "INDEX")
+  // Persisted 3-View Switcher State ("BISTRO" | "INDEX" | "BOOK")
   const [menuStyle, setMenuStyle] = useState(() => {
     const saved = localStorage.getItem("sous-chef-menu-edition");
-    return saved === "BISTRO" || saved === "INDEX" ? saved : "BISTRO";
+    return saved === "BISTRO" || saved === "INDEX" || saved === "BOOK"
+      ? saved
+      : "BISTRO";
   });
 
   const handleSelectMenuStyle = (styleId) => {
@@ -264,19 +268,16 @@ const Recipies = () => {
   // Filtered & Sorted Recipes
   const processedRecipes = useMemo(() => {
     let list = recipes.filter((item) => {
-      // 1. Cuisine Filter
       if (selectedCuisine !== "ALL") {
         const itemCuisine = (item.cuisine || "").trim();
         if (itemCuisine !== selectedCuisine) return false;
       }
 
-      // 2. Course Type Filter
       if (selectedCourse !== "ALL") {
         const itemCourse = (item.courseType || "").trim();
         if (itemCourse !== selectedCourse) return false;
       }
 
-      // 3. Search Filter
       if (searchTerm.trim()) {
         const query = searchTerm.toLowerCase().trim();
         const matchesTitle = item.title?.toLowerCase().includes(query);
@@ -518,12 +519,12 @@ const Recipies = () => {
                 )}
               </button>
 
-              {/* Mobile / Tablet Icon-Only 2-Edition Toggle (< xl) */}
+              {/* Mobile / Tablet 3-Edition Toggle (< xl) */}
               <div className="xl:hidden inline-flex items-center h-9 border border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] divide-x divide-stone-900/30 dark:divide-stone-700 shrink-0">
                 <button
                   type="button"
                   onClick={() => handleSelectMenuStyle("BISTRO")}
-                  className={`h-full px-2.5 sm:px-3 inline-flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
+                  className={`h-full px-2 sm:px-2.5 inline-flex items-center justify-center gap-1 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
                     menuStyle === "BISTRO"
                       ? "bg-stone-900 dark:bg-[#f59e0b] text-white dark:text-[#140F0A] font-extrabold"
                       : "text-stone-600 dark:text-stone-400 font-bold hover:text-stone-900 dark:hover:text-white"
@@ -531,14 +532,14 @@ const Recipies = () => {
                   title="Bistro Course Boxes"
                   aria-label="Bistro Course Boxes"
                 >
-                  <LayoutGrid size={13} />
+                  <LayoutGrid size={12} />
                   <span className="hidden sm:inline">Bistro</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleSelectMenuStyle("INDEX")}
-                  className={`h-full px-2.5 sm:px-3 inline-flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
+                  className={`h-full px-2 sm:px-2.5 inline-flex items-center justify-center gap-1 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
                     menuStyle === "INDEX"
                       ? "bg-stone-900 dark:bg-[#f59e0b] text-white dark:text-[#140F0A] font-extrabold"
                       : "text-stone-600 dark:text-stone-400 font-bold hover:text-stone-900 dark:hover:text-white"
@@ -546,8 +547,23 @@ const Recipies = () => {
                   title="Chef's Tasting Carte"
                   aria-label="Chef's Tasting Carte"
                 >
-                  <BookOpen size={13} />
+                  <BookOpen size={12} />
                   <span className="hidden sm:inline">Carte</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectMenuStyle("BOOK")}
+                  className={`h-full px-2 sm:px-2.5 inline-flex items-center justify-center gap-1 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
+                    menuStyle === "BOOK"
+                      ? "bg-stone-900 dark:bg-[#f59e0b] text-white dark:text-[#140F0A] font-extrabold"
+                      : "text-stone-600 dark:text-stone-400 font-bold hover:text-stone-900 dark:hover:text-white"
+                  }`}
+                  title="Menu Book Edition"
+                  aria-label="Menu Book Edition"
+                >
+                  <BookMarked size={12} />
+                  <span className="hidden sm:inline">Book</span>
                 </button>
               </div>
             </div>
@@ -601,8 +617,8 @@ const Recipies = () => {
                 className="w-full sm:w-32"
               />
 
-              {/* 5. Collapse / Expand All Sections Button */}
-              {groupedSections.length > 1 && (
+              {/* 5. Collapse / Expand All Sections Button (Hidden in Book mode) */}
+              {menuStyle !== "BOOK" && groupedSections.length > 1 && (
                 <button
                   type="button"
                   onClick={handleToggleCollapseAll}
@@ -631,12 +647,12 @@ const Recipies = () => {
                 </button>
               )}
 
-              {/* 6. Desktop Sharp 2-Edition Toggle (Bistro vs Carte) */}
+              {/* 6. Desktop Sharp 3-Edition Toggle (Bistro vs Carte vs Book) */}
               <div className="hidden xl:inline-flex items-center h-9 border border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] divide-x divide-stone-900/30 dark:divide-stone-700 shrink-0">
                 <button
                   type="button"
                   onClick={() => handleSelectMenuStyle("BISTRO")}
-                  className={`h-full px-3 inline-flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
+                  className={`h-full px-2.5 inline-flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
                     menuStyle === "BISTRO"
                       ? "bg-stone-900 dark:bg-[#f59e0b] text-white dark:text-[#140F0A] font-extrabold"
                       : "text-stone-600 dark:text-stone-400 font-bold hover:text-stone-900 dark:hover:text-white"
@@ -649,7 +665,7 @@ const Recipies = () => {
                 <button
                   type="button"
                   onClick={() => handleSelectMenuStyle("INDEX")}
-                  className={`h-full px-3 inline-flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
+                  className={`h-full px-2.5 inline-flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
                     menuStyle === "INDEX"
                       ? "bg-stone-900 dark:bg-[#f59e0b] text-white dark:text-[#140F0A] font-extrabold"
                       : "text-stone-600 dark:text-stone-400 font-bold hover:text-stone-900 dark:hover:text-white"
@@ -657,6 +673,19 @@ const Recipies = () => {
                   title="Chef's Tasting Carte"
                 >
                   <BookOpen size={12} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectMenuStyle("BOOK")}
+                  className={`h-full px-2.5 inline-flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer ${
+                    menuStyle === "BOOK"
+                      ? "bg-stone-900 dark:bg-[#f59e0b] text-white dark:text-[#140F0A] font-extrabold"
+                      : "text-stone-600 dark:text-stone-400 font-bold hover:text-stone-900 dark:hover:text-white"
+                  }`}
+                  title="Menu Book Edition"
+                >
+                  <BookMarked size={12} />
                 </button>
               </div>
             </div>
@@ -715,6 +744,15 @@ const Recipies = () => {
                 onOpenCookMode={openCookMode}
                 groupBy={groupBy}
                 activeFiltersLabel={activeFiltersLabel}
+              />
+            )}
+
+            {menuStyle === "BOOK" && (
+              <BookMenuView
+                groupedSections={groupedSections}
+                onOpenDetails={openDetails}
+                onOpenCookMode={openCookMode}
+                groupBy={groupBy}
               />
             )}
           </>
