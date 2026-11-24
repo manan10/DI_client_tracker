@@ -10,6 +10,7 @@ import {
   Menu,
   BarChart3,
   ListTodo,
+  Calculator,
   ChevronDown,
   ReceiptIndianRupee,
   Clapperboard,
@@ -117,6 +118,7 @@ const Navbar = () => {
     { name: "Home", path: "/dashboard", icon: LayoutDashboard },
     { name: "Directory", path: "/directory", icon: Users },
     { name: "Ops", path: "/tasks", icon: ListTodo },
+    { name: "Tools", path: "/tools", icon: Calculator },
     ...(user?.isAdmin
       ? [{ name: "Accounts", path: "/accounts", icon: BarChart3 }]
       : []),
@@ -151,7 +153,6 @@ const Navbar = () => {
                 </Link>
 
                 <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2.5 items-start min-w-0">
-                  {/* Option 5: Approved "Dalal Investments" Serif + Refined "Co-Pilot" Pill */}
                   <Link
                     to="/dashboard"
                     className="outline-none hover:opacity-95 transition-opacity max-w-full"
@@ -223,7 +224,12 @@ const Navbar = () => {
                               const AppIcon = app.icon;
                               const isCurrent =
                                 (app.id === "CLIENT_TRACKER" &&
-                                  location.pathname.startsWith("/dashboard")) ||
+                                  (location.pathname.startsWith("/dashboard") ||
+                                    location.pathname.startsWith("/directory") ||
+                                    location.pathname.startsWith("/tasks") ||
+                                    location.pathname.startsWith("/tools") ||
+                                    location.pathname.startsWith("/accounts") ||
+                                    location.pathname.startsWith("/client"))) ||
                                 (app.id === "EXPENSE_TRACKER" &&
                                   location.pathname.startsWith("/expenses")) ||
                                 (app.id === "SHOW_RATER" &&
@@ -284,7 +290,7 @@ const Navbar = () => {
                   <Link
                     key={item.name}
                     to={item.path}
-                    className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-xs tracking-wide transition-all outline-none select-none ${
+                    className={`relative flex items-center gap-2 px-3.5 xl:px-4 py-2 rounded-lg text-xs tracking-wide transition-all outline-none select-none ${
                       isActive
                         ? "bg-white/[0.12] text-white border border-white/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.35)] font-bold"
                         : "text-slate-400 hover:text-white hover:bg-white/5 border border-transparent font-medium"
