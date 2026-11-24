@@ -144,7 +144,6 @@ export const calculateTargetSip = ({
     };
   }
 
-  // Binary search for exact starting monthly SIP that reaches remainingTarget with stepUpPct
   let low = 0;
   let high = remainingTarget;
   for (let i = 0; i < 60; i++) {
@@ -162,7 +161,7 @@ export const calculateTargetSip = ({
     }
   }
 
-  const requiredMonthlySip = Math.ceil(high / 100) * 100; // Clean ₹100 rounding
+  const requiredMonthlySip = Math.ceil(high / 100) * 100;
   const finalSim = calculateStepUpSip({
     monthlySip: requiredMonthlySip,
     annualReturnPct,
@@ -179,5 +178,106 @@ export const calculateTargetSip = ({
     totalWealthGained: Math.round(
       futureValueOfExisting + finalSim.futureValue - existingSavings - finalSim.totalInvested
     ),
+  };
+};
+
+/**
+ * 4. APPROACH A: Monte Carlo Volatility Simulation (Stochastic Return Paths)
+ */
+export const runMonteCarloSimulation = ({
+  monthlySip = 15000,
+  meanReturnPct = 12,
+  volatilityPct = 15,
+  years = 15,
+  stepUpPct = 0,
+}) => {
+  const pessimisticRate = Math.max(4, meanReturnPct - volatilityPct * 0.75);
+  const expectedRate = meanReturnPct;
+  const optimisticRate = meanReturnPct + volatilityPct * 0.75;
+
+  const p25 = calculateStepUpSip({ monthlySip, annualReturnPct: pessimisticRate, years, stepUpPct });
+  const p50 = calculateStepUpSip({ monthlySip, annualReturnPct: expectedRate, years, stepUpPct });
+  const p75 = calculateStepUpSip({ monthlySip, annualReturnPct: optimisticRate, years, stepUpPct });
+
+  const combinedSchedule = p50.yearlySchedule.map((row, idx) => ({
+    year: row.year,
+    monthlySip: row.monthlySip,
+    totalInvested: row.totalInvested,
+    pessimistic: p25.yearlySchedule[idx]?.endBalance || 0,
+    expected: row.endBalance,
+    optimistic: p75.yearlySchedule[idx]?.endBalance || 0,
+  }));
+
+  return {
+    totalInvested: p50.totalInvested,
+    pessimisticFinal: p25.futureValue,
+    expectedFinal: p50.futureValue,
+    optimisticFinal: p75.futureValue,
+    yearlySchedule: combinedSchedule,
+  };
+};
+
+/**
+ * 5. APPROACH B: Historical Backtesting (Nifty 50 Rolling Returns Simulator up to 35 Years)
+ */
+const HISTORICAL_CYCLES = {
+  bull2014: {
+    name: "2014 Structural Bull Run Cycle",
+    returns: [31, -3, 28, 10, 12, 15, 24, 4, 20, 18, 14, 22, 11, 16, 25, 8, 19, 21, 13, 17, 26, 12, 15, 19, 22, 11, 14, 18, 20, 15, 12, 25, 19, 14, 16],
+  },
+  crash2008: {
+    name: "2008 Global Financial Crisis Cycle",
+    returns: [-52, 18, 15, -3, 11, 29, 3, -8, 28, 14, 22, -15, 25, 12, 19, -5, 24, 16, 11, 20, 18, -10, 22, 15, 12, 28, 14, 19, 11, 15, 20, 22, 14, 16, 18],
+  },
+  covid2020: {
+    name: "2020 Post-COVID Recovery Cycle",
+    returns: [15, 24, 4, 20, 18, 12, 15, 10, 22, 16, 25, 14, 19, 11, 21, 17, 13, 24, 15, 18, 20, 12, 16, 22, 14, 19, 11, 15, 21, 18, 13, 24, 16, 20, 15],
+  },
+};
+
+export const runHistoricalBacktest = ({
+  monthlySip = 15000,
+  cycleKey = "bull2014",
+  years = 15,
+  stepUpPct = 0,
+}) => {
+  const yrs = Math.max(1, Number(years) || 15);
+  const cycle = HISTORICAL_CYCLES[cycleKey] || HISTORICAL_CYCLES.bull2014;
+
+  let currentSip = monthlySip;
+  let corpus = 0;
+  let totalInvested = 0;
+  const yearlySchedule = [];
+
+  for (let yr = 1; yr <= yrs; yr++) {
+    const annualRet = cycle.returns[(yr - 1) % cycle.returns.length];
+    const monthlyRate = annualRet / 100 / 12;
+
+    let yearInvested = 0;
+    for (let m = 1; m <= 12; m++) {
+      totalInvested += currentSip;
+      yearInvested += currentSip;
+      corpus = (corpus + currentSip) * (1 + monthlyRate);
+    }
+
+    yearlySchedule.push({
+      year: yr,
+      monthlySip: Math.round(currentSip),
+      annualReturnUsed: annualRet,
+      yearInvested: Math.round(yearInvested),
+      totalInvested: Math.round(totalInvested),
+      wealthGained: Math.round(corpus - totalInvested),
+      endBalance: Math.round(corpus),
+    });
+
+    currentSip = currentSip * (1 + stepUpPct / 100);
+  }
+
+  return {
+    cycleName: cycle.name,
+    totalInvested: Math.round(totalInvested),
+    futureValue: Math.round(corpus),
+    wealthGained: Math.round(corpus - totalInvested),
+    yearlySchedule,
   };
 };

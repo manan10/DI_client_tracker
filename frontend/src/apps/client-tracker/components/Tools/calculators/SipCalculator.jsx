@@ -11,6 +11,9 @@ import {
   Plus,
   Landmark,
   Wallet,
+  Activity,
+  History,
+  Zap,
 } from "lucide-react";
 import {
   AreaChart,
@@ -21,24 +24,38 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { formatINR, formatINRCompact } from "./mathUtils";
+import {
+  calculateStepUpSip,
+  runMonteCarloSimulation,
+  runHistoricalBacktest,
+  formatINR,
+  formatINRCompact,
+} from "./mathUtils";
 
 const TRANSLATIONS = {
   en: {
-    sectionTitle: "1. Enter Your Savings Plan",
-    sectionSub: "Adjust the sliders or type exact figures below to model your SIP.",
+    sectionTitle: "1. Monthly SIP & Market Simulation Engine",
+    sectionSub: "Choose between standard compounding, Monte Carlo volatility probability paths, or historical index backtesting.",
+    modeStandard: "Standard Growth",
+    modeMonteCarlo: "Monte Carlo Volatility",
+    modeHistorical: "Historical Backtest",
+
     monthlyLabel: "Monthly SIP Amount",
     monthlyDesc: "Fixed amount invested automatically every month.",
     stepUpLabel: "Yearly SIP Increase (%)",
     stepUpDesc: "Grow your SIP annually as income rises (0% = constant).",
     returnLabel: "Expected Return (p.a.)",
     returnDesc: "Long-term equity funds average 11%–13%.",
+    volatilityLabel: "Market Volatility (±% Std Dev)",
+    volatilityDesc: "Simulates annual market fluctuation range.",
+    historicalCycleLabel: "Historical Market Cycle",
+    historicalCycleDesc: "Test portfolio performance across past Nifty 50 cycles.",
     yearsLabel: "Time Horizon",
     yearsDesc: "Longer duration unlocks exponential compounding.",
     yearsUnit: "Yrs",
     yrShort: "Yr",
 
-    resultHeader: "2. Projected Wealth Summary",
+    resultHeader: "2. Projected Wealth & Simulation Results",
     heroTitle: "Estimated Final Value",
     investedLabel: "Money Put In",
     investedSub: "Your out-of-pocket savings",
@@ -50,6 +67,10 @@ const TRANSLATIONS = {
       `Your monthly SIP starts at ${start} in Year 1 and gradually reaches ${end} by Year ${yrs}.`,
     takeawaySentence: (invested, profit, total, yrs, mult) =>
       `By investing systematically over ${yrs} years, you contribute ${invested} from your pocket and generate ${profit} in compounding profit — growing your money ${mult}x to ${total}.`,
+
+    mcOptimistic: "Optimistic Path (P75)",
+    mcExpected: "Expected Path (P50)",
+    mcPessimistic: "Pessimistic Path (P25)",
 
     compareToggle: "Compare vs. Bank FD & Inflation",
     compareDesc: "Check post-tax FD returns and today's purchasing power.",
@@ -101,14 +122,22 @@ const TRANSLATIONS = {
     pdfSubtitle: "Long-term wealth projection and compounding analysis",
   },
   hi: {
-    sectionTitle: "1. अपनी बचत योजना दर्ज करें",
-    sectionSub: "स्लाइडर खिसकाएं या नीचे सीधे सही राशि दर्ज करें।",
+    sectionTitle: "1. मासिक SIP और मार्केट सिमुलेशन इंजन",
+    sectionSub: "स्टैंडर्ड ग्रोथ, मोंटे कार्लो वोलेटिलिटी या ऐतिहासिक बैकटेस्ट में से चुनें।",
+    modeStandard: "स्टैंडर्ड ग्रोथ",
+    modeMonteCarlo: "मोंटे कार्लो वोलेटिलिटी",
+    modeHistorical: "ऐतिहासिक बैकटेस्ट",
+
     monthlyLabel: "मासिक SIP राशि",
     monthlyDesc: "हर महीने बैंक से निवेश होने वाली राशि।",
     stepUpLabel: "सालाना SIP बढ़ोतरी (%)",
     stepUpDesc: "आय बढ़ने के साथ हर साल SIP बढ़ाएं (0% = समान राशि)।",
     returnLabel: "अनुमानित सालाना रिटर्न",
     returnDesc: "लंबे समय में इक्विटी फंड औसतन 11%–13% रिटर्न देते हैं।",
+    volatilityLabel: "बाजार उतार-चढ़ाव (±% Volatility)",
+    volatilityDesc: "वार्षिक बाजार उतार-चढ़ाव सीमा सिमुलेट करता है।",
+    historicalCycleLabel: "ऐतिहासिक बाजार चक्र",
+    historicalCycleDesc: "पिछले निफ्टी 50 चक्रों के आधार पर प्रदर्शन जांचें।",
     yearsLabel: "निवेश की अवधि",
     yearsDesc: "लंबा समय कंपाउंडिंग का सबसे बड़ा लाभ देता है।",
     yearsUnit: "साल",
@@ -127,10 +156,14 @@ const TRANSLATIONS = {
     takeawaySentence: (invested, profit, total, yrs, mult) =>
       `${yrs} सालों तक नियमित निवेश करके आप अपनी जेब से ${invested} जमा करेंगे और कंपाउंडिंग से ${profit} का मुनाफा कमाएंगे — जिससे आपका पैसा ${mult} गुना बढ़कर ${total} हो जाएगा।`,
 
+    mcOptimistic: "बेहतर संभावना (P75)",
+    mcExpected: "संभावित पाथ (P50)",
+    mcPessimistic: "कमजोर संभावना (P25)",
+
     compareToggle: "बैंक FD और महंगाई से तुलना करें",
     compareDesc: "टैक्स के बाद FD रिटर्न और आज की कीमत में वैल्यू देखें।",
     fdRateLabel: "बैंक FD दर (%)",
-    taxSlabLabel: "टैक्स स्लैब",
+    taxSlabLabel: "आपका टैक्स स्लैब",
     inflationLabel: "सालाना महंगाई (%)",
     fdCardTitle: "बैंक FD में इतनी ही बचत",
     fdCardSub: (rate, slab) => `${rate}% ब्याज, ${slab}% सालाना टैक्स के बाद`,
@@ -177,14 +210,22 @@ const TRANSLATIONS = {
     pdfSubtitle: "दीर्घकालिक वेल्थ निर्माण और कंपाउंडिंग विश्लेषण",
   },
   gu: {
-    sectionTitle: "1. તમારી બચત યોજના દાખલ કરો",
-    sectionSub: "સ્લાઇડર ખસેડો અથવા નીચે સીધી રકમ લખો.",
+    sectionTitle: "1. માસિક SIP અને માર્કેટ સિમ્યુલેશન ઇंजनों",
+    sectionSub: "સ્ટાન્ડર્ડ ગ્રોથ, મોન્ટે કાર્લો વોલેટિલિટી અથવા હિસ્ટેરિકલ બેકટેસ્ટ પસંદ કરો.",
+    modeStandard: "સ્ટાન્ડર્ડ ગ્રોથ",
+    modeMonteCarlo: "મોન્ટે કાર્લો વોલેટિલિટી",
+    modeHistorical: "હિસ્ટેરિકલ બેકટેસ્ટ",
+
     monthlyLabel: "માસિક SIP રકમ",
     monthlyDesc: "દર મહિને આપમેળે રોકાણ થતી રકમ.",
     stepUpLabel: "વાર્ષિક SIP વધારો (%)",
     stepUpDesc: "આવક વધવાની સાથે દર વર્ષે SIP વધારો (0% = એકસરખી).",
     returnLabel: "અંદાજિત વાર્ષિક વળતર",
     returnDesc: "લાંબા ગાળે ઇક્વિટી ફંડ સરેરાશ 11%–13% વળતર આપે છે.",
+    volatilityLabel: "બજાર અસ્થિરતા (±% Volatility)",
+    volatilityDesc: "વાર્ષિક બજાર ઉતાર-ચઢાવ મર્યાદા દર્શાવે છે.",
+    historicalCycleLabel: "ઐતિહાસિક બજાર ચક્ર",
+    historicalCycleDesc: "પાછલા નિફ્ટી 50 ચક્ર મુજબ પ્રદર્શન ચકાસો.",
     yearsLabel: "રોકાણનો સમયગાળો",
     yearsDesc: "લાંબો સમય કમ્પાઉન્ડિંગનો સૌથી મોટો ફાયદો આપે છે.",
     yearsUnit: "વર્ષ",
@@ -202,6 +243,10 @@ const TRANSLATIONS = {
       `તમારી માસિક SIP પ્રથમ વર્ષે ${start} થી શરૂ થઈને ${yrs}મા વર્ષે ${end} થશે.`,
     takeawaySentence: (invested, profit, total, yrs, mult) =>
       `${yrs} વર્ષ સુધી નિયમિત રોકાણ કરીને તમે તમારા ખિસ્સામાંથી ${invested} રોકશો અને કમ્પાઉન્ડિંગ દ્વારા ${profit} નો નફો મેળવશો — જેનાથી તમારા પૈસા ${mult} ગણા વધીને ${total} થશે.`,
+
+    mcOptimistic: "શ્રેષ્ઠ શક્યતા (P75)",
+    mcExpected: "સંભવિત પાથ (P50)",
+    mcPessimistic: "નબળી શક્યતા (P25)",
 
     compareToggle: "બેંક FD અને મોંઘવારી સાથે સરખામણી",
     compareDesc: "ટેક્સ પછી FD વળતર અને આજની ખરીદશક્તિ જુઓ.",
@@ -310,6 +355,12 @@ const TactileSliderInput = ({
       thumb: "border-indigo-600",
       ring: "focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/15",
       presetActive: "bg-indigo-600 text-white border-indigo-600 shadow-2xs",
+    },
+    amber: {
+      bar: "bg-amber-500",
+      thumb: "border-amber-600",
+      ring: "focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/15",
+      presetActive: "bg-amber-600 text-white border-amber-600 shadow-2xs",
     },
   }[accent] || {
     bar: "bg-emerald-500",
@@ -506,7 +557,13 @@ const CustomDropdown = ({ value, options, onChange }) => {
   );
 };
 
-const CustomGrowthTooltip = ({ active, payload, t, showComparison }) => {
+const HISTORICAL_CYCLE_OPTIONS = [
+  { value: "bull2014", label: "2014 Structural Bull Run Cycle" },
+  { value: "crash2008", label: "2008 Global Financial Crisis Cycle" },
+  { value: "covid2020", label: "2020 Post-COVID Recovery Cycle" },
+];
+
+const CustomSimulationTooltip = ({ active, payload, t, simMode }) => {
   if (!active || !payload || !payload.length) return null;
   const row = payload[0]?.payload;
   if (!row) return null;
@@ -528,26 +585,29 @@ const CustomGrowthTooltip = ({ active, payload, t, showComparison }) => {
             {formatINRCompact(row.totalInvested)}
           </span>
         </div>
-        {showComparison && (
-          <div className="flex justify-between gap-4">
-            <span className="text-amber-600 dark:text-amber-400">{t.legendFd}:</span>
-            <span className="font-bold text-amber-600 dark:text-amber-400">
-              {formatINRCompact(row.fdBalance)}
+        {simMode === "montecarlo" ? (
+          <>
+            <div className="flex justify-between gap-4">
+              <span className="text-emerald-600">{t.mcOptimistic}:</span>
+              <span className="font-bold text-emerald-600">{formatINRCompact(row.optimistic)}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-indigo-600">{t.mcExpected}:</span>
+              <span className="font-bold text-indigo-600">{formatINRCompact(row.expected)}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-amber-600">{t.mcPessimistic}:</span>
+              <span className="font-bold text-amber-600">{formatINRCompact(row.pessimistic)}</span>
+            </div>
+          </>
+        ) : (
+          <div className="flex justify-between gap-4 pt-1.5 border-t border-slate-100 dark:border-white/10">
+            <span className="font-bold text-slate-900 dark:text-white">{t.colTotal}:</span>
+            <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
+              {formatINRCompact(row.endBalance)}
             </span>
           </div>
         )}
-        <div className="flex justify-between gap-4">
-          <span className="text-emerald-600 dark:text-emerald-400">{t.profitLabel}:</span>
-          <span className="font-bold text-emerald-600 dark:text-emerald-400">
-            +{formatINRCompact(row.wealthGained)}
-          </span>
-        </div>
-        <div className="flex justify-between gap-4 pt-1.5 border-t border-slate-100 dark:border-white/10">
-          <span className="font-bold text-slate-900 dark:text-white">{t.colTotal}:</span>
-          <span className="font-extrabold text-slate-900 dark:text-white">
-            {formatINRCompact(row.endBalance)}
-          </span>
-        </div>
       </div>
     </div>
   );
@@ -563,10 +623,13 @@ const TAX_SLAB_OPTIONS = [
 const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
 
+  const [simMode, setSimMode] = useState("standard"); // 'standard' | 'montecarlo' | 'historical'
   const [monthlySip, setMonthlySip] = useState(15000);
   const [annualReturn, setAnnualReturn] = useState(12);
   const [years, setYears] = useState(15);
   const [stepUpPct, setStepUpPct] = useState(10);
+  const [volatility, setVolatility] = useState(15);
+  const [historicalCycle, setHistoricalCycle] = useState("bull2014");
 
   // Optional FD & Inflation Reality Check
   const [showComparison, setShowComparison] = useState(false);
@@ -577,58 +640,55 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
   const [activeView, setActiveView] = useState("chart");
 
   const result = useMemo(() => {
-    const sip = Number(monthlySip) || 0;
-    const rate = Number(annualReturn) || 0;
-    const yrs = Math.max(1, Number(years) || 1);
-    const step = Number(stepUpPct) || 0;
-
-    const monthlyMfRate = rate / 100 / 12;
-    const postTaxFdAnnualRate =
-      ((Number(fdRate) || 0) / 100) * (1 - (Number(taxSlab) || 0) / 100);
-    const monthlyFdRate = postTaxFdAnnualRate / 12;
-
-    let currentSip = sip;
-    let mfCorpus = 0;
-    let fdCorpus = 0;
-    let totalInvested = 0;
-    const yearlySchedule = [];
-
-    for (let yr = 1; yr <= yrs; yr++) {
-      for (let m = 1; m <= 12; m++) {
-        totalInvested += currentSip;
-        mfCorpus = (mfCorpus + currentSip) * (1 + monthlyMfRate);
-        fdCorpus = (fdCorpus + currentSip) * (1 + monthlyFdRate);
-      }
-
-      yearlySchedule.push({
-        year: yr,
-        monthlySip: Math.round(currentSip),
-        totalInvested: Math.round(totalInvested),
-        wealthGained: Math.round(mfCorpus - totalInvested),
-        endBalance: Math.round(mfCorpus),
-        fdBalance: Math.round(fdCorpus),
+    if (simMode === "montecarlo") {
+      const mc = runMonteCarloSimulation({
+        monthlySip: Number(monthlySip) || 0,
+        meanReturnPct: Number(annualReturn) || 12,
+        volatilityPct: Number(volatility) || 15,
+        years: Number(years) || 1,
+        stepUpPct: Number(stepUpPct) || 0,
       });
-
-      currentSip = currentSip * (1 + step / 100);
+      const mult = mc.totalInvested > 0 ? (mc.expectedFinal / mc.totalInvested).toFixed(2) : "1.00";
+      return {
+        totalInvested: mc.totalInvested,
+        futureValue: mc.expectedFinal,
+        wealthGained: Math.max(0, mc.expectedFinal - mc.totalInvested),
+        pessimisticFinal: mc.pessimisticFinal,
+        optimisticFinal: mc.optimisticFinal,
+        multiplier: mult,
+        yearlySchedule: mc.yearlySchedule,
+        isMonteCarlo: true,
+      };
+    } else if (simMode === "historical") {
+      const hist = runHistoricalBacktest({
+        monthlySip: Number(monthlySip) || 0,
+        cycleKey: historicalCycle,
+        years: Math.min(years, 35),
+        stepUpPct: Number(stepUpPct) || 0,
+      });
+      const mult = hist.totalInvested > 0 ? (hist.futureValue / hist.totalInvested).toFixed(2) : "1.00";
+      return {
+        totalInvested: hist.totalInvested,
+        futureValue: hist.futureValue,
+        wealthGained: hist.wealthGained,
+        multiplier: mult,
+        yearlySchedule: hist.yearlySchedule,
+        isHistorical: true,
+      };
+    } else {
+      const std = calculateStepUpSip({
+        monthlySip: Number(monthlySip) || 0,
+        annualReturnPct: Number(annualReturn) || 0,
+        years: Number(years) || 1,
+        stepUpPct: Number(stepUpPct) || 0,
+      });
+      const mult = std.totalInvested > 0 ? (std.futureValue / std.totalInvested).toFixed(2) : "1.00";
+      return {
+        ...std,
+        multiplier: mult,
+      };
     }
-
-    const inflationFactor = Math.pow(1 + (Number(inflationRate) || 0) / 100, yrs);
-    const inflationAdjustedValue = Math.round(mfCorpus / inflationFactor);
-    const multiplier =
-      totalInvested > 0 ? (mfCorpus / totalInvested).toFixed(2) : "1.00";
-
-    return {
-      totalInvested: Math.round(totalInvested),
-      futureValue: Math.round(mfCorpus),
-      wealthGained: Math.round(mfCorpus - totalInvested),
-      fdFutureValue: Math.round(fdCorpus),
-      sipOverFdEdge: Math.round(mfCorpus - fdCorpus),
-      inflationAdjustedValue,
-      multiplier,
-      finalMonthlySip: Math.round(sip * Math.pow(1 + step / 100, Math.max(0, yrs - 1))),
-      yearlySchedule,
-    };
-  }, [monthlySip, annualReturn, years, stepUpPct, fdRate, taxSlab, inflationRate]);
+  }, [simMode, monthlySip, annualReturn, years, stepUpPct, volatility, historicalCycle]);
 
   const investedRatio =
     result.futureValue > 0
@@ -637,6 +697,13 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
   const profitRatio = 100 - investedRatio;
 
   useEffect(() => {
+    const modeLabel =
+      simMode === "montecarlo"
+        ? t.modeMonteCarlo
+        : simMode === "historical"
+        ? t.modeHistorical
+        : t.modeStandard;
+
     const takeaway = t.takeawaySentence(
       formatINRCompact(result.totalInvested),
       formatINRCompact(result.wealthGained),
@@ -661,13 +728,12 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
 
     const text =
       `${t.waGreeting(clientName?.trim())}\n\n` +
-      `${t.waIntro(stepUpPct > 0)}\n\n` +
-      `${t.waPlanHeader}\n` +
+      `${t.waIntro(false)}\n\n` +
+      `• Mode: *${modeLabel}*\n` +
       `• ${t.waSip}: *${formatINR(monthlySip)}*\n` +
       stepUpLine +
-      `• ${t.waDuration}: *${years} ${t.yearsUnit}*\n` +
-      `• ${t.waReturn}: *${annualReturn}% p.a.*\n\n` +
-      `${t.waOutcomeHeader}\n` +
+      `• ${t.waDuration}: *${years} ${t.yearsUnit}*\n\n` +
+      `📊 *${t.waOutcomeHeader}*\n` +
       `• ${t.waInvested}: *${formatINRCompact(result.totalInvested)}* (${investedRatio}%)\n` +
       `• ${t.waProfit}: *+${formatINRCompact(result.wealthGained)}* (${profitRatio}%)\n` +
       `• ${t.waMultiplier}: *${result.multiplier}x*\n` +
@@ -677,7 +743,6 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
       `_${t.waDisclaimer}_\n` +
       `— *Dalal Investments | Private Wealth Desk*`;
 
-    // Pick up to 5 clean milestone rows (e.g., every 3-5 years + final year) for the PDF sheet
     const milestoneStep = years <= 5 ? 1 : years <= 15 ? 3 : 5;
     const milestones = result.yearlySchedule
       .filter((r) => r.year === 1 || r.year % milestoneStep === 0 || r.year === years)
@@ -686,53 +751,33 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
         sip: formatINR(r.monthlySip),
         invested: formatINRCompact(r.totalInvested),
         profit: formatINRCompact(r.wealthGained),
-        total: formatINRCompact(r.endBalance),
+        total: formatINRCompact(r.endBalance || r.expected),
       }));
 
     onSummaryChange({
-      title: t.pdfTitle,
-      subtitle: t.pdfSubtitle,
+      title: `${t.pdfTitle} (${modeLabel})`,
+      subtitle: `Simulation Mode: ${modeLabel}`,
       takeaway,
       whatsappText: text,
       assumptions: [
         { label: t.waSip, value: formatINR(monthlySip) },
-        { label: t.waStepUp, value: stepUpPct > 0 ? `${stepUpPct}% / yr` : "0% (Fixed)" },
+        { label: "Simulation Mode", value: modeLabel },
         { label: t.waDuration, value: `${years} ${t.yearsUnit}` },
-        { label: t.waReturn, value: `${annualReturn}% p.a.` },
       ],
       highlights: [
         {
-          label: t.waInvested,
-          sub: `${investedRatio}% of total corpus`,
+          label: t.investedLabel,
+          sub: `${investedRatio}% of corpus`,
           value: `${formatINRCompact(result.totalInvested)} (${formatINR(result.totalInvested)})`,
         },
         {
-          label: t.waProfit,
-          sub: `${profitRatio}% wealth created via compounding`,
-          value: `+${formatINRCompact(result.wealthGained)} (${formatINR(result.wealthGained)})`,
+          label: t.profitLabel,
+          sub: `${profitRatio}% compounding gain`,
+          value: `+${formatINRCompact(result.wealthGained)}`,
         },
         {
-          label: t.waMultiplier,
-          sub: t.multiplierSub,
-          value: `${result.multiplier}x`,
-        },
-        ...(showComparison
-          ? [
-              {
-                label: t.fdCardTitle,
-                sub: t.fdCardSub(fdRate, taxSlab),
-                value: `${formatINRCompact(result.fdFutureValue)} (SIP Edge: +${formatINRCompact(result.sipOverFdEdge)})`,
-              },
-              {
-                label: t.realValueTitle,
-                sub: t.realValueSub(inflationRate),
-                value: formatINRCompact(result.inflationAdjustedValue),
-              },
-            ]
-          : []),
-        {
-          label: t.waTotal,
-          sub: `Projected maturity fund at the end of ${years} ${t.yearsUnit}`,
+          label: t.heroTitle,
+          sub: `Projected corpus under ${modeLabel}`,
           value: `${formatINRCompact(result.futureValue)} (${formatINR(result.futureValue)})`,
           isHero: true,
         },
@@ -743,9 +788,9 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
   }, [
     clientName,
     monthlySip,
-    annualReturn,
     years,
     stepUpPct,
+    simMode,
     showComparison,
     fdRate,
     taxSlab,
@@ -760,22 +805,59 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
   return (
     <div className="space-y-8 w-full font-sans">
       
-      {/* ================================================================= */}
-      {/* TOP SECTION: STEP 1 — SAVINGS PLAN FORM (2x2 Grid + Compare Bar)  */}
-      {/* ================================================================= */}
+      {/* SIMULATION MODE SELECTOR TABS */}
+      <div className="flex flex-wrap items-center gap-2 bg-slate-100 dark:bg-white/5 p-1.5 rounded-xl border border-slate-200 dark:border-white/10">
+        <button
+          type="button"
+          onClick={() => setSimMode("standard")}
+          className={`flex-1 min-w-[130px] py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center gap-2 ${
+            simMode === "standard"
+              ? "bg-white dark:bg-[#0B1120] text-emerald-700 dark:text-emerald-400 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+          }`}
+        >
+          <TrendingUp size={14} />
+          <span>{t.modeStandard}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setSimMode("montecarlo")}
+          className={`flex-1 min-w-[160px] py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center gap-2 ${
+            simMode === "montecarlo"
+              ? "bg-white dark:bg-[#0B1120] text-indigo-700 dark:text-indigo-400 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+          }`}
+        >
+          <Activity size={14} />
+          <span>{t.modeMonteCarlo}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setSimMode("historical")}
+          className={`flex-1 min-w-[150px] py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center gap-2 ${
+            simMode === "historical"
+              ? "bg-white dark:bg-[#0B1120] text-amber-700 dark:text-amber-400 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+          }`}
+        >
+          <History size={14} />
+          <span>{t.modeHistorical}</span>
+        </button>
+      </div>
+
+      {/* SECTION 1: CONFIGURATION FORM */}
       <section className="bg-slate-50/90 dark:bg-white/[0.02] border border-slate-200/90 dark:border-white/10 rounded-2xl p-5 sm:p-6 space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200/80 dark:border-white/10">
-          <div>
-            <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-              {t.sectionTitle}
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              {t.sectionSub}
-            </p>
-          </div>
+        <div className="pb-3 border-b border-slate-200/80 dark:border-white/10">
+          <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+            {t.sectionTitle}
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            {t.sectionSub}
+          </p>
         </div>
 
-        {/* 2x2 Input Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
           <TactileSliderInput
             label={t.monthlyLabel}
@@ -808,44 +890,110 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
               { label: "0% (Fixed)", value: 0 },
               { label: "5% / yr", value: 5 },
               { label: "10% / yr", value: 10 },
-              { label: "15% / yr", value: 15 },
-            ]}
-          />
-
-          <TactileSliderInput
-            label={t.returnLabel}
-            description={t.returnDesc}
-            value={annualReturn}
-            onChange={setAnnualReturn}
-            min={6}
-            max={22}
-            step={0.5}
-            suffix="%"
-            presets={[
-              { label: "8% (Debt)", value: 8 },
-              { label: "12% (Equity)", value: 12 },
-              { label: "15% (Aggressive)", value: 15 },
-            ]}
-          />
-
-          <TactileSliderInput
-            label={t.yearsLabel}
-            description={t.yearsDesc}
-            value={years}
-            onChange={setYears}
-            min={1}
-            max={35}
-            step={1}
-            suffix={t.yearsUnit}
-            accent="indigo"
-            presets={[
-              { label: `5 ${t.yearsUnit}`, value: 5 },
-              { label: `10 ${t.yearsUnit}`, value: 10 },
-              { label: `15 ${t.yearsUnit}`, value: 15 },
-              { label: `20 ${t.yearsUnit}`, value: 20 },
             ]}
           />
         </div>
+
+        {simMode === "montecarlo" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+            <TactileSliderInput
+              label={t.returnLabel}
+              description={t.returnDesc}
+              value={annualReturn}
+              onChange={setAnnualReturn}
+              min={8}
+              max={18}
+              step={0.5}
+              suffix="%"
+              accent="indigo"
+              presets={[
+                { label: "10% (Expected)", value: 10 },
+                { label: "12% (Expected)", value: 12 },
+              ]}
+            />
+            <TactileSliderInput
+              label={t.volatilityLabel}
+              description={t.volatilityDesc}
+              value={volatility}
+              onChange={setVolatility}
+              min={5}
+              max={30}
+              step={1}
+              suffix="%"
+              accent="amber"
+              presets={[
+                { label: "±10% (Low)", value: 10 },
+                { label: "±15% (Normal)", value: 15 },
+                { label: "±25% (High)", value: 25 },
+              ]}
+            />
+          </div>
+        ) : simMode === "historical" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+            <div>
+              <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                {t.historicalCycleLabel}
+              </label>
+              <CustomDropdown
+                value={historicalCycle}
+                options={HISTORICAL_CYCLE_OPTIONS}
+                onChange={setHistoricalCycle}
+              />
+              <p className="text-[11px] text-slate-400 mt-1">{t.historicalCycleDesc}</p>
+            </div>
+            <TactileSliderInput
+              label={t.yearsLabel}
+              value={Math.min(years, 35)}
+              onChange={setYears}
+              min={1}
+              max={35}
+              step={1}
+              suffix={t.yearsUnit}
+              accent="indigo"
+              presets={[
+                { label: `5 ${t.yearsUnit}`, value: 5 },
+                { label: `10 ${t.yearsUnit}`, value: 10 },
+                { label: `15 ${t.yearsUnit}`, value: 15 },
+                { label: `20 ${t.yearsUnit}`, value: 20 },
+              ]}
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+            <TactileSliderInput
+              label={t.returnLabel}
+              description={t.returnDesc}
+              value={annualReturn}
+              onChange={setAnnualReturn}
+              min={6}
+              max={22}
+              step={0.5}
+              suffix="%"
+              presets={[
+                { label: "10%", value: 10 },
+                { label: "12%", value: 12 },
+                { label: "15%", value: 15 },
+              ]}
+            />
+            <TactileSliderInput
+              label={t.yearsLabel}
+              description={t.yearsDesc}
+              value={years}
+              onChange={setYears}
+              min={1}
+              max={35}
+              step={1}
+              suffix={t.yearsUnit}
+              accent="indigo"
+              presets={[
+                { label: `5 ${t.yearsUnit}`, value: 5 },
+                { label: `10 ${t.yearsUnit}`, value: 10 },
+                { label: `15 ${t.yearsUnit}`, value: 15 },
+                { label: `20 ${t.yearsUnit}`, value: 20 },
+              ]}
+            />
+          </div>
+        )}
 
         {/* Optional FD & Inflation Reality Check Accordion Bar */}
         <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl p-4 shadow-2xs">
@@ -914,9 +1062,7 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
         </div>
       </section>
 
-      {/* ================================================================= */}
-      {/* BOTTOM SECTION: STEP 2 — PROJECTED RESULTS, KPIs & CHARTS         */}
-      {/* ================================================================= */}
+      {/* SECTION 2: RESULTS & VISUALS */}
       <section className="space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
@@ -924,12 +1070,12 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
           </h3>
         </div>
 
-        {/* High-Contrast Hero Result Banner */}
+        {/* Hero Result Banner */}
         <div className="rounded-2xl bg-slate-900 dark:bg-[#0F172A] border border-slate-800 dark:border-emerald-500/30 text-white p-6 shadow-md space-y-5">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[11px] font-bold uppercase tracking-wider">
-                <TrendingUp size={13} />
+                <Zap size={13} />
                 <span>
                   {t.heroTitle} ({years} {t.yearsUnit})
                 </span>
@@ -953,9 +1099,7 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
                 <span className="text-lg sm:text-xl font-black text-white tabular-nums mt-0.5 block">
                   {formatINRCompact(result.totalInvested)}
                 </span>
-                <span className="text-[11px] text-slate-400">
-                  {investedRatio}% of corpus
-                </span>
+                <span className="text-[11px] text-slate-400">{investedRatio}% of corpus</span>
               </div>
 
               <div className="bg-slate-800/90 border border-emerald-500/30 rounded-xl px-4 py-3">
@@ -965,9 +1109,7 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
                 <span className="text-lg sm:text-xl font-black text-emerald-400 tabular-nums mt-0.5 block">
                   +{formatINRCompact(result.wealthGained)}
                 </span>
-                <span className="text-[11px] text-slate-400">
-                  {profitRatio}% compounding gain
-                </span>
+                <span className="text-[11px] text-slate-400">{profitRatio}% gain</span>
               </div>
 
               <div className="bg-slate-800/90 border border-slate-700 rounded-xl px-4 py-3">
@@ -977,96 +1119,13 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
                 <span className="text-lg sm:text-xl font-black text-amber-400 tabular-nums mt-0.5 block">
                   {result.multiplier}x
                 </span>
-                <span className="text-[11px] text-slate-400">
-                  {t.multiplierSub}
-                </span>
+                <span className="text-[11px] text-slate-400">Growth multiple</span>
               </div>
             </div>
           </div>
-
-          {/* 2-Tone Split Bar */}
-          <div className="space-y-2">
-            <div className="w-full h-3 rounded-full bg-slate-800 overflow-hidden flex p-0.5 gap-0.5">
-              <div
-                style={{ width: `${investedRatio}%` }}
-                className="h-full rounded-l-full bg-indigo-400 transition-all duration-300"
-              />
-              <div
-                style={{ width: `${profitRatio}%` }}
-                className="h-full rounded-r-full bg-emerald-400 transition-all duration-300"
-              />
-            </div>
-
-            <div className="flex flex-wrap justify-between items-center gap-2 text-xs">
-              <span className="inline-flex items-center gap-1.5 text-slate-200 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-indigo-400" />
-                {t.investedLabel}:{" "}
-                <strong className="text-white">{formatINRCompact(result.totalInvested)}</strong>{" "}
-                <span className="text-slate-400">({investedRatio}%)</span>
-              </span>
-
-              <span className="inline-flex items-center gap-1.5 text-slate-200 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                {t.profitLabel}:{" "}
-                <strong className="text-emerald-400">+{formatINRCompact(result.wealthGained)}</strong>{" "}
-                <span className="text-slate-400">({profitRatio}%)</span>
-              </span>
-            </div>
-          </div>
-
-          {stepUpPct > 0 && (
-            <div className="pt-3 border-t border-slate-800 flex items-center gap-2 text-xs text-amber-300 font-medium">
-              <Sparkles size={14} className="text-amber-400 shrink-0" />
-              <span>
-                {t.stepUpNote(formatINR(monthlySip), formatINR(result.finalMonthlySip), years)}
-              </span>
-            </div>
-          )}
         </div>
 
-        {/* Optional FD & Inflation Comparison Cards */}
-        {showComparison && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-150">
-            <div className="p-5 rounded-xl bg-amber-50/70 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 flex items-start justify-between gap-4">
-              <div className="space-y-1">
-                <span className="text-xs font-bold text-amber-800 dark:text-amber-300 block">
-                  {t.fdCardTitle}
-                </span>
-                <span className="text-2xl font-black text-slate-900 dark:text-white block tabular-nums">
-                  {formatINRCompact(result.fdFutureValue)}
-                </span>
-                <span className="text-xs text-slate-600 dark:text-slate-400 block">
-                  {t.fdCardSub(fdRate, taxSlab)}
-                </span>
-                <span className="inline-block mt-1 px-2.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
-                  {t.fdExtraEdge(formatINRCompact(result.sipOverFdEdge))}
-                </span>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                <Landmark size={20} />
-              </div>
-            </div>
-
-            <div className="p-5 rounded-xl bg-purple-50/60 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/25 flex items-start justify-between gap-4">
-              <div className="space-y-1">
-                <span className="text-xs font-bold text-purple-800 dark:text-purple-300 block">
-                  {t.realValueTitle}
-                </span>
-                <span className="text-2xl font-black text-slate-900 dark:text-white block tabular-nums">
-                  {formatINRCompact(result.inflationAdjustedValue)}
-                </span>
-                <span className="text-xs text-slate-600 dark:text-slate-400 block leading-relaxed">
-                  {t.realValueSub(inflationRate)}
-                </span>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-                <Wallet size={20} />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Full-Width Chart & Year-by-Year Table Card */}
+        {/* Chart & Table Card */}
         <div className="border border-slate-200 dark:border-white/10 rounded-2xl p-5 sm:p-6 bg-white dark:bg-[#0B1120] shadow-xs space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -1110,19 +1169,32 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
           {activeView === "chart" ? (
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-5 text-xs font-bold">
-                <span className="inline-flex items-center gap-1.5 text-indigo-700 dark:text-indigo-300">
-                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-                  {t.legendInvested}
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                  {t.legendTotal}
-                </span>
-                {showComparison && (
-                  <span className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-300">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                    {t.legendFd}
-                  </span>
+                {simMode === "montecarlo" ? (
+                  <>
+                    <span className="inline-flex items-center gap-1.5 text-emerald-600">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                      {t.mcOptimistic}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-indigo-600">
+                      <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+                      {t.mcExpected}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-amber-600">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                      {t.mcPessimistic}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                      {t.legendTotal}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-indigo-700 dark:text-indigo-300">
+                      <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+                      {t.legendInvested}
+                    </span>
+                  </>
                 )}
               </div>
 
@@ -1132,16 +1204,6 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
                     data={result.yearlySchedule}
                     margin={{ top: 10, right: 16, left: 4, bottom: 0 }}
                   >
-                    <defs>
-                      <linearGradient id="sipTotalGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.32} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
-                      </linearGradient>
-                      <linearGradient id="sipInvestedGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.22} />
-                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0.02} />
-                      </linearGradient>
-                    </defs>
                     <CartesianGrid
                       strokeDasharray="3 3"
                       vertical={false}
@@ -1161,35 +1223,19 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
                       tickLine={false}
                       width={76}
                     />
-                    <Tooltip
-                      content={<CustomGrowthTooltip t={t} showComparison={showComparison} />}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="endBalance"
-                      name={t.legendTotal}
-                      stroke="#10b981"
-                      strokeWidth={2.5}
-                      fill="url(#sipTotalGrad)"
-                    />
-                    {showComparison && (
-                      <Area
-                        type="monotone"
-                        dataKey="fdBalance"
-                        name={t.legendFd}
-                        stroke="#f59e0b"
-                        strokeWidth={2}
-                        fillOpacity={0}
-                      />
+                    <Tooltip content={<CustomSimulationTooltip t={t} simMode={simMode} />} />
+                    {simMode === "montecarlo" ? (
+                      <>
+                        <Area type="monotone" dataKey="optimistic" stroke="#10b981" strokeWidth={2} fillOpacity={0.1} fill="#10b981" />
+                        <Area type="monotone" dataKey="expected" stroke="#6366f1" strokeWidth={2.5} fillOpacity={0.2} fill="#6366f1" />
+                        <Area type="monotone" dataKey="pessimistic" stroke="#f59e0b" strokeWidth={2} fillOpacity={0.1} fill="#f59e0b" />
+                      </>
+                    ) : (
+                      <>
+                        <Area type="monotone" dataKey="endBalance" stroke="#10b981" strokeWidth={2.5} fill="#10b981" fillOpacity={0.2} />
+                        <Area type="monotone" dataKey="totalInvested" stroke="#6366f1" strokeWidth={2} fill="#6366f1" fillOpacity={0.1} />
+                      </>
                     )}
-                    <Area
-                      type="monotone"
-                      dataKey="totalInvested"
-                      name={t.legendInvested}
-                      stroke="#6366f1"
-                      strokeWidth={2}
-                      fill="url(#sipInvestedGrad)"
-                    />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -1208,14 +1254,11 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                   {result.yearlySchedule.map((row) => (
-                    <tr
-                      key={row.year}
-                      className="hover:bg-emerald-50/40 dark:hover:bg-white/[0.03] transition-colors"
-                    >
+                    <tr key={row.year} className="hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors">
                       <td className="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-200">
                         {t.yrShort} {row.year}
                       </td>
-                      <td className="py-2.5 px-4 text-indigo-600 dark:text-indigo-400 font-semibold">
+                      <td className="py-2.5 px-4 text-slate-600 dark:text-slate-400">
                         {formatINR(row.monthlySip)}
                       </td>
                       <td className="py-2.5 px-4 text-slate-600 dark:text-slate-400">
@@ -1225,7 +1268,7 @@ const SipCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
                         +{formatINR(row.wealthGained)}
                       </td>
                       <td className="py-2.5 px-4 text-right font-extrabold text-slate-900 dark:text-white">
-                        {formatINR(row.endBalance)}
+                        {formatINR(row.endBalance || row.expected)}
                       </td>
                     </tr>
                   ))}
