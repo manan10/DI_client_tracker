@@ -3,28 +3,28 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   X,
-  ChevronLeft,
-  ChevronRight,
-  Flame,
-  Clock,
   Play,
   Pause,
-  RotateCcw,
-  CheckCircle2,
-  ListFilter,
-  Users,
-  Volume2,
-  VolumeX,
-  Maximize2,
-  Minimize2,
-  Sparkles,
-  UtensilsCrossed,
   ChefHat,
-  ChevronDown,
-  Check,
+  Plus,
+  ListOrdered,
+  Minus,
 } from "lucide-react";
 import { useApi } from "../../../shared/hooks/useApi";
 import { toast } from "sonner";
+import {
+  INGREDIENT_CATEGORIES,
+  classifyIngredientCategory,
+  formatTimer,
+} from "../components/CookMode/cookModeUtils";
+import CookModeHeader from "../components/CookMode/CookModeHeader";
+import MiseEnPlaceList from "../components/CookMode/MiseEnPlaceList";
+import CookModeStepStage from "../components/CookMode/CookModeStepStage";
+import CookModeBottomDock from "../components/CookMode/CookModeBottomDock";
+import CookModeSheets from "../components/CookMode/CookModeSheets";
+
+const SESSION_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
+const getSessionKey = (id) => `shahi_cook_session_${id}`;
 
 const CookMode = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -36,55 +36,125 @@ const CookMode = () => {
   const [recipe, setRecipe] = useState(null);
   const [allRecipes, setAllRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isRecipePickerOpen, setIsRecipePickerOpen] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  // Cooking Progression
+  // Cooking Progression (Explicit step completion only)
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [completedSteps, setCompletedSteps] = useState({});
   const [servings, setServings] = useState(4);
 
-  // Ingredients Drawer
-  const [isIngredientsOpen, setIsIngredientsOpen] = useState(false);
+  // Video & Mobile Sheets
+  const [showMobileVideo, setShowMobileVideo] = useState(false);
+  const [activeSheet, setActiveSheet] = useState(null);
   const [checkedIngredients, setCheckedIngredients] = useState({});
 
-  // Active Timer State
-  const [timerSeconds, setTimerSeconds] = useState(0);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [timerInitialSeconds, setTimerInitialSeconds] = useState(0);
+  // Timestamp-Backed Parallel Multi-Timer Engine
+  const [timers, setTimers] = useState([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [notifPermission, setNotifPermission] = useState(() =>
+    typeof Notification !== "undefined" ? Notification.permission : "denied"
+  );
 
-  // Wake Lock & Fullscreen State
+  // Kitchen Ergonomics
+  const [largeText, setLargeText] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [wakeLockActive, setWakeLockActive] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const wakeLockRef = useRef(null);
+  const touchStartRef = useRef({ x: 0, y: 0 });
 
-  // Audio Chime Helper
-  const playChime = useCallback(() => {
-    if (!soundEnabled) return;
-    try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContext) return;
-      const ctx = new AudioContext();
-
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
-
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start();
-      osc.stop(ctx.currentTime + 0.8);
-    } catch {
-      // Ignore autoplay restrictions
+  // Request OS / Browser Notification Permission
+  const requestNotificationPermission = useCallback(async () => {
+    if (typeof Notification === "undefined") {
+      toast.error("Notifications are not supported on this browser");
+      return false;
     }
-  }, [soundEnabled]);
+    if (Notification.permission === "granted") {
+      setNotifPermission("granted");
+      return true;
+    }
+    if (Notification.permission !== "denied") {
+      const result = await Notification.requestPermission();
+      setNotifPermission(result);
+      if (result === "granted") {
+        toast.success("Phone timer alerts enabled!");
+        return true;
+      }
+    }
+    toast.error("Enable notifications in browser settings for timer alerts");
+    return false;
+  }, []);
+
+  // Send Phone Banner Notification
+  const sendPhoneNotification = useCallback((title, body, tag) => {
+    if (
+      typeof Notification === "undefined" ||
+      Notification.permission !== "granted"
+    ) {
+      return;
+    }
+    try {
+      if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.showNotification(title, {
+            body,
+            tag,
+            vibrate: [250, 120, 250],
+            renotify: true,
+          });
+        });
+      } else {
+        new Notification(title, { body, tag });
+      }
+    } catch {
+      // Handled silently
+    }
+  }, []);
+
+  // Audio + Vibration Chime
+  const playChime = useCallback(
+    (isWarning = false) => {
+      try {
+        if ("vibrate" in navigator) {
+          navigator.vibrate(
+            isWarning ? [150, 80, 150] : [250, 120, 250, 120, 400]
+          );
+        }
+      } catch {
+        // Ignore unsupported vibration
+      }
+
+      if (!soundEnabled) return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = "sine";
+        if (isWarning) {
+          osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+          osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.15);
+        } else {
+          osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+          osc.frequency.setValueAtTime(880, ctx.currentTime + 0.16);
+          osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.32);
+        }
+
+        gain.gain.setValueAtTime(0.32, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.95);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start();
+        osc.stop(ctx.currentTime + 0.95);
+      } catch {
+        // Handled silently
+      }
+    },
+    [soundEnabled]
+  );
 
   // Screen Wake Lock API
   useEffect(() => {
@@ -97,37 +167,59 @@ const CookMode = () => {
             setWakeLockActive(false);
           });
         }
-      } catch (err) {
-        console.warn("Screen wake lock unavailable:", err);
+      } catch {
+        setWakeLockActive(false);
       }
     };
 
     requestWakeLock();
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        requestWakeLock();
-      }
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") requestWakeLock();
     };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      if (wakeLockRef.current) {
-        wakeLockRef.current.release().catch(() => {});
-      }
+      document.removeEventListener("visibilitychange", onVisibility);
+      if (wakeLockRef.current) wakeLockRef.current.release().catch(() => {});
     };
   }, []);
 
-  // Fetch Current Recipe and all recipes for quick switching
+  // Accidental Tab Close / Refresh Guard
+  useEffect(() => {
+    const hasRunningTimer = timers.some(
+      (t) => t.isRunning && t.remainingSeconds > 0
+    );
+    if (!hasRunningTimer) return;
+
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [timers]);
+
+  // Cleanup Speech Synthesis
+  useEffect(() => {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+    return () => {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [currentStepIndex, recipe]);
+
+  // Fetch Recipe & Restore Saved Cooking Session
   useEffect(() => {
     let isMounted = true;
 
     const loadData = async () => {
       setLoading(true);
+      setIsHydrated(false);
       try {
-        // Fetch all recipes first
         const listRes = await request("/recipes", "GET");
         let availableList = [];
         if (listRes?.success && Array.isArray(listRes.data)) {
@@ -141,25 +233,85 @@ const CookMode = () => {
         if (!isMounted) return;
         setAllRecipes(availableList);
 
-        // Target recipe validation: Do not call if id is "cook-mode", "undefined", or null
-        const isValidId = recipeId && recipeId !== "cook-mode" && recipeId !== "undefined";
-        const targetId = isValidId ? recipeId : (availableList.length > 0 ? availableList[0]._id : null);
+        const isValidId =
+          recipeId && recipeId !== "cook-mode" && recipeId !== "undefined";
+        const targetId = isValidId
+          ? recipeId
+          : availableList.length > 0
+          ? availableList[0]._id
+          : null;
 
         if (targetId && targetId !== "cook-mode") {
           const detailRes = await request(`/recipes/${targetId}`, "GET");
           const recipeData = detailRes?.data || detailRes;
+
           if (isMounted && recipeData && recipeData.title) {
             setRecipe(recipeData);
-            setServings(recipeData.baseServings || 4);
-            setCurrentStepIndex(0);
-            setCompletedSteps({});
-            setCheckedIngredients({});
+
+            let restored = false;
+            try {
+              const rawSaved = localStorage.getItem(
+                getSessionKey(recipeData._id)
+              );
+              if (rawSaved) {
+                const parsed = JSON.parse(rawSaved);
+                const isFresh =
+                  parsed.updatedAt &&
+                  Date.now() - parsed.updatedAt < SESSION_TTL_MS;
+
+                if (isFresh) {
+                  const maxStep = Math.max(
+                    0,
+                    (recipeData.instructions?.length || 1) - 1
+                  );
+                  setCurrentStepIndex(
+                    Math.min(parsed.currentStepIndex || 0, maxStep)
+                  );
+                  setCompletedSteps(parsed.completedSteps || {});
+                  setCheckedIngredients(parsed.checkedIngredients || {});
+                  setServings(parsed.servings || recipeData.baseServings || 4);
+
+                  const now = Date.now();
+                  const restoredTimers = (parsed.timers || []).map((t) => {
+                    if (t.isRunning && t.endTimestamp) {
+                      const rem = Math.max(
+                        0,
+                        Math.round((t.endTimestamp - now) / 1000)
+                      );
+                      return {
+                        ...t,
+                        remainingSeconds: rem,
+                        isRunning: rem > 0,
+                      };
+                    }
+                    return t;
+                  });
+                  setTimers(restoredTimers);
+                  restored = true;
+                  toast.info("Resumed your active cooking session");
+                } else {
+                  localStorage.removeItem(getSessionKey(recipeData._id));
+                }
+              }
+            } catch {
+              // Ignore storage parse error
+            }
+
+            if (!restored) {
+              setServings(recipeData.baseServings || 4);
+              setCurrentStepIndex(0);
+              setCompletedSteps({});
+              setCheckedIngredients({});
+              setTimers([]);
+            }
+
+            setShowMobileVideo(false);
+            setIsHydrated(true);
           }
         }
       } catch (err) {
-        console.error("Cook Mode Load Error:", err);
         if (isMounted) {
-          toast.error(err?.message || "Failed to load recipe data for cook mode");
+          toast.error(err?.message || "Failed to load recipe for Cook Mode");
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -167,143 +319,420 @@ const CookMode = () => {
     };
 
     loadData();
-
     return () => {
       isMounted = false;
     };
   }, [recipeId, request]);
 
-  const handleSelectRecipe = (selectedId) => {
-    setIsRecipePickerOpen(false);
-    setSearchParams({ recipeId: selectedId });
-  };
-
-  // Synchronize Timer when moving between steps
+  // Auto-Persist Session State
   useEffect(() => {
-    if (!recipe?.instructions) return;
-    const currentStep = recipe.instructions[currentStepIndex];
-    const duration = currentStep?.timerDurationSeconds || 0;
-
-    setTimerInitialSeconds(duration);
-    setTimerSeconds(duration);
-    setIsTimerRunning(false);
-  }, [currentStepIndex, recipe]);
-
-  // Timer Tick Engine
-  useEffect(() => {
-    let interval = null;
-    if (isTimerRunning && timerSeconds > 0) {
-      interval = setInterval(() => {
-        setTimerSeconds((prev) => prev - 1);
-      }, 1000);
-    } else if (timerSeconds === 0 && isTimerRunning) {
-      setIsTimerRunning(false);
-      playChime();
-      toast.success("Timer Complete!", {
-        description: `Step ${currentStepIndex + 1} timer reached 0:00.`,
-      });
+    if (!isHydrated || !recipe?._id) return;
+    try {
+      localStorage.setItem(
+        getSessionKey(recipe._id),
+        JSON.stringify({
+          updatedAt: Date.now(),
+          currentStepIndex,
+          completedSteps,
+          checkedIngredients,
+          servings,
+          timers,
+        })
+      );
+    } catch {
+      // Ignore quota errors
     }
-    return () => clearInterval(interval);
-  }, [isTimerRunning, timerSeconds, currentStepIndex, playChime]);
+  }, [
+    isHydrated,
+    recipe?._id,
+    currentStepIndex,
+    completedSteps,
+    checkedIngredients,
+    servings,
+    timers,
+  ]);
 
-  // Keyboard navigation
+  // Timestamp-Accurate Parallel Multi-Timer Tick Engine
+  useEffect(() => {
+    const hasRunning = timers.some((t) => t.isRunning && t.remainingSeconds > 0);
+    if (!hasRunning) return;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setTimers((prev) =>
+        prev.map((t) => {
+          if (!t.isRunning || t.remainingSeconds <= 0) return t;
+
+          const next = t.endTimestamp
+            ? Math.max(0, Math.round((t.endTimestamp - now) / 1000))
+            : Math.max(0, t.remainingSeconds - 1);
+
+          if (
+            next <= 60 &&
+            next > 0 &&
+            t.totalSeconds >= 120 &&
+            !t.warned1Min
+          ) {
+            playChime(true);
+            toast.info(`1 Minute Left: ${t.label}`);
+            sendPhoneNotification(
+              `1 Minute Left • ${recipe?.title || "Cook Mode"}`,
+              `${t.label} finishes in 1 minute.`,
+              `warn-${t.id}`
+            );
+            return { ...t, remainingSeconds: next, warned1Min: true };
+          }
+
+          if (next === 0) {
+            playChime(false);
+            toast.success(`Timer Done: ${t.label}`, { duration: 7000 });
+            sendPhoneNotification(
+              `Timer Done! • ${recipe?.title || "Cook Mode"}`,
+              `${t.label} has finished.`,
+              `done-${t.id}`
+            );
+            return {
+              ...t,
+              remainingSeconds: 0,
+              endTimestamp: null,
+              isRunning: false,
+            };
+          }
+
+          return { ...t, remainingSeconds: next };
+        })
+      );
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [timers, playChime, sendPhoneNotification, recipe?.title]);
+
+  const totalSteps = recipe?.instructions?.length || 0;
+  const currentStep = recipe?.instructions?.[currentStepIndex];
+
+  const goToNextStep = useCallback(() => {
+    if (currentStepIndex < totalSteps - 1) {
+      setCurrentStepIndex((prev) => prev + 1);
+    }
+  }, [currentStepIndex, totalSteps]);
+
+  const goToPrevStep = useCallback(() => {
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex((prev) => prev - 1);
+    }
+  }, [currentStepIndex]);
+
+  const toggleStepDone = (idx) =>
+    setCompletedSteps((prev) => ({ ...prev, [idx]: !prev[idx] }));
+
+  const toggleIngredientCheck = (idx) =>
+    setCheckedIngredients((prev) => ({ ...prev, [idx]: !prev[idx] }));
+
+  // Keyboard Navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
-
       if (e.key === "ArrowRight") {
         e.preventDefault();
         goToNextStep();
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
         goToPrevStep();
-      } else if (e.key === " " && timerInitialSeconds > 0) {
-        e.preventDefault();
-        setIsTimerRunning((prev) => !prev);
+      } else if (e.key === "Escape" && activeSheet) {
+        setActiveSheet(null);
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  });
+  }, [goToNextStep, goToPrevStep, activeSheet]);
 
+  // Touch Swipe Handlers
+  const handleTouchStart = (e) => {
+    if (activeSheet) return;
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleTouchEnd = (e) => {
+    if (activeSheet) return;
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - touchStartRef.current.x;
+    const deltaY = touch.clientY - touchStartRef.current.y;
+
+    if (Math.abs(deltaX) > 65 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
+      if (deltaX < 0) goToNextStep();
+      else goToPrevStep();
+    }
+  };
+
+  // Text-to-Speech Read Aloud
+  const toggleSpeakStep = () => {
+    if (!("speechSynthesis" in window) || !currentStep) {
+      toast.error("Voice readout not supported on this browser");
+      return;
+    }
+
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    const textToRead = [
+      `Step ${currentStepIndex + 1}.`,
+      currentStep.title ? `${currentStep.title}.` : "",
+      currentStep.instruction || "",
+      currentStep.chefTip ? `Chef's tip: ${currentStep.chefTip}` : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const utterance = new SpeechSynthesisUtterance(textToRead);
+    utterance.rate = 0.96;
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.cancel();
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Timer Handlers
+  const ensureNotificationsPrompted = () => {
+    if (
+      typeof Notification !== "undefined" &&
+      Notification.permission === "default"
+    ) {
+      Notification.requestPermission()
+        .then((res) => setNotifPermission(res))
+        .catch(() => {});
+    }
+  };
+
+  const startOrToggleStepTimer = () => {
+    if (!currentStep?.timerDurationSeconds) return;
+    ensureNotificationsPrompted();
+    const stepTimerId = `step-${currentStepIndex}`;
+    const existing = timers.find((t) => t.id === stepTimerId);
+    const now = Date.now();
+
+    if (existing) {
+      setTimers((prev) =>
+        prev.map((t) => {
+          if (t.id !== stepTimerId) return t;
+          const nextRunning = !t.isRunning;
+          const nextRem =
+            t.remainingSeconds === 0 ? t.totalSeconds : t.remainingSeconds;
+          return {
+            ...t,
+            remainingSeconds: nextRem,
+            endTimestamp: nextRunning ? now + nextRem * 1000 : null,
+            isRunning: nextRunning,
+            warned1Min: nextRem > 60 ? false : t.warned1Min,
+          };
+        })
+      );
+    } else {
+      const dur = currentStep.timerDurationSeconds;
+      setTimers((prev) => [
+        ...prev,
+        {
+          id: stepTimerId,
+          label: currentStep.title || `Step ${currentStepIndex + 1}`,
+          totalSeconds: dur,
+          remainingSeconds: dur,
+          endTimestamp: now + dur * 1000,
+          isRunning: true,
+          stepIndex: currentStepIndex,
+          warned1Min: false,
+        },
+      ]);
+    }
+  };
+
+  const addCustomTimer = (minutes, labelOverride) => {
+    ensureNotificationsPrompted();
+    const secs = minutes * 60;
+    setTimers((prev) => [
+      ...prev,
+      {
+        id: `custom-${Date.now()}`,
+        label: labelOverride || `${minutes}m Kitchen Timer`,
+        totalSeconds: secs,
+        remainingSeconds: secs,
+        endTimestamp: Date.now() + secs * 1000,
+        isRunning: true,
+        stepIndex: currentStepIndex,
+        warned1Min: false,
+      },
+    ]);
+    setActiveSheet(null);
+    toast.success(`Started ${minutes} min timer`);
+  };
+
+  const toggleTimerById = (id) => {
+    const now = Date.now();
+    setTimers((prev) =>
+      prev.map((t) => {
+        if (t.id !== id) return t;
+        const nextRunning = !t.isRunning;
+        const nextRem =
+          t.remainingSeconds === 0 ? t.totalSeconds : t.remainingSeconds;
+        return {
+          ...t,
+          remainingSeconds: nextRem,
+          endTimestamp: nextRunning ? now + nextRem * 1000 : null,
+          isRunning: nextRunning,
+          warned1Min: nextRem > 60 ? false : t.warned1Min,
+        };
+      })
+    );
+  };
+
+  const addMinuteToTimer = (id) => {
+    setTimers((prev) =>
+      prev.map((t) => {
+        if (t.id !== id) return t;
+        const nextRem = t.remainingSeconds + 60;
+        return {
+          ...t,
+          totalSeconds: t.totalSeconds + 60,
+          remainingSeconds: nextRem,
+          endTimestamp: t.isRunning ? Date.now() + nextRem * 1000 : null,
+          warned1Min: false,
+        };
+      })
+    );
+  };
+
+  const resetTimerById = (id) => {
+    setTimers((prev) =>
+      prev.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              isRunning: false,
+              remainingSeconds: t.totalSeconds,
+              endTimestamp: null,
+              warned1Min: false,
+            }
+          : t
+      )
+    );
+  };
+
+  const removeTimerById = (id) =>
+    setTimers((prev) => prev.filter((t) => t.id !== id));
+
+  const handleResetSession = () => {
+    if (!recipe) return;
+    localStorage.removeItem(getSessionKey(recipe._id));
+    setCurrentStepIndex(0);
+    setCompletedSteps({});
+    setCheckedIngredients({});
+    setServings(recipe.baseServings || 4);
+    setTimers([]);
+    setActiveSheet(null);
+    toast.success("Cooking session reset");
+  };
+
+  const handleExitCookMode = () => {
+    const runningTimers = timers.filter(
+      (t) => t.isRunning && t.remainingSeconds > 0
+    );
+    if (runningTimers.length > 0) {
+      const ok = window.confirm(
+        `You have ${runningTimers.length} active timer(s) running. Exit Cook Mode? (Your session progress will be saved.)`
+      );
+      if (!ok) return;
+    }
+    navigate(`/sous-chef/recipes/${recipe._id}`);
+  };
+
+  const handleSelectRecipe = (selectedId) => {
+    setActiveSheet(null);
+    setSearchParams({ recipeId: selectedId });
+  };
+
+  // Scaling & Ingredient Grouping
   const scaleRatio = useMemo(() => {
     if (!recipe?.baseServings || recipe.baseServings === 0) return 1;
     return servings / recipe.baseServings;
   }, [servings, recipe?.baseServings]);
 
-  const totalSteps = recipe?.instructions?.length || 0;
-  const currentStep = recipe?.instructions?.[currentStepIndex];
-
-  const goToNextStep = () => {
-    if (currentStepIndex < totalSteps - 1) {
-      setCompletedSteps((prev) => ({ ...prev, [currentStepIndex]: true }));
-      setCurrentStepIndex((prev) => prev + 1);
-    }
+  const formatScaledQty = (qty) => {
+    if (!qty || qty <= 0) return "";
+    return Number((qty * scaleRatio).toFixed(2));
   };
 
-  const goToPrevStep = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex((prev) => prev - 1);
-    }
-  };
+  const stepIngredients = useMemo(() => {
+    if (!recipe?.ingredients || !currentStep?.instruction) return [];
+    const lower = currentStep.instruction.toLowerCase();
 
-  const toggleStepCompleted = (idx) => {
-    setCompletedSteps((prev) => ({ ...prev, [idx]: !prev[idx] }));
-  };
+    return recipe.ingredients.filter((ing) => {
+      if (!ing.name) return false;
+      const nameLower = ing.name.toLowerCase().trim();
+      if (lower.includes(nameLower)) return true;
+      const words = nameLower.split(/\s+/).filter((w) => w.length > 3);
+      return words.some((w) => lower.includes(w));
+    });
+  }, [recipe?.ingredients, currentStep?.instruction]);
 
-  const toggleIngredient = (idx) => {
-    setCheckedIngredients((prev) => ({ ...prev, [idx]: !prev[idx] }));
-  };
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen().catch(() => {});
-      setIsFullscreen(false);
-    }
-  };
-
-  const formatTimer = (totalSec) => {
-    const mins = Math.floor(totalSec / 60);
-    const secs = totalSec % 60;
-    return `${mins < 10 ? "0" : ""}${mins}:${secs < 10 ? "0" : ""}${secs}`;
-  };
+  const groupedIngredients = useMemo(() => {
+    const rawList = recipe?.ingredients || [];
+    const buckets = {};
+    INGREDIENT_CATEGORIES.forEach((cat) => {
+      buckets[cat.id] = [];
+    });
+    rawList.forEach((ing, idx) => {
+      const catId = classifyIngredientCategory(ing);
+      buckets[catId].push({ ...ing, originalIdx: idx });
+    });
+    return INGREDIENT_CATEGORIES.map((cat) => ({
+      ...cat,
+      items: buckets[cat.id] || [],
+    })).filter((g) => g.items.length > 0);
+  }, [recipe?.ingredients]);
 
   if (loading) {
     return (
-      <div className="h-screen w-screen bg-[#0E0C0A] flex flex-col items-center justify-center text-amber-400 gap-3 font-mono">
-        <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs uppercase tracking-widest text-stone-400">
-          Entering Hands-Free Kitchen Mode...
+      <div className="h-[100dvh] w-screen bg-[#FAF9F6] dark:bg-[#0E0C0A] flex flex-col items-center justify-center text-amber-500 gap-3 font-mono">
+        <div className="w-9 h-9 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400">
+          Loading Kitchen Cockpit...
         </p>
       </div>
     );
   }
 
-  // Safe fallback if no recipe or instructions are available
   if (!recipe || !currentStep) {
     return (
-      <div className="h-screen w-screen bg-[#0E0C0A] flex flex-col items-center justify-center text-stone-300 p-6 text-center space-y-4 font-sans select-none">
-        <ChefHat size={48} className="text-amber-500 mx-auto" />
-        <h2 className="text-2xl font-serif font-bold text-white">Select a Recipe to Cook</h2>
-        <p className="text-sm text-stone-400 max-w-sm">
-          Pick a dish from your kitchen vault to launch hands-free Cook Mode.
-        </p>
+      <div className="h-[100dvh] w-screen bg-[#FAF9F6] dark:bg-[#0E0C0A] flex flex-col items-center justify-center text-stone-800 dark:text-stone-200 p-6 text-center space-y-5 font-mono select-none">
+        <ChefHat size={44} className="text-amber-500 mx-auto" />
+        <div className="space-y-1">
+          <h2 className="text-2xl font-sans font-[1000] uppercase tracking-tighter text-stone-900 dark:text-white">
+            Select a Dish to Cook
+          </h2>
+          <p className="text-xs text-stone-500 dark:text-stone-400 max-w-xs mx-auto">
+            Choose a recipe from your collection to enter Cook Mode.
+          </p>
+        </div>
 
         {allRecipes.length > 0 && (
-          <div className="w-full max-w-xs space-y-2 pt-2">
+          <div className="w-full max-w-sm space-y-2 max-h-72 overflow-y-auto no-scrollbar">
             {allRecipes.map((r) => (
               <button
                 key={r._id}
                 type="button"
                 onClick={() => handleSelectRecipe(r._id)}
-                className="w-full p-3 rounded-xl bg-[#1C140D] hover:bg-[#2A1D13] border border-[#3A281A] hover:border-amber-500/50 text-left transition-all cursor-pointer flex items-center justify-between"
+                className="w-full p-3 rounded-xl bg-white dark:bg-[#171310] border border-stone-300 dark:border-stone-800 hover:border-amber-500 text-left transition-colors cursor-pointer flex items-center justify-between gap-3"
               >
-                <span className="font-serif font-bold text-sm text-white truncate">{r.title}</span>
-                <span className="text-[10px] font-mono text-amber-400 uppercase">{r.cuisine}</span>
+                <span className="font-sans font-bold text-sm text-stone-900 dark:text-white truncate">
+                  {r.title}
+                </span>
+                <span className="text-[10px] font-mono font-bold text-amber-600 dark:text-amber-400 uppercase shrink-0">
+                  {r.cuisine}
+                </span>
               </button>
             ))}
           </div>
@@ -312,413 +741,311 @@ const CookMode = () => {
         <button
           type="button"
           onClick={() => navigate("/sous-chef/recipes")}
-          className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold text-xs uppercase tracking-wider cursor-pointer"
+          className="px-5 py-2.5 rounded-xl bg-amber-500 text-stone-950 font-mono font-extrabold text-xs uppercase tracking-wider cursor-pointer"
         >
-          Return to Recipes
+          Back to Recipes
         </button>
       </div>
     );
   }
 
+  const hasVideo = Boolean(recipe.video?.embedUrl);
+  const currentStepTimerObj = timers.find(
+    (t) => t.id === `step-${currentStepIndex}`
+  );
+  const backgroundTimers = timers.filter(
+    (t) => t.id !== `step-${currentStepIndex}`
+  );
+  const nextStep =
+    currentStepIndex < totalSteps - 1
+      ? recipe.instructions[currentStepIndex + 1]
+      : null;
+  const checkedIngredientsCount =
+    Object.values(checkedIngredients).filter(Boolean).length;
+  const totalIngredientsCount = recipe.ingredients?.length || 0;
+  const completedStepsCount =
+    Object.values(completedSteps).filter(Boolean).length;
+
   return (
-    <div className="h-screen w-screen bg-[#0E0C0A] text-stone-100 flex flex-col font-sans select-none overflow-hidden relative">
-      {/* 1. TOP STATUS & HUD BAR */}
-      <header className="h-16 px-4 sm:px-8 border-b border-[#2C1F15] bg-[#140F0A]/95 backdrop-blur-md flex items-center justify-between shrink-0 z-30">
-        <div className="flex items-center gap-3 min-w-0">
-          <button
-            type="button"
-            onClick={() => navigate(`/sous-chef/recipes/${recipe._id}`)}
-            className="p-2 rounded-xl text-stone-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer shrink-0"
-            title="Exit Cook Mode"
-          >
-            <X size={20} />
-          </button>
+    <div className="h-[100dvh] w-screen bg-[#FAF9F6] dark:bg-[#0E0C0A] text-stone-900 dark:text-stone-100 flex flex-col font-mono select-none overflow-hidden relative">
+      {/* 1. UNIFIED TOP KITCHEN HUD */}
+      <CookModeHeader
+        recipeTitle={recipe.title}
+        wakeLockActive={wakeLockActive}
+        hasVideo={hasVideo}
+        showMobileVideo={showMobileVideo}
+        onToggleMobileVideo={() => setShowMobileVideo((prev) => !prev)}
+        isSpeaking={isSpeaking}
+        onToggleSpeak={toggleSpeakStep}
+        largeText={largeText}
+        onToggleLargeText={() => setLargeText((prev) => !prev)}
+        timersCount={timers.length}
+        onOpenSheet={setActiveSheet}
+        onExit={handleExitCookMode}
+      />
 
-          <div className="min-w-0 relative">
-            <button
-              type="button"
-              onClick={() => setIsRecipePickerOpen(!isRecipePickerOpen)}
-              className="text-left group cursor-pointer outline-none flex items-center gap-1.5"
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-500">
-                    Cook Mode • {recipe.cuisine}
-                  </span>
-                  {wakeLockActive && (
-                    <span className="inline-flex items-center gap-1 text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/30">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      Screen Active
-                    </span>
-                  )}
-                </div>
-                <h1 className="text-base sm:text-lg font-serif font-bold text-white truncate leading-tight group-hover:text-amber-400 transition-colors">
-                  {recipe.title}
-                </h1>
-              </div>
-              <ChevronDown size={14} className="text-stone-400 group-hover:text-amber-400 shrink-0" />
-            </button>
-
-            {/* Quick Recipe Switcher Popover */}
-            {isRecipePickerOpen && (
-              <div className="absolute left-0 mt-2 w-72 max-h-80 overflow-y-auto rounded-2xl bg-[#1C140D] border border-amber-500/30 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 no-scrollbar">
-                <div className="px-3 py-1.5 text-[9px] font-mono uppercase tracking-wider text-amber-500 font-bold">
-                  Switch Active Recipe
-                </div>
-                {allRecipes.map((r) => (
-                  <button
-                    key={r._id}
-                    type="button"
-                    onClick={() => handleSelectRecipe(r._id)}
-                    className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs text-left cursor-pointer transition-colors ${
-                      r._id === recipe._id
-                        ? "bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40"
-                        : "text-stone-300 hover:bg-white/5 hover:text-white"
-                    }`}
-                  >
-                    <span className="truncate flex-1 pr-2">{r.title}</span>
-                    {r._id === recipe._id && <Check size={13} className="text-amber-400 shrink-0" />}
-                  </button>
-                ))}
-              </div>
-            )}
+      {/* 2. MOBILE COLLAPSIBLE VIDEO DRAWER */}
+      {hasVideo && showMobileVideo && (
+        <div className="lg:hidden bg-black border-b border-stone-800 shrink-0 z-20">
+          <div className="max-w-lg mx-auto aspect-video w-full">
+            <iframe
+              src={recipe.video.embedUrl}
+              title={recipe.title}
+              className="w-full h-full border-none"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
           </div>
         </div>
+      )}
 
-        {/* Right Controls */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-xl bg-[#1C140D] border border-amber-500/30 text-xs">
-            <Users size={13} className="text-amber-500 mr-1" />
-            <button
-              type="button"
-              onClick={() => setServings((s) => Math.max(1, s - 1))}
-              className="w-5 h-5 rounded hover:bg-white/10 text-stone-300 font-bold cursor-pointer"
+      {/* 3. BACKGROUND RUNNING TIMERS BAR */}
+      {backgroundTimers.length > 0 && (
+        <div className="px-3 sm:px-6 py-1.5 bg-amber-500/10 border-b border-amber-500/30 flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0">
+          {backgroundTimers.map((t) => (
+            <div
+              key={t.id}
+              className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border text-xs font-mono shrink-0 ${
+                t.remainingSeconds === 0
+                  ? "bg-emerald-500/20 border-emerald-500 text-emerald-700 dark:text-emerald-300 animate-pulse"
+                  : "bg-white dark:bg-[#1B1714] border-amber-500/40 text-stone-900 dark:text-amber-300"
+              }`}
             >
-              -
-            </button>
-            <span className="w-6 text-center font-mono font-bold text-amber-300">
-              {servings}p
-            </span>
-            <button
-              type="button"
-              onClick={() => setServings((s) => s + 1)}
-              className="w-5 h-5 rounded hover:bg-white/10 text-stone-300 font-bold cursor-pointer"
-            >
-              +
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className={`p-2 rounded-xl border transition-colors cursor-pointer ${
-              soundEnabled
-                ? "bg-amber-500/15 border-amber-500/40 text-amber-400"
-                : "border-[#2C1F15] text-stone-500"
-            }`}
-            title={soundEnabled ? "Mute Timer Chime" : "Enable Timer Chime"}
-          >
-            {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsIngredientsOpen(!isIngredientsOpen)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-              isIngredientsOpen
-                ? "bg-amber-500 text-stone-950 border-amber-400 font-black shadow-lg shadow-amber-500/20"
-                : "bg-[#1C140D] border-amber-500/30 text-amber-300 hover:border-amber-400"
-            }`}
-          >
-            <ListFilter size={14} />
-            <span className="hidden sm:inline">Ingredients</span>
-            <span className="text-[10px] font-mono px-1 rounded bg-black/30">
-              {Object.keys(checkedIngredients).length}/{recipe.ingredients?.length || 0}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={toggleFullscreen}
-            className="p-2 rounded-xl border border-[#2C1F15] text-stone-400 hover:text-white transition-colors cursor-pointer hidden md:flex"
-            title="Toggle Fullscreen"
-          >
-            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-          </button>
-        </div>
-      </header>
-
-      {/* 2. PROGRESS STEP RIBBON */}
-      <div className="w-full bg-[#17100B] px-4 sm:px-8 py-2 border-b border-[#2C1F15] flex items-center justify-between shrink-0 text-xs font-mono">
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar flex-1 mr-4">
-          {recipe.instructions.map((step, idx) => {
-            const isCurrent = idx === currentStepIndex;
-            const isDone = completedSteps[idx];
-
-            return (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => setCurrentStepIndex(idx)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all cursor-pointer shrink-0 border ${
-                  isCurrent
-                    ? "bg-amber-500 text-stone-950 font-black border-amber-400 shadow-md"
-                    : isDone
-                    ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/40"
-                    : "bg-[#1F1710] text-stone-400 border-[#332215] hover:text-stone-200"
-                }`}
-              >
-                <span>{isDone ? "✓" : idx + 1}</span>
-                {step.title && (
-                  <span className="truncate max-w-[90px] sm:max-w-[120px] text-[11px] font-sans">
-                    {step.title}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        <span className="text-amber-500 font-bold shrink-0">
-          Step {currentStepIndex + 1} of {totalSteps}
-        </span>
-      </div>
-
-      {/* 3. MAIN COOKING ARENA */}
-      <div className="flex-1 flex overflow-hidden relative">
-        <main className="flex-1 flex flex-col justify-between p-4 sm:p-8 lg:p-12 overflow-y-auto max-w-5xl mx-auto w-full no-scrollbar">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <span className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-stone-950 font-mono font-black text-lg sm:text-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
-                  {currentStep.stepNumber || currentStepIndex + 1}
-                </span>
-
-                <div>
-                  <span className="text-xs font-mono uppercase tracking-widest text-amber-500/80 font-bold">
-                    Current Directive
-                  </span>
-                  <h2 className="text-xl sm:text-3xl font-serif font-bold text-white tracking-tight">
-                    {currentStep.title || `Cooking Step #${currentStepIndex + 1}`}
-                  </h2>
-                </div>
-              </div>
-
               <button
                 type="button"
-                onClick={() => toggleStepCompleted(currentStepIndex)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                  completedSteps[currentStepIndex]
-                    ? "bg-emerald-500 text-stone-950 border-emerald-400 font-black shadow-md"
-                    : "bg-[#1C140D] border-[#3A281A] text-stone-400 hover:text-stone-200"
-                }`}
+                onClick={() => setCurrentStepIndex(t.stepIndex)}
+                className="text-[10px] font-bold uppercase truncate max-w-[100px] hover:underline cursor-pointer"
               >
-                <CheckCircle2 size={16} />
-                <span className="hidden sm:inline">
-                  {completedSteps[currentStepIndex] ? "Step Complete" : "Mark Done"}
-                </span>
+                {t.label}
+              </button>
+              <span className="font-extrabold tabular-nums">
+                {formatTimer(t.remainingSeconds)}
+              </span>
+              <button
+                type="button"
+                onClick={() => toggleTimerById(t.id)}
+                className="p-0.5 text-amber-600 dark:text-amber-400 cursor-pointer"
+              >
+                {t.isRunning ? <Pause size={12} /> : <Play size={12} />}
+              </button>
+              <button
+                type="button"
+                onClick={() => removeTimerById(t.id)}
+                className="p-0.5 text-stone-400 hover:text-rose-500 cursor-pointer"
+              >
+                <X size={12} />
               </button>
             </div>
+          ))}
+        </div>
+      )}
 
-            <div className="p-6 sm:p-10 rounded-3xl bg-[#140F0A] border-2 border-amber-500/30 shadow-2xl">
-              <p className="text-lg sm:text-2xl lg:text-3xl text-stone-100 font-serif leading-relaxed sm:leading-loose">
-                {currentStep.instruction}
-              </p>
-
-              {currentStep.chefTip && (
-                <div className="mt-6 p-4 rounded-2xl bg-amber-500/10 border-l-4 border-amber-500 text-xs sm:text-sm text-amber-200 flex items-start gap-3">
-                  <Sparkles size={18} className="text-amber-400 shrink-0 mt-0.5" />
-                  <div>
-                    <strong className="text-amber-400 uppercase font-mono tracking-wider mr-2">
-                      Chef's Pro Tip:
-                    </strong>
-                    {currentStep.chefTip}
-                  </div>
+      {/* 4. MAIN WORKSPACE */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* DESKTOP LEFT RAIL: PINNED VIDEO + MISE-EN-PLACE CHECKLIST (lg+) */}
+        <aside className="hidden lg:flex lg:w-[390px] xl:w-[430px] flex-col border-r border-stone-200 dark:border-stone-800 bg-[#FAF9F6] dark:bg-[#120F0C] shrink-0 overflow-hidden">
+          {hasVideo && (
+            <div className="p-4 pb-2 shrink-0">
+              <div className="p-1.5 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-[#1B1714] shadow-xs">
+                <div className="w-full aspect-video rounded-lg overflow-hidden bg-black">
+                  <iframe
+                    src={recipe.video.embedUrl}
+                    title={recipe.title}
+                    className="w-full h-full border-none"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Active Step Timer HUD */}
-          {timerInitialSeconds > 0 && (
-            <div className="my-6 p-6 rounded-3xl bg-gradient-to-r from-[#1E140D] via-[#24180F] to-[#1E140D] border-2 border-amber-500/40 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-2xl ${isTimerRunning ? "bg-amber-500 text-stone-950 animate-pulse shadow-lg shadow-amber-500/30" : "bg-[#140F0A] text-amber-400 border border-amber-500/30"}`}>
-                  <Clock size={28} />
-                </div>
-                <div>
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold block">
-                    Step Countdown Timer
-                  </span>
-                  <span className="text-4xl sm:text-5xl font-mono font-black tabular-nums tracking-wider text-amber-300">
-                    {formatTimer(timerSeconds)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsTimerRunning(!isTimerRunning)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black font-mono text-sm uppercase tracking-wider transition-all cursor-pointer shadow-lg active:scale-95 ${
-                    isTimerRunning
-                      ? "bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/30"
-                      : "bg-[#f59e0b] hover:bg-[#d97706] text-stone-950 shadow-amber-500/30"
-                  }`}
-                >
-                  {isTimerRunning ? (
-                    <>
-                      <Pause size={16} />
-                      <span>Pause</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play size={16} fill="currentColor" />
-                      <span>{timerSeconds === timerInitialSeconds ? "Start Timer" : "Resume"}</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setTimerSeconds((s) => s + 60)}
-                  className="px-3.5 py-3 rounded-2xl bg-[#140F0A] hover:bg-white/10 border border-[#3A281A] text-stone-300 font-mono text-xs font-bold transition-colors cursor-pointer"
-                  title="Add 1 Minute"
-                >
-                  +1m
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsTimerRunning(false);
-                    setTimerSeconds(timerInitialSeconds);
-                  }}
-                  className="p-3 rounded-2xl bg-[#140F0A] hover:bg-white/10 border border-[#3A281A] text-stone-400 hover:text-white transition-colors cursor-pointer"
-                  title="Reset Timer"
-                >
-                  <RotateCcw size={16} />
-                </button>
               </div>
             </div>
           )}
 
-          {/* Bottom Huge Tap Targets */}
-          <div className="pt-6 flex items-center justify-between gap-4 shrink-0">
-            <button
-              type="button"
-              disabled={currentStepIndex === 0}
-              onClick={goToPrevStep}
-              className="flex-1 flex items-center justify-center gap-2 py-4 sm:py-5 rounded-2xl bg-[#1C140D] hover:bg-[#251A11] border border-[#3A281A] text-stone-300 font-bold text-sm sm:text-base transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer active:scale-98"
-            >
-              <ChevronLeft size={20} strokeWidth={2.5} />
-              <span>Previous Step</span>
-            </button>
-
-            {currentStepIndex < totalSteps - 1 ? (
-              <button
-                type="button"
-                onClick={goToNextStep}
-                className="flex-1 flex items-center justify-center gap-2 py-4 sm:py-5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-black text-sm sm:text-base transition-all shadow-xl shadow-amber-500/20 cursor-pointer active:scale-98"
-              >
-                <span>Next Step</span>
-                <ChevronRight size={20} strokeWidth={2.5} />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  toast.success("Dish Completed! Shahi Rasoi compliments the chef!");
-                  navigate(`/sous-chef/recipes/${recipe._id}`);
-                }}
-                className="flex-1 flex items-center justify-center gap-2 py-4 sm:py-5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-stone-950 font-black text-sm sm:text-base transition-all shadow-xl shadow-emerald-500/20 cursor-pointer active:scale-98"
-              >
-                <CheckCircle2 size={20} strokeWidth={2.5} />
-                <span>Finish Cooking</span>
-              </button>
-            )}
-          </div>
-        </main>
-
-        {/* 4. INGREDIENTS SIDEBAR */}
-        <aside
-          className={`absolute top-0 right-0 h-full w-80 sm:w-96 bg-[#140F0A] border-l-2 border-amber-500/30 p-5 flex flex-col justify-between transition-transform duration-300 z-40 shadow-2xl ${
-            isIngredientsOpen ? "translate-x-0" : "translate-x-full"
-          }`}
-        >
-          <div className="flex items-center justify-between pb-3 border-b border-[#2C1F15]">
-            <div className="flex items-center gap-2">
-              <UtensilsCrossed size={16} className="text-amber-500" />
-              <h3 className="font-serif font-bold text-base text-white">
-                Ingredients Checklist
-              </h3>
+          <div className="px-4 py-3 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between gap-2 shrink-0">
+            <div>
+              <h2 className="font-sans font-[1000] uppercase tracking-tight text-sm text-stone-900 dark:text-white leading-none">
+                Mise-en-Place
+              </h2>
+              <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+                {checkedIngredientsCount} of {totalIngredientsCount} prepped
+              </span>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsIngredientsOpen(false)}
-              className="p-1 rounded-lg text-stone-400 hover:text-white cursor-pointer"
-            >
-              <X size={16} />
-            </button>
+
+            <div className="inline-flex items-center rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-[#1B1714]">
+              <button
+                type="button"
+                onClick={() => setServings((s) => Math.max(1, s - 1))}
+                className="w-7 h-7 flex items-center justify-center hover:bg-amber-500 hover:text-stone-950 rounded-l-lg cursor-pointer"
+              >
+                <Minus size={11} strokeWidth={3} />
+              </button>
+              <span className="px-2 text-xs font-mono font-extrabold text-amber-600 dark:text-amber-300 tabular-nums">
+                {servings}p
+              </span>
+              <button
+                type="button"
+                onClick={() => setServings((s) => s + 1)}
+                className="w-7 h-7 flex items-center justify-center hover:bg-amber-500 hover:text-stone-950 rounded-r-lg cursor-pointer"
+              >
+                <Plus size={11} strokeWidth={3} />
+              </button>
+            </div>
           </div>
 
-          <div className="py-2 text-[11px] font-mono text-amber-400/80">
-            Ratios dynamically scaled for <strong className="text-white">{servings} servings</strong> ({scaleRatio.toFixed(1)}x)
-          </div>
-
-          <div className="flex-1 overflow-y-auto space-y-2 py-2 no-scrollbar">
-            {recipe.ingredients?.map((ing, idx) => {
-              const isChecked = checkedIngredients[idx];
-              const scaledQty =
-                ing.quantity > 0
-                  ? Number((ing.quantity * scaleRatio).toFixed(2))
-                  : 0;
-
-              return (
-                <div
-                  key={idx}
-                  onClick={() => toggleIngredient(idx)}
-                  className={`p-2.5 rounded-xl border flex items-center justify-between text-xs transition-all cursor-pointer ${
-                    isChecked
-                      ? "bg-emerald-950/20 border-emerald-500/30 text-stone-500 line-through"
-                      : "bg-[#1C140D] border-[#332215] text-stone-200 hover:border-amber-500/40"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div
-                      className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
-                        isChecked
-                          ? "bg-emerald-500 text-stone-950 border-emerald-400"
-                          : "border-stone-600"
-                      }`}
-                    >
-                      {isChecked && <Check size={11} strokeWidth={3} />}
-                    </div>
-                    <span className="truncate">{ing.name}</span>
-                  </div>
-
-                  <span className="font-mono font-bold text-amber-400 shrink-0 ml-2">
-                    {scaledQty > 0 ? scaledQty : ""} {ing.unit}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="pt-3 border-t border-[#2C1F15] flex items-center justify-between text-xs font-mono">
-            <button
-              type="button"
-              onClick={() => setCheckedIngredients({})}
-              className="text-stone-400 hover:text-rose-400 cursor-pointer"
-            >
-              Reset Checklist
-            </button>
-            <span className="text-amber-500 font-bold">
-              {Object.keys(checkedIngredients).length} / {recipe.ingredients?.length || 0} Ready
-            </span>
+          <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
+            <MiseEnPlaceList
+              groupedIngredients={groupedIngredients}
+              checkedIngredients={checkedIngredients}
+              onToggleIngredient={toggleIngredientCheck}
+              formatScaledQty={formatScaledQty}
+            />
           </div>
         </aside>
+
+        {/* RIGHT / PRIMARY STAGE */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {/* Mobile Story Progress Bar */}
+          <div className="lg:hidden px-3.5 py-2 bg-[#FAF9F6] dark:bg-[#120F0C] border-b border-stone-200 dark:border-stone-800/80 shrink-0 space-y-1.5">
+            <div className="flex items-center gap-1 w-full">
+              {recipe.instructions.map((_, idx) => {
+                const isCurrent = idx === currentStepIndex;
+                const isDone = Boolean(completedSteps[idx]);
+                return (
+                  <div
+                    key={idx}
+                    className={`h-1.5 flex-1 rounded-full transition-all duration-200 ${
+                      isCurrent
+                        ? "bg-amber-500 scale-y-125"
+                        : isDone
+                        ? "bg-emerald-500"
+                        : "bg-stone-300 dark:bg-stone-800"
+                    }`}
+                  />
+                );
+              })}
+            </div>
+
+            <div className="flex items-center justify-between text-[10px] font-mono font-bold uppercase tracking-wider">
+              <span className="text-amber-700 dark:text-amber-400 tabular-nums">
+                Step {String(currentStepIndex + 1).padStart(2, "0")} of{" "}
+                {String(totalSteps).padStart(2, "0")}
+                {completedStepsCount > 0 && ` • ${completedStepsCount} Done`}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setActiveSheet("steps")}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-stone-200/80 dark:bg-[#1E1915] text-stone-700 dark:text-stone-300 cursor-pointer"
+              >
+                <ListOrdered size={11} />
+                <span>All Steps</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Desktop Horizontal Step Ribbon */}
+          <div className="hidden lg:flex items-center justify-between gap-4 px-6 py-2.5 bg-[#FAF9F6] dark:bg-[#120F0C] border-b border-stone-200 dark:border-stone-800 shrink-0">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar flex-1">
+              {recipe.instructions.map((step, idx) => {
+                const isCurrent = idx === currentStepIndex;
+                const isDone = Boolean(completedSteps[idx]);
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setCurrentStepIndex(idx)}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-mono transition-colors cursor-pointer shrink-0 ${
+                      isCurrent
+                        ? "bg-amber-500 text-stone-950 border-amber-400 font-extrabold"
+                        : isDone
+                        ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 font-bold"
+                        : "bg-white dark:bg-[#1B1714] text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-800 hover:text-stone-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <span>
+                      {isDone ? "✓" : String(idx + 1).padStart(2, "0")}
+                    </span>
+                    {step.title && (
+                      <span className="truncate max-w-[130px] font-sans font-bold text-[11px]">
+                        {step.title}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400 shrink-0 tabular-nums">
+              {completedStepsCount}/{totalSteps} Done
+            </span>
+          </div>
+
+          {/* Swipeable Step Stage */}
+          <CookModeStepStage
+            currentStep={currentStep}
+            currentStepIndex={currentStepIndex}
+            isStepCompleted={Boolean(completedSteps[currentStepIndex])}
+            onToggleStepDone={toggleStepDone}
+            largeText={largeText}
+            servings={servings}
+            stepIngredients={stepIngredients}
+            formatScaledQty={formatScaledQty}
+            currentStepTimerObj={currentStepTimerObj}
+            onStartOrToggleStepTimer={startOrToggleStepTimer}
+            onAddMinuteToTimer={addMinuteToTimer}
+            onResetTimerById={resetTimerById}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          />
+
+          {/* Bottom Thumb-Zone Dock */}
+          <CookModeBottomDock
+            currentStepIndex={currentStepIndex}
+            totalSteps={totalSteps}
+            nextStepTitle={nextStep?.title}
+            checkedIngredientsCount={checkedIngredientsCount}
+            totalIngredientsCount={totalIngredientsCount}
+            onOpenIngredients={() => setActiveSheet("ingredients")}
+            onPrevStep={goToPrevStep}
+            onNextStep={goToNextStep}
+            onFinishDish={() => {
+              localStorage.removeItem(getSessionKey(recipe._id));
+              toast.success("Dish Completed! Great job in the kitchen!");
+              navigate(`/sous-chef/recipes/${recipe._id}`);
+            }}
+          />
+        </div>
       </div>
+
+      {/* 5. UNIFIED MOBILE BOTTOM SHEETS */}
+      <CookModeSheets
+        activeSheet={activeSheet}
+        onClose={() => setActiveSheet(null)}
+        recipe={recipe}
+        allRecipes={allRecipes}
+        onSelectRecipe={handleSelectRecipe}
+        servings={servings}
+        onChangeServings={setServings}
+        groupedIngredients={groupedIngredients}
+        checkedIngredients={checkedIngredients}
+        checkedIngredientsCount={checkedIngredientsCount}
+        totalIngredientsCount={totalIngredientsCount}
+        onToggleIngredient={toggleIngredientCheck}
+        formatScaledQty={formatScaledQty}
+        currentStepIndex={currentStepIndex}
+        completedSteps={completedSteps}
+        onSelectStep={setCurrentStepIndex}
+        onToggleStepDone={toggleStepDone}
+        timers={timers}
+        onAddCustomTimer={addCustomTimer}
+        onToggleTimerById={toggleTimerById}
+        onAddMinuteToTimer={addMinuteToTimer}
+        onRemoveTimerById={removeTimerById}
+        notifPermission={notifPermission}
+        onRequestNotifPermission={requestNotificationPermission}
+        soundEnabled={soundEnabled}
+        onToggleSound={() => setSoundEnabled((prev) => !prev)}
+        onResetSession={handleResetSession}
+      />
     </div>
   );
 };

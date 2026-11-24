@@ -98,9 +98,13 @@ const SECTION_META = {
   },
 };
 
-const RecipeEditDrawer = ({ section, recipe, onClose, onSaved }) => {
+const RecipeEditDrawer = ({ isOpen, section, recipe, onClose, onSaved }) => {
   const { request } = useApi();
   const [saving, setSaving] = useState(false);
+
+  // Two-stage visibility state so open & close CSS transitions play smoothly
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   // Section form states
   const [coverImage, setCoverImage] = useState("");
@@ -134,9 +138,48 @@ const RecipeEditDrawer = ({ section, recipe, onClose, onSaved }) => {
     overwriteSteps: true,
   });
 
+  // Handle smooth mount -> animate-in and animate-out -> unmount lifecycle
   useEffect(() => {
-    if (!section || !recipe) return;
-    document.body.style.overflow = "hidden";
+    let rafId;
+    let closeTimer;
+
+    if (isOpen && section && recipe) {
+      setShouldRender(true);
+      document.body.style.overflow = "hidden";
+      rafId = requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      });
+    } else {
+      setIsVisible(false);
+      document.body.style.overflow = "unset";
+      closeTimer = setTimeout(() => {
+        setShouldRender(false);
+      }, 300);
+    }
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      if (closeTimer) clearTimeout(closeTimer);
+    };
+  }, [isOpen, section, recipe]);
+
+  // Escape key to close smoothly
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && !saving && !isAiParsing) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, saving, isAiParsing, onClose]);
+
+  // Hydrate form state when opened
+  useEffect(() => {
+    if (!isOpen || !section || !recipe) return;
 
     if (section === "photo") {
       setCoverImage(recipe.coverImage || "");
@@ -174,7 +217,15 @@ const RecipeEditDrawer = ({ section, recipe, onClose, onSaved }) => {
               isPantryStaple: Boolean(ing.isPantryStaple),
               notes: ing.notes || "",
             }))
-          : [{ name: "", quantity: 1, unit: "cup", isPantryStaple: false, notes: "" }]
+          : [
+              {
+                name: "",
+                quantity: 1,
+                unit: "cup",
+                isPantryStaple: false,
+                notes: "",
+              },
+            ]
       );
     } else if (section === "steps") {
       setInstructions(
@@ -201,13 +252,9 @@ const RecipeEditDrawer = ({ section, recipe, onClose, onSaved }) => {
       setLinkInput("");
       setRawText("");
     }
+  }, [isOpen, section, recipe]);
 
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [section, recipe]);
-
-  if (!section || !recipe) return null;
+  if (!shouldRender || !section || !recipe) return null;
 
   const meta = SECTION_META[section] || SECTION_META.details;
 
@@ -268,7 +315,10 @@ const RecipeEditDrawer = ({ section, recipe, onClose, onSaved }) => {
           stepNumber: idx + 1,
           title: step.title ? step.title.trim() : "",
           instruction: step.instruction.trim(),
-          timerDurationSeconds: Math.max(0, Number(step.timerDurationSeconds) || 0),
+          timerDurationSeconds: Math.max(
+            0,
+            Number(step.timerDurationSeconds) || 0
+          ),
           chefTip: step.chefTip ? step.chefTip.trim() : "",
         }));
 
@@ -457,24 +507,43 @@ const RecipeEditDrawer = ({ section, recipe, onClose, onSaved }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end bg-stone-950/75 dark:bg-black/80 backdrop-blur-xs transition-opacity duration-200 font-sans">
-      {/* Backdrop */}
-      <div className="absolute inset-0" onClick={onClose} />
-
-      {/* Slide-Over Drawer (Matches AddRecipeModal Editorial Architecture) */}
+    <div
+      className={`fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end font-sans transition-opacity duration-300 ease-out ${
+        isVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+      }`}
+    >
+      {/* Smooth Fading Backdrop */}
       <div
-        className="relative z-10 w-full sm:w-[580px] max-h-[92vh] sm:max-h-full h-[88vh] sm:h-full flex flex-col bg-[#FAF9F6] dark:bg-[#0E0C0A] border-t-4 border-t-stone-900 dark:border-t-amber-500 sm:border-l-2 sm:border-l-stone-900 dark:sm:border-l-stone-700 text-stone-900 dark:text-stone-100 shadow-2xl overflow-hidden"
+        className="absolute inset-0 bg-stone-950/75 dark:bg-black/80 backdrop-blur-xs transition-opacity duration-300"
+        onClick={() => !saving && !isAiParsing && onClose()}
+      />
+
+      {/* Smooth Bottom-Sheet (Mobile) / Slide-Over Drawer (Desktop) */}
+      <div
+        style={{
+          transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
+        }}
+        className={`relative z-10 w-full sm:w-[580px] max-h-[92vh] sm:max-h-full h-[88vh] sm:h-full flex flex-col rounded-t-2xl sm:rounded-none bg-[#FAF9F6] dark:bg-[#0E0C0A] border-t-4 border-t-stone-900 dark:border-t-amber-500 sm:border-l-2 sm:border-l-stone-900 dark:sm:border-l-stone-700 text-stone-900 dark:text-stone-100 shadow-2xl overflow-hidden transform transition-transform duration-300 will-change-transform ${
+          isVisible
+            ? "translate-y-0 sm:translate-x-0"
+            : "translate-y-full sm:translate-y-0 sm:translate-x-full"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Sheet Grab Indicator */}
+        <div className="sm:hidden flex justify-center pt-2 pb-1 bg-white dark:bg-[#14110E] shrink-0">
+          <span className="w-10 h-1 rounded-full bg-stone-300 dark:bg-stone-700" />
+        </div>
+
         {/* Drawer Header */}
-        <header className="px-5 sm:px-6 pt-4 pb-3.5 border-b-2 border-stone-900 dark:border-stone-800 bg-white dark:bg-[#14110E] flex items-start justify-between gap-4 shrink-0">
+        <header className="px-5 sm:px-6 pt-2 sm:pt-4 pb-3.5 border-b-2 border-stone-900 dark:border-stone-800 bg-white dark:bg-[#14110E] flex items-start justify-between gap-4 shrink-0">
           <div className="min-w-0 space-y-1">
             <div className="flex items-center gap-1.5">
               <span className="px-1.5 py-0.5 text-[9px] font-mono font-extrabold uppercase tracking-wider bg-amber-500/15 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30">
                 {meta.badge}
               </span>
               <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400 truncate">
-                • {recipe.title}
+                - {recipe.title}
               </span>
             </div>
 
@@ -488,10 +557,11 @@ const RecipeEditDrawer = ({ section, recipe, onClose, onSaved }) => {
 
           <button
             type="button"
+            disabled={saving || isAiParsing}
             onClick={onClose}
             className="h-8 px-2.5 border border-stone-300 dark:border-stone-700 bg-[#FAF9F6] dark:bg-[#0E0C0A] hover:border-stone-900 dark:hover:border-amber-400 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white flex items-center gap-1 text-[10px] font-mono font-extrabold uppercase tracking-wider transition-colors cursor-pointer shrink-0"
           >
-            <span>Esc</span>
+            <span className="hidden sm:inline">Esc</span>
             <X size={13} strokeWidth={2.5} />
           </button>
         </header>
@@ -503,7 +573,10 @@ const RecipeEditDrawer = ({ section, recipe, onClose, onSaved }) => {
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono font-extrabold uppercase tracking-wider text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
-                  <ImageIcon size={12} className="text-amber-600 dark:text-amber-400" />
+                  <ImageIcon
+                    size={12}
+                    className="text-amber-600 dark:text-amber-400"
+                  />
                   <span>Cover Image URL</span>
                 </label>
                 <input
@@ -511,7 +584,6 @@ const RecipeEditDrawer = ({ section, recipe, onClose, onSaved }) => {
                   value={coverImage}
                   onChange={(e) => setCoverImage(e.target.value)}
                   placeholder="https://images.unsplash.com/..."
-                  autoFocus
                   className="w-full h-10 px-3 border border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] text-xs font-mono text-stone-900 dark:text-white focus:outline-none focus:border-stone-900 dark:focus:border-amber-400"
                 />
               </div>
@@ -550,7 +622,6 @@ const RecipeEditDrawer = ({ section, recipe, onClose, onSaved }) => {
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
                   placeholder="https://www.youtube.com/watch?v=... or https://www.instagram.com/reel/..."
-                  autoFocus
                   className="w-full h-10 px-3 border border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] text-xs font-mono text-stone-900 dark:text-white focus:outline-none focus:border-stone-900 dark:focus:border-amber-400"
                 />
                 <p className="text-[11px] font-mono text-stone-500 dark:text-stone-400">
@@ -989,10 +1060,9 @@ const RecipeEditDrawer = ({ section, recipe, onClose, onSaved }) => {
             </div>
           )}
 
-          {/* 7. AI EXTRACT FROM LINK OR TEXT (Mirrors AddRecipeModal SmartPasteStep) */}
+          {/* 7. AI EXTRACT FROM LINK OR TEXT */}
           {section === "import" && (
             <div className="space-y-5 font-mono">
-              {/* Callout */}
               <div className="border-2 border-stone-900 dark:border-stone-700 bg-white dark:bg-[#14110E] p-4 flex items-start gap-3">
                 <div className="w-8 h-8 border border-amber-500/40 bg-amber-500/15 text-amber-800 dark:text-amber-300 flex items-center justify-center shrink-0">
                   <Sparkles size={15} />
@@ -1002,12 +1072,13 @@ const RecipeEditDrawer = ({ section, recipe, onClose, onSaved }) => {
                     Smart Recipe Extractor
                   </h3>
                   <p className="text-[11px] text-stone-600 dark:text-stone-300 leading-relaxed">
-                    Extract ingredients, steps, timings, and metadata from a YouTube/Instagram link or pasted recipe text and apply them to this dish.
+                    Extract ingredients, steps, timings, and metadata from a
+                    YouTube/Instagram link or pasted recipe text and apply them
+                    to this dish.
                   </p>
                 </div>
               </div>
 
-              {/* Segmented Mode Switcher */}
               <div className="grid grid-cols-2 border border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#14110E] divide-x divide-stone-900/30 dark:divide-stone-700">
                 <button
                   type="button"
@@ -1036,7 +1107,6 @@ const RecipeEditDrawer = ({ section, recipe, onClose, onSaved }) => {
                 </button>
               </div>
 
-              {/* URL Input */}
               {importMode === "url" && (
                 <form
                   onSubmit={handleExtractUrl}
@@ -1045,7 +1115,10 @@ const RecipeEditDrawer = ({ section, recipe, onClose, onSaved }) => {
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-mono font-extrabold uppercase tracking-wider text-stone-700 dark:text-stone-300 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
-                        <Link2 size={12} className="text-amber-600 dark:text-amber-400" />
+                        <Link2
+                          size={12}
+                          className="text-amber-600 dark:text-amber-400"
+                        />
                         <span>Video / Reel URL</span>
                       </span>
                       <span className="flex items-center gap-2 text-stone-400">
@@ -1084,7 +1157,6 @@ const RecipeEditDrawer = ({ section, recipe, onClose, onSaved }) => {
                 </form>
               )}
 
-              {/* Text Paste Input */}
               {importMode === "text" && (
                 <div className="border-2 border-stone-900 dark:border-stone-700 bg-white dark:bg-[#14110E] p-4 space-y-3.5">
                   <div className="space-y-1.5">
@@ -1138,7 +1210,6 @@ const RecipeEditDrawer = ({ section, recipe, onClose, onSaved }) => {
                 </div>
               )}
 
-              {/* Extracted Preview & Selective Merge Toggles */}
               {extractedPreview && (
                 <div className="border-2 border-emerald-600/60 bg-emerald-500/5 p-4 space-y-3">
                   <div className="flex items-center justify-between">

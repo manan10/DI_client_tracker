@@ -1,6 +1,6 @@
 // src/apps/recipes/pages/RecipeDetail.jsx
 import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ChefHat,
   Loader2,
@@ -100,7 +100,6 @@ const INGREDIENT_CATEGORIES = [
   },
 ];
 
-// Classifies an ingredient into one of the 6 culinary categories
 const classifyIngredientCategory = (ing) => {
   const name = (ing.name || "").toLowerCase();
   const notes = (ing.notes || "").toLowerCase();
@@ -238,14 +237,24 @@ const RecipeDetail = () => {
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Active slide-over edit drawer ('photo' | 'video' | 'details' | 'stats' | 'ingredients' | 'steps' | 'import' | null)
+  // Smooth Drawer State
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeEditSection, setActiveEditSection] = useState(null);
 
   // Portion Scaling
   const [servings, setServings] = useState(4);
 
-  // Mobile View Filter ('all' | 'ingredients' | 'steps')
-  const [mobileSection, setMobileSection] = useState("all");
+  // Mobile Tab State ('ingredients' | 'steps')
+  const [mobileSection, setMobileSection] = useState("ingredients");
+
+  const openEditDrawer = (section) => {
+    setActiveEditSection(section);
+    setIsDrawerOpen(true);
+  };
+
+  const closeEditDrawer = () => {
+    setIsDrawerOpen(false);
+  };
 
   useEffect(() => {
     const fetchRecipe = async () => {
@@ -359,9 +368,50 @@ const RecipeDetail = () => {
 
   const allIngredients = recipe.ingredients || [];
   const totalSteps = recipe.instructions?.length || 0;
+  const cookModeUrl = `/sous-chef/recipes/cook-mode?recipeId=${recipe._id}`;
+
+  // Reusable Video Block (Rendered above mobile tabs on mobile, pinned top of left rail on desktop)
+  const renderVideoBlock = () => {
+    if (recipe.video?.embedUrl) {
+      return (
+        <div className="p-1.5 rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-[#24201C] shadow-sm space-y-1.5 shrink-0">
+          <div className="w-full aspect-video rounded-lg overflow-hidden bg-black border border-stone-200 dark:border-stone-700">
+            <iframe
+              src={recipe.video.embedUrl}
+              title={recipe.title}
+              className="w-full h-full border-none"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+          <div className="flex justify-end px-1">
+            <button
+              type="button"
+              onClick={() => openEditDrawer("video")}
+              className="inline-flex items-center gap-1 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 hover:text-amber-700 dark:hover:text-amber-300 cursor-pointer"
+            >
+              <Pencil size={10} />
+              <span>Change Video Link</span>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={() => openEditDrawer("video")}
+        className="w-full py-2.5 px-3 rounded-lg border border-dashed border-stone-300 dark:border-stone-600 text-[11px] font-mono font-bold uppercase tracking-wider text-stone-500 dark:text-stone-300 hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-300 flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0"
+      >
+        <Video size={13} />
+        <span>Add Video Link</span>
+      </button>
+    );
+  };
 
   return (
-    <div className="min-h-screen w-full bg-[#FAF9F6] dark:bg-[#181512] text-stone-900 dark:text-stone-100 transition-colors duration-200 pb-28 relative font-mono overflow-x-hidden">
+    <div className="min-h-screen w-full bg-[#FAF9F6] dark:bg-[#181512] text-stone-900 dark:text-stone-100 transition-colors duration-200 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-24 relative font-mono overflow-x-hidden">
       {/* SUBTLE WARM AMBIENT ATMOSPHERE */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute -top-36 left-1/3 w-[550px] h-[350px] bg-amber-500/[0.05] dark:bg-amber-500/[0.06] blur-[130px] rounded-full" />
@@ -370,105 +420,103 @@ const RecipeDetail = () => {
 
       <ChefNavbar />
 
-      <main className="relative z-10 w-full px-4 sm:px-8 xl:px-12 py-3 sm:py-5 space-y-6">
-        {/* 1. TOP COMMAND BAR */}
+      <main className="relative z-10 w-full px-3.5 sm:px-8 xl:px-12 py-3 sm:py-5 space-y-4 sm:space-y-6">
+        {/* 1. COMPACT SINGLE-ROW TOP COMMAND BAR */}
         <RecipeCommandBar
           onBack={() => navigate("/sous-chef/recipes")}
           onShare={handleCopyLink}
-          onOpenImport={() => setActiveEditSection("import")}
-          cookModeUrl={`/sous-chef/recipes/cook-mode?recipeId=${recipe._id}`}
+          onOpenImport={() => openEditDrawer("import")}
+          cookModeUrl={cookModeUrl}
         />
 
         {/* 2. TITLE HERO SECTION */}
         <RecipeTitleHero
           recipe={recipe}
-          onEditSection={(sec) => setActiveEditSection(sec)}
+          onEditSection={(sec) => openEditDrawer(sec)}
         />
 
+        {/* 3. MOBILE PERSISTENT VIDEO PLAYER (Stays visible when switching tabs) */}
+        <div className="lg:hidden">{renderVideoBlock()}</div>
+
         {/* ========================================================================= */}
-        {/* 3. EDITORIAL PUBLICATION LAYOUT                                           */}
+        {/* 4. EDITORIAL PUBLICATION LAYOUT                                           */}
         {/* ========================================================================= */}
-        <section className="pt-1">
-          {/* STICKY MOBILE NAVIGATION BAR */}
-          <div className="sticky top-0 z-30 flex lg:hidden bg-[#FAF9F6]/95 dark:bg-[#181512]/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-700 mb-6 text-xs font-mono font-bold uppercase tracking-wider">
-            {[
-              { id: "all", label: "Full View" },
-              {
-                id: "ingredients",
-                label: `Ingredients (${allIngredients.length})`,
-              },
-              {
-                id: "steps",
-                label: `Method (${totalSteps})`,
-              },
-            ].map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setMobileSection(t.id)}
-                className={`flex-1 py-3 text-center border-b-2 transition-all cursor-pointer ${
-                  mobileSection === t.id
-                    ? "border-amber-500 text-amber-700 dark:text-amber-300 bg-amber-500/[0.06]"
-                    : "border-transparent text-stone-500 dark:text-stone-300 hover:text-stone-800 dark:hover:text-white"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
+        <section>
+          {/* CLEAN ARCHITECTURAL UNDERLINE TABS (Mobile Only) */}
+          <div className="sticky top-0 z-30 lg:hidden bg-[#FAF9F6]/95 dark:bg-[#181512]/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 mb-4 -mx-3.5 px-3.5">
+            <div className="grid grid-cols-2">
+              {[
+                {
+                  id: "ingredients",
+                  label: "Ingredients",
+                  count: allIngredients.length,
+                },
+                {
+                  id: "steps",
+                  label: "Method",
+                  count: totalSteps,
+                },
+              ].map((tab) => {
+                const isActive = mobileSection === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setMobileSection(tab.id)}
+                    className={`relative py-3 flex items-center justify-center gap-1.5 text-xs font-sans font-[1000] uppercase tracking-wider transition-colors cursor-pointer ${
+                      isActive
+                        ? "text-stone-950 dark:text-white"
+                        : "text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-300"
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span
+                      className={`font-mono text-[11px] font-extrabold tabular-nums ${
+                        isActive
+                          ? "text-amber-600 dark:text-amber-400"
+                          : "text-stone-400 dark:text-stone-600"
+                      }`}
+                    >
+                      ({tab.count})
+                    </span>
+
+                    {/* Crisp Bottom Active Indicator */}
+                    <span
+                      className={`absolute inset-x-4 bottom-0 h-[2.5px] rounded-t-full transition-all duration-200 ${
+                        isActive
+                          ? "bg-amber-500 opacity-100 scale-x-100"
+                          : "bg-transparent opacity-0 scale-x-50"
+                      }`}
+                    />
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
             {/* ================================================================= */}
-            {/* LEFT RAIL: FRAMED VIDEO IFRAME + CATEGORIZED INGREDIENTS (4 Cols) */}
+            {/* LEFT RAIL: PINNED VIDEO + INDEPENDENTLY SCROLLABLE INGREDIENTS    */}
             {/* ================================================================= */}
             <aside
-              className={`lg:col-span-4 space-y-7 lg:pr-8 lg:border-r border-stone-200 dark:border-stone-700/80 lg:sticky lg:top-6 ${
+              className={`lg:col-span-4 space-y-5 lg:pr-8 lg:border-r border-stone-200 dark:border-stone-700/80 lg:sticky lg:top-4 ${
                 mobileSection === "steps" ? "hidden lg:block" : "block"
               }`}
             >
-              {/* VIDEO SECTION */}
-              {recipe.video?.embedUrl ? (
-                <div className="p-1.5 rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-[#24201C] shadow-md space-y-1.5">
-                  <div className="w-full aspect-video rounded-lg overflow-hidden bg-black border border-stone-200 dark:border-stone-700">
-                    <iframe
-                      src={recipe.video.embedUrl}
-                      title={recipe.title}
-                      className="w-full h-full border-none"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
-                  <div className="flex justify-end px-1">
-                    <button
-                      type="button"
-                      onClick={() => setActiveEditSection("video")}
-                      className="inline-flex items-center gap-1 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 hover:text-amber-700 dark:hover:text-amber-300 cursor-pointer"
-                    >
-                      <Pencil size={10} />
-                      <span>Change Video Link</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setActiveEditSection("video")}
-                  className="w-full py-2.5 px-3 rounded-lg border border-dashed border-stone-300 dark:border-stone-600 text-[11px] font-mono font-bold uppercase tracking-wider text-stone-500 dark:text-stone-300 hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-300 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <Video size={13} />
-                  <span>Add Video Link</span>
-                </button>
-              )}
+              {/* Desktop Video Block (Fixed in view; never scrolls away) */}
+              <div className="hidden lg:block">{renderVideoBlock()}</div>
 
               {/* INGREDIENTS EDITORIAL LEDGER */}
-              <div className="space-y-4">
-                <div className="pb-3 border-b-2 border-stone-900 dark:border-stone-200 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+              <div className="space-y-3.5">
+                {/* Header Row */}
+                <div className="pb-2.5 border-b border-stone-200 dark:border-stone-700/80 lg:border-b-2 lg:border-stone-900 dark:lg:border-stone-200 flex items-center justify-between gap-2">
+                  {/* Desktop Title */}
+                  <div className="hidden lg:flex items-center gap-2">
                     <Scale
                       size={16}
                       className="text-amber-500 dark:text-amber-400 shrink-0"
                     />
-                    <h2 className="text-base sm:text-lg font-sans font-[1000] uppercase tracking-tighter text-stone-900 dark:text-white leading-none">
+                    <h2 className="text-lg font-sans font-[1000] uppercase tracking-tighter text-stone-900 dark:text-white leading-none">
                       Ingredients
                     </h2>
                     <span className="text-xs font-mono font-bold text-stone-500 dark:text-stone-300">
@@ -476,37 +524,41 @@ const RecipeDetail = () => {
                     </span>
                   </div>
 
+                  {/* Mobile Yield Label */}
+                  <span className="lg:hidden text-[11px] font-mono font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                    Portion Yield
+                  </span>
+
+                  {/* Thumb-Friendly Scaler & Edit Controls */}
                   <div className="flex items-center gap-2">
-                    {/* Portion Scaler */}
-                    <div className="inline-flex items-center rounded-md border border-stone-300 dark:border-stone-600 bg-white dark:bg-[#24201C] shadow-2xs text-xs">
+                    <div className="inline-flex items-center rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-[#24201C] shadow-2xs text-xs">
                       <button
                         type="button"
                         onClick={() => setServings((s) => Math.max(1, s - 1))}
-                        className="px-1.5 py-1 text-stone-700 dark:text-stone-200 hover:bg-amber-500 hover:text-stone-950 rounded-l-md transition-colors cursor-pointer"
+                        className="h-8 w-8 lg:h-7 lg:w-6 flex items-center justify-center text-stone-700 dark:text-stone-200 hover:bg-amber-500 hover:text-stone-950 rounded-l-lg transition-colors cursor-pointer"
                         title="Decrease Servings"
                       >
-                        <Minus size={10} strokeWidth={3} />
+                        <Minus size={11} strokeWidth={3} />
                       </button>
-                      <span className="px-2 py-0.5 font-mono font-extrabold text-amber-700 dark:text-amber-300 tabular-nums border-x border-stone-200 dark:border-stone-600">
+                      <span className="px-2.5 lg:px-2 font-mono font-extrabold text-amber-700 dark:text-amber-300 tabular-nums border-x border-stone-200 dark:border-stone-600">
                         {servings}p
                       </span>
                       <button
                         type="button"
                         onClick={() => setServings((s) => s + 1)}
-                        className="px-1.5 py-1 text-stone-700 dark:text-stone-200 hover:bg-amber-500 hover:text-stone-950 rounded-r-md transition-colors cursor-pointer"
+                        className="h-8 w-8 lg:h-7 lg:w-6 flex items-center justify-center text-stone-700 dark:text-stone-200 hover:bg-amber-500 hover:text-stone-950 rounded-r-lg transition-colors cursor-pointer"
                         title="Increase Servings"
                       >
-                        <Plus size={10} strokeWidth={3} />
+                        <Plus size={11} strokeWidth={3} />
                       </button>
                     </div>
 
-                    {/* Edit Ingredients Drawer Trigger */}
                     <button
                       type="button"
-                      onClick={() => setActiveEditSection("ingredients")}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-stone-300 dark:border-stone-600 bg-white dark:bg-[#24201C] text-[10px] font-mono font-bold uppercase tracking-wider text-stone-700 dark:text-stone-200 hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-300 transition-colors cursor-pointer"
+                      onClick={() => openEditDrawer("ingredients")}
+                      className="inline-flex items-center gap-1.5 h-8 lg:h-7 px-3 lg:px-2.5 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-[#24201C] text-[11px] lg:text-[10px] font-mono font-bold uppercase tracking-wider text-stone-700 dark:text-stone-200 hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-300 transition-colors cursor-pointer"
                     >
-                      <Pencil size={10} />
+                      <Pencil size={11} />
                       <span>Edit</span>
                     </button>
                   </div>
@@ -528,8 +580,14 @@ const RecipeDetail = () => {
                   </div>
                 )}
 
-                {/* Categorized Ingredient Groups */}
-                <div className="space-y-5">
+                {/* Scrollable Ingredient List Container (Only the list scrolls on desktop) */}
+                <div
+                  className={`space-y-4 lg:overflow-y-auto lg:pr-1.5 ${
+                    recipe.video?.embedUrl
+                      ? "lg:max-h-[calc(100vh-22rem)]"
+                      : "lg:max-h-[calc(100vh-10rem)]"
+                  }`}
+                >
                   {groupedIngredients.map((group) => {
                     const GroupIcon = group.Icon;
 
@@ -606,29 +664,34 @@ const RecipeDetail = () => {
                 mobileSection === "ingredients" ? "hidden lg:block" : "block"
               }`}
             >
-              {/* Preparation Section Header */}
-              <div className="pb-3 border-b-2 border-stone-900 dark:border-stone-200 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
+              {/* Preparation Section Header (Compact on mobile, full title on desktop) */}
+              <div className="pb-2.5 border-b border-stone-200 dark:border-stone-700/80 lg:border-b-2 lg:border-stone-900 dark:lg:border-stone-200 flex items-center justify-between gap-4">
+                <div className="hidden lg:flex items-center gap-2">
                   <ListOrdered
                     size={17}
                     className="text-amber-500 dark:text-amber-400 shrink-0"
                   />
-                  <h2 className="text-base sm:text-lg font-sans font-[1000] uppercase tracking-tighter text-stone-900 dark:text-white leading-none">
+                  <h2 className="text-lg font-sans font-[1000] uppercase tracking-tighter text-stone-900 dark:text-white leading-none">
                     Preparation
                   </h2>
                 </div>
 
+                {/* Mobile Step Count Label */}
+                <span className="lg:hidden text-[11px] font-mono font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                  {totalSteps} {totalSteps === 1 ? "Step" : "Steps"} Total
+                </span>
+
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded bg-stone-200 dark:bg-[#2A2520] text-stone-800 dark:text-stone-100 border border-stone-300 dark:border-stone-600 text-[10px] font-mono font-bold uppercase tracking-wider">
+                  <span className="hidden lg:inline-block px-2.5 py-0.5 rounded bg-stone-200 dark:bg-[#2A2520] text-stone-800 dark:text-stone-100 border border-stone-300 dark:border-stone-600 text-[10px] font-mono font-bold uppercase tracking-wider">
                     {totalSteps} {totalSteps === 1 ? "Step" : "Steps"}
                   </span>
 
                   <button
                     type="button"
-                    onClick={() => setActiveEditSection("steps")}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-stone-300 dark:border-stone-600 bg-white dark:bg-[#24201C] text-[10px] font-mono font-bold uppercase tracking-wider text-stone-700 dark:text-stone-200 hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-300 transition-colors cursor-pointer"
+                    onClick={() => openEditDrawer("steps")}
+                    className="inline-flex items-center gap-1.5 h-8 lg:h-7 px-3 lg:px-2.5 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-[#24201C] text-[11px] lg:text-[10px] font-mono font-bold uppercase tracking-wider text-stone-700 dark:text-stone-200 hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-300 transition-colors cursor-pointer"
                   >
-                    <Pencil size={10} />
+                    <Pencil size={11} />
                     <span>Edit Steps</span>
                   </button>
                 </div>
@@ -652,7 +715,7 @@ const RecipeDetail = () => {
                   return (
                     <article
                       key={idx}
-                      className="py-6 first:pt-2 flex flex-col sm:flex-row gap-4 sm:gap-7"
+                      className="py-5 first:pt-2 flex flex-col sm:flex-row gap-3 sm:gap-7"
                     >
                       {/* Left Step Meta Column */}
                       <div className="sm:w-36 shrink-0 flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-2">
@@ -705,9 +768,9 @@ const RecipeDetail = () => {
                               return (
                                 <span
                                   key={i}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-white dark:bg-[#26211D] border border-stone-300 dark:border-stone-600 text-stone-800 dark:text-stone-100 shadow-2xs"
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-mono font-bold bg-white dark:bg-[#26211D] border border-stone-300 dark:border-stone-600 text-stone-800 dark:text-stone-100 shadow-2xs"
                                 >
-                                  <ItemIcon size={11} className={iconColor} />
+                                  <ItemIcon size={10} className={iconColor} />
                                   <span>{item.name}</span>
                                   {qty !== "" && (
                                     <span className="text-amber-700 dark:text-amber-300 font-extrabold tabular-nums">
@@ -761,11 +824,23 @@ const RecipeDetail = () => {
         </section>
       </main>
 
-      {/* FOCUSED SLIDE-OVER DRAWER FOR EACH INDIVIDUAL SECTION & AI EXTRACT */}
+      {/* FLOATING THUMB-ZONE COOK MODE CTA (Mobile Only) */}
+      <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-30 lg:hidden">
+        <Link
+          to={cookModeUrl}
+          className="inline-flex items-center gap-2 px-4 py-3 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 font-mono font-extrabold text-xs uppercase tracking-wider shadow-xl shadow-stone-950/25 border border-amber-400 active:scale-95 transition-transform"
+        >
+          <Flame size={15} fill="currentColor" />
+          <span>Cook Mode</span>
+        </Link>
+      </div>
+
+      {/* SMOOTH SLIDE-OVER / BOTTOM-SHEET DRAWER */}
       <RecipeEditDrawer
+        isOpen={isDrawerOpen}
         section={activeEditSection}
         recipe={recipe}
-        onClose={() => setActiveEditSection(null)}
+        onClose={closeEditDrawer}
         onSaved={handleRecipeUpdated}
       />
     </div>

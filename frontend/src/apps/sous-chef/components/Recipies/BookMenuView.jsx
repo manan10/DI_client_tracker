@@ -7,7 +7,7 @@ import {
   Play,
   BookOpen,
   List,
-  ChevronsUpDown,
+  MoveHorizontal,
   Copy,
   Check,
   Printer,
@@ -40,10 +40,9 @@ const BookMenuView = ({
   const flipTimersRef = useRef([]);
   const lastWheelTurnRef = useRef(0);
 
-  // Mobile Touch Flick Tracking Refs
-  const touchStartYRef = useRef(null);
+  // Mobile Horizontal Touch Swipe Tracking Refs
   const touchStartXRef = useRef(null);
-  const touchStartScrollTopRef = useRef(0);
+  const touchStartYRef = useRef(null);
   const mobileScrollRef = useRef(null);
 
   const clearAllFlipTimers = useCallback(() => {
@@ -70,7 +69,7 @@ const BookMenuView = ({
 
   // Sequential Multi-Page Flick Trigger (e.g., Ch 1 -> Ch 4 flicks 3 pages: 1->2->3->4)
   const triggerPageTurn = useCallback(
-    (targetIdx, explicitDirection = null, axis = "horizontal") => {
+    (targetIdx, explicitDirection = null) => {
       if (totalTabs <= 1 || isAnimatingRef.current) return;
 
       const normalizedTarget = ((targetIdx % totalTabs) + totalTabs) % totalTabs;
@@ -110,14 +109,14 @@ const BookMenuView = ({
             ? (currentPage + 1) % totalTabs
             : (currentPage - 1 + totalTabs) % totalTabs;
 
-        setFlipState({ direction, axis, phase: "out", stepMs: halfStep });
+        setFlipState({ direction, phase: "out", stepMs: halfStep });
 
         const t1 = setTimeout(() => {
           setActiveTabIdx(nextPage);
           if (mobileScrollRef.current) {
             mobileScrollRef.current.scrollTop = 0;
           }
-          setFlipState({ direction, axis, phase: "in", stepMs: halfStep });
+          setFlipState({ direction, phase: "in", stepMs: halfStep });
 
           const t2 = setTimeout(() => {
             runStep(currentStep + 1, nextPage);
@@ -143,9 +142,9 @@ const BookMenuView = ({
         return;
       }
       if (e.key === "ArrowRight") {
-        triggerPageTurn(safeIdx + 1, "next", "horizontal");
+        triggerPageTurn(safeIdx + 1, "next");
       } else if (e.key === "ArrowLeft") {
-        triggerPageTurn(safeIdx - 1, "prev", "horizontal");
+        triggerPageTurn(safeIdx - 1, "prev");
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -160,9 +159,9 @@ const BookMenuView = ({
       if (now - lastWheelTurnRef.current < 420) return;
       lastWheelTurnRef.current = now;
       if (e.deltaX > 0) {
-        triggerPageTurn(safeIdx + 1, "next", "horizontal");
+        triggerPageTurn(safeIdx + 1, "next");
       } else {
-        triggerPageTurn(safeIdx - 1, "prev", "horizontal");
+        triggerPageTurn(safeIdx - 1, "prev");
       }
     }
   };
@@ -173,7 +172,7 @@ const BookMenuView = ({
       setMobileScreen("PAGE");
       return;
     }
-    triggerPageTurn(idx, null, "horizontal");
+    triggerPageTurn(idx, null);
   };
 
   // Copy & Print Active Chapter
@@ -221,92 +220,63 @@ const BookMenuView = ({
     }
   };
 
-  // Mobile Vertical Flick Handlers (Flick Up -> Next Page, Flick Down -> Prev Page)
+  // Mobile Horizontal Swipe Handlers (Swipe Left -> Next Page, Swipe Right -> Prev Page)
   const handleMobileTouchStart = (e) => {
     if (mobileScreen !== "PAGE" || totalTabs <= 1) return;
     const touch = e.touches[0];
-    touchStartYRef.current = touch.clientY;
     touchStartXRef.current = touch.clientX;
-    touchStartScrollTopRef.current = mobileScrollRef.current?.scrollTop || 0;
+    touchStartYRef.current = touch.clientY;
   };
 
   const handleMobileTouchEnd = (e) => {
     if (
       mobileScreen !== "PAGE" ||
-      touchStartYRef.current === null ||
       touchStartXRef.current === null ||
+      touchStartYRef.current === null ||
       totalTabs <= 1
     ) {
       return;
     }
 
     const touch = e.changedTouches[0];
-    const deltaY = touchStartYRef.current - touch.clientY; // positive = flicked UP
-    const deltaX = Math.abs(touchStartXRef.current - touch.clientX);
+    const deltaX = touchStartXRef.current - touch.clientX; // positive = swiped LEFT (next page)
+    const deltaY = Math.abs(touchStartYRef.current - touch.clientY);
 
-    touchStartYRef.current = null;
     touchStartXRef.current = null;
+    touchStartYRef.current = null;
 
-    if (Math.abs(deltaY) < 52 || deltaX > Math.abs(deltaY) * 0.85) return;
+    // Require clear horizontal intent so normal vertical list scrolling never triggers a page turn
+    if (Math.abs(deltaX) < 48 || deltaY > Math.abs(deltaX) * 0.75) return;
 
-    const el = mobileScrollRef.current;
-    const isScrollable = el ? el.scrollHeight > el.clientHeight + 4 : false;
-    const atTop = !el || el.scrollTop <= 2;
-    const atBottom =
-      !el || el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
-
-    if (deltaY > 0) {
-      if (!isScrollable || atBottom) {
-        triggerPageTurn(safeIdx + 1, "next", "vertical");
-      }
+    if (deltaX > 0) {
+      triggerPageTurn(safeIdx + 1, "next");
     } else {
-      if (!isScrollable || (atTop && touchStartScrollTopRef.current <= 2)) {
-        triggerPageTurn(safeIdx - 1, "prev", "vertical");
-      }
+      triggerPageTurn(safeIdx - 1, "prev");
     }
   };
 
-  // Compute 3D CSS transform for the active leaf during page turn
-  const getPageFlipStyle = (axis) => {
-    if (!flipState || flipState.axis !== axis) {
+  // Compute Left-Hinged 3D CSS transform for both Mobile & Desktop
+  const getHorizontalFlipStyle = (perspectivePx = 1800) => {
+    if (!flipState) {
       return {
-        transform:
-          axis === "horizontal"
-            ? "perspective(1800px) rotateY(0deg)"
-            : "perspective(1400px) rotateX(0deg)",
+        transform: `perspective(${perspectivePx}px) rotateY(0deg)`,
         opacity: 1,
         transition: `transform 160ms cubic-bezier(0.22, 1, 0.36, 1), opacity 160ms ease`,
       };
     }
 
     const { direction, phase, stepMs } = flipState;
-
-    if (axis === "horizontal") {
-      const angle =
-        phase === "out"
-          ? direction === "next"
-            ? -28
-            : 24
-          : direction === "next"
-          ? 24
-          : -28;
-      return {
-        transform: `perspective(1800px) rotateY(${angle}deg)`,
-        opacity: phase === "out" ? 0.14 : 0.32,
-        transition: `transform ${stepMs}ms cubic-bezier(0.4, 0, 0.2, 1), opacity ${stepMs}ms ease`,
-      };
-    }
-
-    const angleX =
+    const angle =
       phase === "out"
         ? direction === "next"
-          ? 28
-          : -24
+          ? -28
+          : 24
         : direction === "next"
-        ? -24
-        : 28;
+        ? 24
+        : -28;
+
     return {
-      transform: `perspective(1400px) rotateX(${angleX}deg)`,
+      transform: `perspective(${perspectivePx}px) rotateY(${angle}deg)`,
       opacity: phase === "out" ? 0.14 : 0.32,
       transition: `transform ${stepMs}ms cubic-bezier(0.4, 0, 0.2, 1), opacity ${stepMs}ms ease`,
     };
@@ -423,13 +393,13 @@ const BookMenuView = ({
 
       <div className="w-full">
         {/* ===================================================================== */}
-        {/* MOBILE TOP-BOUND POCKET BOOK (< md) — ARCHITECTURAL PAGE INTEGRATION   */}
+        {/* MOBILE LEFT-BOUND POCKET BOOK (< md) — HORIZONTAL SWIPE PAGE TURN     */}
         {/* ===================================================================== */}
         <div className="md:hidden">
           <div
             onTouchStart={handleMobileTouchStart}
             onTouchEnd={handleMobileTouchEnd}
-            className="border-2 border-stone-900 dark:border-stone-700 bg-[#FAF9F6] dark:bg-[#120F0C] select-none relative"
+            className="border-2 border-stone-900 dark:border-stone-700 bg-[#FAF9F6] dark:bg-[#120F0C] select-none relative touch-pan-y"
           >
             {/* Top-Edge Chapter Progress Hairline */}
             <div className="h-[2px] w-full bg-stone-200 dark:bg-stone-800">
@@ -439,147 +409,152 @@ const BookMenuView = ({
               />
             </div>
 
-            {/* Top Stab-Stitched Silk Binding Strip */}
-            <div className="flex items-center justify-around px-6 py-1.5 bg-[#F2EFE7] dark:bg-[#17130F] border-b border-stone-900/25 dark:border-stone-700 relative">
-              <div
-                aria-hidden="true"
-                className="absolute inset-x-6 top-1/2 -translate-y-1/2 h-[1.5px] bg-amber-700/75 dark:bg-amber-400/75"
-              />
-              {[0, 1, 2, 3].map((knot) => (
-                <span
-                  key={knot}
-                  className="relative z-10 w-[3px] h-3.5 bg-amber-700 dark:bg-amber-400"
-                />
-              ))}
-            </div>
-
-            {/* Mobile Page Body */}
-            <div className="overflow-hidden">
-              {mobileScreen === "INDEX" ? (
-                /* MOBILE SCREEN A: CHAPTER TABLE OF CONTENTS */
-                <div className="p-4 space-y-3 h-[540px] flex flex-col">
-                  <div className="flex items-center justify-between pb-2.5 border-b-2 border-stone-900 dark:border-stone-200 shrink-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-amber-700 dark:text-amber-400">
-                        おまかせ
-                      </span>
-                      <h2 className="font-sans font-bold uppercase tracking-[0.14em] text-sm text-stone-900 dark:text-white">
-                        Book Chapters
-                      </h2>
-                    </div>
-                    <span className="font-mono text-[10px] font-bold text-stone-500">
-                      {totalTabs} CHAPTERS
-                    </span>
-                  </div>
-
-                  <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar divide-y divide-stone-200/80 dark:divide-stone-800/80">
-                    {groupedSections.map((sec, idx) => {
-                      const isCurrent = idx === safeIdx;
-                      return (
-                        <button
-                          key={sec.groupName}
-                          type="button"
-                          onClick={() => handleSelectChapter(idx)}
-                          className={`w-full py-3 px-2 flex items-center justify-between gap-3 text-left transition-colors cursor-pointer ${
-                            isCurrent
-                              ? "bg-amber-500/15 text-amber-900 dark:text-amber-300"
-                              : "hover:bg-stone-200/50 dark:hover:bg-white/5 text-stone-800 dark:text-stone-200"
-                          }`}
-                        >
-                          <div className="flex items-baseline gap-2.5 min-w-0">
-                            <span className="font-mono text-[11px] font-extrabold text-amber-700 dark:text-amber-400 shrink-0">
-                              {String(idx + 1).padStart(2, "0")}.
-                            </span>
-                            <span className="font-sans font-bold uppercase tracking-wide text-xs truncate">
-                              {sec.groupName}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0 font-mono text-[10px] text-stone-500">
-                            <span className="tabular-nums">
-                              {sec.items.length} dishes
-                            </span>
-                            <ChevronRight size={13} className="text-amber-600" />
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                /* MOBILE SCREEN B: FIXED-HEIGHT FLICKABLE PAGE */
+            <div className="flex overflow-hidden">
+              {/* Left 4-Hole Silk Stab-Binding Spine (Hinge for Horizontal Page Flip) */}
+              <div className="w-6 shrink-0 bg-[#F2EFE7] dark:bg-[#17130F] border-r border-stone-900/25 dark:border-stone-800 flex flex-col justify-between py-9 items-center relative">
                 <div
-                  style={{
-                    ...getPageFlipStyle("vertical"),
-                    transformOrigin: "top center",
-                  }}
-                  className="p-4 h-[540px] flex flex-col justify-between bg-gradient-to-b from-stone-900/[0.03] via-transparent to-stone-900/[0.02] dark:from-black/35"
-                >
-                  {/* Chapter Header with One-Tap "Chapters" TOC Toggle */}
-                  <div className="flex items-center justify-between gap-2 pb-2.5 mb-3 border-b-2 border-stone-900 dark:border-stone-200 shrink-0">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">
-                        <span>おまかせ</span>
-                        <span>•</span>
-                        <span>
-                          PAGE {String(safeIdx + 1).padStart(2, "0")} OF{" "}
-                          {String(totalTabs).padStart(2, "0")}
+                  aria-hidden="true"
+                  className="absolute inset-y-7 left-1/2 -translate-x-1/2 w-[1.5px] bg-amber-700/75 dark:bg-amber-400/75"
+                />
+                {[0, 1, 2, 3].map((hole) => (
+                  <span
+                    key={hole}
+                    className="relative z-10 w-3.5 h-[2.5px] bg-amber-700 dark:bg-amber-400"
+                  />
+                ))}
+              </div>
+
+              {/* Mobile Page Body */}
+              <div className="flex-1 min-w-0 overflow-hidden">
+                {mobileScreen === "INDEX" ? (
+                  /* MOBILE SCREEN A: CHAPTER TABLE OF CONTENTS */
+                  <div className="p-3.5 space-y-3 h-[540px] flex flex-col">
+                    <div className="flex items-center justify-between pb-2.5 border-b-2 border-stone-900 dark:border-stone-200 shrink-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs text-amber-700 dark:text-amber-400">
+                          おまかせ
+                        </span>
+                        <h2 className="font-sans font-bold uppercase tracking-[0.14em] text-sm text-stone-900 dark:text-white">
+                          Book Chapters
+                        </h2>
+                      </div>
+                      <span className="font-mono text-[10px] font-bold text-stone-500">
+                        {totalTabs} CHAPTERS
+                      </span>
+                    </div>
+
+                    <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar divide-y divide-stone-200/80 dark:divide-stone-800/80">
+                      {groupedSections.map((sec, idx) => {
+                        const isCurrent = idx === safeIdx;
+                        return (
+                          <button
+                            key={sec.groupName}
+                            type="button"
+                            onClick={() => handleSelectChapter(idx)}
+                            className={`w-full py-3 px-2 flex items-center justify-between gap-3 text-left transition-colors cursor-pointer ${
+                              isCurrent
+                                ? "bg-amber-500/15 text-amber-900 dark:text-amber-300"
+                                : "hover:bg-stone-200/50 dark:hover:bg-white/5 text-stone-800 dark:text-stone-200"
+                            }`}
+                          >
+                            <div className="flex items-baseline gap-2.5 min-w-0">
+                              <span className="font-mono text-[11px] font-extrabold text-amber-700 dark:text-amber-400 shrink-0">
+                                {String(idx + 1).padStart(2, "0")}.
+                              </span>
+                              <span className="font-sans font-bold uppercase tracking-wide text-xs truncate">
+                                {sec.groupName}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0 font-mono text-[10px] text-stone-500">
+                              <span className="tabular-nums">
+                                {sec.items.length} dishes
+                              </span>
+                              <ChevronRight
+                                size={13}
+                                className="text-amber-600"
+                              />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  /* MOBILE SCREEN B: FIXED-HEIGHT HORIZONTALLY FLICKABLE PAGE */
+                  <div
+                    style={{
+                      ...getHorizontalFlipStyle(1400),
+                      transformOrigin: "left center",
+                    }}
+                    className="p-3.5 h-[540px] flex flex-col justify-between bg-gradient-to-r from-stone-900/[0.04] via-transparent to-stone-900/[0.02] dark:from-black/35"
+                  >
+                    {/* Chapter Header with One-Tap "Chapters" TOC Toggle */}
+                    <div className="flex items-center justify-between gap-2 pb-2.5 mb-3 border-b-2 border-stone-900 dark:border-stone-200 shrink-0">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">
+                          <span>おまかせ</span>
+                          <span>•</span>
+                          <span>
+                            PAGE {String(safeIdx + 1).padStart(2, "0")} OF{" "}
+                            {String(totalTabs).padStart(2, "0")}
+                          </span>
+                        </div>
+                        <h2 className="font-sans font-bold uppercase tracking-[0.06em] text-[15px] text-stone-900 dark:text-white truncate mt-0.5">
+                          {activeSection?.groupName}
+                        </h2>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setMobileScreen("INDEX")}
+                        className="h-8 px-2.5 border border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#1A1612] text-stone-800 dark:text-stone-200 text-[10px] font-mono font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95 transition-transform"
+                      >
+                        <List
+                          size={12}
+                          className="text-amber-700 dark:text-amber-400"
+                        />
+                        <span>Chapters</span>
+                      </button>
+                    </div>
+
+                    {/* Vertically Scrollable Dish List (Scrollbar Invisible) */}
+                    <div
+                      ref={mobileScrollRef}
+                      className="flex-1 min-h-0 overflow-y-auto no-scrollbar pr-0.5"
+                    >
+                      {renderChapterDishes(activeSection, false)}
+                    </div>
+
+                    {/* Minimalist Horizontal Swipe Cue Strip */}
+                    {totalTabs > 1 && (
+                      <div className="pt-2.5 mt-2 border-t border-stone-300/75 dark:border-stone-800 flex items-center justify-between gap-2 font-mono text-[9px] uppercase tracking-wider text-stone-400 dark:text-stone-500 shrink-0">
+                        <span className="truncate max-w-[36%]">
+                          ← {prevChapterName}
+                        </span>
+
+                        <span className="inline-flex items-center gap-1 font-bold text-amber-800/80 dark:text-amber-400/80 shrink-0">
+                          <MoveHorizontal size={11} />
+                          <span>Swipe</span>
+                        </span>
+
+                        <span className="truncate max-w-[36%] text-right">
+                          {nextChapterName} →
                         </span>
                       </div>
-                      <h2 className="font-sans font-bold uppercase tracking-[0.06em] text-base text-stone-900 dark:text-white truncate mt-0.5">
-                        {activeSection?.groupName}
-                      </h2>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setMobileScreen("INDEX")}
-                      className="h-8 px-2.5 border border-stone-900/40 dark:border-stone-700 bg-white dark:bg-[#1A1612] text-stone-800 dark:text-stone-200 text-[10px] font-mono font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95 transition-transform"
-                    >
-                      <List
-                        size={12}
-                        className="text-amber-700 dark:text-amber-400"
-                      />
-                      <span>Chapters</span>
-                    </button>
+                    )}
                   </div>
+                )}
+              </div>
 
-                  {/* Scrollable Dish List (Scrollbar Invisible) */}
-                  <div
-                    ref={mobileScrollRef}
-                    className="flex-1 min-h-0 overflow-y-auto no-scrollbar pr-0.5"
-                  >
-                    {renderChapterDishes(activeSection, false)}
-                  </div>
-
-                  {/* Minimalist Gesture Cue Strip */}
-                  {totalTabs > 1 && (
-                    <div className="pt-2.5 mt-2 border-t border-stone-300/75 dark:border-stone-800 flex items-center justify-between gap-2 font-mono text-[9px] uppercase tracking-wider text-stone-400 dark:text-stone-500 shrink-0">
-                      <span className="truncate max-w-[36%]">
-                        ↓ {prevChapterName}
-                      </span>
-
-                      <span className="inline-flex items-center gap-1 font-bold text-amber-800/80 dark:text-amber-400/80 shrink-0">
-                        <ChevronsUpDown size={10} />
-                        <span>Flick</span>
-                      </span>
-
-                      <span className="truncate max-w-[36%] text-right">
-                        {nextChapterName} ↑
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Layered Right Outer Paper Edges on Mobile */}
+              <div
+                aria-hidden="true"
+                className="flex shrink-0 border-l border-stone-900/20 dark:border-stone-800"
+              >
+                <div className="w-[2.5px] h-full bg-[#F5F2EA] dark:bg-[#1A1612] border-r border-stone-300/90 dark:border-stone-800" />
+                <div className="w-[2.5px] h-full bg-[#E8E4D9] dark:bg-[#110E0B]" />
+              </div>
             </div>
-          </div>
-
-          {/* Stacked Bottom Paper Leaves */}
-          <div
-            aria-hidden="true"
-            className="mx-1.5 flex flex-col border-x border-b border-stone-900/35 dark:border-stone-700"
-          >
-            <div className="h-[3px] w-full bg-[#F2EFE7] dark:bg-[#16120F] border-b border-stone-300 dark:border-stone-800" />
-            <div className="h-[3px] w-full bg-[#E8E3D7] dark:bg-[#110E0B]" />
           </div>
         </div>
 
@@ -594,7 +569,7 @@ const BookMenuView = ({
             {/* Clickable Left 4-Hole Silk Stab-Binding Spine -> Previous Page */}
             <button
               type="button"
-              onClick={() => triggerPageTurn(safeIdx - 1, "prev", "horizontal")}
+              onClick={() => triggerPageTurn(safeIdx - 1, "prev")}
               disabled={totalTabs <= 1}
               title={`Previous Chapter: ${prevChapterName || ""}`}
               aria-label="Previous Chapter"
@@ -662,7 +637,7 @@ const BookMenuView = ({
 
               <div
                 style={{
-                  ...getPageFlipStyle("horizontal"),
+                  ...getHorizontalFlipStyle(1800),
                   transformOrigin: "left center",
                 }}
                 className="flex-1 min-h-0 p-7 pl-3 flex flex-col bg-gradient-to-r from-stone-900/[0.015] via-transparent to-stone-900/[0.025] dark:from-black/20 dark:via-transparent dark:to-black/30"
@@ -726,9 +701,7 @@ const BookMenuView = ({
                         </span>
                         <button
                           type="button"
-                          onClick={() =>
-                            triggerPageTurn(safeIdx - 1, "prev", "horizontal")
-                          }
+                          onClick={() => triggerPageTurn(safeIdx - 1, "prev")}
                           className="h-7 px-2.5 border border-stone-900/35 dark:border-stone-700 bg-white dark:bg-[#1A1612] hover:border-amber-600 dark:hover:border-amber-400 text-stone-800 dark:text-stone-200 text-[10px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1 cursor-pointer transition-colors"
                           title="Previous Chapter (Left Arrow)"
                         >
@@ -737,9 +710,7 @@ const BookMenuView = ({
                         </button>
                         <button
                           type="button"
-                          onClick={() =>
-                            triggerPageTurn(safeIdx + 1, "next", "horizontal")
-                          }
+                          onClick={() => triggerPageTurn(safeIdx + 1, "next")}
                           className="h-7 px-2.5 border border-stone-900/35 dark:border-stone-700 bg-white dark:bg-[#1A1612] hover:border-amber-600 dark:hover:border-amber-400 text-stone-800 dark:text-stone-200 text-[10px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1 cursor-pointer transition-colors"
                           title="Next Chapter (Right Arrow)"
                         >
@@ -769,7 +740,7 @@ const BookMenuView = ({
             {/* Clickable Layered Right Outer Paper Edges -> Next Page */}
             <button
               type="button"
-              onClick={() => triggerPageTurn(safeIdx + 1, "next", "horizontal")}
+              onClick={() => triggerPageTurn(safeIdx + 1, "next")}
               disabled={totalTabs <= 1}
               title={`Next Chapter: ${nextChapterName || ""}`}
               aria-label="Next Chapter"
