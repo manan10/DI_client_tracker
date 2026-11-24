@@ -11,6 +11,8 @@ import {
   Shield,
   CreditCard,
   Landmark,
+  Coins,
+  ShieldAlert,
   Copy,
   Send,
   Printer,
@@ -28,7 +30,10 @@ import TargetCorpusCalculator from "./calculators/TargetCorpusCalculator";
 import SipSwpCalculator from "./calculators/SipSwpCalculator";
 import StpCalculator from "./calculators/StpCalculator";
 import SwpCalculator from "./calculators/SwpCalculator";
+import StepUpStpCalculator from "./calculators/StepUpStpCalculator";
+import CapitalGainsCalculator from "./calculators/CapitalGainsCalculator";
 import GoalPlannerCalculator from "./calculators/GoalPlannerCalculator";
+import EmergencyFundCalculator from "./calculators/EmergencyFundCalculator";
 import DelayCostCalculator from "./calculators/DelayCostCalculator";
 import InsuranceCalculator from "./calculators/InsuranceCalculator";
 import EmiCalculator from "./calculators/EmiCalculator";
@@ -57,6 +62,13 @@ const CALCULATOR_CATALOG = [
     icon: Target,
   },
   {
+    id: "capital-gains",
+    category: "wealth",
+    name: "Capital Gains & Tax Harvesting",
+    subtitle: "Calculate mutual fund LTCG / STCG tax liability and check ₹1.25L tax-free profit harvesting.",
+    icon: Coins,
+  },
+  {
     id: "sip-swp",
     category: "cashflow",
     name: "SIP + SWP (Build & Withdraw)",
@@ -71,11 +83,25 @@ const CALCULATOR_CATALOG = [
     icon: Repeat,
   },
   {
+    id: "stepup-stp",
+    category: "cashflow",
+    name: "Step-Up vs. Regular STP",
+    subtitle: "Compare regular fixed STP against annual step-up STP for aggressive equity accumulation.",
+    icon: Repeat,
+  },
+  {
     id: "swp",
     category: "cashflow",
     name: "SWP & Step-Up SWP",
     subtitle: "Plan regular monthly retirement cashflows and check corpus longevity.",
     icon: ArrowDownCircle,
+  },
+  {
+    id: "emergency",
+    category: "cashflow",
+    name: "Emergency Fund Planner",
+    subtitle: "Calculate ideal liquidity buffer (3–12 months expenses & EMIs) and check cash reserves.",
+    icon: ShieldAlert,
   },
   {
     id: "goals",
@@ -126,6 +152,23 @@ const LANGUAGES = [
   { code: "gu", label: "ગુજરાતી" },
 ];
 
+const READY_CALCULATORS = [
+  "sip",
+  "lumpsum",
+  "target-corpus",
+  "capital-gains",
+  "sip-swp",
+  "stp",
+  "stepup-stp",
+  "swp",
+  "emergency",
+  "goals",
+  "delay",
+  "insurance",
+  "emi",
+  "tax",
+];
+
 const Calculators = () => {
   const [selectedMode, setSelectedMode] = useState("sip");
   const [clientName, setClientName] = useState("");
@@ -165,7 +208,8 @@ const Calculators = () => {
   const currentCalcObj =
     CALCULATOR_CATALOG.find((c) => c.id === selectedMode) || CALCULATOR_CATALOG[0];
 
-  const isShareReady = Boolean(sharePayload.whatsappText);
+  const isShareReady =
+    READY_CALCULATORS.includes(selectedMode) && Boolean(sharePayload.whatsappText);
 
   const handleCopyWhatsApp = async () => {
     if (!sharePayload.whatsappText) return;
@@ -736,6 +780,14 @@ const Calculators = () => {
           />
         )}
 
+        {selectedMode === "capital-gains" && (
+          <CapitalGainsCalculator
+            clientName={clientName}
+            lang={lang}
+            onSummaryChange={handleSummaryChange}
+          />
+        )}
+
         {selectedMode === "sip-swp" && (
           <SipSwpCalculator
             clientName={clientName}
@@ -752,8 +804,24 @@ const Calculators = () => {
           />
         )}
 
+        {selectedMode === "stepup-stp" && (
+          <StepUpStpCalculator
+            clientName={clientName}
+            lang={lang}
+            onSummaryChange={handleSummaryChange}
+          />
+        )}
+
         {selectedMode === "swp" && (
           <SwpCalculator
+            clientName={clientName}
+            lang={lang}
+            onSummaryChange={handleSummaryChange}
+          />
+        )}
+
+        {selectedMode === "emergency" && (
+          <EmergencyFundCalculator
             clientName={clientName}
             lang={lang}
             onSummaryChange={handleSummaryChange}
@@ -798,6 +866,17 @@ const Calculators = () => {
             lang={lang}
             onSummaryChange={handleSummaryChange}
           />
+        )}
+
+        {!READY_CALCULATORS.includes(selectedMode) && (
+          <div className="py-16 text-center space-y-2">
+            <p className="text-sm font-bold text-slate-900 dark:text-white">
+              {currentCalcObj.name}
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Ready to build next using the exact same layout and multilingual standard.
+            </p>
+          </div>
         )}
 
       </div>
