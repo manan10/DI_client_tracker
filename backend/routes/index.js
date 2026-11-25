@@ -7,6 +7,7 @@ router.use("/users", require("../authentication/userRoutes"));
 
 // Client Tracker Routes
 router.use("/clients", require("../app-client-tracker/routes/clientRoutes"));
+router.use("/risk-invites", require("../app-client-tracker/routes/riskInviteRoutes"));
 router.use("/interactions", require("../app-client-tracker/routes/interactionRoutes"));
 router.use("/upload", require("../app-client-tracker/routes/uploadRoutes"));
 router.use("/stats", require("../app-client-tracker/routes/statsRoutes"));

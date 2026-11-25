@@ -19,6 +19,9 @@ import { renderSousChefRoutes } from "./apps/sous-chef/routes";
 const Auth = lazy(() => import("./shared/pages/Auth"));
 const AppPicker = lazy(() => import("./shared/pages/AppPicker"));
 const Settings = lazy(() => import("./shared/pages/Settings"));
+const PublicRiskAssessment = lazy(() =>
+  import("./apps/client-tracker/pages/PublicRiskAssessment")
+);
 
 const PageLoader = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-[#0B1120]">
@@ -53,6 +56,7 @@ function App() {
             <Routes>
               {/* Public & Shared Routes */}
               <Route path="/login" element={<Auth />} />
+              <Route path="/assess/:token" element={<PublicRiskAssessment />} />
               <Route
                 path="/"
                 element={

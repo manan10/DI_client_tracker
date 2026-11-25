@@ -34,6 +34,20 @@ const ClientSchema = new mongoose.Schema({
     enum: ['Conservative', 'Moderate', 'Aggressive'], 
     default: 'Moderate' 
   },
+  riskScore: { type: Number, min: 0, max: 100 },
+  riskTier: { 
+    type: String, 
+    enum: ['Conservative', 'Moderately Conservative', 'Moderate', 'Growth', 'Aggressive']
+  },
+  riskAssessedAt: { type: Date },
+  riskAssessment: {
+    capacityScore: { type: Number },
+    toleranceScore: { type: Number },
+    overrideApplied: { type: Boolean, default: false },
+    overrideReason: { type: String },
+    answers: { type: mongoose.Schema.Types.Mixed },
+    assessedBy: { type: String }
+  },
   lastMet: { type: Date },
   familyId: { type: String, trim: true },
   isFamilyHead: { type: Boolean, default: false },

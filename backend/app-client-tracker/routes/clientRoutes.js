@@ -7,6 +7,7 @@ router.post("/", protect, clientController.createClient);
 router.get("/", protect, clientController.getAllClients);
 router.get("/dormant", protect, clientController.getDormantClients);
 router.get("/:id", protect, clientController.getClientById);
+router.patch("/:id/risk-profile", protect, clientController.updateClientRiskProfile);
 
 router.post("/:id/documents", clientController.addDocument);
 router.delete("/:id/documents/:docId", clientController.deleteDocument);

@@ -188,6 +188,66 @@ exports.getDormantClients = async (req, res) => {
 };
 
 /**
+ * @desc    Update client SEBI risk profile & assessment audit snapshot
+ * @route   PATCH /api/clients/:id/risk-profile
+ * @access  Private
+ */
+exports.updateClientRiskProfile = async (req, res) => {
+  try {
+    const {
+      riskProfile,
+      riskTier,
+      riskScore,
+      capacityScore,
+      toleranceScore,
+      overrideApplied,
+      overrideReason,
+      answers
+    } = req.body;
+
+    const allowedBaseProfiles = ["Conservative", "Moderate", "Aggressive"];
+    if (!riskProfile || !allowedBaseProfiles.includes(riskProfile)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid riskProfile (Conservative, Moderate, or Aggressive) is required."
+      });
+    }
+
+    const client = await Client.findById(req.params.id);
+    if (!client) {
+      return res.status(404).json({ success: false, message: "Client not found" });
+    }
+
+    client.riskProfile = riskProfile;
+    if (riskTier) client.riskTier = riskTier;
+    if (typeof riskScore === "number") client.riskScore = riskScore;
+    client.riskAssessedAt = new Date();
+    client.riskAssessment = {
+      capacityScore: typeof capacityScore === "number" ? capacityScore : undefined,
+      toleranceScore: typeof toleranceScore === "number" ? toleranceScore : undefined,
+      overrideApplied: Boolean(overrideApplied),
+      overrideReason: overrideReason || "",
+      answers: answers || {},
+      assessedBy: req.user?.name || req.user?.username || "Advisor"
+    };
+
+    await client.save();
+
+    res.status(200).json({
+      success: true,
+      data: client,
+      message: `Risk profile updated to ${riskTier || riskProfile}`
+    });
+  } catch (err) {
+    console.error("Update Client Risk Profile Error:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message || "Failed to update client risk profile"
+    });
+  }
+};
+
+/**
  * @desc    Attach a document record to a client
  * @route   POST /api/clients/:id/documents
  * @access  Private
