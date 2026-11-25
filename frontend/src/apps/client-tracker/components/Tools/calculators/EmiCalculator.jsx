@@ -1,13 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import {
-  CreditCard,
-  Sparkles,
-  BarChart3,
-  Table as TableIcon,
-  TrendingUp,
-  BadgeIndianRupee,
-  CheckCircle2,
-} from "lucide-react";
+import { CreditCard, Sparkles, TrendingUp, CheckCircle2 } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -19,9 +11,11 @@ import {
 } from "recharts";
 import { calculateStepUpSip, formatINR, formatINRCompact } from "./mathUtils";
 import { TactileSliderInput } from "./CalculatorControls";
+import { COMMON_TRANSLATIONS, ScheduleViewerCard } from "./CalculatorShared";
 
 const TRANSLATIONS = {
   en: {
+    ...COMMON_TRANSLATIONS.en,
     sectionTitle: "1. Enter Loan Details & Interest-Recovery SIP",
     sectionSub:
       "Calculate your monthly EMI, total bank interest, and see how a small parallel SIP recovers 100% of that interest.",
@@ -31,54 +25,35 @@ const TRANSLATIONS = {
     interestRateDesc: "Annual interest rate charged by your bank or NBFC.",
     tenureLabel: "Loan Tenure (Years)",
     tenureDesc: "Total repayment duration in years.",
-    yearsUnit: "Yrs",
-    yrShort: "Yr",
-
     sipOffsetToggle: "Enable 'Interest-Free Loan' Parallel SIP Pitch",
     sipOffsetDesc:
       "Start a parallel Equity SIP alongside your EMI so compounding profit covers your entire bank interest cost.",
     sipPctOfEmiLabel: "Parallel Monthly SIP (% of EMI)",
     sipReturnLabel: "Expected SIP Return (% p.a.)",
-
     resultHeader: "2. Loan EMI & Interest Recovery Summary",
     heroTitle: "Monthly Loan EMI",
     principalLabel: "Loan Principal",
-    interestLabel: "Total Bank Interest",
-    totalPayableLabel: "Total Bank Repayment",
-    sipProfitLabel: "Parallel SIP Profit Earned",
+    interestLabel: "Total Interest",
+    totalPayableLabel: "Total Payable",
+    sipProfitLabel: "SIP Profit",
     interestRecoveredBadge: (pct) =>
       pct >= 100
         ? `100%+ of Bank Interest Recovered (${pct}%) — Effectively Interest-Free!`
         : `${pct}% of Bank Interest Recovered via Parallel SIP`,
-
-    takeawaySentence: (
-      loanAmt,
-      rate,
-      yrs,
-      emi,
-      totalInterest,
-      showSip,
-      parallelSip,
-      sipGain
-    ) =>
+    takeawaySentence: (loanAmt, rate, yrs, emi, totalInterest, showSip, parallelSip, sipGain) =>
       showSip
         ? `On a ${loanAmt} loan at ${rate}% for ${yrs} years, your EMI is ${emi}/mo and total interest is ${totalInterest}. By running a parallel SIP of ${parallelSip}/mo alongside your EMI, you earn ${sipGain} in profit — recovering your bank interest cost!`
         : `On a ${loanAmt} loan at ${rate}% for ${yrs} years, your monthly EMI is ${emi}/mo. Over ${yrs} years, you repay ${totalInterest} in interest on top of the ${loanAmt} principal.`,
-
     chartTitle: "Loan Balance Paydown vs. Parallel SIP Wealth",
     chartSub: "Watch your loan balance drop to zero while your parallel SIP builds net wealth",
     legendLoanBal: "Remaining Loan Balance",
     legendSipVal: "Parallel SIP Corpus",
     viewChart: "Paydown Chart",
     viewTable: "Amortization Schedule",
-
-    colYear: "Year",
     colPrincipalPaid: "Principal Paid",
     colInterestPaid: "Interest Paid",
     colLoanBal: "Ending Loan Bal.",
     colSipBal: "Parallel SIP Value",
-
-    waGreeting: (name) => (name ? `Namaste *${name}*,` : `Namaste,`),
     waIntro:
       "Here is your personalized *Loan EMI & Interest-Recovery Plan* prepared by *Dalal Investments*:",
     waLoanHeader: "1️⃣ *Loan Repayment Summary*",
@@ -99,6 +74,7 @@ const TRANSLATIONS = {
     pdfSubtitle: "Amortization breakdown & wealth-offset strategy",
   },
   hi: {
+    ...COMMON_TRANSLATIONS.hi,
     sectionTitle: "1. लोन विवरण और ब्याज-रिकवरी SIP दर्ज करें",
     sectionSub:
       "अपनी मासिक EMI, कुल बैंक ब्याज जानें और देखें कि एक छोटी समानांतर SIP कैसे आपका पूरा ब्याज वापस दिला सकती है।",
@@ -108,54 +84,35 @@ const TRANSLATIONS = {
     interestRateDesc: "बैंक द्वारा ली जाने वाली वार्षिक ब्याज दर।",
     tenureLabel: "लोन की अवधि (साल)",
     tenureDesc: "लोन चुकाने की कुल अवधि।",
-    yearsUnit: "साल",
-    yrShort: "वर्ष",
-
     sipOffsetToggle: "'ब्याज-मुक्त लोन' समानांतर SIP रणनीति जोड़ें",
     sipOffsetDesc:
       "EMI के साथ एक छोटी इक्विटी SIP शुरू करें ताकि उसका मुनाफा आपके पूरे बैंक ब्याज की भरपाई कर दे।",
     sipPctOfEmiLabel: "मासिक SIP (EMI का % हिस्सा)",
     sipReturnLabel: "अनुमानित SIP रिटर्न (% सालाना)",
-
     resultHeader: "2. लोन EMI और ब्याज रिकवरी रिपोर्ट",
     heroTitle: "मासिक लोन EMI",
     principalLabel: "मूल लोन राशि",
-    interestLabel: "कुल बैंक ब्याज",
-    totalPayableLabel: "बैंक को कुल भुगतान",
-    sipProfitLabel: "समानांतर SIP से अर्जित लाभ",
+    interestLabel: "कुल ब्याज",
+    totalPayableLabel: "कुल भुगतान",
+    sipProfitLabel: "SIP मुनाफा",
     interestRecoveredBadge: (pct) =>
       pct >= 100
         ? `100%+ बैंक ब्याज की रिकवरी (${pct}%) — प्रभावी रूप से ब्याज-मुक्त लोन!`
         : `समानांतर SIP से ${pct}% बैंक ब्याज की रिकवरी`,
-
-    takeawaySentence: (
-      loanAmt,
-      rate,
-      yrs,
-      emi,
-      totalInterest,
-      showSip,
-      parallelSip,
-      sipGain
-    ) =>
+    takeawaySentence: (loanAmt, rate, yrs, emi, totalInterest, showSip, parallelSip, sipGain) =>
       showSip
         ? `${rate}% ब्याज पर ${yrs} साल के ${loanAmt} लोन की EMI ${emi}/माह है और कुल ब्याज ${totalInterest} है। EMI के साथ ${parallelSip}/माह की SIP चलाकर आप ${sipGain} का मुनाफा कमाते हैं — जिससे आपका बैंक ब्याज वसूल हो जाता है!`
         : `${rate}% ब्याज पर ${yrs} साल के ${loanAmt} लोन की मासिक EMI ${emi}/माह है। पूरी अवधि में आप ${loanAmt} मूलधन के अलावा ${totalInterest} ब्याज चुकाते हैं।`,
-
     chartTitle: "लोन भुगतान बनाम समानांतर SIP वेल्थ ग्रोथ",
     chartSub: "देखें कि लोन घटकर शून्य होता है जबकि आपकी SIP बड़ा फंड तैयार करती है",
     legendLoanBal: "शेष लोन बैलेंस",
     legendSipVal: "समानांतर SIP फंड",
     viewChart: "तुलना चार्ट",
     viewTable: "वार्षिक तालिका",
-
-    colYear: "साल",
     colPrincipalPaid: "मूलधन भुगतान",
     colInterestPaid: "ब्याज भुगतान",
     colLoanBal: "शेष लोन",
     colSipBal: "समानांतर SIP वैल्यू",
-
-    waGreeting: (name) => (name ? `नमस्ते *${name}*,` : `नमस्ते,`),
     waIntro:
       "*Dalal Investments* की ओर से आपकी *लोन EMI और ब्याज-रिकवरी योजना* नीचे प्रस्तुत है:",
     waLoanHeader: "1️⃣ *लोन भुगतान सारांश*",
@@ -176,6 +133,7 @@ const TRANSLATIONS = {
     pdfSubtitle: "लोन भुगतान विवरण और वेल्थ-ऑफसेट रणनीति (Dalal Investments)",
   },
   gu: {
+    ...COMMON_TRANSLATIONS.gu,
     sectionTitle: "1. લોનની વિગતો અને વ્યાજ-રિકવરી SIP દાખલ કરો",
     sectionSub:
       "તમારી માસિક EMI, કુલ બેંક વ્યાજ જાણો અને જુઓ કે એક નાની સમાંતર SIP કેવી રીતે તમારું પૂરું વ્યાજ પાછું અપાવી શકે છે.",
@@ -185,54 +143,35 @@ const TRANSLATIONS = {
     interestRateDesc: "બેંક દ્વારા લેવામાં આવતો વાર્ષિક વ્યાજ દર.",
     tenureLabel: "લોનનો સમયગાળો (વર્ષ)",
     tenureDesc: "લોન ચૂકવવાનો કુલ સમયગાળો.",
-    yearsUnit: "વર્ષ",
-    yrShort: "વર્ષ",
-
     sipOffsetToggle: "'વ્યાજ-મુક્ત લોન' સમાંતર SIP વ્યૂહરચના ઉમેરો",
     sipOffsetDesc:
       "EMI સાથે એક નાની ઇક્વિટી SIP શરૂ કરો જેથી તેનો નફો તમારા સમગ્ર બેંક વ્યાજની ભરપાઈ કરી દે.",
     sipPctOfEmiLabel: "માસિક SIP (EMI નો % ભાગ)",
     sipReturnLabel: "અંદાજિત SIP વળતર (% વાર્ષિક)",
-
     resultHeader: "2. લોન EMI અને વ્યાજ રિકવરી રિપોર્ટ",
     heroTitle: "માસિક લોન EMI",
     principalLabel: "મૂળ લોન રકમ",
-    interestLabel: "કુલ બેંક વ્યાજ",
-    totalPayableLabel: "બેંકને કુલ ચુકવણી",
-    sipProfitLabel: "સમાંતર SIP થી મળેલો નફો",
+    interestLabel: "કુલ વ્યાજ",
+    totalPayableLabel: "કુલ ચુકવણી",
+    sipProfitLabel: "SIP નફો",
     interestRecoveredBadge: (pct) =>
       pct >= 100
         ? `100%+ બેંક વ્યાજની રિકવરી (${pct}%) — અસરકારક રીતે વ્યાજ-મુક્ત લોન!`
         : `સમાંતર SIP થી ${pct}% બેંક વ્યાજની રિકવરી`,
-
-    takeawaySentence: (
-      loanAmt,
-      rate,
-      yrs,
-      emi,
-      totalInterest,
-      showSip,
-      parallelSip,
-      sipGain
-    ) =>
+    takeawaySentence: (loanAmt, rate, yrs, emi, totalInterest, showSip, parallelSip, sipGain) =>
       showSip
         ? `${rate}% વ્યાજે ${yrs} વર્ષની ${loanAmt} લોનની EMI ${emi}/માસ છે અને કુલ વ્યાજ ${totalInterest} છે. EMI સાથે ${parallelSip}/માસ ની SIP ચલાવીને તમે ${sipGain} નો નફો મેળવો છો — જેનાથી તમારું બેંક વ્યાજ વસૂલ થઈ જાય છે!`
         : `${rate}% વ્યાજે ${yrs} વર્ષની ${loanAmt} લોનની માસિક EMI ${emi}/માસ છે. સમગ્ર સમયગાળામાં તમે ${loanAmt} મૂળધન ઉપરાંત ${totalInterest} વ્યાજ ચૂકવો છો.`,
-
     chartTitle: "લોન ચુકવણી વિ. સમાંતર SIP વેલ્થ ગ્રોથ",
     chartSub: "જુઓ કે લોન ઘટીને શૂન્ય થાય છે જ્યારે તમારી SIP મોટું ફંડ બનાવે છે",
     legendLoanBal: "બાકી લોન બેલેન્સ",
     legendSipVal: "સમાંતર SIP ફંડ",
     viewChart: "સરખામણી ચાર્ટ",
     viewTable: "વાર્ષિક કોષ્ટક",
-
-    colYear: "વર્ષ",
     colPrincipalPaid: "મૂળધન ચુકવણી",
     colInterestPaid: "વ્યાજ ચુકવણી",
     colLoanBal: "બાકી લોન",
     colSipBal: "સમાંતર SIP મૂલ્ય",
-
-    waGreeting: (name) => (name ? `નમસ્તે *${name}*,` : `નમસ્તે,`),
     waIntro:
       "*Dalal Investments* તરફથી તમારી *લોન EMI અને વ્યાજ-રિકવરી યોજના* નીચે મુજબ છે:",
     waLoanHeader: "1️⃣ *લોન ચુકવણી સારાંશ*",
@@ -255,24 +194,24 @@ const TRANSLATIONS = {
 };
 
 const CustomEmiTooltip = ({ active, payload, t, showSipOffset }) => {
-  if (!active || !payload || !payload.length) return null;
+  if (!active || !payload?.length) return null;
   const row = payload[0]?.payload;
   if (!row) return null;
 
   return (
-    <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/15 rounded-xl p-3.5 shadow-xl space-y-2 min-w-[225px] font-sans text-xs z-50">
-      <div className="font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-white/10 pb-1.5">
+    <div className="bg-white dark:bg-[#0B1120] border border-slate-300 dark:border-white/15 rounded-xl p-3 shadow-xl space-y-1.5 min-w-[210px] sm:min-w-[225px] font-sans text-xs z-50">
+      <div className="font-bold text-slate-900 dark:text-white border-b border-slate-200 dark:border-white/15 pb-1.5">
         {t.yrShort} {row.year}
       </div>
       <div className="space-y-1.5 tabular-nums">
-        <div className="flex justify-between gap-4">
+        <div className="flex justify-between gap-3">
           <span className="text-slate-500 dark:text-slate-400">{t.legendLoanBal}:</span>
           <span className="font-bold text-amber-600 dark:text-amber-400">
             {formatINRCompact(row.endingLoanBalance)}
           </span>
         </div>
         {showSipOffset && (
-          <div className="flex justify-between gap-4">
+          <div className="flex justify-between gap-3">
             <span className="text-emerald-600 dark:text-emerald-400">{t.legendSipVal}:</span>
             <span className="font-bold text-emerald-600 dark:text-emerald-400">
               {formatINRCompact(row.sipCorpus)}
@@ -287,16 +226,13 @@ const CustomEmiTooltip = ({ active, payload, t, showSipOffset }) => {
 const EmiCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
 
-  const [loanAmount, setLoanAmount] = useState(5000000); // ₹50L
+  const [loanAmount, setLoanAmount] = useState(5000000);
   const [interestRate, setInterestRate] = useState(8.75);
   const [tenureYears, setTenureYears] = useState(20);
 
-  // Parallel SIP Interest-Recovery Pitch
   const [showSipOffset, setShowSipOffset] = useState(true);
   const [sipPctOfEmi, setSipPctOfEmi] = useState(20);
   const [sipReturnPct, setSipReturnPct] = useState(12);
-
-  const [activeView, setActiveView] = useState("chart");
 
   const result = useMemo(() => {
     const P = Math.max(50000, Number(loanAmount) || 500000);
@@ -309,7 +245,6 @@ const EmiCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
     const totalPayable = emi * n;
     const totalInterest = Math.max(0, totalPayable - P);
 
-    // Parallel SIP calculation
     const parallelMonthlySip = Math.round((emi * (Number(sipPctOfEmi) || 0)) / 100 / 100) * 100;
     const sipSim = calculateStepUpSip({
       monthlySip: parallelMonthlySip,
@@ -321,7 +256,6 @@ const EmiCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
     const interestRecoveredPct =
       totalInterest > 0 ? Math.round((sipSim.wealthGained / totalInterest) * 100) : 100;
 
-    // Year-by-year amortization + parallel SIP curve
     let remainingBal = P;
     const yearlySchedule = [];
 
@@ -457,34 +391,28 @@ const EmiCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
       milestones,
       disclaimer: t.waDisclaimer,
     });
-  }, [
-    clientName,
-    interestRate,
-    tenureYears,
-    showSipOffset,
-    sipReturnPct,
-    result,
-    t,
-    onSummaryChange,
-  ]);
+  }, [clientName, interestRate, tenureYears, showSipOffset, sipReturnPct, result, t, onSummaryChange]);
+
+  const chartLegends = [
+    { label: t.legendLoanBal, textClass: "text-amber-700 dark:text-amber-300", dotClass: "bg-amber-500" },
+    ...(showSipOffset
+      ? [{ label: t.legendSipVal, textClass: "text-emerald-700 dark:text-emerald-300", dotClass: "bg-emerald-500" }]
+      : []),
+  ];
 
   return (
-    <div className="space-y-8 w-full font-sans">
-      
-      {/* ================================================================= */}
-      {/* TOP SECTION: LOAN & PARALLEL SIP FORM                             */}
-      {/* ================================================================= */}
-      <section className="bg-slate-50/90 dark:bg-white/[0.02] border border-slate-200/90 dark:border-white/10 rounded-2xl p-5 sm:p-6 space-y-5">
-        <div className="pb-3 border-b border-slate-200/80 dark:border-white/10">
-          <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+    <div className="space-y-5 sm:space-y-7 w-full font-sans">
+      {/* SECTION 1: BORDERLESS INPUT GRID */}
+      <section className="space-y-3.5 sm:space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 px-0.5">
+          <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
             {t.sectionTitle}
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
             {t.sectionSub}
           </p>
         </div>
 
-        {/* Loan Amount */}
         <TactileSliderInput
           label={t.loanAmountLabel}
           description={t.loanAmountDesc}
@@ -505,8 +433,7 @@ const EmiCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
           ]}
         />
 
-        {/* Interest Rate & Tenure */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
           <TactileSliderInput
             label={t.interestRateLabel}
             description={t.interestRateDesc}
@@ -543,30 +470,30 @@ const EmiCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
           />
         </div>
 
-        {/* Parallel SIP Interest-Recovery Toggle Bar */}
-        <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl p-4 shadow-2xs space-y-4">
-          <label className="flex items-start sm:items-center gap-3 cursor-pointer select-none">
+        {/* Parallel SIP Interest-Recovery Toggle Card */}
+        <div className="bg-white dark:bg-[#111827] border border-slate-300 dark:border-white/15 rounded-xl p-3.5 sm:p-4 shadow-xs space-y-3.5 sm:space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={showSipOffset}
               onChange={(e) => setShowSipOffset(e.target.checked)}
-              className="w-4 h-4 rounded accent-emerald-600 cursor-pointer shrink-0 mt-0.5 sm:mt-0"
+              className="w-4 h-4 rounded border-slate-400 accent-emerald-600 cursor-pointer shrink-0"
             />
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <TrendingUp size={16} />
+            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-300/80 dark:border-white/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <TrendingUp size={15} />
             </div>
-            <div>
+            <div className="min-w-0">
               <span className="text-xs font-extrabold text-slate-900 dark:text-white block">
                 {t.sipOffsetToggle}
               </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 block leading-snug">
                 {t.sipOffsetDesc}
               </span>
             </div>
           </label>
 
           {showSipOffset && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-slate-100 dark:border-white/10 animate-in fade-in duration-150">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4 pt-3 border-t border-slate-200 dark:border-white/15 animate-in fade-in duration-150">
               <TactileSliderInput
                 label={t.sipPctOfEmiLabel}
                 value={sipPctOfEmi}
@@ -602,89 +529,87 @@ const EmiCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
         </div>
       </section>
 
-      {/* ================================================================= */}
-      {/* BOTTOM SECTION: EMI SUMMARY, RECOVERY BADGE & PAYDOWN CHART       */}
-      {/* ================================================================= */}
-      <section className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+      {/* SECTION 2: EMI SUMMARY, RECOVERY BADGE & PAYDOWN CHART */}
+      <section className="space-y-4 sm:space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 px-0.5">
+          <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
             {t.resultHeader}
           </h3>
 
           {showSipOffset && (
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-extrabold">
-              <CheckCircle2 size={14} />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-500/15 border border-slate-300 dark:border-white/15 text-emerald-800 dark:text-emerald-300 text-[11px] sm:text-xs font-extrabold">
+              <CheckCircle2 size={14} className="shrink-0" />
               <span>{t.interestRecoveredBadge(result.interestRecoveredPct)}</span>
             </div>
           )}
         </div>
 
         {/* High-Contrast Hero Banner */}
-        <div className="rounded-2xl bg-slate-900 dark:bg-[#0F172A] border border-slate-800 dark:border-emerald-500/30 text-white p-6 shadow-md space-y-5">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="rounded-2xl bg-slate-900 dark:bg-[#0F172A] border border-slate-800 dark:border-white/15 text-white p-4 sm:p-6 shadow-md space-y-4 sm:space-y-5">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/20 border border-amber-400/30 text-amber-300 text-[11px] font-bold uppercase tracking-wider">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/20 border border-amber-400/30 text-amber-300 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">
                 <CreditCard size={13} />
                 <span>
                   {t.heroTitle} ({tenureYears} {t.yearsUnit})
                 </span>
               </div>
 
-              <div className="mt-2.5 flex flex-wrap items-baseline gap-2.5">
-                <span className="text-3xl sm:text-5xl font-black tracking-tight text-white tabular-nums">
+              <div className="mt-2 sm:mt-2.5 flex flex-wrap items-baseline gap-2 sm:gap-2.5">
+                <span className="text-2xl sm:text-5xl font-black tracking-tight text-white tabular-nums">
                   {formatINR(result.emi)}
                 </span>
-                <span className="text-sm font-bold text-amber-300">/ month</span>
+                <span className="text-xs sm:text-sm font-bold text-amber-300">/ month</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 shrink-0">
-              <div className="bg-slate-800/90 border border-slate-700 rounded-xl px-4 py-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300 block">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 shrink-0">
+              <div className="bg-slate-800/95 border border-slate-700 rounded-xl px-2.5 py-2 sm:px-4 sm:py-3 min-w-0">
+                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-300 block truncate">
                   {t.principalLabel}
                 </span>
-                <span className="text-lg font-black text-white tabular-nums mt-0.5 block">
+                <span className="text-sm sm:text-lg font-black text-white tabular-nums mt-0.5 block truncate">
                   {formatINRCompact(result.loanAmount)}
                 </span>
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[10px] sm:text-[11px] text-slate-400 block truncate">
                   Borrowed
                 </span>
               </div>
 
-              <div className="bg-slate-800/90 border border-amber-500/30 rounded-xl px-4 py-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 block">
+              <div className="bg-slate-800/95 border border-slate-700 rounded-xl px-2.5 py-2 sm:px-4 sm:py-3 min-w-0">
+                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-amber-300 block truncate">
                   {t.interestLabel}
                 </span>
-                <span className="text-lg font-black text-amber-400 tabular-nums mt-0.5 block">
+                <span className="text-sm sm:text-lg font-black text-amber-400 tabular-nums mt-0.5 block truncate">
                   {formatINRCompact(result.totalInterest)}
                 </span>
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[10px] sm:text-[11px] text-slate-400 block truncate">
                   @ {interestRate}% p.a.
                 </span>
               </div>
 
               {showSipOffset ? (
-                <div className="bg-slate-800/90 border border-emerald-500/30 rounded-xl px-4 py-3">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 block">
+                <div className="bg-slate-800/95 border border-slate-700 rounded-xl px-2.5 py-2 sm:px-4 sm:py-3 min-w-0">
+                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-emerald-300 block truncate">
                     {t.sipProfitLabel}
                   </span>
-                  <span className="text-lg font-black text-emerald-400 tabular-nums mt-0.5 block">
+                  <span className="text-sm sm:text-lg font-black text-emerald-400 tabular-nums mt-0.5 block truncate">
                     +{formatINRCompact(result.sipProfitGained)}
                   </span>
-                  <span className="text-[11px] text-slate-400">
-                    SIP: {formatINR(result.parallelMonthlySip)}/mo
+                  <span className="text-[10px] sm:text-[11px] text-slate-400 block truncate">
+                    {formatINR(result.parallelMonthlySip)}/mo
                   </span>
                 </div>
               ) : (
-                <div className="bg-slate-800/90 border border-slate-700 rounded-xl px-4 py-3">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block">
+                <div className="bg-slate-800/95 border border-slate-700 rounded-xl px-2.5 py-2 sm:px-4 sm:py-3 min-w-0">
+                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-indigo-300 block truncate">
                     {t.totalPayableLabel}
                   </span>
-                  <span className="text-lg font-black text-indigo-300 tabular-nums mt-0.5 block">
+                  <span className="text-sm sm:text-lg font-black text-indigo-300 tabular-nums mt-0.5 block truncate">
                     {formatINRCompact(result.totalPayable)}
                   </span>
-                  <span className="text-[11px] text-slate-400">
-                    Principal + Interest
+                  <span className="text-[10px] sm:text-[11px] text-slate-400 block truncate">
+                    Prin. + Int.
                   </span>
                 </div>
               )}
@@ -693,8 +618,8 @@ const EmiCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
         </div>
 
         {/* Plain-Language Summary Callout */}
-        <div className="p-4 rounded-xl bg-emerald-50/70 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/25 flex items-start gap-3 text-xs sm:text-sm text-slate-800 dark:text-slate-200">
-          <Sparkles size={17} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+        <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#111827] border border-slate-300 dark:border-white/15 shadow-xs flex items-start gap-3 text-xs sm:text-sm text-slate-800 dark:text-slate-200">
+          <Sparkles size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
           <p className="font-medium leading-relaxed">
             {t.takeawaySentence(
               formatINRCompact(result.loanAmount),
@@ -709,170 +634,105 @@ const EmiCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
           </p>
         </div>
 
-        {/* Paydown Chart & Amortization Schedule */}
-        <div className="border border-slate-200 dark:border-white/10 rounded-2xl p-5 sm:p-6 bg-white dark:bg-[#0B1120] shadow-xs space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
-                {activeView === "chart" ? t.chartTitle : t.viewTable}
-              </h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                {t.chartSub}
-              </p>
-            </div>
-
-            <div className="flex items-center bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-slate-200 dark:border-white/10">
-              <button
-                type="button"
-                onClick={() => setActiveView("chart")}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  activeView === "chart"
-                    ? "bg-white dark:bg-[#0B1120] text-emerald-700 dark:text-emerald-400 shadow-2xs"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800"
-                }`}
-              >
-                <BarChart3 size={14} />
-                <span>{t.viewChart}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveView("table")}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  activeView === "table"
-                    ? "bg-white dark:bg-[#0B1120] text-emerald-700 dark:text-emerald-400 shadow-2xs"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800"
-                }`}
-              >
-                <TableIcon size={14} />
-                <span>{t.viewTable}</span>
-              </button>
-            </div>
-          </div>
-
-          {activeView === "chart" ? (
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-5 text-xs font-bold">
-                <span className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-300">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                  {t.legendLoanBal}
-                </span>
-                {showSipOffset && (
-                  <span className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    {t.legendSipVal}
-                  </span>
-                )}
-              </div>
-
-              <div className="w-full h-[280px]">
-                <ResponsiveContainer width="100%" height={280}>
-                  <AreaChart
-                    data={result.yearlySchedule}
-                    margin={{ top: 10, right: 16, left: 4, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient id="emiLoanGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.28} />
-                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.02} />
-                      </linearGradient>
-                      <linearGradient id="emiSipGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.32} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      vertical={false}
-                      stroke="rgba(148, 163, 184, 0.18)"
-                    />
-                    <XAxis
-                      dataKey="year"
-                      tickFormatter={(v) => `${t.yrShort} ${v}`}
-                      tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tickFormatter={(v) => formatINRCompact(v)}
-                      tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }}
-                      axisLine={false}
-                      tickLine={false}
-                      width={76}
-                    />
-                    <Tooltip
-                      content={
-                        <CustomEmiTooltip t={t} showSipOffset={showSipOffset} />
-                      }
-                    />
+        <ScheduleViewerCard
+          chartTitle={t.chartTitle}
+          tableTitle={t.viewTable}
+          subtitle={t.chartSub}
+          viewChartLabel={t.viewChart}
+          viewTableLabel={t.viewTable}
+          legends={chartLegends}
+          renderChart={() => (
+            <div className="w-full h-[230px] sm:h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={result.yearlySchedule} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="emiLoanGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.28} />
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.02} />
+                    </linearGradient>
+                    <linearGradient id="emiSipGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.32} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.25)" />
+                  <XAxis
+                    dataKey="year"
+                    tickFormatter={(v) => `${t.yrShort} ${v}`}
+                    tick={{ fontSize: 10, fill: "#64748b", fontWeight: 600 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tickFormatter={(v) => formatINRCompact(v)}
+                    tick={{ fontSize: 10, fill: "#64748b", fontWeight: 600 }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={68}
+                  />
+                  <Tooltip content={<CustomEmiTooltip t={t} showSipOffset={showSipOffset} />} />
+                  <Area
+                    type="monotone"
+                    dataKey="endingLoanBalance"
+                    name={t.legendLoanBal}
+                    stroke="#f59e0b"
+                    strokeWidth={2.5}
+                    fill="url(#emiLoanGrad)"
+                  />
+                  {showSipOffset && (
                     <Area
                       type="monotone"
-                      dataKey="endingLoanBalance"
-                      name={t.legendLoanBal}
-                      stroke="#f59e0b"
+                      dataKey="sipCorpus"
+                      name={t.legendSipVal}
+                      stroke="#10b981"
                       strokeWidth={2.5}
-                      fill="url(#emiLoanGrad)"
+                      fill="url(#emiSipGrad)"
                     />
-                    {showSipOffset && (
-                      <Area
-                        type="monotone"
-                        dataKey="sipCorpus"
-                        name={t.legendSipVal}
-                        stroke="#10b981"
-                        strokeWidth={2.5}
-                        fill="url(#emiSipGrad)"
-                      />
-                    )}
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          ) : (
-            <div className="max-h-[340px] overflow-y-auto overflow-x-auto border border-slate-200 dark:border-white/10 rounded-xl">
-              <table className="w-full text-left border-collapse text-xs sm:text-sm tabular-nums">
-                <thead className="sticky top-0 bg-slate-50 dark:bg-[#131C31] border-b border-slate-200 dark:border-white/10 text-xs font-bold text-slate-700 dark:text-slate-200">
-                  <tr>
-                    <th className="py-3 px-4">{t.colYear}</th>
-                    <th className="py-3 px-4">{t.colPrincipalPaid}</th>
-                    <th className="py-3 px-4">{t.colInterestPaid}</th>
-                    <th className="py-3 px-4">{t.colLoanBal}</th>
-                    {showSipOffset && (
-                      <th className="py-3 px-4 text-right">{t.colSipBal}</th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                  {result.yearlySchedule.map((row) => (
-                    <tr
-                      key={row.year}
-                      className="hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors"
-                    >
-                      <td className="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-200">
-                        {t.yrShort} {row.year}
-                      </td>
-                      <td className="py-2.5 px-4 text-slate-600 dark:text-slate-400">
-                        {formatINRCompact(row.principalPaid)}
-                      </td>
-                      <td className="py-2.5 px-4 text-amber-600 dark:text-amber-400">
-                        {formatINRCompact(row.interestPaid)}
-                      </td>
-                      <td className="py-2.5 px-4 font-bold text-slate-900 dark:text-white">
-                        {formatINRCompact(row.endingLoanBalance)}
-                      </td>
-                      {showSipOffset && (
-                        <td className="py-2.5 px-4 text-right font-extrabold text-emerald-600 dark:text-emerald-400">
-                          {formatINRCompact(row.sipCorpus)}
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                  )}
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           )}
-        </div>
+          renderTable={() => (
+            <table className="w-full text-left border-collapse text-[11px] sm:text-sm tabular-nums">
+              <thead className="sticky top-0 bg-slate-100 dark:bg-[#131C31] border-b border-slate-300 dark:border-white/15 text-[11px] sm:text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                <tr>
+                  <th className="py-2.5 px-2.5 sm:py-3 sm:px-4 whitespace-nowrap">{t.colYear}</th>
+                  <th className="py-2.5 px-2.5 sm:py-3 sm:px-4 whitespace-nowrap">{t.colPrincipalPaid}</th>
+                  <th className="py-2.5 px-2.5 sm:py-3 sm:px-4 whitespace-nowrap">{t.colInterestPaid}</th>
+                  <th className="py-2.5 px-2.5 sm:py-3 sm:px-4 whitespace-nowrap">{t.colLoanBal}</th>
+                  {showSipOffset && (
+                    <th className="py-2.5 px-2.5 sm:py-3 sm:px-4 text-right whitespace-nowrap">{t.colSipBal}</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-white/10">
+                {result.yearlySchedule.map((row) => (
+                  <tr key={row.year} className="hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-colors">
+                    <td className="py-2 px-2.5 sm:py-2.5 sm:px-4 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                      {t.yrShort} {row.year}
+                    </td>
+                    <td className="py-2 px-2.5 sm:py-2.5 sm:px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                      {formatINRCompact(row.principalPaid)}
+                    </td>
+                    <td className="py-2 px-2.5 sm:py-2.5 sm:px-4 text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                      {formatINRCompact(row.interestPaid)}
+                    </td>
+                    <td className="py-2 px-2.5 sm:py-2.5 sm:px-4 font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                      {formatINRCompact(row.endingLoanBalance)}
+                    </td>
+                    {showSipOffset && (
+                      <td className="py-2 px-2.5 sm:py-2.5 sm:px-4 text-right font-extrabold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                        {formatINRCompact(row.sipCorpus)}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        />
       </section>
-
     </div>
   );
 };

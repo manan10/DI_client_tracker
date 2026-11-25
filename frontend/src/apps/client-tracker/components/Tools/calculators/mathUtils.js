@@ -80,35 +80,43 @@ export const calculateLumpsum = ({
   taxSlabPct = 30,
   inflationPct = 6,
 }) => {
-  const mfFutureValue = principal * Math.pow(1 + annualReturnPct / 100, years);
-  const mfGrossGain = Math.max(0, mfFutureValue - principal);
+  const cap = Number(principal) || 0;
+  const rate = Number(annualReturnPct) || 0;
+  const yrs = Math.max(1, Number(years) || 1);
+
+  const mfFutureValue = cap * Math.pow(1 + rate / 100, yrs);
+  const mfGrossGain = Math.max(0, mfFutureValue - cap);
 
   // Equity MF LTCG: 12.5% above ₹1.25L annual exemption (for holding > 1 yr)
-  const taxableMfGain = years >= 1 ? Math.max(0, mfGrossGain - 125000) : mfGrossGain;
-  const mfTaxRate = years >= 1 ? 0.125 : 0.2;
+  const taxableMfGain = yrs > 1 ? Math.max(0, mfGrossGain - 125000) : mfGrossGain;
+  const mfTaxRate = yrs > 1 ? 0.125 : 0.2;
   const mfTax = taxableMfGain * mfTaxRate;
   const mfPostTaxValue = mfFutureValue - mfTax;
 
   // FD: Interest taxed annually at slab rate -> effective post-tax compounding rate
-  const fdPostTaxRate = (fdReturnPct / 100) * (1 - taxSlabPct / 100);
-  const fdPostTaxValue = principal * Math.pow(1 + fdPostTaxRate, years);
+  const fdPostTaxRate = ((Number(fdReturnPct) || 0) / 100) * (1 - (Number(taxSlabPct) || 0) / 100);
+  const fdPostTaxValue = cap * Math.pow(1 + fdPostTaxRate, yrs);
 
   // Inflation-adjusted (Real Value in Today's Terms)
-  const inflationFactor = Math.pow(1 + inflationPct / 100, years);
+  const inflationFactor = Math.pow(1 + (Number(inflationPct) || 0) / 100, yrs);
   const mfRealValue = mfPostTaxValue / inflationFactor;
   const fdRealValue = fdPostTaxValue / inflationFactor;
 
   const yearlySchedule = [];
-  for (let yr = 1; yr <= years; yr++) {
+  for (let yr = 1; yr <= yrs; yr++) {
+    const mfVal = cap * Math.pow(1 + rate / 100, yr);
+    const fdVal = cap * Math.pow(1 + fdPostTaxRate, yr);
     yearlySchedule.push({
       year: yr,
-      mfValue: Math.round(principal * Math.pow(1 + annualReturnPct / 100, yr)),
-      fdPostTaxValue: Math.round(principal * Math.pow(1 + fdPostTaxRate, yr)),
+      principal: Math.round(cap),
+      mfGain: Math.round(mfVal - cap),
+      mfValue: Math.round(mfVal),
+      fdPostTaxValue: Math.round(fdVal),
     });
   }
 
   return {
-    principal: Math.round(principal),
+    principal: Math.round(cap),
     mfFutureValue: Math.round(mfFutureValue),
     mfGrossGain: Math.round(mfGrossGain),
     mfPostTaxValue: Math.round(mfPostTaxValue),
@@ -116,12 +124,13 @@ export const calculateLumpsum = ({
     mfRealValue: Math.round(mfRealValue),
     fdRealValue: Math.round(fdRealValue),
     postTaxAdvantage: Math.round(mfPostTaxValue - fdPostTaxValue),
+    multiplier: cap > 0 ? (mfFutureValue / cap).toFixed(2) : "1.00",
     yearlySchedule,
   };
 };
 
 /**
- * 3. Crorepati / Target Corpus Reverse SIP Engine
+ * 3. Target Corpus Reverse SIP Engine
  */
 export const calculateTargetSip = ({
   targetCorpus = 10000000,
@@ -182,7 +191,7 @@ export const calculateTargetSip = ({
 };
 
 /**
- * 4. APPROACH A: Monte Carlo Volatility Simulation (Stochastic Return Paths)
+ * 4. Monte Carlo Volatility Simulation (Stochastic Return Paths)
  */
 export const runMonteCarloSimulation = ({
   monthlySip = 15000,
@@ -218,7 +227,7 @@ export const runMonteCarloSimulation = ({
 };
 
 /**
- * 5. APPROACH B: Historical Backtesting (Nifty 50 Rolling Returns Simulator up to 35 Years)
+ * 5. Historical Backtesting (Nifty 50 Rolling Returns Simulator up to 35 Years)
  */
 const HISTORICAL_CYCLES = {
   bull2014: {
@@ -279,5 +288,89 @@ export const runHistoricalBacktest = ({
     futureValue: Math.round(corpus),
     wealthGained: Math.round(corpus - totalInvested),
     yearlySchedule,
+  };
+};
+
+/**
+ * 6. Two-Phase SIP + SWP (Build & Withdraw) Engine
+ */
+export const calculateSipSwp = ({
+  monthlySip = 20000,
+  sipStepUpPct = 10,
+  sipYears = 15,
+  sipReturnPct = 12,
+  monthlySwp = 75000,
+  swpStepUpPct = 5,
+  swpYears = 15,
+  swpReturnPct = 9,
+}) => {
+  const sipStart = Number(monthlySip) || 0;
+  const sipStep = Number(sipStepUpPct) || 0;
+  const yrs1 = Math.max(1, Number(sipYears) || 1);
+  const rate1 = (Number(sipReturnPct) || 0) / 100 / 12;
+
+  const swpStart = Number(monthlySwp) || 0;
+  const swpStep = Number(swpStepUpPct) || 0;
+  const yrs2 = Math.max(1, Number(swpYears) || 1);
+  const rate2 = (Number(swpReturnPct) || 0) / 100 / 12;
+
+  let corpus = 0;
+  let cumInvested = 0;
+  let cumWithdrawn = 0;
+  let currentSip = sipStart;
+  const schedule = [];
+
+  for (let yr = 1; yr <= yrs1; yr++) {
+    for (let m = 1; m <= 12; m++) {
+      cumInvested += currentSip;
+      corpus = (corpus + currentSip) * (1 + rate1);
+    }
+    schedule.push({
+      year: yr,
+      phase: "SIP",
+      monthlyFlow: Math.round(currentSip),
+      cumInvested: Math.round(cumInvested),
+      cumWithdrawn: 0,
+      endBalance: Math.round(corpus),
+    });
+    currentSip *= 1 + sipStep / 100;
+  }
+
+  const corpusAtSwitch = Math.round(corpus);
+  let currentSwp = swpStart;
+  let depletedAtSwpYear = null;
+
+  for (let swpYr = 1; swpYr <= yrs2; swpYr++) {
+    for (let m = 1; m <= 12; m++) {
+      if (corpus <= 0) {
+        corpus = 0;
+        continue;
+      }
+      corpus *= 1 + rate2;
+      const actualDraw = Math.min(corpus, currentSwp);
+      cumWithdrawn += actualDraw;
+      corpus -= actualDraw;
+      if (corpus <= 0 && depletedAtSwpYear === null) {
+        depletedAtSwpYear = swpYr;
+      }
+    }
+    schedule.push({
+      year: yrs1 + swpYr,
+      phase: "SWP",
+      monthlyFlow: Math.round(currentSwp),
+      cumInvested: Math.round(cumInvested),
+      cumWithdrawn: Math.round(cumWithdrawn),
+      endBalance: Math.round(corpus),
+    });
+    currentSwp *= 1 + swpStep / 100;
+  }
+
+  return {
+    totalInvested: Math.round(cumInvested),
+    corpusAtSwitch,
+    totalWithdrawn: Math.round(cumWithdrawn),
+    finalLegacyCorpus: Math.round(corpus),
+    depletedAtSwpYear,
+    schedule,
   };
 };

@@ -1,12 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import {
-  Landmark,
-  CheckCircle2,
-  Sparkles,
-  Scale,
-  BadgeIndianRupee,
-  ShieldCheck,
-} from "lucide-react";
+import { CheckCircle2, Sparkles } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -19,9 +12,11 @@ import {
 } from "recharts";
 import { formatINR, formatINRCompact } from "./mathUtils";
 import { TactileSliderInput, CustomDropdown } from "./CalculatorControls";
+import { COMMON_TRANSLATIONS } from "./CalculatorShared";
 
 const TRANSLATIONS = {
   en: {
+    ...COMMON_TRANSLATIONS.en,
     sectionTitle: "1. Enter FY 2026–27 (AY 2027–28) Income & Deductions",
     sectionSub:
       "Compare your total tax liability under the Default New Tax Regime vs. Old Tax Regime.",
@@ -38,7 +33,6 @@ const TRANSLATIONS = {
     hraHomeDesc: "Combined annual HRA exemption & self-occupied home loan interest.",
     nps80ccdLabel: "NPS Contribution (Sec 80CCD 1B)",
     nps80ccdDesc: "Additional deduction up to ₹50,000 in Old Regime.",
-
     resultHeader: "2. FY 2026–27 Tax Regime Comparison",
     recommendedBadge: (winner) => `${winner} Saves You More!`,
     equalBadge: "Both Regimes Result in Equal Tax",
@@ -48,30 +42,23 @@ const TRANSLATIONS = {
     oldRegimeSub: "Includes 80C, 80D, HRA, Home Loan & NPS deductions",
     taxableIncomeLabel: "Net Taxable Income",
     totalTaxLabel: "Total Tax Payable (incl. 4% Cess)",
-    effectiveRateLabel: "Effective Tax Rate",
-    netSavingsLabel: "Annual Tax Saved",
-
     takeawaySentence: (gross, newTax, oldTax, savings, winner) =>
       savings > 0
         ? `On an annual income of ${gross}, the ${winner} reduces your tax to ${winner === "New Regime" ? newTax : oldTax} — saving you ${savings} every year compared to the alternative regime.`
         : `On an annual income of ${gross}, both the New Regime and Old Regime result in zero or identical tax liability (${newTax}).`,
-
     chartTitle: "Visual Tax Comparison (New vs. Old Regime)",
-    chartSub: "Side-by-side comparison of Net Taxable Income and Final Tax Payable",
+    chartSub: "Side-by-side comparison of Final Tax Payable",
     tableTitle: "Slab-by-Slab & Deduction Breakdown",
     colMetric: "Tax Component",
-    colNew: "New Regime (FY 26–27)",
-    colOld: "Old Regime (FY 26–27)",
+    colNew: "New Regime",
+    colOld: "Old Regime",
     rowGross: "Gross Annual Income",
     rowStdDed: "Standard Deduction (Salaried)",
     rowChapter6: "Chapter VI-A & HRA/Home Loan Deductions",
     rowTaxable: "Net Taxable Income",
     rowBaseTax: "Slab Tax (Before Rebate)",
-    rowRebate: "Section 87A Tax Rebate",
     rowCess: "Health & Education Cess (4%)",
     rowFinalTax: "Final Tax Payable",
-
-    waGreeting: (name) => (name ? `Namaste *${name}*,` : `Namaste,`),
     waIntro:
       "Here is your *FY 2026–27 (AY 2027–28) Income Tax Comparison* prepared by *Dalal Investments*:",
     waSummaryHeader: "📊 *Tax Summary (New vs. Old Regime)*",
@@ -86,6 +73,7 @@ const TRANSLATIONS = {
     pdfSubtitle: "Assessment Year 2027–28 tax liability & ELSS/80C deduction estimator",
   },
   hi: {
+    ...COMMON_TRANSLATIONS.hi,
     sectionTitle: "1. वित्त वर्ष 2026–27 की आय और कटौती (Deductions) दर्ज करें",
     sectionSub:
       "डिफ़ॉल्ट नई टैक्स व्यवस्था (New Regime) बनाम पुरानी टैक्स व्यवस्था (Old Regime) की तुलना करें।",
@@ -102,7 +90,6 @@ const TRANSLATIONS = {
     hraHomeDesc: "वार्षिक HRA छूट और होम लोन ब्याज की कुल राशि।",
     nps80ccdLabel: "NPS निवेश (धारा 80CCD 1B)",
     nps80ccdDesc: "पुरानी व्यवस्था में ₹50,000 तक की अतिरिक्त छूट।",
-
     resultHeader: "2. वित्त वर्ष 2026–27 टैक्स तुलना रिपोर्ट",
     recommendedBadge: (winner) => `${winner} में ज्यादा बचत!`,
     equalBadge: "दोनों व्यवस्थाओं में टैक्स समान है",
@@ -112,30 +99,23 @@ const TRANSLATIONS = {
     oldRegimeSub: "80C, 80D, HRA, होम लोन और NPS छूट सहित",
     taxableIncomeLabel: "शुद्ध कर योग्य आय",
     totalTaxLabel: "कुल देय टैक्स (4% सेस सहित)",
-    effectiveRateLabel: "प्रभावी टैक्स दर",
-    netSavingsLabel: "सालाना टैक्स बचत",
-
     takeawaySentence: (gross, newTax, oldTax, savings, winner) =>
       savings > 0
         ? `${gross} की वार्षिक आय पर, ${winner} आपका टैक्स घटाकर ${winner === "New Regime" ? newTax : oldTax} कर देती है — जिससे हर साल ${savings} की सीधा बचत होती है।`
         : `${gross} की वार्षिक आय पर दोनों टैक्स व्यवस्थाओं में टैक्स देनदारी शून्य या समान (${newTax}) है।`,
-
     chartTitle: "टैक्स तुलना चार्ट (New vs. Old Regime)",
-    chartSub: "कर योग्य आय और कुल देय टैक्स की आमने-सामने तुलना",
+    chartSub: "कुल देय टैक्स की आमने-सामने तुलना",
     tableTitle: "टैक्स गणना का पूरा विवरण",
     colMetric: "विवरण",
-    colNew: "नई व्यवस्था (FY 26–27)",
-    colOld: "पुरानी व्यवस्था (FY 26–27)",
+    colNew: "नई व्यवस्था",
+    colOld: "पुरानी व्यवस्था",
     rowGross: "सालाना कुल आय",
     rowStdDed: "स्टैंडर्ड डिडक्शन (सैलरी)",
     rowChapter6: "80C, 80D, HRA और होम लोन छूट",
     rowTaxable: "शुद्ध कर योग्य आय",
     rowBaseTax: "स्लैब टैक्स (रिबेट से पहले)",
-    rowRebate: "धारा 87A टैक्स छूट (Rebate)",
     rowCess: "स्वास्थ्य एवं शिक्षा सेस (4%)",
     rowFinalTax: "कुल देय टैक्स",
-
-    waGreeting: (name) => (name ? `नमस्ते *${name}*,` : `नमस्ते,`),
     waIntro:
       "*Dalal Investments* की ओर से आपकी *वित्त वर्ष 2026–27 इनकम टैक्स तुलना* नीचे प्रस्तुत है:",
     waSummaryHeader: "📊 *टैक्स सारांश (New vs. Old Regime)*",
@@ -150,6 +130,7 @@ const TRANSLATIONS = {
     pdfSubtitle: "New Regime बनाम Old Regime कर देनदारी और बचत विश्लेषण",
   },
   gu: {
+    ...COMMON_TRANSLATIONS.gu,
     sectionTitle: "1. નાણાકીય વર્ષ 2026–27 ની આવક અને કપાત (Deductions) દાખલ કરો",
     sectionSub:
       "ડિફોલ્ટ નવી ટેક્સ વ્યવસ્થા (New Regime) વિ. જૂની ટેક્સ વ્યવસ્થા (Old Regime) ની સરખામણી કરો.",
@@ -166,7 +147,6 @@ const TRANSLATIONS = {
     hraHomeDesc: "વાર્ષિક HRA મુક્તિ અને હોમ લોન વ્યાજની કુલ રકમ.",
     nps80ccdLabel: "NPS રોકાણ (કલમ 80CCD 1B)",
     nps80ccdDesc: "જૂની વ્યવસ્થામાં ₹50,000 સુધીની વધારાની છૂટ.",
-
     resultHeader: "2. નાણાકીય વર્ષ 2026–27 ટેક્સ સરખામણી રિપોર્ટ",
     recommendedBadge: (winner) => `${winner} માં વધુ બચત!`,
     equalBadge: "બંને વ્યવસ્થામાં ટેક્સ સમાન છે",
@@ -176,30 +156,23 @@ const TRANSLATIONS = {
     oldRegimeSub: "80C, 80D, HRA, હોમ લોન અને NPS છૂટ સહિત",
     taxableIncomeLabel: "ચોખ્ખી કરપાત્ર આવક",
     totalTaxLabel: "કુલ ભરવાપાત્ર ટેક્સ (4% સેસ સહિત)",
-    effectiveRateLabel: "અસરકારક ટેક્સ દર",
-    netSavingsLabel: "વાર્ષિક ટેક્સ બચત",
-
     takeawaySentence: (gross, newTax, oldTax, savings, winner) =>
       savings > 0
         ? `${gross} ની વાર્ષિક આવક પર, ${winner} તમારો ટેક્સ ઘટાડીને ${winner === "New Regime" ? newTax : oldTax} કરે છે — જેનાથી દર વર્ષે ${savings} ની સીધી બચત થાય છે.`
         : `${gross} ની વાર્ષિક આવક પર બંને ટેક્સ વ્યવસ્થામાં ટેક્સ જવાબદારી શૂન્ય અથવા સમાન (${newTax}) છે.`,
-
     chartTitle: "ટેક્સ સરખામણી ચાર્ટ (New vs. Old Regime)",
-    chartSub: "કરપાત્ર આવક અને કુલ ભરવાપાત્ર ટેક્સની સામસામે સરખામણી",
+    chartSub: "કુલ ભરવાપાત્ર ટેક્સની સામસામે સરખામણી",
     tableTitle: "ટેક્સ ગણતરીની સંપૂર્ણ વિગત",
     colMetric: "વિગત",
-    colNew: "નવી વ્યવસ્થા (FY 26–27)",
-    colOld: "જૂની વ્યવસ્થા (FY 26–27)",
+    colNew: "નવી વ્યવસ્થા",
+    colOld: "જૂની વ્યવસ્થા",
     rowGross: "વાર્ષિક કુલ આવક",
     rowStdDed: "સ્ટાન્ડર્ડ ડિડક્શન (પગારદાર)",
     rowChapter6: "80C, 80D, HRA અને હોમ લોન છૂટ",
     rowTaxable: "ચોખ્ખી કરપાત્ર આવક",
     rowBaseTax: "સ્લેબ ટેક્સ (રિબેટ પહેલા)",
-    rowRebate: "કલમ 87A ટેક્સ રિબેટ",
     rowCess: "હેલ્થ અને એજ્યુકેશન સેસ (4%)",
     rowFinalTax: "કુલ ભરવાપાત્ર ટેક્સ",
-
-    waGreeting: (name) => (name ? `નમસ્તે *${name}*,` : `નમસ્તે,`),
     waIntro:
       "*Dalal Investments* તરફથી તમારી *નાણાકીય વર્ષ 2026–27 ઇન્કમ ટેક્સ સરખામણી* નીચે મુજબ છે:",
     waSummaryHeader: "📊 *ટેક્સ સારાંશ (New vs. Old Regime)*",
@@ -226,9 +199,6 @@ const AGE_OPTIONS = [
   { value: "supersenior", label: "Super Senior (80+)" },
 ];
 
-/**
- * FY 2026–27 (AY 2027–28) New Tax Regime Slab Calculation
- */
 const computeNewRegimeTax = (taxable) => {
   if (taxable <= 400000) return 0;
 
@@ -240,7 +210,6 @@ const computeNewRegimeTax = (taxable) => {
   if (taxable > 800000) tax += (Math.min(taxable, 1200000) - 800000) * 0.1;
   if (taxable > 400000) tax += (Math.min(taxable, 800000) - 400000) * 0.05;
 
-  // Section 87A Rebate up to ₹12,00,000 taxable income (max ₹60,000) + Marginal Relief
   if (taxable <= 1200000) {
     return 0;
   }
@@ -252,9 +221,6 @@ const computeNewRegimeTax = (taxable) => {
   return Math.round(tax);
 };
 
-/**
- * FY 2026–27 (AY 2027–28) Old Tax Regime Slab Calculation
- */
 const computeOldRegimeTax = (taxable, ageGroup) => {
   const basicExempt =
     ageGroup === "supersenior" ? 500000 : ageGroup === "senior" ? 300000 : 250000;
@@ -266,7 +232,6 @@ const computeOldRegimeTax = (taxable, ageGroup) => {
   if (taxable > 500000) tax += (Math.min(taxable, 1000000) - 500000) * 0.2;
   if (taxable > basicExempt) tax += (Math.min(taxable, 500000) - basicExempt) * 0.05;
 
-  // Section 87A Rebate up to ₹5,00,000 taxable income (max ₹12,500)
   if (taxable <= 500000) {
     return 0;
   }
@@ -277,11 +242,10 @@ const computeOldRegimeTax = (taxable, ageGroup) => {
 const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
 
-  const [grossIncome, setGrossIncome] = useState(1500000); // ₹15L
+  const [grossIncome, setGrossIncome] = useState(1500000);
   const [taxpayerType, setTaxpayerType] = useState("salaried");
   const [ageGroup, setAgeGroup] = useState("below60");
 
-  // Old Regime Deductions
   const [sec80C, setSec80C] = useState(150000);
   const [sec80D, setSec80D] = useState(25000);
   const [hraAndHomeLoan, setHraAndHomeLoan] = useState(0);
@@ -290,14 +254,12 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
   const result = useMemo(() => {
     const gross = Math.max(0, Number(grossIncome) || 0);
 
-    // 1. New Regime (FY 2026-27)
     const newStdDed = taxpayerType === "salaried" ? Math.min(75000, gross) : 0;
     const newTaxable = Math.max(0, gross - newStdDed);
     const newBaseTax = computeNewRegimeTax(newTaxable);
     const newCess = Math.round(newBaseTax * 0.04);
     const newTotalTax = newBaseTax + newCess;
 
-    // 2. Old Regime (FY 2026-27)
     const oldStdDed = taxpayerType === "salaried" ? Math.min(50000, gross) : 0;
     const capped80C = Math.min(150000, Math.max(0, Number(sec80C) || 0));
     const capped80D = Math.min(100000, Math.max(0, Number(sec80D) || 0));
@@ -422,26 +384,22 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
   }, [clientName, taxpayerType, result, t, onSummaryChange]);
 
   return (
-    <div className="space-y-8 w-full font-sans">
-      
-      {/* ================================================================= */}
-      {/* TOP SECTION: INCOME & DEDUCTION INPUTS                            */}
-      {/* ================================================================= */}
-      <section className="bg-slate-50/90 dark:bg-white/[0.02] border border-slate-200/90 dark:border-white/10 rounded-2xl p-5 sm:p-6 space-y-5">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-white/10">
+    <div className="space-y-5 sm:space-y-7 w-full font-sans">
+      {/* SECTION 1: BORDERLESS INCOME & DEDUCTION INPUTS */}
+      <section className="space-y-3.5 sm:space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-300 dark:border-white/15">
           <div>
-            <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+            <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
               {t.sectionTitle}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               {t.sectionSub}
             </p>
           </div>
 
-          {/* Profile & Age Custom Dropdowns */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:w-[410px] shrink-0">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:w-[410px] shrink-0">
             <div>
-              <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">
+              <label className="text-[10px] sm:text-[11px] font-extrabold text-slate-700 dark:text-slate-300 block mb-1 truncate">
                 {t.taxpayerTypeLabel}
               </label>
               <CustomDropdown
@@ -452,7 +410,7 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
             </div>
 
             <div>
-              <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">
+              <label className="text-[10px] sm:text-[11px] font-extrabold text-slate-700 dark:text-slate-300 block mb-1 truncate">
                 {t.ageGroupLabel}
               </label>
               <CustomDropdown
@@ -464,7 +422,6 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
           </div>
         </div>
 
-        {/* Gross Annual Income */}
         <TactileSliderInput
           label={t.incomeLabel}
           description={t.incomeDesc}
@@ -487,11 +444,11 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
 
         {/* Old Regime Deductions Grid */}
         <div className="space-y-3 pt-1">
-          <div className="text-xs font-extrabold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
+          <div className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-indigo-700 dark:text-indigo-400 px-0.5">
             {t.deductionsHeader}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
             <TactileSliderInput
               label={t.sec80cLabel}
               description={t.sec80cDesc}
@@ -565,17 +522,15 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
         </div>
       </section>
 
-      {/* ================================================================= */}
-      {/* BOTTOM SECTION: REGIME COMPARISON CARDS, CHART & BREAKDOWN TABLE  */}
-      {/* ================================================================= */}
-      <section className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+      {/* SECTION 2: REGIME COMPARISON CARDS, CHART & BREAKDOWN TABLE */}
+      <section className="space-y-4 sm:space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 px-0.5">
+          <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
             {t.resultHeader}
           </h3>
 
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-extrabold">
-            <CheckCircle2 size={15} />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-500/15 border border-slate-300 dark:border-white/15 text-emerald-800 dark:text-emerald-300 text-[11px] sm:text-xs font-extrabold">
+            <CheckCircle2 size={14} className="shrink-0" />
             <span>
               {result.netSavings > 0
                 ? `${t.recommendedBadge(result.winner)} (${formatINR(result.netSavings)}/yr)`
@@ -584,18 +539,18 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
           </div>
         </div>
 
-        {/* 2-Regime Side-by-Side Comparison Banner */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* 2-Regime Side-by-Side Comparison Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-5">
           {/* New Regime Card */}
           <div
-            className={`rounded-2xl p-6 border transition-all space-y-4 ${
+            className={`rounded-2xl p-4 sm:p-6 border transition-all space-y-3 sm:space-y-4 ${
               result.winner === "New Regime"
-                ? "bg-slate-900 dark:bg-[#0F172A] border-emerald-500 text-white shadow-md"
-                : "bg-white dark:bg-[#0B1120] border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
+                ? "bg-slate-900 dark:bg-[#0F172A] border-slate-800 dark:border-white/15 text-white shadow-md"
+                : "bg-white dark:bg-[#111827] border-slate-300 dark:border-white/15 text-slate-900 dark:text-white shadow-xs"
             }`}
           >
             <div className="flex items-start justify-between gap-2">
-              <div>
+              <div className="min-w-0">
                 <span
                   className={`text-xs font-extrabold uppercase tracking-wider block ${
                     result.winner === "New Regime"
@@ -606,7 +561,7 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
                   {t.newRegimeTitle}
                 </span>
                 <span
-                  className={`text-xs block mt-0.5 ${
+                  className={`text-[11px] sm:text-xs block mt-0.5 ${
                     result.winner === "New Regime" ? "text-slate-300" : "text-slate-500"
                   }`}
                 >
@@ -615,22 +570,22 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
               </div>
 
               {result.winner === "New Regime" && (
-                <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-extrabold uppercase">
+                <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-extrabold uppercase shrink-0">
                   Optimal
                 </span>
               )}
             </div>
 
-            <div className="pt-2">
+            <div className="pt-1">
               <span
-                className={`text-[11px] font-bold uppercase block ${
+                className={`text-[10px] sm:text-[11px] font-bold uppercase block ${
                   result.winner === "New Regime" ? "text-slate-400" : "text-slate-500"
                 }`}
               >
                 {t.totalTaxLabel}
               </span>
-              <div className="flex items-baseline gap-3 mt-1">
-                <span className="text-3xl sm:text-4xl font-black tabular-nums">
+              <div className="flex items-baseline gap-2.5 sm:gap-3 mt-1">
+                <span className="text-2xl sm:text-4xl font-black tabular-nums">
                   {formatINR(result.newTotalTax)}
                 </span>
                 <span
@@ -647,7 +602,7 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
               className={`pt-3 border-t flex justify-between text-xs ${
                 result.winner === "New Regime"
                   ? "border-slate-800 text-slate-300"
-                  : "border-slate-100 dark:border-white/10 text-slate-600 dark:text-slate-400"
+                  : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400"
               }`}
             >
               <span>{t.taxableIncomeLabel}:</span>
@@ -663,14 +618,14 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
 
           {/* Old Regime Card */}
           <div
-            className={`rounded-2xl p-6 border transition-all space-y-4 ${
+            className={`rounded-2xl p-4 sm:p-6 border transition-all space-y-3 sm:space-y-4 ${
               result.winner === "Old Regime"
-                ? "bg-slate-900 dark:bg-[#0F172A] border-indigo-500 text-white shadow-md"
-                : "bg-white dark:bg-[#0B1120] border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
+                ? "bg-slate-900 dark:bg-[#0F172A] border-slate-800 dark:border-white/15 text-white shadow-md"
+                : "bg-white dark:bg-[#111827] border-slate-300 dark:border-white/15 text-slate-900 dark:text-white shadow-xs"
             }`}
           >
             <div className="flex items-start justify-between gap-2">
-              <div>
+              <div className="min-w-0">
                 <span
                   className={`text-xs font-extrabold uppercase tracking-wider block ${
                     result.winner === "Old Regime"
@@ -681,7 +636,7 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
                   {t.oldRegimeTitle}
                 </span>
                 <span
-                  className={`text-xs block mt-0.5 ${
+                  className={`text-[11px] sm:text-xs block mt-0.5 ${
                     result.winner === "Old Regime" ? "text-slate-300" : "text-slate-500"
                   }`}
                 >
@@ -690,22 +645,22 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
               </div>
 
               {result.winner === "Old Regime" && (
-                <span className="px-2.5 py-1 rounded-lg bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-[10px] font-extrabold uppercase">
+                <span className="px-2.5 py-1 rounded-lg bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-[10px] font-extrabold uppercase shrink-0">
                   Optimal
                 </span>
               )}
             </div>
 
-            <div className="pt-2">
+            <div className="pt-1">
               <span
-                className={`text-[11px] font-bold uppercase block ${
+                className={`text-[10px] sm:text-[11px] font-bold uppercase block ${
                   result.winner === "Old Regime" ? "text-slate-400" : "text-slate-500"
                 }`}
               >
                 {t.totalTaxLabel}
               </span>
-              <div className="flex items-baseline gap-3 mt-1">
-                <span className="text-3xl sm:text-4xl font-black tabular-nums">
+              <div className="flex items-baseline gap-2.5 sm:gap-3 mt-1">
+                <span className="text-2xl sm:text-4xl font-black tabular-nums">
                   {formatINR(result.oldTotalTax)}
                 </span>
                 <span
@@ -722,7 +677,7 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
               className={`pt-3 border-t flex justify-between text-xs ${
                 result.winner === "Old Regime"
                   ? "border-slate-800 text-slate-300"
-                  : "border-slate-100 dark:border-white/10 text-slate-600 dark:text-slate-400"
+                  : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400"
               }`}
             >
               <span>{t.taxableIncomeLabel}:</span>
@@ -738,8 +693,8 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
         </div>
 
         {/* Plain-Language Summary Callout */}
-        <div className="p-4 rounded-xl bg-emerald-50/70 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/25 flex items-start gap-3 text-xs sm:text-sm text-slate-800 dark:text-slate-200">
-          <Sparkles size={17} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+        <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#111827] border border-slate-300 dark:border-white/15 shadow-xs flex items-start gap-3 text-xs sm:text-sm text-slate-800 dark:text-slate-200">
+          <Sparkles size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
           <p className="font-medium leading-relaxed">
             {t.takeawaySentence(
               formatINRCompact(result.gross),
@@ -752,41 +707,40 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
         </div>
 
         {/* Bar Chart + Detailed Breakdown Table */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Bar Chart (5 cols) */}
-          <div className="lg:col-span-5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 bg-white dark:bg-[#0B1120] shadow-xs space-y-3">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+          <div className="lg:col-span-5 border border-slate-300 dark:border-white/15 rounded-2xl p-4 sm:p-5 bg-white dark:bg-[#111827] shadow-xs space-y-3">
             <div>
-              <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
+              <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
                 {t.chartTitle}
               </h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 {t.chartSub}
               </p>
             </div>
 
-            <div className="w-full h-[230px]">
-              <ResponsiveContainer width="100%" height={230}>
+            <div className="w-full h-[220px] sm:h-[240px]">
+              <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={result.chartData}
-                  margin={{ top: 14, right: 16, left: 0, bottom: 0 }}
+                  margin={{ top: 10, right: 8, left: -12, bottom: 0 }}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
                     vertical={false}
-                    stroke="rgba(148, 163, 184, 0.18)"
+                    stroke="rgba(148, 163, 184, 0.25)"
                   />
                   <XAxis
                     dataKey="name"
-                    tick={{ fontSize: 12, fill: "#64748b", fontWeight: 700 }}
+                    tick={{ fontSize: 11, fill: "#64748b", fontWeight: 700 }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
                     tickFormatter={(v) => formatINRCompact(v)}
-                    tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }}
+                    tick={{ fontSize: 10, fill: "#64748b", fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
-                    width={70}
+                    width={64}
                   />
                   <Tooltip
                     formatter={(value) => formatINR(value)}
@@ -796,7 +750,7 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
                       fontWeight: 700,
                     }}
                   />
-                  <Bar dataKey="tax" name={t.totalTaxLabel} radius={[8, 8, 0, 0]} barSize={56}>
+                  <Bar dataKey="tax" name={t.totalTaxLabel} radius={[8, 8, 0, 0]} barSize={52}>
                     {result.chartData.map((entry, idx) => (
                       <Cell key={`cell-${idx}`} fill={entry.fill} />
                     ))}
@@ -806,90 +760,99 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
             </div>
           </div>
 
-          {/* Step-by-Step Comparison Table (7 cols) */}
-          <div className="lg:col-span-7 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden bg-white dark:bg-[#0B1120] shadow-xs">
-            <div className="px-5 py-3.5 bg-slate-50 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10">
-              <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
+          <div className="lg:col-span-7 border border-slate-300 dark:border-white/15 rounded-2xl overflow-hidden bg-white dark:bg-[#111827] shadow-xs">
+            <div className="px-4 sm:px-5 py-3 sm:py-3.5 bg-slate-100 dark:bg-[#131C31] border-b border-slate-300 dark:border-white/15">
+              <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
                 {t.tableTitle}
               </h4>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs sm:text-sm tabular-nums">
+            <div className="overflow-x-auto no-scrollbar">
+              <table className="w-full text-left border-collapse text-[11px] sm:text-sm tabular-nums">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-white/10 text-xs font-bold text-slate-500 dark:text-slate-400">
-                    <th className="py-3 px-4">{t.colMetric}</th>
-                    <th className="py-3 px-4 text-right text-emerald-700 dark:text-emerald-400">
+                  <tr className="border-b border-slate-300 dark:border-white/15 text-[11px] sm:text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                    <th className="py-2.5 px-3 sm:py-3 sm:px-4">{t.colMetric}</th>
+                    <th className="py-2.5 px-3 sm:py-3 sm:px-4 text-right text-emerald-700 dark:text-emerald-400 whitespace-nowrap">
                       {t.colNew}
                     </th>
-                    <th className="py-3 px-4 text-right text-indigo-700 dark:text-indigo-400">
+                    <th className="py-2.5 px-3 sm:py-3 sm:px-4 text-right text-indigo-700 dark:text-indigo-400 whitespace-nowrap">
                       {t.colOld}
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                <tbody className="divide-y divide-slate-200 dark:divide-white/10">
                   <tr>
-                    <td className="py-2.5 px-4 text-slate-600 dark:text-slate-300">
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-slate-600 dark:text-slate-300">
                       {t.rowGross}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-semibold">
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-right font-semibold whitespace-nowrap">
                       {formatINR(result.gross)}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-semibold">
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-right font-semibold whitespace-nowrap">
                       {formatINR(result.gross)}
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-2.5 px-4 text-slate-600 dark:text-slate-300">
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-slate-600 dark:text-slate-300">
                       {t.rowStdDed}
                     </td>
-                    <td className="py-2.5 px-4 text-right text-emerald-600">
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-right text-emerald-600 whitespace-nowrap">
                       -{formatINR(result.newStdDed)}
                     </td>
-                    <td className="py-2.5 px-4 text-right text-indigo-600">
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-right text-indigo-600 whitespace-nowrap">
                       -{formatINR(result.oldStdDed)}
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-2.5 px-4 text-slate-600 dark:text-slate-300">
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-slate-600 dark:text-slate-300">
                       {t.rowChapter6}
                     </td>
-                    <td className="py-2.5 px-4 text-right text-slate-400">₹0 (Not Applicable)</td>
-                    <td className="py-2.5 px-4 text-right text-indigo-600">
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-right text-slate-400 whitespace-nowrap">
+                      ₹0 (N/A)
+                    </td>
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-right text-indigo-600 whitespace-nowrap">
                       -{formatINR(result.totalOldDeductions)}
                     </td>
                   </tr>
-                  <tr className="bg-slate-50/70 dark:bg-white/[0.02] font-bold">
-                    <td className="py-2.5 px-4 text-slate-900 dark:text-white">
+                  <tr className="bg-slate-50 dark:bg-white/[0.03] font-bold">
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-slate-900 dark:text-white">
                       {t.rowTaxable}
                     </td>
-                    <td className="py-2.5 px-4 text-right text-slate-900 dark:text-white">
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-right text-slate-900 dark:text-white whitespace-nowrap">
                       {formatINR(result.newTaxable)}
                     </td>
-                    <td className="py-2.5 px-4 text-right text-slate-900 dark:text-white">
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-right text-slate-900 dark:text-white whitespace-nowrap">
                       {formatINR(result.oldTaxable)}
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-2.5 px-4 text-slate-600 dark:text-slate-300">
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-slate-600 dark:text-slate-300">
                       {t.rowBaseTax}
                     </td>
-                    <td className="py-2.5 px-4 text-right">{formatINR(result.newBaseTax)}</td>
-                    <td className="py-2.5 px-4 text-right">{formatINR(result.oldBaseTax)}</td>
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-right whitespace-nowrap">
+                      {formatINR(result.newBaseTax)}
+                    </td>
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-right whitespace-nowrap">
+                      {formatINR(result.oldBaseTax)}
+                    </td>
                   </tr>
                   <tr>
-                    <td className="py-2.5 px-4 text-slate-600 dark:text-slate-300">
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-slate-600 dark:text-slate-300">
                       {t.rowCess}
                     </td>
-                    <td className="py-2.5 px-4 text-right">{formatINR(result.newCess)}</td>
-                    <td className="py-2.5 px-4 text-right">{formatINR(result.oldCess)}</td>
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-right whitespace-nowrap">
+                      {formatINR(result.newCess)}
+                    </td>
+                    <td className="py-2 px-3 sm:py-2.5 sm:px-4 text-right whitespace-nowrap">
+                      {formatINR(result.oldCess)}
+                    </td>
                   </tr>
                   <tr className="bg-slate-900 text-white font-extrabold">
-                    <td className="py-3 px-4">{t.rowFinalTax}</td>
-                    <td className="py-3 px-4 text-right text-emerald-400">
+                    <td className="py-2.5 px-3 sm:py-3 sm:px-4">{t.rowFinalTax}</td>
+                    <td className="py-2.5 px-3 sm:py-3 sm:px-4 text-right text-emerald-400 whitespace-nowrap">
                       {formatINR(result.newTotalTax)}
                     </td>
-                    <td className="py-3 px-4 text-right text-indigo-300">
+                    <td className="py-2.5 px-3 sm:py-3 sm:px-4 text-right text-indigo-300 whitespace-nowrap">
                       {formatINR(result.oldTotalTax)}
                     </td>
                   </tr>
@@ -899,7 +862,6 @@ const TaxEstimatorCalculator = ({ clientName, lang = "en", onSummaryChange }) =>
           </div>
         </div>
       </section>
-
     </div>
   );
 };
