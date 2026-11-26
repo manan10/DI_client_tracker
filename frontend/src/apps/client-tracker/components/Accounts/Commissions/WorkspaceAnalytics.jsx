@@ -17,19 +17,18 @@ import {
   Loader2,
   AlertCircle,
   CircleDot,
-  Building2,
 } from "lucide-react";
 import { useApi } from "../../../../../shared/hooks/useApi";
 
 const THEME_COLORS = [
-  "#10b981",
-  "#3b82f6",
-  "#06b6d4",
-  "#f59e0b",
-  "#8b5cf6",
-  "#ec4899",
-  "#6366f1",
-  "#14b8a6",
+  "#0284c7", // sky-600
+  "#0891b2", // cyan-600
+  "#38bdf8", // sky-400
+  "#3b82f6", // blue-500
+  "#6366f1", // indigo-500
+  "#22d3ee", // cyan-400
+  "#0ea5e9", // sky-500
+  "#14b8a6", // teal-500
 ];
 
 const formatINR = (val) => {
@@ -40,7 +39,6 @@ const formatINR = (val) => {
   }).format(val || 0);
 };
 
-// 1. Premium Glassmorphic Tooltip
 const PremiumChartTooltip = ({ active, payload, label, isCurrency = true }) => {
   if (active && payload && payload.length) {
     const item = payload[0];
@@ -50,25 +48,25 @@ const PremiumChartTooltip = ({ active, payload, label, isCurrency = true }) => {
       item.payload?.name ||
       item.payload?.month ||
       label;
-    const color = item.payload?.color || item.fill || item.color || "#10b981";
+    const color = item.payload?.color || item.fill || item.color || "#0284c7";
 
     return (
-      <div className="bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-md border border-slate-200/90 dark:border-white/10 p-3 rounded-xl shadow-xl space-y-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 min-w-35">
-        <div className="flex items-center gap-2 border-b border-slate-100 dark:border-white/5 pb-1">
+      <div className="bg-white/95 dark:bg-[#1C2230]/95 backdrop-blur-xs border border-slate-200 dark:border-slate-700 p-3 rounded-lg shadow-lg space-y-1 z-50 min-w-35">
+        <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-1">
           <span
             className="w-2 h-2 rounded-full shrink-0"
             style={{ backgroundColor: color }}
           />
-          <p className="font-bold text-slate-800 dark:text-slate-200 uppercase font-mono text-[10px] tracking-wider truncate">
+          <p className="font-semibold text-slate-700 dark:text-slate-200 font-mono text-[10px] uppercase tracking-wider truncate">
             {name}
           </p>
         </div>
         <div className="flex items-baseline justify-between gap-3 pt-0.5">
-          <span className="font-black font-mono text-slate-900 dark:text-white text-xs sm:text-sm">
+          <span className="font-bold font-mono text-slate-900 dark:text-white text-xs sm:text-sm">
             {displayVal}
           </span>
           {item.payload?.percentage && (
-            <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+            <span className="text-[10px] font-mono font-semibold text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-500/15 px-1.5 py-0.5 rounded border border-sky-200/70 dark:border-sky-500/25">
               {item.payload.percentage}
             </span>
           )}
@@ -105,13 +103,13 @@ const WorkspaceAnalytics = ({ arnId, fiscalYear }) => {
 
   if ((isSyncing || apiLoading) && !data) {
     return (
-      <div className="h-64 flex flex-col items-center justify-center gap-3 bg-white dark:bg-[#0B1120] rounded-xl border border-slate-200 dark:border-white/10">
+      <div className="h-56 flex flex-col items-center justify-center gap-3 bg-slate-50/50 dark:bg-[#131720] rounded-lg border border-slate-200 dark:border-slate-800">
         <Loader2
-          className="animate-spin text-emerald-600 dark:text-emerald-400"
-          size={24}
+          className="animate-spin text-sky-600 dark:text-sky-400"
+          size={22}
         />
-        <p className="text-xs text-slate-400 dark:text-slate-500 font-mono font-semibold uppercase tracking-wider">
-          Compiling Workspace Metrics...
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+          Loading workspace analytics...
         </p>
       </div>
     );
@@ -119,16 +117,13 @@ const WorkspaceAnalytics = ({ arnId, fiscalYear }) => {
 
   if (!data || !data.amcBreakdown || data.amcBreakdown.length === 0) {
     return (
-      <div className="h-48 flex flex-col items-center justify-center gap-2.5 bg-white dark:bg-[#0B1120] rounded-xl border border-dashed border-slate-200 dark:border-white/10 p-6 text-center">
-        <div className="w-10 h-10 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 flex items-center justify-center text-slate-400">
-          <AlertCircle size={20} />
-        </div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-          No Analytics Recorded for FY {fiscalYear}
+      <div className="h-44 flex flex-col items-center justify-center gap-2 bg-slate-50/50 dark:bg-[#131720] rounded-lg border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center">
+        <AlertCircle size={20} className="text-slate-400" />
+        <p className="sora-font text-xs font-bold text-slate-700 dark:text-slate-200">
+          No Data Recorded for FY {fiscalYear}
         </p>
-        <span className="text-[11px] text-slate-400 dark:text-slate-500 max-w-sm">
-          Log monthly statements in this workspace to inspect payout momentum
-          and AMC revenue breakdown.
+        <span className="text-xs text-slate-500 dark:text-slate-400 max-w-sm">
+          Log monthly commissions in this workspace to view trends and AMC breakdown.
         </span>
       </div>
     );
@@ -158,92 +153,88 @@ const WorkspaceAnalytics = ({ arnId, fiscalYear }) => {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-300">
-      {/* ======================================================== */}
-      {/* 1. KEY PERFORMANCE INDICATOR METRIC TILES                */}
-      {/* ======================================================== */}
+      {/* 1. KPI TILES */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-        {/* Metric 1: Monthly Average */}
-        <div className="bg-white dark:bg-[#0E1626] border border-slate-200/80 dark:border-white/10 p-4 sm:p-5 rounded-xl shadow-xs flex items-center justify-between gap-3">
+        <div className="bg-slate-50/70 dark:bg-[#131720] border border-slate-200/90 dark:border-slate-800 p-4 rounded-lg flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-              Monthly Run-Rate
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+              Monthly Average
             </span>
-            <p className="text-lg sm:text-xl font-black font-mono text-slate-900 dark:text-white tabular-nums tracking-tight mt-0.5">
+            <p className="sora-font text-lg sm:text-xl font-bold text-slate-900 dark:text-white tabular-nums mt-0.5">
               {formatINR(data.stats.avgMonthly)}
             </p>
-            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-              Average Yield / Period
+            <span className="text-xs text-sky-600 dark:text-sky-300 font-medium">
+              Average per logged month
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <Calendar size={18} strokeWidth={2.2} />
+          <div className="w-9 h-9 rounded-lg bg-sky-50 dark:bg-sky-500/10 border border-sky-200/70 dark:border-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+            <Calendar size={17} strokeWidth={2} />
           </div>
         </div>
 
-        {/* Metric 2: FY Gross Total */}
-        <div className="bg-white dark:bg-[#0E1626] border border-slate-200/80 dark:border-white/10 p-4 sm:p-5 rounded-xl shadow-xs flex items-center justify-between gap-3">
+        <div className="bg-slate-50/70 dark:bg-[#131720] border border-slate-200/90 dark:border-slate-800 p-4 rounded-lg flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-              FY {fiscalYear} Cumulative
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+              FY {fiscalYear} Total
             </span>
-            <p className="text-lg sm:text-xl font-black font-mono text-slate-900 dark:text-white tabular-nums tracking-tight mt-0.5">
+            <p className="sora-font text-lg sm:text-xl font-bold text-slate-900 dark:text-white tabular-nums mt-0.5">
               {formatINR(data.stats.allTimeTotal)}
             </p>
-            <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium">
-              Total Accrued Revenue
+            <span className="text-xs text-cyan-600 dark:text-cyan-300 font-medium">
+              Total commission earned
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-            <Trophy size={18} strokeWidth={2.2} />
+          <div className="w-9 h-9 rounded-lg bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200/70 dark:border-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+            <Trophy size={17} strokeWidth={2} />
           </div>
         </div>
 
-        {/* Metric 3: Logged Periods */}
-        <div className="bg-white dark:bg-[#0E1626] border border-slate-200/80 dark:border-white/10 p-4 sm:p-5 rounded-xl shadow-xs flex items-center justify-between gap-3">
+        <div className="bg-slate-50/70 dark:bg-[#131720] border border-slate-200/90 dark:border-slate-800 p-4 rounded-lg flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-              Recorded Periods
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+              Logged Months
             </span>
             <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-lg sm:text-xl font-black font-mono text-slate-900 dark:text-white tabular-nums tracking-tight">
+              <span className="sora-font text-lg sm:text-xl font-bold text-slate-900 dark:text-white tabular-nums">
                 {data.stats.monthCount || 0}
               </span>
-              <span className="text-xs font-bold text-slate-400 font-mono">
-                / 12 Cycles
+              <span className="text-xs font-medium text-slate-400 font-mono">
+                / 12 months
               </span>
             </div>
-            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-              Audited Months
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              Recorded cycles
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
-            <Zap size={18} strokeWidth={2.2} />
+          <div className="w-9 h-9 rounded-lg bg-sky-50 dark:bg-sky-500/10 border border-sky-200/70 dark:border-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+            <Zap size={17} strokeWidth={2} />
           </div>
         </div>
       </div>
 
-      {/* ======================================================== */}
-      {/* 2. VISUAL ANALYTICS: TREND AREA & AMC STEM GRIDS         */}
-      {/* ======================================================== */}
+      {/* 2. CHARTS GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* CHART 1: MONTHLY PERFORMANCE TREND (AREA CHART) */}
-        <div className="bg-white dark:bg-[#0E1626] border border-slate-200/80 dark:border-white/10 p-5 rounded-xl shadow-xs flex flex-col justify-between h-90">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
+        {/* CHART 1: MONTHLY PAYOUT TREND */}
+        <div className="bg-slate-50/70 dark:bg-[#131720] border border-slate-200/90 dark:border-slate-800 p-5 rounded-lg flex flex-col justify-between h-88">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200/70 dark:border-slate-800">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                <TrendingUp size={16} strokeWidth={2.2} />
+              <div className="w-8 h-8 rounded-md bg-sky-50 dark:bg-sky-500/10 border border-sky-200/70 dark:border-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+                <TrendingUp size={15} strokeWidth={2.2} />
               </div>
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                  Payout Trajectory
+                <h4 className="sora-font text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                  Monthly{" "}
+                  <span className="font-normal text-sky-600 dark:text-sky-300">
+                    Payouts
+                  </span>
                 </h4>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                  Monthly brokerage momentum for FY {fiscalYear}
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Monthly trend for FY {fiscalYear}
                 </p>
               </div>
             </div>
 
-            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 uppercase">
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-200/70 dark:border-sky-500/20 uppercase">
               Trend
             </span>
           </div>
@@ -256,44 +247,29 @@ const WorkspaceAnalytics = ({ arnId, fiscalYear }) => {
               >
                 <defs>
                   <linearGradient
-                    id="emeraldWorkspaceGradient"
+                    id="skyWorkspaceGradient"
                     x1="0"
                     y1="0"
                     x2="0"
                     y2="1"
                   >
-                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity={0.0} />
+                    <stop offset="0%" stopColor="#0284c7" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#0284c7" stopOpacity={0.0} />
                   </linearGradient>
-                  <filter
-                    id="workspaceGlow"
-                    x="-20%"
-                    y="-20%"
-                    width="140%"
-                    height="140%"
-                  >
-                    <feDropShadow
-                      dx="0"
-                      dy="3"
-                      stdDeviation="4"
-                      floodColor="#10b981"
-                      floodOpacity="0.3"
-                    />
-                  </filter>
                 </defs>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
-                  stroke="rgba(148, 163, 184, 0.08)"
+                  stroke="rgba(148, 163, 184, 0.14)"
                 />
                 <XAxis
                   dataKey="month"
-                  tick={{ fontSize: 10, fill: "#64748b", fontWeight: 600 }}
+                  tick={{ fontSize: 10, fill: "#64748b", fontWeight: 500 }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 9, fill: "#64748b", fontWeight: 600 }}
+                  tick={{ fontSize: 10, fill: "#64748b", fontWeight: 500 }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
@@ -302,13 +278,12 @@ const WorkspaceAnalytics = ({ arnId, fiscalYear }) => {
                 <Area
                   type="monotone"
                   dataKey="amount"
-                  stroke="#10b981"
-                  strokeWidth={2.5}
-                  fill="url(#emeraldWorkspaceGradient)"
-                  filter="url(#workspaceGlow)"
+                  stroke="#0284c7"
+                  strokeWidth={2.25}
+                  fill="url(#skyWorkspaceGradient)"
                   activeDot={{
-                    r: 5,
-                    stroke: "#10b981",
+                    r: 4.5,
+                    stroke: "#0284c7",
                     strokeWidth: 2,
                     fill: "#ffffff",
                   }}
@@ -317,32 +292,35 @@ const WorkspaceAnalytics = ({ arnId, fiscalYear }) => {
             </ResponsiveContainer>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400 dark:text-slate-500">
-            <span>Points: {(data.trend || []).length} Cycles</span>
-            <span className="font-bold text-emerald-600 dark:text-emerald-400">
+          <div className="pt-3 border-t border-slate-200/70 dark:border-slate-800 flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-slate-400">
+            <span>{(data.trend || []).length} months logged</span>
+            <span className="font-bold text-sky-600 dark:text-sky-300">
               Total: {formatINR(data.stats.allTimeTotal)}
             </span>
           </div>
         </div>
 
-        {/* CHART 2: AMC PORTFOLIO SHARE (STEM LOLLIPOP + DIRECTORY) */}
-        <div className="bg-white dark:bg-[#0E1626] border border-slate-200/80 dark:border-white/10 p-5 rounded-xl shadow-xs flex flex-col justify-between h-90">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
+        {/* CHART 2: AMC SHARE */}
+        <div className="bg-slate-50/70 dark:bg-[#131720] border border-slate-200/90 dark:border-slate-800 p-5 rounded-lg flex flex-col justify-between h-88">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200/70 dark:border-slate-800">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-                <BarChart3 size={16} strokeWidth={2.2} />
+              <div className="w-8 h-8 rounded-md bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200/70 dark:border-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+                <BarChart3 size={15} strokeWidth={2.2} />
               </div>
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                  AMC Portfolio Share
+                <h4 className="sora-font text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                  AMC{" "}
+                  <span className="font-normal text-sky-600 dark:text-sky-300">
+                    Share
+                  </span>
                 </h4>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                  Revenue concentration by mutual fund house
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Commission split by fund house
                 </p>
               </div>
             </div>
 
-            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 uppercase">
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-cyan-50 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-200/70 dark:border-cyan-500/20 uppercase">
               {amcStemData.length} AMCs
             </span>
           </div>
@@ -360,7 +338,7 @@ const WorkspaceAnalytics = ({ arnId, fiscalYear }) => {
                   className="flex-1 flex flex-col items-center h-full justify-end group cursor-pointer shrink-0 min-w-9 max-w-17.5"
                   title={`${item.fullName}: ${formatINR(item.value)} (${item.percentage})`}
                 >
-                  <span className="text-[8px] font-mono font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity mb-1 select-none">
+                  <span className="text-[9px] font-mono font-semibold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity mb-1 select-none">
                     {item.percentage}
                   </span>
 
@@ -369,10 +347,10 @@ const WorkspaceAnalytics = ({ arnId, fiscalYear }) => {
                     style={{ height: `${heightPct}%` }}
                   >
                     <div
-                      className="w-4 h-4 rounded-full border-2 border-white dark:border-[#0E1626] shadow-md flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-125 z-10"
+                      className="w-3.5 h-3.5 rounded-full border-2 border-white dark:border-[#131720] flex items-center justify-center shrink-0 transition-transform duration-150 group-hover:scale-125 z-10"
                       style={{ backgroundColor: item.color }}
                     >
-                      <CircleDot size={8} className="text-white" />
+                      <CircleDot size={7} className="text-white" />
                     </div>
 
                     <div
@@ -381,7 +359,7 @@ const WorkspaceAnalytics = ({ arnId, fiscalYear }) => {
                     />
                   </div>
 
-                  <span className="text-[9px] font-mono font-bold text-slate-500 dark:text-slate-400 mt-2 truncate w-full text-center group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                  <span className="text-[9px] font-mono font-semibold text-slate-500 dark:text-slate-400 mt-2 truncate w-full text-center group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
                     {item.name}
                   </span>
                 </div>
@@ -389,8 +367,8 @@ const WorkspaceAnalytics = ({ arnId, fiscalYear }) => {
             })}
           </div>
 
-          {/* Multi-Column Itemized AMC Legend */}
-          <div className="pt-3 border-t border-slate-100 dark:border-white/5 grid grid-cols-2 gap-x-3 gap-y-1.5 max-h-20 overflow-y-auto no-scrollbar">
+          {/* Multi-Column AMC Legend */}
+          <div className="pt-3 border-t border-slate-200/70 dark:border-slate-800 grid grid-cols-2 gap-x-3 gap-y-1.5 max-h-20 overflow-y-auto no-scrollbar">
             {amcStemData.map((item, idx) => (
               <div
                 key={idx}

@@ -83,7 +83,6 @@ const AuditWizard = ({
     };
   });
 
-  // Fetch accounts ONCE on mount with stable ref guard
   const isAccountsFetched = useRef(false);
   useEffect(() => {
     if (isAccountsFetched.current) return;
@@ -106,7 +105,6 @@ const AuditWizard = ({
     };
   }, [request]);
 
-  // Fetch ledgers when company context changes
   useEffect(() => {
     if (!selection.tallyCompany) return;
     let isMounted = true;
@@ -127,7 +125,6 @@ const AuditWizard = ({
     };
   }, [selection.tallyCompany, request]);
 
-  // Load transactions once per active audit
   const activeLoadedAuditId = useRef(null);
   const stagedTxsLength = selection.stagedData?.transactions?.length || 0;
 
@@ -239,12 +236,10 @@ const AuditWizard = ({
 
       if (duplicate.sourceFiles && duplicate.sourceFiles.length > 0) {
         setStep(3);
-        return toast.info("Analyzing batch history...");
+        return toast.info("Resuming existing batch...");
       } else {
         setStep(2);
-        return toast.info(
-          "Batch session initialized. Please upload bank statements.",
-        );
+        return toast.info("Batch initialized. Please upload bank statements.");
       }
     }
     setStep(2);
@@ -264,7 +259,7 @@ const AuditWizard = ({
 
     if (bankLedgersToProcess.length === 0) return;
     if (!selection.tallyCompany || !activeArn) {
-      return toast.error("Bridge Error: Missing Company or ARN context.");
+      return toast.error("Missing Company or ARN selection.");
     }
 
     setIsProcessing(true);
@@ -318,10 +313,10 @@ const AuditWizard = ({
 
       setStep(3);
       toast.success(
-        `Batch workspace populated with ${bankLedgersToProcess.length} bank(s).`,
+        `Uploaded statements for ${bankLedgersToProcess.length} bank(s).`,
       );
     } catch (err) {
-      toast.error(err.message || "Batch upload encountered an error.");
+      toast.error(err.message || "File upload encountered an error.");
     } finally {
       setIsProcessing(false);
     }
@@ -362,7 +357,7 @@ const AuditWizard = ({
       );
       if (res?.success) setStep(5);
     } catch {
-      toast.error("Failed to commit sales matrix checkpoint");
+      toast.error("Failed to save sales details");
     } finally {
       setIsProcessing(false);
     }
@@ -372,23 +367,23 @@ const AuditWizard = ({
     setIsProcessing(true);
     try {
       await request(`/audit/${selection.audit._id}/finalize`, "POST");
-      toast.success("Batch finalized and archived securely!");
+      toast.success("Batch finalized and saved!");
       if (refreshData) refreshData();
       onClose();
     } catch {
-      toast.error("Batch finalization failed mid-way.");
+      toast.error("Failed to finalize batch.");
     } finally {
       setIsProcessing(false);
     }
   }, [selection.audit?._id, request, refreshData, onClose]);
 
   const steps = [
-    { id: 1, label: "Entity Scope", subtitle: "Company Selection" },
-    { id: 2, label: "Statement Ingestion", subtitle: "Upload Files" },
-    { id: 3, label: "Transaction Mapping", subtitle: "Ledger Verification" },
-    { id: 4, label: "Sales Matrix", subtitle: "GST & Commission" },
-    { id: 5, label: "Batch Summary", subtitle: "Overview" },
-    { id: 6, label: "Push & Finalize", subtitle: "Tally Vouchers" },
+    { id: 1, label: "Company & Month", subtitle: "Select Entity" },
+    { id: 2, label: "Upload Statements", subtitle: "Bank Files" },
+    { id: 3, label: "Map Transactions", subtitle: "Verify Ledgers" },
+    { id: 4, label: "Sales & GST", subtitle: "Commission Invoices" },
+    { id: 5, label: "Batch Summary", subtitle: "Review Totals" },
+    { id: 6, label: "Push to Tally", subtitle: "Create Vouchers" },
   ];
 
   const isStep3Valid = useMemo(() => {
@@ -419,7 +414,7 @@ const AuditWizard = ({
     switch (step) {
       case 1:
         return {
-          label: selection.stagedData ? "Resume Batch" : "Proceed to Ingestion",
+          label: selection.stagedData ? "Resume Batch" : "Next: Upload Statements",
           disabled: !selection.tallyCompany,
           action: validateAndProceed,
         };
@@ -429,32 +424,30 @@ const AuditWizard = ({
         ).length;
         return {
           label: isProcessing
-            ? "Pushing to Tally..."
+            ? "Processing..."
             : banksStagedCount > 0
               ? `Process Statements (${banksStagedCount} Banks)`
-              : "Awaiting Uploads",
+              : "Upload Statements to Continue",
           disabled: banksStagedCount === 0 || isProcessing,
           action: handleBatchFileUpload,
         };
       }
       case 3:
         return {
-          label: "Proceed to Sales Matrix",
+          label: "Next: Sales & GST",
           disabled: !isStep3Valid,
           action: () => setStep(4),
         };
       case 4:
         return {
-          label: isProcessing
-            ? "Saving Checkpoint..."
-            : "Verify & Lock Sales Matrix",
+          label: isProcessing ? "Saving..." : "Confirm Sales & GST",
           disabled: isProcessing || !isStep4Valid,
           action: handleSalesValidationComplete,
         };
       case 5:
         return {
           label: isTallyOnline
-            ? "Proceed to Voucher Creation"
+            ? "Next: Push to Tally"
             : "Tally Bridge Offline",
           disabled: !isTallyOnline,
           action: () => {
@@ -465,15 +458,15 @@ const AuditWizard = ({
       case 6:
         return {
           label: isProcessing
-            ? "Finalizing Batch..."
+            ? "Finalizing..."
             : isSyncComplete
-              ? "Finalize & Close Batch"
-              : "Awaiting Voucher Push",
+              ? "Finish & Close Batch"
+              : "Push Vouchers First",
           disabled: isProcessing || !isSyncComplete,
           action: handleFinalizeAudit,
         };
       default:
-        return { label: "Proceed", action: () => setStep((s) => s + 1) };
+        return { label: "Next", action: () => setStep((s) => s + 1) };
     }
   }, [
     step,
@@ -496,45 +489,55 @@ const AuditWizard = ({
       <style
         dangerouslySetInnerHTML={{
           __html: `
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+        .sora-font {
+          font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
         .no-scrollbar::-webkit-scrollbar { display: none; } 
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `,
         }}
       />
 
-      <div className="fixed inset-0 z-50 flex animate-in fade-in duration-200 bg-slate-950/70 backdrop-blur-xs">
-        <div className="w-full h-full flex flex-col overflow-hidden text-left bg-[#F8FAFC] dark:bg-[#07090E] min-w-0">
-          <header className="px-4 lg:px-8 py-3.5 bg-white dark:bg-slate-900/90 border-b border-slate-200/80 dark:border-white/10 flex flex-col gap-3 shrink-0 z-30 shadow-xs">
+      <div className="fixed inset-0 z-50 flex animate-in fade-in duration-200 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs">
+        <div className="w-full h-full flex flex-col overflow-hidden text-left bg-[#F6F8FB] dark:bg-[#131720] min-w-0">
+          {/* TOP WIZARD HEADER */}
+          <header className="px-4 lg:px-8 py-3.5 bg-white dark:bg-[#161B26] border-b border-slate-200 dark:border-slate-800 flex flex-col gap-3 shrink-0 z-30">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                  <Layers size={18} strokeWidth={2.5} />
+                <div className="w-9 h-9 rounded-lg bg-sky-50 dark:bg-sky-500/10 border border-sky-200/70 dark:border-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+                  <Layers size={18} strokeWidth={2.2} />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">
-                      Batch Processing Engine
+                    <h2 className="sora-font text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight truncate">
+                      Tally Batch{" "}
+                      <span className="font-normal text-sky-600 dark:text-sky-300">
+                        Wizard
+                      </span>
                     </h2>
-                    <span className="hidden sm:inline-flex px-2 py-0.5 rounded bg-slate-100 dark:bg-white/5 text-[9px] font-black uppercase tracking-wider text-slate-500 border border-slate-200/60 dark:border-white/5">
+                    <span className="hidden sm:inline-flex px-2 py-0.5 rounded bg-slate-100 dark:bg-[#1C2230] text-[10px] font-mono font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                       Step {step} of 6
                     </span>
                   </div>
-                  <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                     {steps[step - 1]?.label} • {steps[step - 1]?.subtitle}
                   </p>
                 </div>
               </div>
 
               <button
+                type="button"
                 onClick={onClose}
-                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors border border-slate-200/80 dark:border-white/10 shrink-0 cursor-pointer"
-                title="Exit Batch Session"
+                className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors border border-slate-200 dark:border-slate-700 shrink-0 cursor-pointer"
+                title="Close Wizard"
               >
-                <X size={16} strokeWidth={2.5} />
+                <X size={16} strokeWidth={2.2} />
               </button>
             </div>
 
-            <div className="hidden lg:grid grid-cols-6 gap-2 pt-1 border-t border-slate-100 dark:border-white/5">
+            {/* DESKTOP 6-STEP PROGRESS TRACK */}
+            <div className="hidden lg:grid grid-cols-6 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               {steps.map((s) => {
                 const isActive = step === s.id;
                 const isDone = step > s.id;
@@ -542,30 +545,30 @@ const AuditWizard = ({
                 return (
                   <div
                     key={s.id}
-                    className={`flex items-center gap-2.5 p-2 rounded-lg transition-all ${
+                    className={`flex items-center gap-2.5 p-2 rounded-md transition-colors ${
                       isActive
-                        ? "bg-emerald-50/70 dark:bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
+                        ? "bg-sky-50/80 dark:bg-sky-500/10 border border-sky-300/80 dark:border-sky-500/30 text-sky-800 dark:text-sky-300"
                         : isDone
-                          ? "bg-slate-100/60 dark:bg-white/5 text-slate-700 dark:text-slate-300"
-                          : "opacity-40 text-slate-400"
+                          ? "bg-slate-50 dark:bg-[#1C2230]/60 text-slate-700 dark:text-slate-300 border border-transparent"
+                          : "opacity-45 text-slate-400 border border-transparent"
                     }`}
                   >
                     <div
-                      className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0 ${
+                      className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-mono font-bold shrink-0 ${
                         isActive
-                          ? "bg-emerald-600 text-white shadow-xs"
+                          ? "bg-sky-600 text-white"
                           : isDone
-                            ? "bg-slate-800 text-white dark:bg-white dark:text-slate-900"
-                            : "bg-slate-200 dark:bg-white/10 text-slate-500"
+                            ? "bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900"
+                            : "bg-slate-200 dark:bg-slate-800 text-slate-500"
                       }`}
                     >
                       {isDone ? <Check size={11} strokeWidth={3} /> : s.id}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-black uppercase tracking-wider truncate">
+                      <p className="text-[11px] font-bold truncate">
                         {s.label}
                       </p>
-                      <p className="text-[9px] font-medium opacity-70 truncate">
+                      <p className="text-[10px] opacity-75 truncate">
                         {s.subtitle}
                       </p>
                     </div>
@@ -574,6 +577,7 @@ const AuditWizard = ({
               })}
             </div>
 
+            {/* MOBILE STEP PILLS */}
             <div className="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
               {steps.map((s) => {
                 const isActive = step === s.id;
@@ -582,21 +586,21 @@ const AuditWizard = ({
                 return (
                   <div
                     key={s.id}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md shrink-0 text-[10px] font-black uppercase tracking-wider border ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md shrink-0 text-[11px] font-semibold border ${
                       isActive
-                        ? "bg-emerald-50/70 dark:bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400"
+                        ? "bg-sky-50 dark:bg-sky-500/10 border-sky-300 dark:border-sky-500/30 text-sky-700 dark:text-sky-300"
                         : isDone
-                          ? "bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200"
+                          ? "bg-slate-100 dark:bg-[#1C2230] border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200"
                           : "border-transparent text-slate-400 opacity-60"
                     }`}
                   >
                     <span
-                      className={`w-4 h-4 rounded flex items-center justify-center text-[9px] ${
+                      className={`w-4 h-4 rounded flex items-center justify-center text-[9px] font-mono ${
                         isActive
-                          ? "bg-emerald-600 text-white"
+                          ? "bg-sky-600 text-white"
                           : isDone
                             ? "bg-slate-700 text-white"
-                            : "bg-slate-200 dark:bg-white/10"
+                            : "bg-slate-200 dark:bg-slate-800"
                       }`}
                     >
                       {isDone ? <Check size={9} strokeWidth={3} /> : s.id}
@@ -608,6 +612,7 @@ const AuditWizard = ({
             </div>
           </header>
 
+          {/* MAIN WIZARD CONTENT */}
           <main className="flex-1 overflow-hidden relative min-w-0">
             <div className="h-full w-full flex flex-col overflow-y-auto lg:overflow-hidden no-scrollbar">
               {step === 1 && (
@@ -658,30 +663,33 @@ const AuditWizard = ({
             </div>
           </main>
 
-          <footer className="px-4 lg:px-8 py-3.5 bg-white dark:bg-slate-900/90 border-t border-slate-200/80 dark:border-white/10 flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0 z-30 shadow-xs">
+          {/* BOTTOM ACTION BAR */}
+          <footer className="px-4 lg:px-8 py-3.5 bg-white dark:bg-[#161B26] border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0 z-30">
             <div className="flex items-center gap-3 w-full sm:w-auto min-w-0">
               <div
-                className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 border text-[10px] font-bold uppercase tracking-wider shrink-0 ${
+                className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 border text-[11px] font-mono font-semibold uppercase shrink-0 ${
                   isTallyOnline
-                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
-                    : "bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500"
+                    ? "bg-sky-50 dark:bg-sky-500/10 border-sky-200/80 dark:border-sky-500/25 text-sky-700 dark:text-sky-300"
+                    : "bg-slate-100 dark:bg-[#1C2230] border-slate-200 dark:border-slate-700 text-slate-500"
                 }`}
               >
                 <span
-                  className={`w-1.5 h-1.5 rounded-full ${isTallyOnline ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`}
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    isTallyOnline ? "bg-sky-500" : "bg-slate-400"
+                  }`}
                 />
                 <span>
                   {isTallyOnline ? "Bridge Online" : "Bridge Offline"}
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 min-w-0 border-l border-slate-200 dark:border-white/10 pl-3">
+              <div className="flex items-center gap-2 min-w-0 border-l border-slate-200 dark:border-slate-800 pl-3">
                 <Building2 size={13} className="text-slate-400 shrink-0" />
-                <span className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase truncate">
-                  {selection.tallyCompany || "No Company Context"}
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                  {selection.tallyCompany || "No Company Selected"}
                 </span>
                 {selection.month && (
-                  <span className="hidden md:inline text-[10px] font-semibold text-slate-400 shrink-0">
+                  <span className="hidden md:inline text-[11px] font-mono text-slate-400 shrink-0">
                     ({selection.month}/{selection.year})
                   </span>
                 )}
@@ -691,34 +699,34 @@ const AuditWizard = ({
             <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end shrink-0">
               {[2, 4, 5].includes(step) && (
                 <button
+                  type="button"
                   onClick={() => setStep(step - 1)}
                   disabled={isProcessing}
-                  className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200/80 dark:border-white/10 transition-all cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-[#1C2230] hover:bg-slate-200/70 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer disabled:opacity-50"
                 >
                   <ArrowLeft size={13} className="inline mr-1" /> Back
                 </button>
               )}
 
               <button
+                type="button"
                 disabled={footerConfig.disabled}
                 onClick={footerConfig.action}
-                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg font-bold uppercase text-xs tracking-wider transition-all duration-200 cursor-pointer shadow-xs active:scale-98 select-none ${
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-xs tracking-wide transition-all cursor-pointer active:scale-98 select-none ${
                   footerConfig.disabled
-                    ? "opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600 border border-slate-200 dark:border-white/5"
-                    : step === 6 && isSyncComplete
-                      ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:bg-emerald-600 dark:hover:bg-emerald-400 hover:text-white"
-                      : "bg-emerald-600 text-white hover:bg-emerald-500 shadow-emerald-600/20"
+                    ? "opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 border border-slate-200 dark:border-slate-700"
+                    : "bg-sky-600 text-white hover:bg-sky-500"
                 }`}
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 size={15} className="animate-spin" />
+                    <Loader2 size={14} className="animate-spin" />
                     <span>Processing...</span>
                   </>
                 ) : (
                   <>
                     <span>{footerConfig.label}</span>
-                    <ArrowRight size={15} strokeWidth={2.5} />
+                    <ArrowRight size={14} strokeWidth={2.5} />
                   </>
                 )}
               </button>

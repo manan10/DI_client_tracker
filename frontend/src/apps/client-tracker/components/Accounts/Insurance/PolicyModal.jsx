@@ -68,12 +68,7 @@ const getInitialFormData = (editingPolicy) => {
   };
 };
 
-const PolicyModalContent = ({
-  onClose,
-  onSave,
-  editingPolicy,
-  saving,
-}) => {
+const PolicyModalContent = ({ onClose, onSave, editingPolicy, saving }) => {
   const [formData, setFormData] = useState(() =>
     getInitialFormData(editingPolicy)
   );
@@ -169,62 +164,78 @@ const PolicyModalContent = ({
     onSave(payload);
   };
 
+  const inputClass =
+    "w-full px-3.5 py-2.5 bg-slate-50/70 dark:bg-[#161B26] border border-slate-200 dark:border-slate-700/90 rounded-md text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-sky-500 dark:focus:border-sky-400 focus:ring-2 focus:ring-sky-500/15 transition-all";
+
+  const labelClass =
+    "text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 block mb-1.5";
+
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto">
-      <div className="bg-white dark:bg-[#0B1120] w-full max-w-5xl rounded-2xl border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden my-auto flex flex-col">
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/50 dark:bg-black/75 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto">
+      <div className="bg-white dark:bg-[#131720] w-full max-w-5xl rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden my-auto flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 sm:px-8 py-5 border-b border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/2 shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-xs">
-              <Shield size={24} />
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-[#161B26] shrink-0">
+          <div className="flex items-center gap-3.5">
+            <div className="p-2 rounded-lg bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-200/70 dark:border-sky-500/20">
+              <Shield size={20} strokeWidth={2.2} />
             </div>
             <div>
-              <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                {editingPolicy
-                  ? "Update Policy Record"
-                  : "Add Policy / Pension Portfolio"}
+              <h3 className="sora-font text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+                {editingPolicy ? (
+                  <>
+                    Edit{" "}
+                    <span className="font-normal text-sky-600 dark:text-sky-300">
+                      Policy
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Add{" "}
+                    <span className="font-normal text-sky-600 dark:text-sky-300">
+                      Policy
+                    </span>
+                  </>
+                )}
               </h3>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-                Family asset, health, risk & retirement coverage registry
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Record policy, health, motor, or pension plan details
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
             type="button"
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-2 rounded-md text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
-            <X size={22} />
+            <X size={20} />
           </button>
         </div>
 
         {/* Form Body */}
         <form
           onSubmit={handleSubmit}
-          className="p-6 sm:p-8 space-y-8 max-h-[75vh] overflow-y-auto custom-scrollbar"
+          className="p-6 sm:p-7 space-y-7 max-h-[78vh] overflow-y-auto custom-scrollbar"
         >
-          {/* Section 1: Classification */}
+          {/* Section 1: Policy Details */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-white/5">
-              <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                1. Policy & Product Identification
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
+              <h4 className="sora-font text-xs font-bold uppercase tracking-wider text-sky-600 dark:text-sky-300">
+                1. Policy Details
               </h4>
-              <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-slate-100 dark:bg-white/5 text-slate-500 uppercase">
+              <span className="text-[11px] font-mono font-semibold px-2.5 py-0.5 rounded bg-slate-100 dark:bg-[#1C2230] text-slate-600 dark:text-slate-300 border border-slate-200/70 dark:border-slate-700/70">
                 {isInvestment
-                  ? "Market/Unit Linked"
+                  ? "ULIP / Pension"
                   : isHealth
-                  ? "Health Risk"
-                  : isMotor
-                  ? "Asset Cover"
-                  : "Pure Term"}
+                    ? "Health Cover"
+                    : isMotor
+                      ? "Vehicle Cover"
+                      : "Life Cover"}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Policy Category *
-                </label>
+                <label className={labelClass}>Policy Type *</label>
                 <select
                   value={formData.policyType}
                   onChange={(e) => {
@@ -253,13 +264,13 @@ const PolicyModalContent = ({
                       taxBenefitSection: taxSec,
                     }));
                   }}
-                  className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                  className={`${inputClass} cursor-pointer`}
                 >
                   {POLICY_TYPES.map((pt) => (
                     <option
                       key={pt.id}
                       value={pt.id}
-                      className="dark:bg-slate-900 text-slate-900 dark:text-white py-1"
+                      className="dark:bg-[#161B26] text-slate-900 dark:text-white"
                     >
                       {pt.label}
                     </option>
@@ -268,9 +279,7 @@ const PolicyModalContent = ({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Policy / PRAN Number *
-                </label>
+                <label className={labelClass}>Policy / PRAN Number *</label>
                 <input
                   type="text"
                   required
@@ -282,18 +291,16 @@ const PolicyModalContent = ({
                       policyNumber: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold font-mono text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className={`${inputClass} font-mono`}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Provider / Insurer / PFM *
-                </label>
+                <label className={labelClass}>Insurance Company *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. HDFC Life / Star Health / SBI Pension"
+                  placeholder="e.g. HDFC Life / Star Health"
                   value={formData.providerName}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -301,17 +308,15 @@ const PolicyModalContent = ({
                       providerName: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className={inputClass}
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Plan / Product Scheme Name
-                </label>
+                <label className={labelClass}>Plan Name</label>
                 <input
                   type="text"
-                  placeholder="e.g. Optima Secure / Click 2 Protect / NPS Tier 1"
+                  placeholder="e.g. Optima Secure / Click 2 Protect"
                   value={formData.planName}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -319,14 +324,12 @@ const PolicyModalContent = ({
                       planName: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Tax Deduction Section
-                </label>
+                <label className={labelClass}>Tax Section</label>
                 <select
                   value={formData.taxBenefitSection}
                   onChange={(e) =>
@@ -335,7 +338,7 @@ const PolicyModalContent = ({
                       taxBenefitSection: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                  className={`${inputClass} cursor-pointer`}
                 >
                   <option value="80D">Section 80D (Health)</option>
                   <option value="80C">Section 80C (Life/ULIP)</option>
@@ -348,22 +351,19 @@ const PolicyModalContent = ({
             </div>
           </div>
 
-          {/* Section 2: DYNAMIC CONTEXTUAL CARDS */}
-          {/* A. Investment / ULIP / NPS */}
+          {/* Section 2A: Investment / ULIP / NPS */}
           {isInvestment && (
-            <div className="p-5 sm:p-6 rounded-2xl bg-indigo-50/50 dark:bg-indigo-500/5 border border-indigo-200/80 dark:border-indigo-500/20 space-y-5 animate-in fade-in">
-              <div className="flex items-center gap-2.5 text-indigo-700 dark:text-indigo-400">
-                <TrendingUp size={20} />
-                <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider">
-                  Investment, Units & Valuation Details
+            <div className="p-5 rounded-lg bg-cyan-50/40 dark:bg-cyan-500/[0.04] border border-cyan-200/80 dark:border-cyan-500/20 space-y-4">
+              <div className="flex items-center gap-2 text-cyan-700 dark:text-cyan-300">
+                <TrendingUp size={18} />
+                <h4 className="sora-font text-xs font-bold uppercase tracking-wider">
+                  Units & Fund Value
                 </h4>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                    Units Held / Balance
-                  </label>
+                  <label className={labelClass}>Units Held</label>
                   <input
                     type="number"
                     step="0.0001"
@@ -385,14 +385,12 @@ const PolicyModalContent = ({
                         },
                       }));
                     }}
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    className={`${inputClass} bg-white dark:bg-[#131720] font-mono`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                    Latest NAV (₹)
-                  </label>
+                  <label className={labelClass}>Latest NAV (₹)</label>
                   <input
                     type="number"
                     step="0.0001"
@@ -414,13 +412,13 @@ const PolicyModalContent = ({
                         },
                       }));
                     }}
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    className={`${inputClass} bg-white dark:bg-[#131720] font-mono`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider block mb-1.5">
-                    Current Portfolio Valuation (₹)
+                  <label className="text-xs font-semibold uppercase tracking-wider text-cyan-700 dark:text-cyan-300 block mb-1.5">
+                    Current Fund Value (₹)
                   </label>
                   <input
                     type="number"
@@ -435,14 +433,12 @@ const PolicyModalContent = ({
                         },
                       }))
                     }
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-500/40 rounded-xl text-sm font-black text-indigo-700 dark:text-indigo-300 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    className={`${inputClass} bg-white dark:bg-[#131720] border-cyan-300 dark:border-cyan-500/40 font-mono font-bold text-cyan-700 dark:text-cyan-300`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                    Total Invested / Capital Paid (₹)
-                  </label>
+                  <label className={labelClass}>Total Invested (₹)</label>
                   <input
                     type="number"
                     placeholder="e.g. 500000"
@@ -456,17 +452,15 @@ const PolicyModalContent = ({
                         },
                       }))
                     }
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    className={`${inputClass} bg-white dark:bg-[#131720] font-mono`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                    Fund Option / Strategy
-                  </label>
+                  <label className={labelClass}>Fund Option</label>
                   <input
                     type="text"
-                    placeholder="e.g. Aggressive (LC 75%) / Balanced"
+                    placeholder="e.g. Aggressive / Balanced"
                     value={formData.investmentDetails.fundOption}
                     onChange={(e) =>
                       setFormData((prev) => ({
@@ -477,14 +471,12 @@ const PolicyModalContent = ({
                         },
                       }))
                     }
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    className={`${inputClass} bg-white dark:bg-[#131720]`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                    Lock-in / Maturation End
-                  </label>
+                  <label className={labelClass}>Lock-in End Date</label>
                   <input
                     type="date"
                     value={formData.investmentDetails.lockInUntil}
@@ -497,31 +489,29 @@ const PolicyModalContent = ({
                         },
                       }))
                     }
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    className={`${inputClass} bg-white dark:bg-[#131720]`}
                   />
                 </div>
               </div>
             </div>
           )}
 
-          {/* B. Health & Mediclaim Specifics */}
+          {/* Section 2B: Health Specifics */}
           {isHealth && (
-            <div className="p-5 sm:p-6 rounded-2xl bg-teal-50/50 dark:bg-teal-500/5 border border-teal-200/80 dark:border-teal-500/20 space-y-5 animate-in fade-in">
-              <div className="flex items-center gap-2.5 text-teal-700 dark:text-teal-400">
-                <HeartPulse size={20} />
-                <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider">
-                  Mediclaim, TPA & Hospitalization Details
+            <div className="p-5 rounded-lg bg-sky-50/40 dark:bg-sky-500/[0.04] border border-sky-200/80 dark:border-sky-500/20 space-y-4">
+              <div className="flex items-center gap-2 text-sky-700 dark:text-sky-300">
+                <HeartPulse size={18} />
+                <h4 className="sora-font text-xs font-bold uppercase tracking-wider">
+                  Health & TPA Details
                 </h4>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                    TPA (Third Party Administrator)
-                  </label>
+                  <label className={labelClass}>TPA Name</label>
                   <input
                     type="text"
-                    placeholder="e.g. Medi Assist / Vidal Health"
+                    placeholder="e.g. Medi Assist"
                     value={formData.healthDetails.tpaName}
                     onChange={(e) =>
                       setFormData((prev) => ({
@@ -532,17 +522,15 @@ const PolicyModalContent = ({
                         },
                       }))
                     }
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                    className={`${inputClass} bg-white dark:bg-[#131720]`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                    Deductible Amount (₹)
-                  </label>
+                  <label className={labelClass}>Deductible (₹)</label>
                   <input
                     type="number"
-                    placeholder="For Top-ups (e.g. 500000)"
+                    placeholder="For Top-ups"
                     value={formData.healthDetails.deductibleAmount}
                     onChange={(e) =>
                       setFormData((prev) => ({
@@ -553,17 +541,15 @@ const PolicyModalContent = ({
                         },
                       }))
                     }
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                    className={`${inputClass} bg-white dark:bg-[#131720] font-mono`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                    Cumulative Bonus (NCB ₹)
-                  </label>
+                  <label className={labelClass}>No-Claim Bonus (₹)</label>
                   <input
                     type="number"
-                    placeholder="Bonus coverage earned"
+                    placeholder="Bonus cover earned"
                     value={formData.healthDetails.cumulativeBonusNCB}
                     onChange={(e) =>
                       setFormData((prev) => ({
@@ -574,17 +560,15 @@ const PolicyModalContent = ({
                         },
                       }))
                     }
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                    className={`${inputClass} bg-white dark:bg-[#131720] font-mono`}
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                    Room Rent Limit / Capping
-                  </label>
+                  <label className={labelClass}>Room Rent Limit</label>
                   <input
                     type="text"
-                    placeholder="e.g. Single Private AC / No Capping"
+                    placeholder="e.g. Single Private AC / No Limit"
                     value={formData.healthDetails.roomRentLimit}
                     onChange={(e) =>
                       setFormData((prev) => ({
@@ -595,19 +579,17 @@ const PolicyModalContent = ({
                         },
                       }))
                     }
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                    className={`${inputClass} bg-white dark:bg-[#131720]`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                    Co-Pay % (if any)
-                  </label>
+                  <label className={labelClass}>Co-Pay %</label>
                   <input
                     type="number"
                     min="0"
                     max="100"
-                    placeholder="e.g. 10 or 0"
+                    placeholder="e.g. 0 or 10"
                     value={formData.healthDetails.copayPercentage}
                     onChange={(e) =>
                       setFormData((prev) => ({
@@ -618,28 +600,26 @@ const PolicyModalContent = ({
                         },
                       }))
                     }
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                    className={`${inputClass} bg-white dark:bg-[#131720] font-mono`}
                   />
                 </div>
               </div>
             </div>
           )}
 
-          {/* C. Motor & Vehicle Specifics */}
+          {/* Section 2C: Motor Specifics */}
           {isMotor && (
-            <div className="p-5 sm:p-6 rounded-2xl bg-amber-50/50 dark:bg-amber-500/5 border border-amber-200/80 dark:border-amber-500/20 space-y-5 animate-in fade-in">
-              <div className="flex items-center gap-2.5 text-amber-700 dark:text-amber-400">
-                <Car size={20} />
-                <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider">
-                  Vehicle & Add-on Coverage Details
+            <div className="p-5 rounded-lg bg-amber-50/40 dark:bg-amber-500/[0.04] border border-amber-200/80 dark:border-amber-500/20 space-y-4">
+              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+                <Car size={18} />
+                <h4 className="sora-font text-xs font-bold uppercase tracking-wider">
+                  Vehicle Details
                 </h4>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                    Vehicle Registration Number *
-                  </label>
+                  <label className={labelClass}>Registration Number *</label>
                   <input
                     type="text"
                     placeholder="e.g. GJ-05-AB-1234"
@@ -653,14 +633,12 @@ const PolicyModalContent = ({
                         },
                       }))
                     }
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold font-mono uppercase text-slate-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className={`${inputClass} bg-white dark:bg-[#131720] font-mono uppercase`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                    Make & Model
-                  </label>
+                  <label className={labelClass}>Car / Bike Model</label>
                   <input
                     type="text"
                     placeholder="e.g. Hyundai Creta SX"
@@ -674,14 +652,12 @@ const PolicyModalContent = ({
                         },
                       }))
                     }
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className={`${inputClass} bg-white dark:bg-[#131720]`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                    Insured Declared Value (IDV ₹)
-                  </label>
+                  <label className={labelClass}>Vehicle IDV (₹)</label>
                   <input
                     type="number"
                     placeholder="e.g. 1450000"
@@ -695,12 +671,12 @@ const PolicyModalContent = ({
                         },
                       }))
                     }
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className={`${inputClass} bg-white dark:bg-[#131720] font-mono`}
                   />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-8 sm:col-span-3 pt-2">
-                  <label className="flex items-center gap-3 cursor-pointer select-none">
+                <div className="flex flex-wrap items-center gap-6 sm:col-span-3 pt-1">
+                  <label className="flex items-center gap-2.5 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={formData.motorDetails.hasZeroDepreciation}
@@ -713,14 +689,14 @@ const PolicyModalContent = ({
                           },
                         }))
                       }
-                      className="w-4 h-4 rounded text-emerald-600 focus:ring-0 cursor-pointer"
+                      className="w-4 h-4 rounded text-sky-600 focus:ring-0 cursor-pointer"
                     />
-                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                      Zero Depreciation Included (Bumper to Bumper)
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      Zero Depreciation (Bumper to Bumper)
                     </span>
                   </label>
 
-                  <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <label className="flex items-center gap-2.5 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={formData.motorDetails.hasEngineProtector}
@@ -733,10 +709,10 @@ const PolicyModalContent = ({
                           },
                         }))
                       }
-                      className="w-4 h-4 rounded text-emerald-600 focus:ring-0 cursor-pointer"
+                      className="w-4 h-4 rounded text-sky-600 focus:ring-0 cursor-pointer"
                     />
-                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                      Engine Protector Included
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      Engine Protector
                     </span>
                   </label>
                 </div>
@@ -744,22 +720,22 @@ const PolicyModalContent = ({
             </div>
           )}
 
-          {/* Section 3: Premiums & Schedules */}
+          {/* Section 3: Cover, Premium & Dates */}
           <div className="space-y-4">
-            <div className="pb-2 border-b border-slate-100 dark:border-white/5">
-              <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                3. Coverage, Premium & Schedules
+            <div className="pb-2 border-b border-slate-200/80 dark:border-slate-800">
+              <h4 className="sora-font text-xs font-bold uppercase tracking-wider text-sky-600 dark:text-sky-300">
+                2. Cover, Premium & Dates
               </h4>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
+                <label className={labelClass}>
                   {isInvestment
                     ? "Sum Assured (₹)"
                     : isHealth
-                    ? "Sum Insured (₹)"
-                    : "Sum Assured / IDV (₹)"}
+                      ? "Sum Insured (₹)"
+                      : "Cover / IDV (₹)"}
                 </label>
                 <input
                   type="number"
@@ -771,14 +747,12 @@ const PolicyModalContent = ({
                       sumAssured: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className={`${inputClass} font-mono`}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Premium / Outflow (₹) *
-                </label>
+                <label className={labelClass}>Premium Amount (₹) *</label>
                 <input
                   type="number"
                   required
@@ -790,14 +764,12 @@ const PolicyModalContent = ({
                       premiumAmount: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className={`${inputClass} font-mono`}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Frequency
-                </label>
+                <label className={labelClass}>Payment Cycle</label>
                 <select
                   value={formData.premiumFrequency}
                   onChange={(e) =>
@@ -806,7 +778,7 @@ const PolicyModalContent = ({
                       premiumFrequency: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                  className={`${inputClass} cursor-pointer`}
                 >
                   <option value="YEARLY">Yearly</option>
                   <option value="HALF_YEARLY">Half-Yearly</option>
@@ -818,9 +790,7 @@ const PolicyModalContent = ({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Status
-                </label>
+                <label className={labelClass}>Status</label>
                 <select
                   value={formData.status}
                   onChange={(e) =>
@@ -829,21 +799,19 @@ const PolicyModalContent = ({
                       status: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                  className={`${inputClass} cursor-pointer`}
                 >
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="GRACE_PERIOD">GRACE PERIOD</option>
-                  <option value="PAID_UP">PAID UP</option>
-                  <option value="LAPSED">LAPSED</option>
-                  <option value="MATURED">MATURED</option>
-                  <option value="SURRENDERED">SURRENDERED</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="GRACE_PERIOD">Grace Period</option>
+                  <option value="PAID_UP">Paid Up</option>
+                  <option value="LAPSED">Lapsed</option>
+                  <option value="MATURED">Matured</option>
+                  <option value="SURRENDERED">Surrendered</option>
                 </select>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Policy Term (Years)
-                </label>
+                <label className={labelClass}>Policy Term (Years)</label>
                 <input
                   type="number"
                   min="1"
@@ -855,14 +823,12 @@ const PolicyModalContent = ({
                       policyTermYears: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className={`${inputClass} font-mono`}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Paying Term (PPT)
-                </label>
+                <label className={labelClass}>Paying Term (Years)</label>
                 <input
                   type="number"
                   min="1"
@@ -874,14 +840,12 @@ const PolicyModalContent = ({
                       premiumPayingTermYears: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className={`${inputClass} font-mono`}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Start Date *
-                </label>
+                <label className={labelClass}>Start Date *</label>
                 <input
                   type="date"
                   required
@@ -892,14 +856,12 @@ const PolicyModalContent = ({
                       startDate: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Next Due Date *
-                </label>
+                <label className={labelClass}>Next Due Date *</label>
                 <input
                   type="date"
                   required
@@ -910,36 +872,34 @@ const PolicyModalContent = ({
                       nextDueDate: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className={inputClass}
                 />
               </div>
             </div>
           </div>
 
-          {/* Section 4: Members & Nominee */}
+          {/* Section 4: Policy Holder & Covered Members */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-white/5">
-              <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                4. Policy Holder, Covered Lives & Beneficiaries
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
+              <h4 className="sora-font text-xs font-bold uppercase tracking-wider text-sky-600 dark:text-sky-300">
+                3. Policy Holder & Nominee
               </h4>
               <button
                 type="button"
                 onClick={addInsuredPerson}
-                className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 hover:underline cursor-pointer"
+                className="text-xs font-semibold text-sky-600 dark:text-sky-300 flex items-center gap-1 hover:underline cursor-pointer"
               >
-                <Plus size={16} /> Add Covered Person
+                <Plus size={14} /> Add Covered Member
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Policy Holder Name *
-                </label>
+                <label className={labelClass}>Policy Holder Name *</label>
                 <input
                   type="text"
                   required
-                  placeholder="Primary holder / Investor"
+                  placeholder="Primary policy holder"
                   value={formData.policyHolder}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -947,14 +907,12 @@ const PolicyModalContent = ({
                       policyHolder: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Nominee Details (Name & Relation)
-                </label>
+                <label className={labelClass}>Nominee Name & Relation</label>
                 <div className="grid grid-cols-2 gap-3">
                   <input
                     type="text"
@@ -966,7 +924,7 @@ const PolicyModalContent = ({
                         nominee: { ...prev.nominee, name: e.target.value },
                       }))
                     }
-                    className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    className={inputClass}
                   />
                   <input
                     type="text"
@@ -978,19 +936,19 @@ const PolicyModalContent = ({
                         nominee: { ...prev.nominee, relation: e.target.value },
                       }))
                     }
-                    className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    className={inputClass}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Covered Lives Row */}
-            <div className="space-y-3 pt-2">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                Covered Lives / Insured Members
+            {/* Covered Members List */}
+            <div className="space-y-2.5 pt-1">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+                Covered Members
               </label>
               {formData.insuredPersons.map((p, idx) => (
-                <div key={idx} className="flex items-center gap-3">
+                <div key={idx} className="flex items-center gap-2.5">
                   <input
                     type="text"
                     placeholder="Member Name"
@@ -998,24 +956,24 @@ const PolicyModalContent = ({
                     onChange={(e) =>
                       handleInsuredChange(idx, "name", e.target.value)
                     }
-                    className="flex-1 px-4 py-2.5 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    className={inputClass}
                   />
                   <input
                     type="text"
-                    placeholder="Relation (e.g. Self, Spouse, Child)"
+                    placeholder="Relation (e.g. Self, Spouse)"
                     value={p.relation}
                     onChange={(e) =>
                       handleInsuredChange(idx, "relation", e.target.value)
                     }
-                    className="w-56 px-4 py-2.5 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    className={`${inputClass} sm:w-56`}
                   />
                   {formData.insuredPersons.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeInsuredPerson(idx)}
-                      className="p-2.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-colors cursor-pointer"
+                      className="p-2.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-md transition-colors cursor-pointer"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={16} />
                     </button>
                   )}
                 </div>
@@ -1023,23 +981,21 @@ const PolicyModalContent = ({
             </div>
           </div>
 
-          {/* Section 5: Servicing Agent & Notes */}
+          {/* Section 5: Agent & Notes */}
           <div className="space-y-4">
-            <div className="pb-2 border-b border-slate-100 dark:border-white/5">
-              <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                5. Servicing Advisor & Notes
+            <div className="pb-2 border-b border-slate-200/80 dark:border-slate-800">
+              <h4 className="sora-font text-xs font-bold uppercase tracking-wider text-sky-600 dark:text-sky-300">
+                4. Agent & Notes
               </h4>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Advisor / Agent (Name & Phone)
-                </label>
+                <label className={labelClass}>Agent Name & Phone</label>
                 <div className="grid grid-cols-2 gap-3">
                   <input
                     type="text"
-                    placeholder="Advisor Name"
+                    placeholder="Agent Name"
                     value={formData.servicingAgent.name}
                     onChange={(e) =>
                       setFormData((prev) => ({
@@ -1050,7 +1006,7 @@ const PolicyModalContent = ({
                         },
                       }))
                     }
-                    className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    className={inputClass}
                   />
                   <input
                     type="text"
@@ -1065,18 +1021,16 @@ const PolicyModalContent = ({
                         },
                       }))
                     }
-                    className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    className={inputClass}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                  Portal Login URL / Claims Portal
-                </label>
+                <label className={labelClass}>Portal Link</label>
                 <input
                   type="text"
-                  placeholder="https://cra-nsdl.com / insurer portal"
+                  placeholder="https://..."
                   value={formData.servicingAgent.portalUrl}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -1087,18 +1041,16 @@ const PolicyModalContent = ({
                       },
                     }))
                   }
-                  className="w-full px-4 py-3 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className={inputClass}
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
-                Internal Notes & Observations
-              </label>
+              <label className={labelClass}>Notes</label>
               <textarea
                 rows={2}
-                placeholder="Riders attached, special terms, renewal details..."
+                placeholder="Riders, special terms, or renewal remarks..."
                 value={formData.notes}
                 onChange={(e) =>
                   setFormData((prev) => ({
@@ -1106,30 +1058,30 @@ const PolicyModalContent = ({
                     notes: e.target.value,
                   }))
                 }
-                className="w-full p-4 bg-slate-50/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                className={inputClass}
               />
             </div>
           </div>
 
           {/* Footer Controls */}
-          <div className="flex items-center justify-end gap-4 pt-6 border-t border-slate-200 dark:border-white/10">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-all cursor-pointer"
+              className="px-5 py-2.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-8 py-3 rounded-xl text-sm font-black uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-50 cursor-pointer"
+              className="px-7 py-2.5 rounded-lg text-xs font-semibold tracking-wide bg-sky-600 hover:bg-sky-500 text-white transition-all disabled:opacity-50 cursor-pointer"
             >
               {saving
-                ? "Saving Record..."
+                ? "Saving..."
                 : editingPolicy
-                ? "Update Policy"
-                : "Save to Ledger"}
+                  ? "Update Policy"
+                  : "Save Policy"}
             </button>
           </div>
         </form>
@@ -1138,13 +1090,7 @@ const PolicyModalContent = ({
   );
 };
 
-const PolicyModal = ({
-  isOpen,
-  onClose,
-  onSave,
-  editingPolicy,
-  saving,
-}) => {
+const PolicyModal = ({ isOpen, onClose, onSave, editingPolicy, saving }) => {
   if (!isOpen) return null;
 
   return (

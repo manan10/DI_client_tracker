@@ -2,9 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   Search,
   History,
-  Calendar,
   RefreshCw,
-  AlertCircle,
   FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -53,11 +51,11 @@ const WorkspaceHistory = ({ arnId, fiscalYear }) => {
   if (isLoading && history.length === 0) {
     return (
       <div className="space-y-3 mt-4">
-        <div className="h-10 bg-slate-100 dark:bg-white/5 rounded-xl animate-pulse" />
+        <div className="h-10 bg-slate-100 dark:bg-[#1C2230] rounded-lg animate-pulse" />
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="animate-pulse h-14 bg-white dark:bg-[#0B1120] rounded-xl border border-slate-200/80 dark:border-white/10"
+            className="animate-pulse h-14 bg-slate-50 dark:bg-[#131720] rounded-lg border border-slate-200/80 dark:border-slate-800"
           />
         ))}
       </div>
@@ -65,30 +63,33 @@ const WorkspaceHistory = ({ arnId, fiscalYear }) => {
   }
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-300">
-      {/* 1. Header & Live Search Toolstrip */}
+    <div className="space-y-4 animate-in fade-in duration-300">
+      {/* 1. Header & Search Toolstrip */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-2xs">
+          <div className="w-8 h-8 rounded-md bg-sky-50 dark:bg-sky-500/10 border border-sky-200/70 dark:border-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
             <History size={16} strokeWidth={2.2} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                Commission History Ledger
+              <h4 className="sora-font text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                Monthly{" "}
+                <span className="font-normal text-sky-600 dark:text-sky-300">
+                  History
+                </span>
               </h4>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10">
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-100 dark:bg-[#1C2230] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                 FY {fiscalYear}
               </span>
             </div>
-            <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500 mt-0.5">
-              {filteredHistory.length} Reconciled Statement
-              {filteredHistory.length === 1 ? "" : "s"}
+            <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 mt-0.5">
+              {filteredHistory.length} saved{" "}
+              {filteredHistory.length === 1 ? "month" : "months"}
             </p>
           </div>
         </div>
 
-        {/* Search Field & Refresh Trigger */}
+        {/* Search Field & Refresh */}
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative w-full sm:w-64">
             <Search
@@ -97,10 +98,10 @@ const WorkspaceHistory = ({ arnId, fiscalYear }) => {
             />
             <input
               type="text"
-              placeholder="Search period (YYYY-MM)..."
+              placeholder="Search month (YYYY-MM)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-50/80 dark:bg-[#0E1626] border border-slate-200 dark:border-white/10 rounded-xl py-2 pl-9 pr-3 text-xs font-mono text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+              className="w-full bg-slate-50/80 dark:bg-[#131720] border border-slate-200 dark:border-slate-800 rounded-lg py-2 pl-9 pr-3 text-xs font-mono text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-sky-500 dark:focus:border-sky-400 transition-colors"
             />
           </div>
 
@@ -108,46 +109,46 @@ const WorkspaceHistory = ({ arnId, fiscalYear }) => {
             type="button"
             onClick={fetchHistory}
             disabled={isLoading}
-            className="p-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors shrink-0 disabled:opacity-50 cursor-pointer"
-            title="Refresh History Entries"
+            className="p-2 rounded-lg bg-slate-50 dark:bg-[#131720] border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-sky-600 dark:hover:text-sky-300 transition-colors shrink-0 disabled:opacity-50 cursor-pointer"
+            title="Refresh History"
           >
             <RefreshCw
               size={15}
-              className={isLoading ? "animate-spin text-emerald-500" : ""}
+              className={isLoading ? "animate-spin text-sky-500" : ""}
             />
           </button>
         </div>
       </div>
 
-      {/* 2. Ledger Container */}
-      <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden shadow-xs">
+      {/* 2. History Table */}
+      <div className="bg-white dark:bg-[#131720] border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
         {filteredHistory.length === 0 ? (
           <div className="p-12 text-center flex flex-col items-center justify-center">
-            <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-400 mb-3">
-              <FileSpreadsheet size={20} />
+            <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 mb-2.5">
+              <FileSpreadsheet size={18} />
             </div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-              No History Records Found
+            <p className="sora-font text-xs font-bold text-slate-800 dark:text-slate-200">
+              No Records Found
             </p>
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 max-w-sm">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
               {searchTerm
-                ? `No commission entries match "${searchTerm}" for FY ${fiscalYear}.`
-                : `No commission entries have been logged yet for FY ${fiscalYear}.`}
+                ? `No entries match "${searchTerm}" for FY ${fiscalYear}.`
+                : `No commission entries logged yet for FY ${fiscalYear}.`}
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-170">
               <thead>
-                <tr className="bg-slate-50/80 dark:bg-white/2 border-b border-slate-200 dark:border-white/10 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  <th className="px-5 py-3.5">Accounting Period</th>
+                <tr className="bg-slate-50/90 dark:bg-[#1C2230] border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <th className="px-5 py-3.5">Month</th>
                   <th className="px-5 py-3.5 text-center">AMC Breakdown</th>
                   <th className="px-5 py-3.5 text-right">Net Commission</th>
                   <th className="px-5 py-3.5 text-center">Status</th>
                   <th className="px-5 py-3.5 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-xs">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
                 {filteredHistory.map((row) => (
                   <HistoryRow
                     key={row._id}

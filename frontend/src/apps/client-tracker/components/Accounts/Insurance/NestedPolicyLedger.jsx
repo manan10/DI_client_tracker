@@ -13,11 +13,7 @@ import {
   getStatusBadge,
 } from "./insuranceUtils";
 
-const NestedPolicyLedger = ({
-  policies,
-  onEditPolicy,
-  onDeletePolicy,
-}) => {
+const NestedPolicyLedger = ({ policies, onEditPolicy, onDeletePolicy }) => {
   const [collapsedGroups, setCollapsedGroups] = useState({});
 
   const toggleGroupCollapse = (groupId) => {
@@ -29,10 +25,15 @@ const NestedPolicyLedger = ({
 
   const groupedSections = SUB_TYPE_GROUPS.map((group) => {
     const items = policies.filter((p) => group.match(p.policyType));
-    const totalPremium = items.reduce((sum, p) => sum + (p.premiumAmount || 0), 0);
+    const totalPremium = items.reduce(
+      (sum, p) => sum + (p.premiumAmount || 0),
+      0
+    );
     const totalValuation = items.reduce((sum, p) => {
       if (group.id === "INVESTMENT_PENSION") {
-        return sum + (p.investmentDetails?.currentValuation || p.sumAssured || 0);
+        return (
+          sum + (p.investmentDetails?.currentValuation || p.sumAssured || 0)
+        );
       }
       return sum + (p.sumAssured || 0);
     }, 0);
@@ -47,37 +48,37 @@ const NestedPolicyLedger = ({
 
   if (groupedSections.length === 0) {
     return (
-      <div className="py-16 text-center bg-white dark:bg-[#0F172A] rounded-md border border-slate-200 dark:border-white/10 shadow-xs">
+      <div className="py-16 text-center bg-white dark:bg-[#161B26] rounded-lg border border-slate-200 dark:border-slate-800/80">
         <ShieldCheck
-          size={32}
+          size={30}
           className="mx-auto text-slate-300 dark:text-slate-600 mb-2"
         />
-        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-          No policies recorded for this member
+        <p className="sora-font text-sm font-bold text-slate-800 dark:text-slate-200">
+          No policies found for this member
         </p>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Use the Add Policy button above to log a record.
+          Click Add Policy above to record one.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-white/10 rounded-md shadow-xs overflow-hidden">
+    <div className="bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse min-w-[760px]">
-          {/* Master Table Header */}
+          {/* Master Header */}
           <thead>
-            <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              <th className="py-3 px-5">Policy Category</th>
-              <th className="py-3 px-4 text-center">Policies</th>
-              <th className="py-3 px-5 text-right">Total Cover / Fund Value</th>
-              <th className="py-3 px-5 text-right">Annual Premium</th>
-              <th className="py-3 px-5 text-right w-16">Details</th>
+            <tr className="border-b border-slate-200 dark:border-slate-800/80 bg-slate-50/90 dark:bg-[#1C2230] text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <th className="py-3.5 px-5">Policy Type</th>
+              <th className="py-3.5 px-4 text-center">Policies</th>
+              <th className="py-3.5 px-5 text-right">Cover / Fund Value</th>
+              <th className="py-3.5 px-5 text-right">Yearly Premium</th>
+              <th className="py-3.5 px-5 text-right w-20">Expand</th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-xs font-medium">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs font-medium">
             {groupedSections.map((group) => {
               const isCollapsed = !!collapsedGroups[group.id];
               const GroupIcon = group.icon;
@@ -87,93 +88,112 @@ const NestedPolicyLedger = ({
                   {/* Master Category Row */}
                   <tr
                     onClick={() => toggleGroupCollapse(group.id)}
-                    className="cursor-pointer hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors group select-none"
+                    className="cursor-pointer hover:bg-sky-50/35 dark:hover:bg-white/[0.02] transition-colors group select-none"
                   >
-                    {/* Category Title & Badge */}
                     <td className="py-3.5 px-5">
                       <div className="flex items-center gap-3">
-                        <div className={`p-1.5 rounded-sm border shrink-0 ${group.color}`}>
-                          <GroupIcon size={15} strokeWidth={2.4} />
+                        <div
+                          className={`p-2 rounded-md border shrink-0 ${group.color}`}
+                        >
+                          <GroupIcon size={16} strokeWidth={2.2} />
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900 dark:text-white uppercase tracking-wider group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                          <p className="sora-font font-bold text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-300 transition-colors">
                             {group.label}
                           </p>
-                          <p className="text-[10px] text-slate-400 font-medium">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
                             {group.subLabel}
                           </p>
                         </div>
                       </div>
                     </td>
 
-                    {/* Policy Count Badge */}
                     <td className="py-3.5 px-4 text-center">
-                      <span className={`inline-block text-[10px] font-mono font-bold px-2 py-0.5 rounded-sm border ${group.badgeColor}`}>
-                        {group.items.length} {group.items.length === 1 ? "Policy" : "Policies"}
+                      <span
+                        className={`inline-block text-[11px] font-mono font-semibold px-2.5 py-0.5 rounded border ${group.badgeColor}`}
+                      >
+                        {group.items.length}{" "}
+                        {group.items.length === 1 ? "Policy" : "Policies"}
                       </span>
                     </td>
 
-                    {/* Valuation / Cover Sum */}
                     <td className="py-3.5 px-5 text-right">
-                      <span className="font-black font-mono text-sm text-slate-900 dark:text-white block">
+                      <span className="font-bold font-mono text-sm text-slate-900 dark:text-white tabular-nums block">
                         {formatCurrency(group.totalValuation)}
                       </span>
-                      <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest">
-                        {group.id === "INVESTMENT_PENSION" ? "Fund Value" : "Sum Insured"}
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                        {group.id === "INVESTMENT_PENSION"
+                          ? "Fund value"
+                          : "Sum insured"}
                       </span>
                     </td>
 
-                    {/* Annual Premium Total */}
                     <td className="py-3.5 px-5 text-right">
-                      <span className="font-black font-mono text-sm text-emerald-600 dark:text-emerald-400 block">
+                      <span className="font-bold font-mono text-sm text-sky-600 dark:text-sky-300 tabular-nums block">
                         {formatCurrency(group.totalPremium)}
                       </span>
-                      <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest">
-                        Annual Outflow
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                        Per year
                       </span>
                     </td>
 
-                    {/* Toggle Chevron */}
                     <td className="py-3.5 px-5 text-right">
-                      <div className="inline-flex p-1 rounded-sm text-slate-400 group-hover:text-slate-700 dark:group-hover:text-white transition-colors">
+                      <div className="inline-flex p-1 rounded text-slate-400 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">
                         <ChevronDown
-                          size={15}
-                          className={`transition-transform duration-200 ${isCollapsed ? "-rotate-90" : "rotate-0"}`}
+                          size={16}
+                          className={`transition-transform duration-200 ${
+                            isCollapsed ? "-rotate-90" : "rotate-0"
+                          }`}
                         />
                       </div>
                     </td>
                   </tr>
 
-                  {/* Nested Sub-Table Row */}
+                  {/* Nested Policy Rows */}
                   {!isCollapsed && (
-                    <tr className="bg-slate-50/50 dark:bg-black/20">
-                      <td colSpan={5} className="p-0 border-t border-b border-slate-200 dark:border-white/10">
-                        <div className="p-3.5 sm:px-5 sm:py-3.5">
-                          <div className="border border-slate-200 dark:border-white/10 rounded-md overflow-hidden bg-white dark:bg-[#0B1120] shadow-2xs">
+                    <tr className="bg-slate-50/60 dark:bg-[#131720]">
+                      <td
+                        colSpan={5}
+                        className="p-0 border-t border-b border-slate-200 dark:border-slate-800"
+                      >
+                        <div className="p-3.5 sm:px-5 sm:py-4">
+                          <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-[#161B26]">
                             <table className="w-full text-left border-collapse">
                               <thead>
-                                <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                                  <th className="py-2.5 px-3.5">Policy & Insurer</th>
-                                  <th className="py-2.5 px-3.5">Holder & Covered</th>
+                                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-[#1C2230] text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                  <th className="py-2.5 px-3.5">
+                                    Insurer & Policy #
+                                  </th>
+                                  <th className="py-2.5 px-3.5">
+                                    Holder & Covered
+                                  </th>
                                   <th className="py-2.5 px-3.5">
                                     {group.id === "INVESTMENT_PENSION"
                                       ? "Units & NAV"
                                       : group.id === "HEALTH"
-                                      ? "TPA & Bonus NCB"
-                                      : group.id === "MOTOR_GENERAL"
-                                      ? "Vehicle & Model"
-                                      : "Tax Section"}
+                                        ? "TPA & Bonus"
+                                        : group.id === "MOTOR_GENERAL"
+                                          ? "Vehicle"
+                                          : "Tax Section"}
                                   </th>
                                   <th className="py-2.5 px-3.5 text-right">
-                                    {group.id === "INVESTMENT_PENSION" ? "Valuation" : "Sum Insured"}
+                                    {group.id === "INVESTMENT_PENSION"
+                                      ? "Fund Value"
+                                      : "Sum Insured"}
                                   </th>
-                                  <th className="py-2.5 px-3.5 text-right">Premium</th>
-                                  <th className="py-2.5 px-3.5">Renewal Due</th>
-                                  <th className="py-2.5 px-3.5 text-center">Status</th>
-                                  <th className="py-2.5 px-3.5 text-right">Actions</th>
+                                  <th className="py-2.5 px-3.5 text-right">
+                                    Premium
+                                  </th>
+                                  <th className="py-2.5 px-3.5">Next Due</th>
+                                  <th className="py-2.5 px-3.5 text-center">
+                                    Status
+                                  </th>
+                                  <th className="py-2.5 px-3.5 text-right">
+                                    Actions
+                                  </th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-xs font-medium">
+                              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs font-medium">
                                 {group.items.map((p) => {
                                   const isDueSoon = p.isDueSoon;
 
@@ -182,29 +202,30 @@ const NestedPolicyLedger = ({
                                       key={p._id}
                                       className="hover:bg-slate-50/80 dark:hover:bg-white/[0.02] transition-colors"
                                     >
-                                      {/* Policy & Insurer */}
+                                      {/* Insurer & Policy # */}
                                       <td className="py-3 px-3.5">
                                         <div className="flex flex-col min-w-0">
                                           <span className="font-bold text-slate-900 dark:text-white truncate">
                                             {p.providerName}
                                           </span>
-                                          <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 font-bold">
+                                          <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
                                             {p.policyNumber}
                                           </span>
-                                          <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase mt-0.5">
-                                            {p.planName || p.policyType.replace(/_/g, " ")}
+                                          <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-300 mt-0.5">
+                                            {p.planName ||
+                                              p.policyType.replace(/_/g, " ")}
                                           </span>
                                         </div>
                                       </td>
 
-                                      {/* Holder & Members */}
+                                      {/* Holder & Covered */}
                                       <td className="py-3 px-3.5">
                                         <div className="flex flex-col">
-                                          <span className="font-bold text-slate-900 dark:text-slate-100">
+                                          <span className="font-semibold text-slate-900 dark:text-slate-100">
                                             {p.policyHolder}
                                           </span>
                                           {p.insuredPersons?.length > 0 && (
-                                            <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                                            <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                                               <Users size={11} />
                                               {p.insuredPersons
                                                 .map((m) => m.name)
@@ -215,31 +236,49 @@ const NestedPolicyLedger = ({
                                         </div>
                                       </td>
 
-                                      {/* Details Column */}
+                                      {/* Plan Specifics */}
                                       <td className="py-3 px-3.5">
                                         {group.id === "INVESTMENT_PENSION" && (
                                           <div className="flex flex-col text-[11px]">
-                                            {p.investmentDetails?.unitsHeld > 0 ? (
-                                              <span className="font-mono text-slate-800 dark:text-slate-200 font-bold">
-                                                {p.investmentDetails.unitsHeld} Units @ ₹{p.investmentDetails.latestNav || 0}
+                                            {p.investmentDetails?.unitsHeld >
+                                            0 ? (
+                                              <span className="font-mono text-slate-800 dark:text-slate-200 font-semibold">
+                                                {p.investmentDetails.unitsHeld}{" "}
+                                                units @ ₹
+                                                {p.investmentDetails
+                                                  .latestNav || 0}
                                               </span>
                                             ) : (
-                                              <span className="text-slate-400">Regular Plan</span>
+                                              <span className="text-slate-400">
+                                                Regular Plan
+                                              </span>
                                             )}
-                                            <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-400 uppercase">
-                                              Invested: {formatCurrency(p.investmentDetails?.totalInvestedTillDate)}
+                                            <span className="text-[10px] font-semibold text-cyan-700 dark:text-cyan-300">
+                                              Invested:{" "}
+                                              {formatCurrency(
+                                                p.investmentDetails
+                                                  ?.totalInvestedTillDate
+                                              )}
                                             </span>
                                           </div>
                                         )}
 
                                         {group.id === "HEALTH" && (
                                           <div className="flex flex-col text-[11px]">
-                                            <span className="text-slate-800 dark:text-slate-200 font-bold">
-                                              TPA: {p.healthDetails?.tpaName || "Direct / In-House"}
+                                            <span className="text-slate-800 dark:text-slate-200 font-semibold">
+                                              TPA:{" "}
+                                              {p.healthDetails?.tpaName ||
+                                                "Direct"}
                                             </span>
-                                            {p.healthDetails?.cumulativeBonusNCB > 0 && (
-                                              <span className="text-[10px] font-bold text-teal-700 dark:text-teal-400 uppercase">
-                                                +{formatCurrency(p.healthDetails.cumulativeBonusNCB)} NCB Bonus
+                                            {p.healthDetails
+                                              ?.cumulativeBonusNCB > 0 && (
+                                              <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-300">
+                                                +
+                                                {formatCurrency(
+                                                  p.healthDetails
+                                                    .cumulativeBonusNCB
+                                                )}{" "}
+                                                Bonus
                                               </span>
                                             )}
                                           </div>
@@ -248,71 +287,80 @@ const NestedPolicyLedger = ({
                                         {group.id === "MOTOR_GENERAL" && (
                                           <div className="flex flex-col text-[11px]">
                                             <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
-                                              {p.motorDetails?.vehicleNumber || "No Reg #"}
+                                              {p.motorDetails?.vehicleNumber ||
+                                                "No Reg #"}
                                             </span>
                                             <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                                              {p.motorDetails?.makeModel || "Vehicle"}
+                                              {p.motorDetails?.makeModel ||
+                                                "Vehicle"}
                                             </span>
                                           </div>
                                         )}
 
                                         {group.id === "LIFE_TERM" && (
-                                          <span className="text-[11px] text-slate-700 dark:text-slate-300 font-bold">
-                                            Section {p.taxBenefitSection || "80C"} Benefit
+                                          <span className="text-[11px] text-slate-700 dark:text-slate-300 font-semibold">
+                                            Section{" "}
+                                            {p.taxBenefitSection || "80C"}
                                           </span>
                                         )}
                                       </td>
 
                                       {/* Valuation / Sum Assured */}
-                                      <td className="py-3 px-3.5 text-right">
+                                      <td className="py-3 px-3.5 text-right tabular-nums">
                                         {group.id === "INVESTMENT_PENSION" ? (
-                                          <div className="flex flex-col items-end">
-                                            <span className="font-black font-mono text-indigo-700 dark:text-indigo-400 text-sm">
-                                              {formatCurrency(p.investmentDetails?.currentValuation || p.sumAssured)}
-                                            </span>
-                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                                              Fund Value
-                                            </span>
-                                          </div>
+                                          <span className="font-bold font-mono text-cyan-700 dark:text-cyan-300 text-sm">
+                                            {formatCurrency(
+                                              p.investmentDetails
+                                                ?.currentValuation ||
+                                                p.sumAssured
+                                            )}
+                                          </span>
                                         ) : (
-                                          <div className="flex flex-col items-end">
-                                            <span className="font-black font-mono text-slate-900 dark:text-white text-sm">
-                                              {p.sumAssured ? formatCurrency(p.sumAssured) : "—"}
-                                            </span>
-                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                                              Sum Insured
-                                            </span>
-                                          </div>
+                                          <span className="font-bold font-mono text-slate-900 dark:text-white text-sm">
+                                            {p.sumAssured
+                                              ? formatCurrency(p.sumAssured)
+                                              : "—"}
+                                          </span>
                                         )}
                                       </td>
 
                                       {/* Premium */}
-                                      <td className="py-3 px-3.5 text-right">
+                                      <td className="py-3 px-3.5 text-right tabular-nums">
                                         <div className="flex flex-col items-end">
                                           <span className="font-bold font-mono text-slate-900 dark:text-white">
                                             {formatCurrency(p.premiumAmount)}
                                           </span>
-                                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                            {p.premiumFrequency.replace(/_/g, " ")} • {p.premiumPayingTermYears || 1}y PPT
+                                          <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 capitalize">
+                                            {p.premiumFrequency
+                                              .toLowerCase()
+                                              .replace(/_/g, " ")}{" "}
+                                            • {p.premiumPayingTermYears || 1}y
+                                            PPT
                                           </span>
                                         </div>
                                       </td>
 
-                                      {/* Renewal Due */}
+                                      {/* Next Due */}
                                       <td className="py-3 px-3.5">
                                         <div className="flex items-center gap-1.5">
                                           <Calendar
                                             size={13}
-                                            className={isDueSoon ? "text-amber-600" : "text-slate-400"}
+                                            className={
+                                              isDueSoon
+                                                ? "text-amber-500"
+                                                : "text-slate-400"
+                                            }
                                           />
                                           <span
-                                            className={`font-bold font-mono ${
+                                            className={`font-semibold font-mono ${
                                               isDueSoon
-                                                ? "text-amber-700 dark:text-amber-400"
+                                                ? "text-amber-600 dark:text-amber-400"
                                                 : "text-slate-800 dark:text-slate-200"
                                             }`}
                                           >
-                                            {new Date(p.nextDueDate).toLocaleDateString("en-IN", {
+                                            {new Date(
+                                              p.nextDueDate
+                                            ).toLocaleDateString("en-IN", {
                                               day: "2-digit",
                                               month: "short",
                                               year: "numeric",
@@ -324,7 +372,7 @@ const NestedPolicyLedger = ({
                                       {/* Status */}
                                       <td className="py-3 px-3.5 text-center">
                                         <span
-                                          className={`inline-block px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-sm border ${getStatusBadge(
+                                          className={`inline-block px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded border ${getStatusBadge(
                                             p.status
                                           )}`}
                                         >
@@ -338,7 +386,7 @@ const NestedPolicyLedger = ({
                                           <button
                                             type="button"
                                             onClick={() => onEditPolicy(p)}
-                                            className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-sm transition-colors cursor-pointer"
+                                            className="p-1.5 text-slate-500 hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-500/10 rounded transition-colors cursor-pointer"
                                             title="Edit Policy"
                                           >
                                             <Edit2 size={13} />
@@ -346,7 +394,7 @@ const NestedPolicyLedger = ({
                                           <button
                                             type="button"
                                             onClick={() => onDeletePolicy(p)}
-                                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-sm transition-colors cursor-pointer"
+                                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded transition-colors cursor-pointer"
                                             title="Delete Policy"
                                           >
                                             <Trash2 size={13} />

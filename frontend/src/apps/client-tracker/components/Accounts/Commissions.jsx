@@ -9,13 +9,13 @@ import {
   Building2,
   Calendar,
   Layers,
-  Sparkles,
   ChevronLeft,
   ChevronRight,
   Scale,
 } from "lucide-react";
 import { toast } from "sonner";
 
+import TabHeader from "../../../../shared/components/TabHeader";
 import ARNSelectorStrip from "./Commissions/ARNSelectorStrip";
 import CommissionForm from "./Commissions/CommissionForm";
 import WorkspaceAnalytics from "./Commissions/WorkspaceAnalytics";
@@ -51,7 +51,6 @@ const Commissions = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Fiscal Year Stepper Handlers
   const handlePrevYear = () => {
     const currentIndex = availableYears.indexOf(selectedFY);
     if (currentIndex > 0) {
@@ -67,9 +66,9 @@ const Commissions = () => {
   };
 
   const isFirstYear = availableYears.indexOf(selectedFY) === 0;
-  const isLastYear = availableYears.indexOf(selectedFY) === availableYears.length - 1;
+  const isLastYear =
+    availableYears.indexOf(selectedFY) === availableYears.length - 1;
 
-  // Main Data Fetch
   const fetchMasterData = useCallback(
     async (isSilent = false) => {
       if (isSilent) setRefreshing(true);
@@ -153,11 +152,12 @@ const Commissions = () => {
 
   if (isInitialLoad && apiLoading) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 bg-transparent">
-        <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border-2 border-emerald-300 dark:border-emerald-500/30 flex items-center justify-center shadow-lg">
-          <Loader2 className="animate-spin text-emerald-600 dark:text-emerald-400" size={32} />
-        </div>
-        <p className="text-base sm:text-lg font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 font-mono">
+      <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
+        <Loader2
+          className="animate-spin text-sky-600 dark:text-sky-400"
+          size={26}
+        />
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
           Loading commission ledger...
         </p>
       </div>
@@ -165,144 +165,121 @@ const Commissions = () => {
   }
 
   return (
-    <div className="w-full space-y-8 animate-in fade-in duration-300">
-      {/* 1. TOP HEADER STRIP */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-2">
-        <div className="flex flex-col gap-2 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/80 dark:border-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
-              <Sparkles size={14} className="text-emerald-500" />
-              Commission Hub
-            </span>
-          </div>
+    <div className="w-full space-y-6 animate-in fade-in duration-300">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+        .sora-font {
+          font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+      `}</style>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-[1000] uppercase tracking-tight bg-linear-to-r from-slate-900 via-slate-800 to-emerald-700 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent leading-none">
-            Commissions & Payouts
-          </h1>
+      {/* 1. SUBORDINATE TAB HEADER WITH FISCAL YEAR & SYNC CONTROLS */}
+      <TabHeader
+        kicker="Trail & Brokerage Payouts"
+        title="Commissions &"
+        accent="Payouts"
+        description="Track mutual fund brokerage, compare entity yields, and audit monthly payouts across AMCs."
+        actions={
+          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+            {/* Fiscal Year Stepper */}
+            <div className="flex items-center bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800 rounded-lg p-1">
+              <button
+                type="button"
+                onClick={handlePrevYear}
+                disabled={isFirstYear || refreshing}
+                className={`p-1.5 rounded-md text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1C2230] transition-colors cursor-pointer ${
+                  isFirstYear ? "opacity-30 cursor-not-allowed" : ""
+                }`}
+                title="Previous Fiscal Year"
+              >
+                <ChevronLeft size={16} strokeWidth={2.2} />
+              </button>
 
-          <p className="text-sm sm:text-base font-medium text-slate-500 dark:text-slate-400">
-            Reconcile mutual fund brokerage, inspect entity metrics, and compare month-over-month variances across AMCs.
-          </p>
-        </div>
+              <div className="flex items-center gap-2 px-3 py-1 text-xs sm:text-sm font-bold text-slate-900 dark:text-white font-mono select-none">
+                <Calendar
+                  size={14}
+                  className="text-sky-600 dark:text-sky-400"
+                />
+                <span>FY {selectedFY}</span>
+              </div>
 
-        {/* Global Controls */}
-        <div className="flex items-center gap-4 self-start lg:self-auto shrink-0">
-          <div className="flex items-center bg-white dark:bg-[#0B1120] border-2 border-slate-200 dark:border-white/10 rounded-xl p-1.5 shadow-sm">
-            <button
-              onClick={handlePrevYear}
-              disabled={isFirstYear || refreshing}
-              className={`p-2.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all cursor-pointer ${
-                isFirstYear ? "opacity-25 cursor-not-allowed" : "active:scale-95"
-              }`}
-              title="Previous Fiscal Year"
-            >
-              <ChevronLeft size={20} strokeWidth={2.5} />
-            </button>
-
-            <div className="flex items-center gap-2.5 px-4 py-1 text-base sm:text-lg font-black text-slate-900 dark:text-white font-mono select-none tracking-tight">
-              <Calendar size={18} className="text-emerald-600 dark:text-emerald-400" />
-              <span>FY {selectedFY}</span>
+              <button
+                type="button"
+                onClick={handleNextYear}
+                disabled={isLastYear || refreshing}
+                className={`p-1.5 rounded-md text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1C2230] transition-colors cursor-pointer ${
+                  isLastYear ? "opacity-30 cursor-not-allowed" : ""
+                }`}
+                title="Next Fiscal Year"
+              >
+                <ChevronRight size={16} strokeWidth={2.2} />
+              </button>
             </div>
 
+            {/* Sync Button */}
             <button
-              onClick={handleNextYear}
-              disabled={isLastYear || refreshing}
-              className={`p-2.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all cursor-pointer ${
-                isLastYear ? "opacity-25 cursor-not-allowed" : "active:scale-95"
+              type="button"
+              onClick={() => fetchMasterData(true)}
+              disabled={refreshing}
+              className={`inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#161B26] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-sky-500/50 hover:text-sky-600 dark:hover:text-sky-300 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                refreshing ? "opacity-70 cursor-not-allowed" : ""
               }`}
-              title="Next Fiscal Year"
+              title="Refresh commission records"
             >
-              <ChevronRight size={20} strokeWidth={2.5} />
+              <RefreshCcw
+                size={14}
+                className={
+                  refreshing
+                    ? "animate-spin text-sky-500"
+                    : "text-slate-500 dark:text-slate-400"
+                }
+              />
+              <span>{refreshing ? "Syncing..." : "Sync Feed"}</span>
             </button>
           </div>
+        }
+      />
 
+      {/* 2. SUB-VIEW TAB NAVIGATION STRIP */}
+      <div className="w-full border-b border-slate-200 dark:border-slate-800/80">
+        <nav className="flex items-center gap-7 -mb-px overflow-x-auto no-scrollbar">
           <button
-            onClick={() => fetchMasterData(true)}
-            disabled={refreshing}
-            className={`inline-flex items-center gap-2.5 px-5 py-3.5 bg-white dark:bg-[#0B1120] text-slate-800 dark:text-slate-200 border-2 border-slate-200 dark:border-white/10 hover:border-emerald-500/50 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl text-sm font-black shadow-sm transition-all cursor-pointer ${
-              refreshing ? "opacity-70 cursor-not-allowed" : "active:scale-95"
-            }`}
-            title="Refresh records from ledger"
-          >
-            <RefreshCcw
-              size={18}
-              className={
-                refreshing ? "animate-spin text-emerald-500" : "text-slate-500 dark:text-slate-400"
-              }
-            />
-            <span className="font-bold uppercase tracking-wider">
-              {refreshing ? "Syncing..." : "Sync Feed"}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* 2. TAB NAVIGATION STRIP */}
-      <div className="w-full border-b-2 border-slate-200/80 dark:border-white/10">
-        <nav className="flex items-center gap-10 -mb-0.5">
-          <button
+            type="button"
             onClick={() => setViewMode("overview")}
-            className={`group flex items-center gap-3 pb-4 text-sm sm:text-base font-bold uppercase tracking-wider transition-all relative outline-none cursor-pointer ${
+            className={`flex items-center gap-2 pb-3 text-xs sm:text-sm font-semibold transition-colors relative outline-none cursor-pointer whitespace-nowrap border-b-2 ${
               viewMode === "overview"
-                ? "text-slate-950 dark:text-white"
-                : "text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                ? "border-sky-600 dark:border-sky-400 text-sky-600 dark:text-sky-300"
+                : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Layers
-              size={20}
-              strokeWidth={viewMode === "overview" ? 2.5 : 2}
-              className={
-                viewMode === "overview" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"
-              }
-            />
+            <Layers size={16} />
             <span>Firmwide Overview</span>
-            {viewMode === "overview" && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.75 bg-emerald-600 dark:bg-emerald-400 rounded-full animate-in fade-in duration-200" />
-            )}
           </button>
 
           <button
+            type="button"
             onClick={() => setViewMode("workspaces")}
-            className={`group flex items-center gap-3 pb-4 text-sm sm:text-base font-bold uppercase tracking-wider transition-all relative outline-none cursor-pointer ${
+            className={`flex items-center gap-2 pb-3 text-xs sm:text-sm font-semibold transition-colors relative outline-none cursor-pointer whitespace-nowrap border-b-2 ${
               viewMode === "workspaces"
-                ? "text-slate-950 dark:text-white"
-                : "text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                ? "border-sky-600 dark:border-sky-400 text-sky-600 dark:text-sky-300"
+                : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Building2
-              size={20}
-              strokeWidth={viewMode === "workspaces" ? 2.5 : 2}
-              className={
-                viewMode === "workspaces" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"
-              }
-            />
+            <Building2 size={16} />
             <span>ARN Workspaces</span>
-            {viewMode === "workspaces" && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.75 bg-emerald-600 dark:bg-emerald-400 rounded-full animate-in fade-in duration-200" />
-            )}
           </button>
 
           <button
+            type="button"
             onClick={() => setViewMode("reconciliation")}
-            className={`group flex items-center gap-3 pb-4 text-sm sm:text-base font-bold uppercase tracking-wider transition-all relative outline-none cursor-pointer ${
+            className={`flex items-center gap-2 pb-3 text-xs sm:text-sm font-semibold transition-colors relative outline-none cursor-pointer whitespace-nowrap border-b-2 ${
               viewMode === "reconciliation"
-                ? "text-slate-950 dark:text-white"
-                : "text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                ? "border-sky-600 dark:border-sky-400 text-sky-600 dark:text-sky-300"
+                : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Scale
-              size={20}
-              strokeWidth={viewMode === "reconciliation" ? 2.5 : 2}
-              className={
-                viewMode === "reconciliation"
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-slate-400"
-              }
-            />
+            <Scale size={16} />
             <span>AMC Reconciliation</span>
-            {viewMode === "reconciliation" && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.75 bg-emerald-600 dark:bg-emerald-400 rounded-full animate-in fade-in duration-200" />
-            )}
           </button>
         </nav>
       </div>
@@ -323,16 +300,19 @@ const Commissions = () => {
         {/* MODE B: ARN WORKSPACES */}
         {viewMode === "workspaces" && (
           <section className="w-full space-y-6 animate-in fade-in duration-200">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between px-1">
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between px-0.5">
                 <div className="flex items-center gap-2">
-                  <Building2 size={18} className="text-emerald-600 dark:text-emerald-400" />
-                  <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                    Select ARN Workspace ({nonDummyArns.length} Active)
-                  </h2>
+                  <Building2
+                    size={15}
+                    className="text-sky-600 dark:text-sky-400"
+                  />
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Select ARN ({nonDummyArns.length} Active)
+                  </h3>
                 </div>
                 {selectedARN && (
-                  <span className="text-xs sm:text-sm font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                  <span className="text-xs font-mono font-semibold text-sky-600 dark:text-sky-300">
                     Active: {selectedARN.nickname || selectedARN.name}
                   </span>
                 )}
@@ -348,44 +328,46 @@ const Commissions = () => {
             </div>
 
             {selectedARN ? (
-              <div className="bg-white dark:bg-[#0B1120] border-2 border-slate-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden">
-                <div className="p-6 bg-slate-50/70 dark:bg-white/2 border-b-2 border-slate-200 dark:border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                      <BookUser size={28} strokeWidth={2.2} />
+              <div className="bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg overflow-hidden">
+                <div className="p-5 bg-slate-50/70 dark:bg-[#1C2230]/60 border-b border-slate-200 dark:border-slate-800/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-11 h-11 rounded-lg bg-sky-50 dark:bg-sky-500/10 border border-sky-200/70 dark:border-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+                      <BookUser size={22} strokeWidth={2} />
                     </div>
                     <div className="min-w-0 flex flex-col">
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-2xl font-[1000] text-slate-900 dark:text-white uppercase tracking-tight truncate">
+                      <div className="flex items-center gap-2.5">
+                        <h3 className="sora-font text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight truncate">
                           {selectedARN.nickname}
                         </h3>
-                        <span className="px-3 py-1 rounded-md text-xs font-mono font-black bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-white/10">
+                        <span className="px-2 py-0.5 rounded text-xs font-mono font-semibold bg-white dark:bg-[#131720] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                           {selectedARN.name}
                         </span>
                       </div>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 font-semibold mt-1">
-                        Performance analytics and monthly commission history for FY {selectedFY}
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        Performance summary and monthly payouts for FY{" "}
+                        {selectedFY}
                       </p>
                     </div>
                   </div>
 
                   <button
+                    type="button"
                     onClick={() => setIsFormOpen(true)}
-                    className="w-full md:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-black uppercase tracking-wider shadow-md hover:shadow-emerald-600/20 active:scale-[0.98] transition-all cursor-pointer shrink-0"
+                    className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer shrink-0 active:scale-[0.99]"
                   >
-                    <Plus size={20} strokeWidth={2.5} />
+                    <Plus size={16} strokeWidth={2.5} />
                     <span>Log Monthly Commission</span>
-                    <ArrowRight size={18} strokeWidth={2.5} />
+                    <ArrowRight size={15} strokeWidth={2.2} />
                   </button>
                 </div>
 
-                <div className="p-6 sm:p-8 space-y-8">
+                <div className="p-5 sm:p-6 space-y-6">
                   <WorkspaceAnalytics
                     key={`analytics-${selectedARN.id}-${selectedFY}`}
                     arnId={selectedARN.id}
                     fiscalYear={selectedFY}
                   />
-                  <div className="border-t border-slate-200 dark:border-white/10" />
+                  <div className="border-t border-slate-200 dark:border-slate-800/80" />
                   <WorkspaceHistory
                     key={`history-${selectedARN.id}-${selectedFY}`}
                     arnId={selectedARN.id}
@@ -394,20 +376,23 @@ const Commissions = () => {
                 </div>
               </div>
             ) : (
-              <div className="p-16 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl text-center bg-white dark:bg-[#0B1120]">
-                <LayoutDashboard className="mx-auto text-slate-400 mb-3" size={36} />
-                <p className="text-base font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 font-mono">
+              <div className="p-14 border border-dashed border-slate-200 dark:border-slate-800 rounded-lg text-center bg-white dark:bg-[#161B26]">
+                <LayoutDashboard
+                  className="mx-auto text-slate-400 mb-2.5"
+                  size={28}
+                />
+                <p className="sora-font text-sm font-bold text-slate-800 dark:text-slate-200">
                   No ARN Selected
                 </p>
-                <p className="text-sm text-slate-400 mt-1 font-medium">
-                  Please select an ARN card above to inspect its metrics.
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Select an ARN card above to view its commission records.
                 </p>
               </div>
             )}
           </section>
         )}
 
-        {/* MODE C: DEDICATED RECONCILIATION TAB COMPONENT */}
+        {/* MODE C: AMC RECONCILIATION */}
         {viewMode === "reconciliation" && (
           <AmcReconciliationTab selectedFY={selectedFY} />
         )}
@@ -421,7 +406,9 @@ const Commissions = () => {
           arnName={selectedARN.nickname}
           arnNickname={selectedARN.name}
           arnId={selectedARN.id}
-          amcList={arns.find((a) => a._id === selectedARN.id)?.allowedAmcs || []}
+          amcList={
+            arns.find((a) => a._id === selectedARN.id)?.allowedAmcs || []
+          }
           onSave={handleSaveCommission}
           saving={apiLoading}
         />

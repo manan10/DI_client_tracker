@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useApi } from "../../../../shared/hooks/useApi";
+import TabHeader from "../../../../shared/components/TabHeader";
 import Logo from "../../../../assets/logo_nobrand.png";
 import { RISK_QUESTIONS, UI_LABELS } from "./riskProfiler/riskQuestions";
 import { calculateRiskAssessment } from "./riskProfiler/riskScoringEngine";
@@ -33,29 +34,21 @@ const LANGUAGES = [
 const RiskProfiler = () => {
   const { request } = useApi();
 
-  // Explicit View Modes:
-  // "hub"     -> Opening screen (Investor Setup + Remote Submissions Ledger)
-  // "quiz"    -> In-person 10-question assessment
-  // "result"  -> In-person assessment result report
-  // "inspect" -> Dedicated read-only audit screen (used for both Remote Submissions & Saved CRM Reports)
   const [view, setView] = useState("hub");
   const [lang, setLang] = useState("en");
   const [answers, setAnswers] = useState({});
 
-  // Unified Investor Input State
   const [clients, setClients] = useState([]);
   const [investorInput, setInvestorInput] = useState("");
   const [selectedClient, setSelectedClient] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Remote Client Link & Read-Only Inspection State
   const [invites, setInvites] = useState([]);
   const [loadingInvites, setLoadingInvites] = useState(false);
   const [generatingLink, setGeneratingLink] = useState(false);
   const [inspectedRecord, setInspectedRecord] = useState(null);
   const [ledgerFilter, setLedgerFilter] = useState("all");
 
-  // Save State
   const [isSaving, setIsSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
 
@@ -126,13 +119,11 @@ const RiskProfiler = () => {
     [invites]
   );
 
-  // Assessment computed for active in-person quiz/result
   const assessment = useMemo(
     () => calculateRiskAssessment(answers, lang),
     [answers, lang]
   );
 
-  // Assessment computed specifically for the inspected read-only record
   const inspectedAssessment = useMemo(() => {
     if (!inspectedRecord?.resultSnapshot?.answers) return null;
     return calculateRiskAssessment(inspectedRecord.resultSnapshot.answers, lang);
@@ -188,7 +179,6 @@ const RiskProfiler = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Opens an existing saved CRM client assessment in the read-only Inspector
   const handleViewSavedClientReport = () => {
     if (!hasSavedClientAnswers || !selectedClient) return;
 
@@ -214,7 +204,6 @@ const RiskProfiler = () => {
       return;
     }
 
-    // Open blank tab synchronously during the click event so browser pop-up blockers allow it
     const waWindow = openWhatsapp ? window.open("", "_blank") : null;
     if (waWindow) {
       waWindow.document.write(
@@ -245,7 +234,6 @@ const RiskProfiler = () => {
       }
       setLedgerFilter("pending");
 
-      // Best-effort clipboard copy (isolated so permission denial never blocks WhatsApp)
       try {
         if (navigator.clipboard?.writeText) {
           await navigator.clipboard.writeText(shareUrl);
@@ -288,7 +276,6 @@ const RiskProfiler = () => {
     }
   };
 
-  // Opens a remote client submission in the read-only Inspector
   const handleInspectInvite = (inv) => {
     if (!inv?.resultSnapshot?.answers) {
       toast.error("No answers found on this submission.");
@@ -677,64 +664,55 @@ const RiskProfiler = () => {
         }
       `}</style>
 
-      {/* Clean Top Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-700/80">
-        {view === "hub" ? (
-          <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-              SEBI Risk Suitability Profiler
-            </h2>
-            <div className="flex items-center gap-1 mt-1 mb-1">
-              <span className="h-[2px] w-4 rounded-full bg-sky-600 dark:bg-sky-400" />
-              <span className="h-[2px] w-1.5 rounded-full bg-sky-500/60 dark:bg-sky-400/60" />
-              <span className="h-[2px] w-1 rounded-full bg-cyan-400/60 dark:bg-cyan-300/50" />
-            </div>
-            <p className="text-xs font-normal text-slate-500 dark:text-slate-300/80">
-              Assess an investor in office or manage remote client links
-            </p>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={handleReturnToHub}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#232B3D] text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-            <span>
-              {view === "inspect"
-                ? inspectedRecord?.source === "crm"
-                  ? "Back to Risk Profiler"
-                  : "Back to Submissions"
-                : "Back to Risk Profiler"}
-            </span>
-          </button>
-        )}
+      {/* SUBORDINATE TAB HEADER */}
+      <TabHeader
+        kicker="SEBI Suitability Profiling"
+        title="Risk"
+        accent="Profiler"
+        description="Assess an investor in office or send and review remote self-assessment links."
+        actions={
+          <div className="flex flex-wrap items-center gap-2.5">
+            {view !== "hub" && (
+              <button
+                type="button"
+                onClick={handleReturnToHub}
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#232B3D] text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                <span>
+                  {view === "inspect" && inspectedRecord?.source !== "crm"
+                    ? "Back to Submissions"
+                    : "Back to Risk Profiler"}
+                </span>
+              </button>
+            )}
 
-        {/* Language Switcher */}
-        <div className="inline-flex items-center rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#232B3D] p-0.5 ml-auto">
-          {LANGUAGES.map((item) => (
-            <button
-              key={item.code}
-              type="button"
-              onClick={() => setLang(item.code)}
-              className={`px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
-                lang === item.code
-                  ? "bg-sky-600 dark:bg-sky-500 text-white"
-                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </div>
+            {/* Language Switcher */}
+            <div className="inline-flex items-center rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#232B3D] p-0.5">
+              {LANGUAGES.map((item) => (
+                <button
+                  key={item.code}
+                  type="button"
+                  onClick={() => setLang(item.code)}
+                  className={`px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                    lang === item.code
+                      ? "bg-sky-600 dark:bg-sky-500 text-white"
+                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        }
+      />
 
       {/* ===================================================================== */}
       {/* VIEW 1: HUB (INVESTOR SETUP + REMOTE SUBMISSIONS LEDGER)              */}
       {/* ===================================================================== */}
       {view === "hub" && (
         <div className="animate-in fade-in duration-200 space-y-6">
-          {/* Inbox Alert if unreviewed submissions exist */}
           {unreviewedCount > 0 && (
             <div className="p-3.5 rounded-md bg-sky-50/90 dark:bg-sky-500/15 border border-sky-300 dark:border-sky-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 text-xs font-medium text-sky-950 dark:text-sky-100">
@@ -846,7 +824,6 @@ const RiskProfiler = () => {
                 )}
               </div>
 
-              {/* Saved Assessment Quick-View Strip (Opens Read-Only Inspector) */}
               {selectedClient && hasSavedClientAnswers && (
                 <div className="p-3 rounded-md bg-slate-50 dark:bg-[#1B2230] border border-slate-200 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-200">
@@ -874,7 +851,6 @@ const RiskProfiler = () => {
               )}
             </div>
 
-            {/* In-Person Start CTA */}
             <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <p className="text-xs text-slate-500 dark:text-slate-300/80">
                 Conduct live in office, or send an online self-assessment link below.
@@ -893,7 +869,6 @@ const RiskProfiler = () => {
               </button>
             </div>
 
-            {/* Remote Client Link Generator */}
             <div className="pt-5 border-t border-slate-200 dark:border-slate-700/80 space-y-3">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300/80 block">
                 Client Not in Office? Send Online Assessment Link

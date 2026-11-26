@@ -1,96 +1,48 @@
-import React, { useState } from "react";
-import { Share2, UserPlus, CalendarCheck, Sparkles, Megaphone } from "lucide-react";
-
-const MARKETING_MODES = [
-  {
-    id: "referral",
-    name: "Referral Outreach",
-    description: "Warm WhatsApp templates to request introductions from happy clients.",
-    icon: UserPlus,
-  },
-  {
-    id: "review",
-    name: "Portfolio Review Invite",
-    description: "Re-engagement pitches for dormant investors or annual checkups.",
-    icon: CalendarCheck,
-  },
-  {
-    id: "awareness",
-    name: "Investor Awareness",
-    description: "SIP discipline, market dip reassurance, and FD-to-MF broadcast notes.",
-    icon: Sparkles,
-  },
-  {
-    id: "proposal",
-    name: "Quick Pitch Builder",
-    description: "Branded Dalal Investments summary note for new prospects.",
-    icon: Share2,
-  },
-];
+import React from "react";
+import { Megaphone, Clock } from "lucide-react";
+import TabHeader from "../../../../shared/components/TabHeader";
 
 const MarketingHub = () => {
-  const [selectedCategory, setSelectedCategory] = useState("referral");
-
-  const activeCategory =
-    MARKETING_MODES.find((m) => m.id === selectedCategory) || MARKETING_MODES[0];
-
   return (
-    <div className="space-y-6">
-      {/* CATEGORY SELECTOR BAR */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {MARKETING_MODES.map((item) => {
-          const Icon = item.icon;
-          const isSelected = selectedCategory === item.id;
+    <div className="space-y-6 animate-in fade-in duration-300">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+        .sora-font {
+          font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+      `}</style>
 
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setSelectedCategory(item.id)}
-              className={`p-4 rounded-xl border text-left transition-all cursor-pointer outline-none flex flex-col gap-2 ${
-                isSelected
-                  ? "bg-white dark:bg-[#0B1120] border-emerald-500 dark:border-emerald-400 shadow-xs ring-1 ring-emerald-500/20"
-                  : "bg-white/60 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <Icon
-                  size={16}
-                  strokeWidth={2.2}
-                  className={
-                    isSelected
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-slate-400"
-                  }
-                />
-                {isSelected && (
-                  <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-                    Active
-                  </span>
-                )}
-              </div>
+      {/* SUBORDINATE TAB HEADER */}
+      <TabHeader
+        kicker="Client Outreach & Templates"
+        title="Marketing"
+        accent="Hub"
+        description="Ready-to-send WhatsApp templates, portfolio review invites, and investor awareness notes."
+      />
 
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                {item.name}
-              </h3>
-            </button>
-          );
-        })}
-      </div>
+      {/* COMING SOON WORKSPACE STAGE */}
+      <div className="relative bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg p-8 sm:p-14 overflow-hidden">
+        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-sky-600 via-cyan-400 to-transparent" />
 
-      {/* MARKETING WORKSPACE STAGE */}
-      <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl p-8 sm:p-12 shadow-xs">
-        <div className="max-w-md mx-auto text-center py-8 space-y-3">
-          <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+        <div className="max-w-md mx-auto text-center py-8 sm:py-12 space-y-4">
+          <div className="w-11 h-11 rounded-lg bg-sky-50 dark:bg-sky-500/10 border border-sky-200/70 dark:border-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center mx-auto">
             <Megaphone size={20} strokeWidth={2} />
           </div>
 
-          <h2 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">
-            {activeCategory.name}
-          </h2>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-sky-50 dark:bg-sky-500/10 border border-sky-200/70 dark:border-sky-500/25 text-[11px] font-mono font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300">
+            <Clock size={12} />
+            <span>Coming Soon</span>
+          </div>
 
-          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            {activeCategory.description}
+          <h3 className="sora-font text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+            Outreach Studio{" "}
+            <span className="font-normal text-sky-600 dark:text-sky-300">
+              In Development
+            </span>
+          </h3>
+
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+            Client referral templates, annual portfolio review invites, and branded WhatsApp broadcast notes are being prepared for this module.
           </p>
         </div>
       </div>

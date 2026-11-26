@@ -19,18 +19,18 @@ const Tools = () => {
       icon: Calculator,
     },
     {
-      id: "marketing",
-      name: "Marketing & Pitch",
-      mobileName: "Marketing",
-      subtitle: "WhatsApp Client Creatives",
-      icon: Megaphone,
-    },
-    {
       id: "risk-profiler",
       name: "Risk Profiler",
       mobileName: "Risk Profile",
       subtitle: "SEBI Suitability & Audit",
       icon: ShieldCheck,
+    },
+    {
+      id: "marketing",
+      name: "Marketing & Pitch",
+      mobileName: "Marketing",
+      subtitle: "WhatsApp Client Creatives",
+      icon: Megaphone,
     },
   ];
 

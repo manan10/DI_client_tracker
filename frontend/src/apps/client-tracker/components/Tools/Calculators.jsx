@@ -25,11 +25,11 @@ import {
   Search,
   Sparkles,
   ArrowLeft,
-  Calculator,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import Logo from "../../../../assets/logo_nobrand.png";
+import TabHeader from "../../../../shared/components/TabHeader";
 import { useApi } from "../../../../shared/hooks/useApi";
 import { generateBrandedPngCard } from "./calculators/exportBrandedCard";
 import { formatINRCompact } from "./calculators/mathUtils";
@@ -254,7 +254,6 @@ const READY_CALCULATORS = [
 ];
 
 const Calculators = () => {
-  // Used on Mobile/Tablet (< lg) to toggle between Tile Directory and Active Calculator
   const [mobileHubView, setMobileHubView] = useState(true);
   const [hubSearch, setHubSearch] = useState("");
   const [selectedMode, setSelectedMode] = useState("sip");
@@ -685,7 +684,7 @@ const Calculators = () => {
   }, [hubSearch]);
 
   return (
-    <div className="calculators-sora-root w-full">
+    <div className="calculators-sora-root w-full space-y-6">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap');
         .calculators-sora-root,
@@ -703,14 +702,19 @@ const Calculators = () => {
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
-      {/* ===================================================================== */}
-      {/* MOBILE / TABLET (< lg): 2-STEP TILE DIRECTORY                         */}
-      {/* ===================================================================== */}
-      {mobileHubView && (
-        <div className="lg:hidden space-y-7">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="relative w-full sm:w-72 shrink-0">
-              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+      {/* SUBORDINATE TAB HEADER */}
+      <TabHeader
+        kicker="Client Planning & Modeling"
+        title="Financial"
+        accent="Calculators"
+        description="Run SIP, SWP, STP, goal planning, loan EMI, and tax projections with instant WhatsApp, PNG, and PDF exports."
+        actions={
+          mobileHubView ? (
+            <div className="relative w-full sm:w-72 lg:hidden">
+              <Search
+                size={14}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+              />
               <input
                 type="text"
                 value={hubSearch}
@@ -728,8 +732,15 @@ const Calculators = () => {
                 </button>
               )}
             </div>
-          </div>
+          ) : null
+        }
+      />
 
+      {/* ===================================================================== */}
+      {/* MOBILE / TABLET (< lg): 2-STEP TILE DIRECTORY                         */}
+      {/* ===================================================================== */}
+      {mobileHubView && (
+        <div className="lg:hidden space-y-7">
           {SIDEBAR_GROUPS.map((group) => {
             const items = filteredCatalog.filter((c) => c.category === group.id);
             if (items.length === 0) return null;
@@ -837,7 +848,6 @@ const Calculators = () => {
         <div className="flex-1 min-w-0 w-full bg-transparent lg:bg-white dark:lg:bg-[#1B2230] border-0 lg:border border-slate-200 dark:border-slate-700/80 rounded-none lg:rounded-lg p-0 lg:p-6 shadow-none lg:shadow-2xs space-y-5 sm:space-y-6">
           {/* UNIFIED HEADER: BACK ICON (< lg) + TITLE + LANGUAGE + CRM CLIENT + EXPORT BUTTONS */}
           <div className="space-y-3.5 pb-4 sm:pb-5 border-b border-slate-200 dark:border-slate-700/80">
-            {/* Row 1: Back Icon (< lg) / Calculator Icon (>= lg) + Title on Left | Action Buttons on Right */}
             <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
               <div className="flex items-center justify-between gap-2.5">
                 <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
@@ -858,18 +868,10 @@ const Calculators = () => {
                   </div>
 
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight truncate">
-                        {currentCalcObj.name}
-                      </h2>
-                    </div>
-                    {/* Segmented Sky Micro-Ticks (matching PageHeader) */}
-                    <div className="flex items-center gap-1 mt-1 mb-1">
-                      <span className="h-[2px] w-4 rounded-full bg-sky-600 dark:bg-sky-400" />
-                      <span className="h-[2px] w-1.5 rounded-full bg-sky-500/60 dark:bg-sky-400/60" />
-                      <span className="h-[2px] w-1 rounded-full bg-cyan-400/60 dark:bg-cyan-300/50" />
-                    </div>
-                    <p className="text-[11px] sm:text-xs font-normal text-slate-500 dark:text-slate-300 line-clamp-1">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight truncate">
+                      {currentCalcObj.name}
+                    </h3>
+                    <p className="text-[11px] sm:text-xs font-normal text-slate-500 dark:text-slate-300 line-clamp-1 mt-0.5">
                       {currentCalcObj.subtitle}
                     </p>
                   </div>

@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import TabHeader from "../../../../shared/components/TabHeader";
 import { useApi } from "../../../../shared/hooks/useApi";
 import { tallyTemplates } from "../../utils/tallyTemplates";
 import AuditWizard from "./AuditManager/AuditWizard";
@@ -92,7 +93,7 @@ const AuditManager = () => {
       setIsTallyOnline(false);
       setActiveFirms([]);
     }
-  }, []);
+  }, [request]);
 
   const fetchMasterData = useCallback(async () => {
     try {
@@ -101,7 +102,7 @@ const AuditManager = () => {
     } catch {
       // Silent catch
     }
-  }, []);
+  }, [request]);
 
   const refreshData = useCallback(async () => {
     try {
@@ -112,9 +113,8 @@ const AuditManager = () => {
     } catch (err) {
       console.error("Error refreshing data", err);
     }
-  }, [checkConnection, fetchMasterData]);
+  }, [request, checkConnection, fetchMasterData]);
 
-  // STABLE: Run once on component mount only
   const hasMounted = useRef(false);
   useEffect(() => {
     if (!hasMounted.current) {
@@ -125,7 +125,7 @@ const AuditManager = () => {
       checkConnection();
     }, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshData, checkConnection]);
 
   const confirmDeleteAudit = async () => {
     if (!auditToDelete) return;
@@ -134,9 +134,9 @@ const AuditManager = () => {
       const res = await request(`/audit/${auditToDelete}`, "DELETE");
       if (res?.success) {
         setAudits((prev) => prev.filter((a) => a._id !== auditToDelete));
-        toast.success("Company dossier deleted successfully.");
+        toast.success("Batch deleted successfully.");
       } else {
-        toast.error("Failed to delete dossier.");
+        toast.error("Failed to delete batch.");
       }
     } catch (err) {
       console.error("Delete Audit Error:", err);
@@ -232,7 +232,6 @@ const AuditManager = () => {
             /<COUNTRY(?:NAME|OFRESIDENCE)[^>]*>(.*?)<\/COUNTRY(?:NAME|OFRESIDENCE)>/i,
           );
 
-          // 1. Root-level GSTIN extraction
           const rootGstinMatch =
             block.match(/<PARTYGSTIN[^>]*>(.*?)<\/PARTYGSTIN>/i) ||
             block.match(/<GSTIN[^>]*>(.*?)<\/GSTIN>/i);
@@ -240,7 +239,6 @@ const AuditManager = () => {
             ? tallyTemplates.unescapeXml(rootGstinMatch[1]).trim()
             : "";
 
-          // 2. Sub-collection fallback (TallyPrime 3.0+ multi-GST effective registrations)
           if (!gstin) {
             const nestedGstinMatch =
               block.match(
@@ -257,7 +255,6 @@ const AuditManager = () => {
             }
           }
 
-          // 3. GST Registration Type
           const regTypeMatch =
             block.match(
               /<GSTREGISTRATIONTYPE[^>]*>(.*?)<\/GSTREGISTRATIONTYPE>/i,
@@ -345,96 +342,108 @@ const AuditManager = () => {
       <style
         dangerouslySetInnerHTML={{
           __html: `
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+        .sora-font {
+          font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `,
         }}
       />
 
-      <div className="w-full flex flex-col font-sans text-left min-w-0">
-        {/* TOP COMMAND STRIP & WORKSPACE HEADER */}
-        <header className="w-full pb-6 pt-2 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0 border-b border-slate-200/80 dark:border-white/10">
-          <div className="space-y-2 min-w-0">
-            <div className="flex flex-wrap items-center gap-3">
+      <div className="w-full flex flex-col text-left min-w-0 space-y-6 animate-in fade-in duration-300">
+        {/* SUBORDINATE TAB HEADER WITH BRIDGE STATUS & START CTA */}
+        <TabHeader
+          kicker="Voucher & Ledger Sync"
+          title="Tally"
+          accent="Zone"
+          description="Sync Tally master ledgers, map bank statements, and push reconciled vouchers directly to Tally."
+          actions={
+            <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+              {/* Bridge Status Badge */}
               <div
-                className={`px-3 py-1 rounded-md flex items-center gap-2 border text-xs font-bold transition-all shadow-sm ${
+                className={`px-3 py-1.5 rounded-md flex items-center gap-2 border text-xs font-semibold transition-colors ${
                   isTallyOnline
-                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
-                    : "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400"
+                    ? "bg-sky-50 dark:bg-sky-500/10 border-sky-200/80 dark:border-sky-500/25 text-sky-700 dark:text-sky-300"
+                    : "bg-rose-50 dark:bg-rose-500/10 border-rose-200/80 dark:border-rose-500/25 text-rose-700 dark:text-rose-300"
                 }`}
               >
                 <span className="relative flex h-2 w-2">
                   {isTallyOnline && (
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
                   )}
                   <span
-                    className={`relative inline-flex rounded-full h-2 w-2 ${isTallyOnline ? "bg-emerald-500" : "bg-rose-500"}`}
+                    className={`relative inline-flex rounded-full h-2 w-2 ${
+                      isTallyOnline ? "bg-sky-500" : "bg-rose-500"
+                    }`}
                   />
                 </span>
-                <span className="text-[10px] font-black uppercase tracking-wider">
-                  {isTallyOnline ? "Tally Bridge Online" : "Bridge Offline"}
+                <span className="text-[11px] font-mono font-semibold uppercase tracking-wider">
+                  {isTallyOnline ? "Bridge Online" : "Bridge Offline"}
                 </span>
               </div>
 
+              {/* Refresh Button */}
               <button
+                type="button"
                 onClick={refreshData}
                 disabled={syncState.isSyncing}
-                className="group flex items-center gap-1.5 px-3 py-1 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-800/40 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500/30 transition-all disabled:opacity-40 cursor-pointer"
+                className="group inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#161B26] text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-300 hover:border-sky-500/40 transition-colors disabled:opacity-40 cursor-pointer"
               >
                 <RefreshCw
-                  size={12}
-                  className={`${syncState.isSyncing ? "animate-spin" : "group-active:rotate-180 transition-transform duration-500"}`}
+                  size={13}
+                  className={`${
+                    syncState.isSyncing
+                      ? "animate-spin text-sky-500"
+                      : "group-active:rotate-180 transition-transform duration-500"
+                  }`}
                 />
-                Refresh
+                <span>Refresh</span>
+              </button>
+
+              {/* Start New Batch CTA */}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelection({
+                    ...selection,
+                    isFreshStart: true,
+                    tallyCompanyName: null,
+                    audit: null,
+                  });
+                  setIsWizardOpen(true);
+                }}
+                className="w-full sm:w-auto bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-lg font-semibold text-xs tracking-wide transition-all active:scale-[0.99] flex justify-center items-center gap-1.5 shrink-0 cursor-pointer"
+              >
+                <Plus size={15} strokeWidth={2.5} />
+                <span>Start New Batch</span>
               </button>
             </div>
-
-            <div className="flex items-baseline gap-2">
-              <h1 className="text-xl md:text-3xl uppercase font-1000 tracking-tight bg-linear-to-r from-slate-900 via-slate-800 to-emerald-500 dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent">
-                Tally Automation Zone
-              </h1>
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 hidden sm:inline">
-                • Tally Batch Processing and Reconciliation Engine
-              </span>
-            </div>
-          </div>
-
-          <button
-            onClick={() => {
-              setSelection({
-                ...selection,
-                isFreshStart: true,
-                tallyCompanyName: null,
-                audit: null,
-              });
-              setIsWizardOpen(true);
-            }}
-            className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all shadow-md shadow-emerald-500/20 active:scale-98 flex justify-center items-center gap-2 shrink-0 cursor-pointer"
-          >
-            <Plus size={16} strokeWidth={2.5} /> Start New Batch
-          </button>
-        </header>
+          }
+        />
 
         {/* WORKSPACE CONTENT GRID */}
-        <div className="flex flex-col lg:flex-row gap-6 pt-6 min-w-0">
-          {/* MOBILE BRIDGE INTELLIGENCE STRIP */}
-          <div className="lg:hidden w-full bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/10 rounded-xl p-4 flex flex-col gap-3 shrink-0">
+        <div className="flex flex-col lg:flex-row gap-6 min-w-0">
+          {/* MOBILE BRIDGE ENTITIES STRIP */}
+          <div className="lg:hidden w-full bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg p-4 flex flex-col gap-3 shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CloudSync
-                  size={14}
-                  className="text-emerald-600 dark:text-emerald-400"
+                  size={15}
+                  className="text-sky-600 dark:text-sky-400"
                 />
-                <h2 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-                  Live Bridge Entities
+                <h2 className="sora-font text-xs font-bold text-slate-900 dark:text-white">
+                  Open Tally Companies
                 </h2>
               </div>
               <button
+                type="button"
                 onClick={() => handleSync(null)}
                 disabled={!isTallyOnline || activeFirms.length === 0}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm shadow-emerald-500/20 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-md text-xs font-semibold active:scale-95 disabled:opacity-50 transition-colors cursor-pointer"
               >
-                <CloudSync size={12} /> Sync All
+                <CloudSync size={13} /> Sync All
               </button>
             </div>
 
@@ -443,20 +452,21 @@ const AuditManager = () => {
                 activeFirms.map((firm, idx) => (
                   <div
                     key={idx}
-                    className="p-3 bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 rounded-lg shadow-xs flex items-center justify-between gap-2 overflow-hidden"
+                    className="p-3 bg-slate-50/70 dark:bg-[#131720] border border-slate-200/80 dark:border-slate-800 rounded-md flex items-center justify-between gap-2 overflow-hidden"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <Building2
                         size={14}
-                        className="text-emerald-600 dark:text-emerald-400 shrink-0"
+                        className="text-sky-600 dark:text-sky-400 shrink-0"
                       />
-                      <p className="text-xs font-black text-slate-900 dark:text-white uppercase truncate">
+                      <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
                         {firm}
                       </p>
                     </div>
                     <button
+                      type="button"
                       onClick={() => handleSync(firm)}
-                      className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/20 transition-colors shrink-0 cursor-pointer"
+                      className="p-1.5 rounded bg-white dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-300 transition-colors shrink-0 cursor-pointer"
                       title={`Sync ${firm}`}
                     >
                       <RefreshCw size={12} />
@@ -464,9 +474,9 @@ const AuditManager = () => {
                   </div>
                 ))
               ) : (
-                <div className="col-span-full py-4 text-center border border-dashed border-slate-300 dark:border-white/10 rounded-lg">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    No active entities detected in Tally
+                <div className="col-span-full py-4 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-md">
+                  <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                    No open companies detected in Tally
                   </p>
                 </div>
               )}
@@ -474,23 +484,24 @@ const AuditManager = () => {
           </div>
 
           {/* DESKTOP SIDEBAR */}
-          <aside className="w-80 shrink-0 hidden lg:flex flex-col gap-5">
-            <div className="p-4 bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/10 rounded-xl space-y-4 shadow-xs">
-              <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 pb-3">
+          <aside className="w-80 shrink-0 hidden lg:flex flex-col gap-4">
+            <div className="p-4 bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="space-y-0.5">
-                  <h2 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-                    Bridge Intelligence
+                  <span className="text-[10px] font-mono font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-wider block">
+                    Tally Bridge
+                  </span>
+                  <h2 className="sora-font text-xs font-bold text-slate-900 dark:text-white">
+                    Open Companies
                   </h2>
-                  <p className="text-xs font-bold text-slate-900 dark:text-white">
-                    Active Tally Entities
-                  </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => handleSync(null)}
                   disabled={!isTallyOnline || activeFirms.length === 0}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-[10px] font-black uppercase tracking-wider transition-all shadow-sm shadow-emerald-500/20 active:scale-95 flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-md text-xs font-semibold transition-colors active:scale-95 flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                 >
-                  <CloudSync size={12} /> Sync All
+                  <CloudSync size={13} /> Sync All
                 </button>
               </div>
 
@@ -499,97 +510,102 @@ const AuditManager = () => {
                   activeFirms.map((firm, idx) => (
                     <div
                       key={idx}
-                      className="group p-3 bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 rounded-lg shadow-xs hover:border-emerald-500/40 transition-all space-y-2"
+                      className="group p-3 bg-slate-50/70 dark:bg-[#131720] border border-slate-200/80 dark:border-slate-800 rounded-md hover:border-sky-500/40 transition-colors space-y-2"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <Building2
                             size={14}
-                            className="text-emerald-600 dark:text-emerald-400 shrink-0"
+                            className="text-sky-600 dark:text-sky-400 shrink-0"
                           />
-                          <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[9px] font-black uppercase tracking-wider">
+                          <span className="px-1.5 py-0.5 rounded bg-sky-50 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-200/70 dark:border-sky-500/25 text-[10px] font-mono font-semibold uppercase">
                             Live
                           </span>
                         </div>
 
                         <button
+                          type="button"
                           onClick={() => handleSync(firm)}
-                          className="p-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/20 transition-all cursor-pointer"
+                          className="p-1.5 rounded bg-white dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-300 transition-colors cursor-pointer"
                           title={`Sync ${firm} Ledgers`}
                         >
                           <RefreshCw size={11} />
                         </button>
                       </div>
-                      <p className="text-xs font-black text-slate-900 dark:text-white uppercase truncate">
+                      <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
                         {firm}
                       </p>
-                      <div className="h-px bg-slate-100 dark:bg-white/5 w-full" />
-                      <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                        Tally Connected
+                      <div className="h-px bg-slate-200/60 dark:bg-slate-800 w-full" />
+                      <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        Connected to Tally
                       </p>
                     </div>
                   ))
                 ) : (
-                  <div className="py-8 px-4 text-center border border-dashed border-slate-300 dark:border-white/10 rounded-lg">
+                  <div className="py-8 px-4 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-md">
                     <WifiOff
                       size={20}
                       className="mx-auto mb-2 text-slate-400 opacity-60"
                     />
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Bridge Offline • Open Tally
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                      Bridge offline — open Tally to connect
                     </p>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="p-4 bg-slate-900 text-white rounded-xl space-y-2 border border-slate-800 shadow-md">
+            <div className="p-4 bg-white dark:bg-[#161B26] rounded-lg space-y-2 border border-slate-200 dark:border-slate-800/80">
               <div className="flex items-center gap-2">
-                <ShieldCheck size={14} className="text-emerald-400" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
-                  Auditor Protocol
+                <ShieldCheck
+                  size={15}
+                  className="text-sky-600 dark:text-sky-400"
+                />
+                <span className="sora-font text-xs font-bold text-slate-900 dark:text-white">
+                  Sync Checklist
                 </span>
               </div>
-              <p className="text-[11px] font-medium text-slate-300 leading-relaxed">
-                Ensure all bank statements are synchronized with the active
-                Tally master ledgers before triggering export files.
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Sync Tally master ledgers before mapping bank statements so new party accounts are matched automatically.
               </p>
             </div>
           </aside>
 
-          {/* MAIN DOSSIER WORKBENCH */}
+          {/* MAIN BATCH WORKBENCH */}
           <section className="flex-1 flex flex-col min-w-0 space-y-4">
-            <div className="p-3 bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/10 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-              <div className="flex p-1 bg-slate-200/70 dark:bg-slate-900/60 rounded-lg w-full sm:w-auto">
+            <div className="p-3 bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex p-1 bg-slate-100 dark:bg-[#131720] rounded-md w-full sm:w-auto border border-slate-200/70 dark:border-slate-800">
                 <button
+                  type="button"
                   onClick={() => setActiveTab("current")}
-                  className={`flex-1 sm:flex-none text-center px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer ${
+                  className={`flex-1 sm:flex-none text-center px-4 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer ${
                     activeTab === "current"
-                      ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                      ? "bg-white dark:bg-[#1C2230] text-sky-600 dark:text-sky-300 shadow-2xs"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
-                  Incomplete (
+                  In Progress (
                   {audits.filter((a) => a.status === "DRAFT").length})
                 </button>
                 <button
+                  type="button"
                   onClick={() => setActiveTab("history")}
-                  className={`flex-1 sm:flex-none text-center px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer ${
+                  className={`flex-1 sm:flex-none text-center px-4 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer ${
                     activeTab === "history"
-                      ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                      ? "bg-white dark:bg-[#1C2230] text-sky-600 dark:text-sky-300 shadow-2xs"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
-                  Archives (
+                  Completed (
                   {audits.filter((a) => a.status === "EXPORTED").length})
                 </button>
               </div>
 
               <div className="flex items-center justify-between sm:justify-end gap-2 px-1 text-right">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Master Sync:
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  Last Ledger Sync:
                 </span>
-                <span className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight">
+                <span className="text-xs font-mono font-semibold text-slate-800 dark:text-slate-200">
                   {lastGlobalSync}
                 </span>
               </div>
@@ -597,20 +613,20 @@ const AuditManager = () => {
 
             {displayAudits.length > 0 ? (
               <>
-                <div className="hidden lg:block w-full overflow-hidden bg-white/40 dark:bg-slate-900/40 border border-slate-200/80 dark:border-white/10 rounded-xl shadow-xs">
+                <div className="hidden lg:block w-full overflow-hidden bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg">
                   <table className="w-full text-left border-collapse table-fixed">
                     <thead>
-                      <tr className="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-white/10 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-                        <th className="px-5 py-3.5 w-1/2">Company Scope</th>
+                      <tr className="bg-slate-50/90 dark:bg-[#1C2230] border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        <th className="px-5 py-3.5 w-1/2">Company & Period</th>
                         <th className="px-5 py-3.5 text-center w-1/4">
-                          Status Stage
+                          Current Stage
                         </th>
                         <th className="px-5 py-3.5 text-right w-1/4">
                           Actions
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                       {displayAudits.map((audit) => (
                         <AuditTableRow
                           key={audit._id}
@@ -665,17 +681,17 @@ const AuditManager = () => {
                 </div>
               </>
             ) : (
-              <div className="h-56 flex flex-col items-center justify-center border-2 border-dashed border-slate-200/80 dark:border-white/10 rounded-xl bg-slate-50/30 dark:bg-slate-900/20 text-slate-400">
+              <div className="h-56 flex flex-col items-center justify-center border border-dashed border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-[#161B26] text-slate-400">
                 <Inbox
-                  size={36}
-                  strokeWidth={1.5}
-                  className="mb-2 opacity-50"
+                  size={32}
+                  strokeWidth={1.6}
+                  className="mb-2 opacity-60"
                 />
-                <p className="text-xs font-black uppercase tracking-widest">
-                  Workspace Clear
+                <p className="sora-font text-xs font-bold text-slate-700 dark:text-slate-200">
+                  No Batches Here
                 </p>
-                <p className="text-[11px] font-medium text-slate-400 mt-0.5">
-                  No dossiers found for this status view.
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Click Start New Batch above to begin reconciling statements.
                 </p>
               </div>
             )}
@@ -684,51 +700,49 @@ const AuditManager = () => {
 
         {/* SYNC MODAL OVERLAY */}
         {syncState.isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl space-y-6 text-center">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 dark:bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="w-full max-w-lg bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800 rounded-lg p-6 md:p-7 shadow-2xl space-y-5 text-center">
               <div className="relative inline-flex mx-auto">
                 {syncState.isComplete ? (
-                  <div className="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30 animate-in zoom-in">
-                    <Check size={28} strokeWidth={3} />
+                  <div className="w-12 h-12 rounded-lg bg-sky-600 flex items-center justify-center text-white animate-in zoom-in">
+                    <Check size={24} strokeWidth={2.5} />
                   </div>
                 ) : (
-                  <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 border border-emerald-500/20">
+                  <div className="w-12 h-12 rounded-lg bg-sky-50 dark:bg-sky-500/10 flex items-center justify-center text-sky-600 dark:text-sky-400 border border-sky-200/70 dark:border-sky-500/20">
                     <RefreshCw
                       className="animate-spin"
-                      size={28}
+                      size={24}
                       strokeWidth={2}
                     />
                   </div>
                 )}
               </div>
 
-              <div className="space-y-1.5">
-                <h3 className="text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white">
+              <div className="space-y-1">
+                <h3 className="sora-font text-base sm:text-lg font-bold text-slate-900 dark:text-white">
                   {syncState.isComplete
-                    ? "Sync Completed"
-                    : "Synchronizing Tally Masters"}
+                    ? "Ledger Sync Complete"
+                    : "Syncing Tally Ledgers"}
                 </h3>
-                <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider truncate px-4">
+                <p className="text-xs font-semibold text-sky-600 dark:text-sky-300 truncate px-4">
                   {syncState.isComplete
-                    ? "Bridge operations reconciled successfully"
-                    : `Processing: ${syncState.currentFirm || "Connecting..."}`}
+                    ? "All accounts updated successfully"
+                    : `Syncing: ${syncState.currentFirm || "Connecting..."}`}
                 </p>
               </div>
 
-              {/* Progress Bar */}
-              <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-slate-100 dark:bg-[#131720] rounded-md overflow-hidden">
                 <div
-                  className="h-full bg-emerald-500 transition-all duration-500 ease-out"
+                  className="h-full bg-sky-600 transition-all duration-500 ease-out"
                   style={{ width: `${syncState.progress}%` }}
                 />
               </div>
 
-              {/* Logs Viewport */}
-              <div className="max-h-36 overflow-y-auto space-y-1.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-white/5 text-left custom-scroll">
+              <div className="max-h-36 overflow-y-auto space-y-1.5 p-3 rounded-md bg-slate-50 dark:bg-[#131720] border border-slate-200/80 dark:border-slate-800 text-left custom-scroll">
                 {syncState.logs.map((log, i) => (
                   <p
                     key={i}
-                    className="text-[11px] font-mono text-slate-600 dark:text-slate-300 leading-tight"
+                    className="text-xs font-mono text-slate-600 dark:text-slate-300 leading-snug"
                   >
                     • {log}
                   </p>
@@ -736,6 +750,7 @@ const AuditManager = () => {
               </div>
 
               <button
+                type="button"
                 onClick={() =>
                   setSyncState({
                     isOpen: false,
@@ -747,13 +762,13 @@ const AuditManager = () => {
                   })
                 }
                 disabled={!syncState.isComplete}
-                className={`w-full py-2.5 rounded-lg font-bold uppercase text-xs tracking-wider transition-all shadow-sm ${
+                className={`w-full py-2.5 rounded-lg font-semibold text-xs tracking-wide transition-colors ${
                   syncState.isComplete
-                    ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-emerald-600 dark:hover:bg-emerald-400 hover:text-white cursor-pointer"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed"
+                    ? "bg-sky-600 hover:bg-sky-500 text-white cursor-pointer"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed"
                 }`}
               >
-                {syncState.isComplete ? "Done" : "Sync In Progress..."}
+                {syncState.isComplete ? "Done" : "Syncing..."}
               </button>
             </div>
           </div>
@@ -761,32 +776,33 @@ const AuditManager = () => {
 
         {/* CUSTOM DELETE CONFIRMATION MODAL */}
         {auditToDelete && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 space-y-4">
-              <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center border border-rose-200 dark:border-rose-500/20 text-rose-500">
-                <AlertTriangle size={18} strokeWidth={2.5} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 dark:bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800 rounded-lg p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 space-y-4">
+              <div className="w-10 h-10 rounded-lg bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center border border-rose-200/80 dark:border-rose-500/25 text-rose-600 dark:text-rose-400">
+                <AlertTriangle size={18} strokeWidth={2.2} />
               </div>
 
               <div className="space-y-1">
-                <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                <h3 className="sora-font text-base font-bold text-slate-900 dark:text-white">
                   Delete Batch
                 </h3>
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Are you sure you want to permanently delete this batch? This
-                  will discard all staged data for this month.
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Are you sure you want to delete this batch? All uploaded statement entries for this month will be removed.
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 pt-2">
+              <div className="flex items-center gap-2.5 pt-2">
                 <button
+                  type="button"
                   onClick={() => setAuditToDelete(null)}
-                  className="flex-1 py-2.5 px-4 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 px-4 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-[#1C2230] hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={confirmDeleteAudit}
-                  className="flex-1 py-2.5 px-4 rounded-lg text-xs font-bold uppercase tracking-wider text-white bg-rose-600 hover:bg-rose-500 shadow-sm shadow-rose-600/20 transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 px-4 rounded-lg text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500 transition-colors cursor-pointer"
                 >
                   Delete
                 </button>
@@ -831,18 +847,18 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
       return {
         label: "Step 6: Exported",
         color:
-          "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20",
+          "bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-200/80 dark:border-sky-500/25",
       };
     if (bankSummaries.length > 0)
       return {
-        label: "Step 3-5: Matrix Verification",
+        label: "Steps 3–5: Mapping & GST",
         color:
-          "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20",
+          "bg-cyan-50 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-200/80 dark:border-cyan-500/25",
       };
     return {
-      label: "Step 2: Ingestion Staging",
+      label: "Step 2: Upload Statements",
       color:
-        "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20",
+        "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/25",
     };
   };
 
@@ -852,20 +868,21 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
     <React.Fragment>
       <tr
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`group transition-all cursor-pointer ${
+        className={`group transition-colors cursor-pointer ${
           isExpanded
-            ? "bg-slate-50/80 dark:bg-slate-800/40"
-            : "hover:bg-slate-50/50 dark:hover:bg-slate-800/20"
+            ? "bg-sky-50/40 dark:bg-sky-500/[0.04]"
+            : "hover:bg-slate-50/80 dark:hover:bg-white/[0.02]"
         }`}
       >
         <td className="px-5 py-3.5">
           <div className="flex items-center gap-3 min-w-0">
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsExpanded(!isExpanded);
               }}
-              className="p-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0"
+              className="p-1 rounded bg-slate-100 dark:bg-[#1C2230] text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0"
             >
               {isExpanded ? (
                 <ChevronDown size={14} />
@@ -874,15 +891,17 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
               )}
             </button>
             <div
-              className={`w-1 h-8 rounded-full shrink-0 ${isDraft ? "bg-amber-400" : "bg-emerald-500"}`}
+              className={`w-1 h-7 rounded-xs shrink-0 ${
+                isDraft ? "bg-amber-400" : "bg-sky-500"
+              }`}
             />
             <div className="min-w-0">
-              <h3 className="text-xs font-black uppercase text-slate-900 dark:text-white tracking-tight truncate">
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
                 {audit?.tallyCompanyName ||
                   audit?.clientName ||
-                  "Client Accounts A/C"}
+                  "Client Accounts"}
               </h3>
-              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide truncate">
+              <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
                 Period: {audit?.month || 1}/{audit?.year || 2026} •{" "}
                 {bankSummaries.length} Bank Account(s)
               </p>
@@ -892,7 +911,7 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
 
         <td className="px-5 py-3.5 text-center">
           <span
-            className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${stage.color}`}
+            className={`inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-semibold ${stage.color}`}
           >
             {stage.label}
           </span>
@@ -901,27 +920,29 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
         <td className="px-5 py-3.5 text-right">
           <div className="flex items-center justify-end gap-2 shrink-0">
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
               }}
               title="Delete Batch"
-              className="p-2 rounded-lg border border-slate-200 dark:border-white/10 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:border-rose-300 dark:hover:border-rose-500/30 transition-all cursor-pointer"
+              className="p-2 rounded-md border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:border-rose-200 dark:hover:border-rose-500/30 transition-colors cursor-pointer"
             >
               <Trash2 size={14} />
             </button>
 
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onAction();
               }}
-              className={`px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider transition-all shadow-xs active:scale-95 shrink-0 cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-md flex items-center gap-1.5 font-semibold text-xs transition-all active:scale-95 shrink-0 cursor-pointer ${
                 isDraft
                   ? isOnline
-                    ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-emerald-600 dark:hover:bg-emerald-400 hover:text-white"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
-                  : "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100"
+                    ? "bg-sky-600 hover:bg-sky-500 text-white"
+                    : "bg-slate-100 dark:bg-[#1C2230] text-slate-400 cursor-not-allowed"
+                  : "bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-200/80 dark:border-sky-500/25"
               }`}
             >
               {isDraft ? (
@@ -947,19 +968,19 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
         <tr>
           <td
             colSpan="3"
-            className="p-0 bg-slate-50/50 dark:bg-slate-900/30 border-t border-b border-slate-200/80 dark:border-white/5"
+            className="p-0 bg-slate-50/70 dark:bg-[#131720] border-t border-b border-slate-200/80 dark:border-slate-800"
           >
             <div className="p-4 animate-in fade-in duration-200">
               {bankSummaries.length > 0 ? (
-                <div className="border border-slate-200 dark:border-white/10 rounded-lg overflow-hidden bg-white dark:bg-slate-900 shadow-xs">
+                <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-[#161B26]">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-white/10 text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-                        <th className="px-3.5 py-2.5">Bank Ledger Account</th>
+                      <tr className="bg-slate-50/90 dark:bg-[#1C2230] border-b border-slate-200 dark:border-slate-800 text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        <th className="px-3.5 py-2.5">Bank Account</th>
                         <th className="px-3.5 py-2.5 text-right">Receipts</th>
                         <th className="px-3.5 py-2.5 text-right">Sales</th>
                         <th className="px-3.5 py-2.5 text-right">Payments</th>
-                        <th className="px-3.5 py-2.5 text-right text-emerald-700 dark:text-emerald-400">
+                        <th className="px-3.5 py-2.5 text-right text-sky-700 dark:text-sky-300">
                           Total Inflow
                         </th>
                         <th className="px-3.5 py-2.5 text-right text-rose-700 dark:text-rose-400">
@@ -967,25 +988,25 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                       {bankSummaries.map((bank, i) => (
                         <tr
                           key={i}
-                          className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors"
+                          className="hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors"
                         >
-                          <td className="px-3.5 py-2 text-xs font-bold uppercase text-slate-800 dark:text-slate-200">
+                          <td className="px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200">
                             {bank.tallyLedgerName}
                           </td>
-                          <td className="px-3.5 py-2 text-right text-xs font-mono font-semibold text-slate-600 dark:text-slate-400">
+                          <td className="px-3.5 py-2 text-right text-xs font-mono font-medium text-slate-600 dark:text-slate-400">
                             {bank.receiptCount || 0}
                           </td>
-                          <td className="px-3.5 py-2 text-right text-xs font-mono font-semibold text-indigo-600 dark:text-indigo-400">
+                          <td className="px-3.5 py-2 text-right text-xs font-mono font-medium text-cyan-700 dark:text-cyan-300">
                             {bank.salesCount || 0}
                           </td>
-                          <td className="px-3.5 py-2 text-right text-xs font-mono font-semibold text-slate-600 dark:text-slate-400">
+                          <td className="px-3.5 py-2 text-right text-xs font-mono font-medium text-slate-600 dark:text-slate-400">
                             {bank.paymentCount || 0}
                           </td>
-                          <td className="px-3.5 py-2 text-right text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                          <td className="px-3.5 py-2 text-right text-xs font-mono font-bold text-sky-600 dark:text-sky-300">
                             ₹{formatINRValue(bank.totalReceipts)}
                           </td>
                           <td className="px-3.5 py-2 text-right text-xs font-mono font-bold text-rose-600 dark:text-rose-400">
@@ -995,23 +1016,23 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr className="bg-slate-100/70 dark:bg-slate-800/80 border-t border-slate-200 dark:border-white/10 font-bold">
-                        <td className="px-3.5 py-2 text-[10px] uppercase tracking-wider text-slate-900 dark:text-white">
+                      <tr className="bg-slate-50/90 dark:bg-[#1C2230] border-t border-slate-200 dark:border-slate-800 font-bold">
+                        <td className="px-3.5 py-2 text-[11px] uppercase tracking-wider text-slate-800 dark:text-slate-200">
                           Grand Total
                         </td>
-                        <td className="px-3.5 py-2 text-right text-xs font-mono font-black text-slate-900 dark:text-white">
+                        <td className="px-3.5 py-2 text-right text-xs font-mono font-bold text-slate-900 dark:text-white">
                           {audit?.summary?.receiptCount || 0}
                         </td>
-                        <td className="px-3.5 py-2 text-right text-xs font-mono font-black text-indigo-600 dark:text-indigo-400">
+                        <td className="px-3.5 py-2 text-right text-xs font-mono font-bold text-cyan-700 dark:text-cyan-300">
                           {audit?.summary?.salesCount || 0}
                         </td>
-                        <td className="px-3.5 py-2 text-right text-xs font-mono font-black text-slate-900 dark:text-white">
+                        <td className="px-3.5 py-2 text-right text-xs font-mono font-bold text-slate-900 dark:text-white">
                           {audit?.summary?.paymentCount || 0}
                         </td>
-                        <td className="px-3.5 py-2 text-right text-xs font-mono font-black text-emerald-600 dark:text-emerald-400">
+                        <td className="px-3.5 py-2 text-right text-xs font-mono font-bold text-sky-600 dark:text-sky-300">
                           ₹{formatINRValue(audit?.summary?.totalReceipts)}
                         </td>
-                        <td className="px-3.5 py-2 text-right text-xs font-mono font-black text-rose-600 dark:text-rose-400">
+                        <td className="px-3.5 py-2 text-right text-xs font-mono font-bold text-rose-600 dark:text-rose-400">
                           ₹{formatINRValue(audit?.summary?.totalPayments)}
                         </td>
                       </tr>
@@ -1019,9 +1040,9 @@ const AuditTableRow = ({ audit, onAction, onDelete, isOnline }) => {
                   </table>
                 </div>
               ) : (
-                <div className="w-full p-4 border border-dashed border-slate-200 dark:border-white/10 rounded-lg text-center">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    No bank statement items parsed in this dossier
+                <div className="w-full p-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-lg text-center">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    No bank statements uploaded in this batch yet
                   </p>
                 </div>
               )}
@@ -1051,88 +1072,93 @@ const AuditMobileCard = ({ audit, onAction, onDelete, isOnline }) => {
       return {
         label: "Exported",
         color:
-          "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20",
+          "bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-200/80 dark:border-sky-500/25",
       };
     if (bankSummaries.length > 0)
       return {
-        label: "Matrix Verification",
+        label: "Mapping & GST",
         color:
-          "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20",
+          "bg-cyan-50 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-200/80 dark:border-cyan-500/25",
       };
     return {
-      label: "Ingestion Staging",
+      label: "Upload Statements",
       color:
-        "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20",
+        "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/25",
     };
   };
 
   const stage = getStageDisplay();
 
   return (
-    <div className="bg-white/60 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/10 rounded-xl p-4 shadow-xs space-y-3">
+    <div className="bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg p-4 space-y-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 space-y-1">
           <div className="flex items-center gap-1.5">
             <span
-              className={`w-2 h-2 rounded-full shrink-0 ${isDraft ? "bg-amber-400" : "bg-emerald-500"}`}
+              className={`w-2 h-2 rounded-full shrink-0 ${
+                isDraft ? "bg-amber-400" : "bg-sky-500"
+              }`}
             />
             <span
-              className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${stage.color}`}
+              className={`px-2 py-0.5 rounded text-[10px] font-semibold ${stage.color}`}
             >
               {stage.label}
             </span>
           </div>
-          <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase truncate">
+          <h3 className="sora-font text-sm font-bold text-slate-900 dark:text-white truncate">
             {audit?.tallyCompanyName ||
               audit?.clientName ||
-              "Client Accounts A/C"}
+              "Client Accounts"}
           </h3>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+          <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
             Period: {audit?.month || 1}/{audit?.year || 2026} •{" "}
             {bankSummaries.length} Bank Account(s)
           </p>
         </div>
 
         <button
+          type="button"
           onClick={onDelete}
-          className="p-2 rounded-lg border border-slate-200 dark:border-white/10 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all shrink-0"
+          className="p-2 rounded-md border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors shrink-0 cursor-pointer"
         >
           <Trash2 size={14} />
         </button>
       </div>
 
       <button
+        type="button"
         onClick={onAction}
-        className={`w-full py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-wider transition-all shadow-xs active:scale-98 ${
+        className={`w-full py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 font-semibold text-xs transition-all active:scale-98 cursor-pointer ${
           isDraft
             ? isOnline
-              ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900"
-              : "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
-            : "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30"
+              ? "bg-sky-600 hover:bg-sky-500 text-white"
+              : "bg-slate-100 dark:bg-[#1C2230] text-slate-400 cursor-not-allowed"
+            : "bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-200/80 dark:border-sky-500/25"
         }`}
       >
         {isDraft ? (
           isOnline ? (
             <>
-              <LayoutList size={14} /> Open Dossier <ArrowRight size={14} />
+              <LayoutList size={14} /> Open Batch <ArrowRight size={14} />
             </>
           ) : (
             <>Tally Offline</>
           )
         ) : (
           <>
-            <CheckCircle2 size={14} /> View Exported File
+            <CheckCircle2 size={14} /> Completed
           </>
         )}
       </button>
 
       {bankSummaries.length > 0 && (
-        <div className="pt-1 border-t border-slate-100 dark:border-white/5">
+        <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
           <button
+            type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="w-full flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-slate-500 py-1"
+            className="w-full flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 py-1 cursor-pointer"
           >
-            <span>Breakdown ({bankSummaries.length} Banks)</span>
+            <span>Bank Summary ({bankSummaries.length})</span>
             {isExpanded ? (
               <ChevronDown size={14} />
             ) : (
@@ -1145,21 +1171,21 @@ const AuditMobileCard = ({ audit, onAction, onDelete, isOnline }) => {
               {bankSummaries.map((bank, idx) => (
                 <div
                   key={idx}
-                  className="p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200/60 dark:border-white/5 space-y-1.5"
+                  className="p-2.5 bg-slate-50 dark:bg-[#131720] rounded-md border border-slate-200/70 dark:border-slate-800 space-y-1.5"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black uppercase text-slate-900 dark:text-white truncate">
+                    <span className="text-xs font-semibold text-slate-900 dark:text-white truncate">
                       {bank.tallyLedgerName}
                     </span>
-                    <span className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 font-bold">
+                    <span className="text-[11px] font-mono text-cyan-700 dark:text-cyan-300 font-semibold">
                       {bank.salesCount || 0} Sales
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-xs font-mono pt-1 border-t border-slate-200/50 dark:border-white/5">
-                    <span className="text-emerald-600 font-bold">
+                  <div className="flex items-center justify-between text-xs font-mono pt-1 border-t border-slate-200/60 dark:border-slate-800">
+                    <span className="text-sky-600 dark:text-sky-300 font-bold">
                       In: ₹{formatINRValue(bank.totalReceipts)}
                     </span>
-                    <span className="text-rose-600 font-bold">
+                    <span className="text-rose-600 dark:text-rose-400 font-bold">
                       Out: ₹{formatINRValue(bank.totalPayments)}
                     </span>
                   </div>

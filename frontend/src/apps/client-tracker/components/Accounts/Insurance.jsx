@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { useApi } from "../../../../shared/hooks/useApi";
+import TabHeader from "../../../../shared/components/TabHeader";
 
 import PolicyModal from "./Insurance/PolicyModal";
 import InsuranceExecutiveKPIs from "./Insurance/InsuranceExecutiveKPIs";
@@ -42,7 +44,7 @@ const Insurance = () => {
       }
     } catch (err) {
       console.error("Failed to load insurance records", err);
-      toast.error("Failed to fetch insurance portfolio");
+      toast.error("Failed to fetch insurance policies");
     } finally {
       setLoading(false);
     }
@@ -77,6 +79,68 @@ const Insurance = () => {
     );
   }, [policies, selectedPerson]);
 
+  // Dynamically compute KPI stats for the selected person (or use server stats for ALL)
+  const displayStats = useMemo(() => {
+    if (selectedPerson === "ALL") {
+      return stats;
+    }
+
+    const activeList = personFilteredPolicies.filter(
+      (p) => p.status === "ACTIVE" || p.status === "GRACE_PERIOD"
+    );
+
+    const totalPureRiskCover = personFilteredPolicies
+      .filter(
+        (p) =>
+          p.policyType === "LIFE_TERM" || p.policyType?.startsWith("HEALTH")
+      )
+      .reduce((sum, p) => sum + (p.sumAssured || 0), 0);
+
+    const totalInvestmentValuation = personFilteredPolicies
+      .filter((p) =>
+        ["LIFE_ULIP", "PENSION_NPS", "LIFE_ENDOWMENT"].includes(p.policyType)
+      )
+      .reduce(
+        (sum, p) =>
+          sum + (p.investmentDetails?.currentValuation || p.sumAssured || 0),
+        0
+      );
+
+    const annualizedPremium = activeList.reduce((sum, p) => {
+      const amt = p.premiumAmount || 0;
+      switch (p.premiumFrequency) {
+        case "MONTHLY":
+          return sum + amt * 12;
+        case "QUARTERLY":
+          return sum + amt * 4;
+        case "HALF_YEARLY":
+          return sum + amt * 2;
+        default:
+          return sum + amt;
+      }
+    }, 0);
+
+    const now = new Date();
+    const thirtyDaysOut = new Date();
+    thirtyDaysOut.setDate(now.getDate() + 30);
+
+    const upcomingDueCount = personFilteredPolicies.filter((p) => {
+      if (p.isDueSoon) return true;
+      if (!p.nextDueDate) return false;
+      const due = new Date(p.nextDueDate);
+      return due >= now && due <= thirtyDaysOut;
+    }).length;
+
+    return {
+      totalPolicies: personFilteredPolicies.length,
+      activePolicies: activeList.length,
+      totalPureRiskCover,
+      totalInvestmentValuation,
+      annualizedPremium,
+      upcomingDueCount,
+    };
+  }, [selectedPerson, stats, personFilteredPolicies]);
+
   const handleSavePolicy = async (payload) => {
     try {
       setSaving(true);
@@ -87,7 +151,7 @@ const Insurance = () => {
           payload
         );
         if (res?.success) {
-          toast.success("Policy updated successfully");
+          toast.success("Policy updated");
           setIsModalOpen(false);
           setEditingPolicy(null);
           fetchPolicies();
@@ -95,14 +159,14 @@ const Insurance = () => {
       } else {
         const res = await request("/insurance", "POST", payload);
         if (res?.success) {
-          toast.success("Policy recorded successfully");
+          toast.success("Policy saved");
           setIsModalOpen(false);
           fetchPolicies();
         }
       }
     } catch (err) {
       console.error("Save Policy Error:", err);
-      toast.error(err.message || "Failed to save policy record");
+      toast.error(err.message || "Failed to save policy");
     } finally {
       setSaving(false);
     }
@@ -128,11 +192,28 @@ const Insurance = () => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
-      {/* 1. EXECUTIVE KPIS */}
-      <InsuranceExecutiveKPIs stats={stats} />
+    <div className="space-y-6 animate-in fade-in duration-300">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+        .sora-font {
+          font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+      `}</style>
 
-      {/* 2. PERSON TABS & SEARCH COMMAND STRIP */}
+      {/* COMPLEMENTARY TAB HEADER */}
+      <TabHeader
+        title="Insurance"
+        accent="Holdings"
+        description="Overview of active life, health, motor, and pension policies across the family."
+      />
+
+      {/* 1. DYNAMIC MEMBER-SCOPED KPIS */}
+      <InsuranceExecutiveKPIs
+        stats={displayStats}
+        selectedPerson={selectedPerson}
+      />
+
+      {/* 2. MEMBER TABS & SEARCH BAR */}
       <InsurancePersonTabs
         peopleList={peopleList}
         policies={policies}
@@ -146,20 +227,24 @@ const Insurance = () => {
         }}
       />
 
-      {/* 3. CONDITIONAL MAIN VIEW */}
+      {/* 3. MAIN LEDGER VIEW */}
       {loading ? (
-        <div className="py-20 text-center bg-white dark:bg-[#0F172A] rounded-md border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-500">
-          Loading insurance portfolio...
+        <div className="py-16 flex flex-col items-center justify-center gap-2.5 bg-white dark:bg-[#161B26] rounded-lg border border-slate-200 dark:border-slate-800/80">
+          <Loader2
+            size={22}
+            className="text-sky-600 dark:text-sky-400 animate-spin"
+          />
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+            Loading policies...
+          </span>
         </div>
       ) : selectedPerson === "ALL" ? (
-        /* All Members View: High-density comparative ledger table */
         <MemberSummaryGrid
           peopleList={peopleList}
           policies={policies}
           onSelectPerson={setSelectedPerson}
         />
       ) : (
-        /* Individual Member View: Grouped accordion sub-tables */
         <NestedPolicyLedger
           policies={personFilteredPolicies}
           onEditPolicy={(p) => {

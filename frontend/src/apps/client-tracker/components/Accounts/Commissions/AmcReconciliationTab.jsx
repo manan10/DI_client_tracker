@@ -3,48 +3,43 @@ import {
   Search,
   Loader2,
   ChevronDown,
-  Building,
   ArrowUpRight,
   ArrowDownRight,
-  Sparkles,
-  Calendar,
-  Layers,
   Scale,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useApi } from "../../../../../shared/hooks/useApi";
 
-// Vibrant, distinct FinTech theme tags for entity sub-rows
 const ENTITY_THEMES = [
   {
-    badge: "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30",
-    dot: "bg-emerald-500",
-    text: "text-emerald-700 dark:text-emerald-400",
+    badge:
+      "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-500/30",
+    dot: "bg-sky-500",
   },
   {
-    badge: "bg-indigo-50 text-indigo-800 border-indigo-300 dark:bg-indigo-500/15 dark:text-indigo-300 dark:border-indigo-500/30",
-    dot: "bg-indigo-500",
-    text: "text-indigo-700 dark:text-indigo-400",
-  },
-  {
-    badge: "bg-cyan-50 text-cyan-800 border-cyan-300 dark:bg-cyan-500/15 dark:text-cyan-300 dark:border-cyan-500/30",
+    badge:
+      "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-500/15 dark:text-cyan-300 dark:border-cyan-500/30",
     dot: "bg-cyan-500",
-    text: "text-cyan-700 dark:text-cyan-400",
   },
   {
-    badge: "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
+    badge:
+      "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30",
+    dot: "bg-blue-500",
+  },
+  {
+    badge:
+      "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-500/15 dark:text-indigo-300 dark:border-indigo-500/30",
+    dot: "bg-indigo-500",
+  },
+  {
+    badge:
+      "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
     dot: "bg-amber-500",
-    text: "text-amber-700 dark:text-amber-400",
   },
   {
-    badge: "bg-purple-50 text-purple-800 border-purple-300 dark:bg-purple-500/15 dark:text-purple-300 dark:border-purple-500/30",
-    dot: "bg-purple-500",
-    text: "text-purple-700 dark:text-purple-400",
-  },
-  {
-    badge: "bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30",
-    dot: "bg-rose-500",
-    text: "text-rose-700 dark:text-rose-400",
+    badge:
+      "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-500/15 dark:text-teal-300 dark:border-teal-500/30",
+    dot: "bg-teal-500",
   },
 ];
 
@@ -74,7 +69,6 @@ const AmcReconciliationTab = ({ selectedFY }) => {
   const [search, setSearch] = useState("");
   const [expandedAmcs, setExpandedAmcs] = useState({});
 
-  // 12 Fiscal Months (Apr -> Mar)
   const fiscalMonths = useMemo(() => {
     const [startYearStr, endYearShort] = selectedFY.split("-");
     const startYear = parseInt(startYearStr, 10);
@@ -124,7 +118,6 @@ const AmcReconciliationTab = ({ selectedFY }) => {
     fetchMatrix();
   }, [fetchMatrix]);
 
-  // Aggregate master and per-ARN figures
   const { rows, monthTotals, grandTotal } = useMemo(() => {
     const monthTotalsMap = {};
     fiscalMonths.forEach((m) => {
@@ -182,109 +175,119 @@ const AmcReconciliationTab = ({ selectedFY }) => {
     mappedRows.sort((a, b) => a.name.localeCompare(b.name));
     const totalAll = Object.values(monthTotalsMap).reduce((s, v) => s + v, 0);
 
-    return { rows: mappedRows, monthTotals: monthTotalsMap, grandTotal: totalAll };
+    return {
+      rows: mappedRows,
+      monthTotals: monthTotalsMap,
+      grandTotal: totalAll,
+    };
   }, [rawData, fiscalMonths, search]);
 
   return (
-    <section className="w-full space-y-6 animate-in fade-in duration-200">
-      {/* 1. VIBRANT COMMAND BANNER */}
-      <div className="bg-linear-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white rounded-2xl p-6 shadow-lg shadow-emerald-600/20 flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-1.5">
+    <section className="w-full space-y-5 animate-in fade-in duration-200">
+      {/* 1. ARCHITECTURAL SUMMARY STRIP */}
+      <div className="bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-sky-600 via-cyan-400 to-transparent" />
+
+        <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-black uppercase tracking-wider backdrop-blur-xs">
-              <Scale size={14} /> Cross-ARN Reconciliation
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-200/70 dark:border-sky-500/20 text-[11px] font-mono font-semibold uppercase tracking-wider">
+              <Scale size={13} /> Cross-ARN Ledger
             </span>
-            <span className="text-xs font-mono font-bold text-emerald-100 uppercase">
+            <span className="text-xs font-mono font-semibold text-slate-500 dark:text-slate-400">
               FY {selectedFY}
             </span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-[1000] uppercase tracking-tight drop-shadow-xs">
-            Consolidated AMC Run-Rate Ledger
-          </h2>
-          <p className="text-xs sm:text-sm text-emerald-100 font-medium max-w-2xl">
-            Month-over-month variances across all active family ARNs. Click any AMC row to inspect individual ARN payout workings.
+          <h3 className="sora-font text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+            Monthly AMC{" "}
+            <span className="font-normal text-sky-600 dark:text-sky-300">
+              Comparison
+            </span>
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-2xl">
+            Compare month-over-month payouts across all family ARNs. Click any AMC row to view individual ARN breakdowns.
           </p>
         </div>
 
-        <div className="bg-black/25 backdrop-blur-md rounded-xl p-4 border border-white/15 shrink-0 text-right">
-          <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-emerald-200 block">
-            FY Gross Consolidated
+        <div className="bg-slate-50 dark:bg-[#131720] rounded-lg px-4 py-3 border border-slate-200/80 dark:border-slate-800 shrink-0 text-left md:text-right">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+            Total FY Brokerage
           </span>
-          <span className="text-2xl sm:text-3xl font-[1000] font-mono text-white tracking-tight tabular-nums block mt-0.5">
+          <span className="sora-font text-xl sm:text-2xl font-bold text-sky-600 dark:text-sky-300 tabular-nums block mt-0.5">
             {formatINR(grandTotal)}
           </span>
-          <span className="text-[10px] font-mono text-emerald-100/80 block mt-1">
-            {rows.length} Fund Houses Aggregated
+          <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 block mt-0.5">
+            {rows.length} Fund Houses
           </span>
         </div>
       </div>
 
-      {/* 2. SEARCH & CONTROLS RIBBON */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white dark:bg-[#0B1120] border-2 border-slate-200 dark:border-white/10 rounded-2xl shadow-xs">
-        <div className="relative max-w-md w-full">
+      {/* 2. SEARCH & COUNT BAR */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="relative max-w-sm w-full">
           <Search
-            size={18}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+            size={15}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
           />
           <input
             type="text"
-            placeholder="Search AMC (e.g. ABSL, SBI, Nippon, HDFC)..."
+            placeholder="Search AMC (e.g. ABSL, SBI, HDFC)..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-[#070B14] border-2 border-slate-200 dark:border-white/10 rounded-xl pl-11 pr-4 py-2.5 text-sm font-bold text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-emerald-500 transition-colors"
+            className="w-full bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs font-medium text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-sky-500 dark:focus:border-sky-400 transition-colors"
           />
         </div>
 
-        <div className="flex items-center gap-3 text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">
-          <span className="font-mono text-slate-900 dark:text-white">
-            {rows.length} AMCs Logged
+        <div className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-slate-400">
+          <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
+            {rows.length} AMCs
           </span>
           <span>•</span>
-          <span className="text-emerald-600 dark:text-emerald-400">
-            Click row to view ARN breakdown
-          </span>
+          <span>Click any row to view ARN split</span>
         </div>
       </div>
 
-      {/* 3. HIGH-LEGIBILITY RECONCILIATION TABLE */}
-      <div className="w-full bg-white dark:bg-[#0B1120] border-2 border-slate-200 dark:border-white/10 rounded-2xl shadow-md overflow-hidden">
+      {/* 3. RECONCILIATION MATRIX TABLE */}
+      <div className="w-full bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg overflow-hidden">
         {loading ? (
-          <div className="py-24 flex flex-col items-center justify-center gap-3">
-            <Loader2 className="animate-spin text-emerald-500" size={32} />
-            <span className="text-sm font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 font-mono">
-              Consolidating AMC commissions across all ARNs...
+          <div className="py-20 flex flex-col items-center justify-center gap-3">
+            <Loader2
+              className="animate-spin text-sky-600 dark:text-sky-400"
+              size={24}
+            />
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Loading AMC reconciliation table...
             </span>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-350">
               <thead>
-                <tr className="bg-slate-100/90 dark:bg-white/4 border-b-2 border-slate-300 dark:border-white/15">
-                  <th className="py-4 px-6 font-[1000] uppercase tracking-wider text-sm sm:text-base text-slate-900 dark:text-white sticky left-0 bg-slate-100 dark:bg-[#0C1220] z-20 shadow-r min-w-65">
+                <tr className="bg-slate-50/90 dark:bg-[#1C2230] border-b border-slate-200 dark:border-slate-800/80 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="py-3.5 px-5 sticky left-0 bg-slate-50 dark:bg-[#1C2230] z-20 border-r border-slate-200/80 dark:border-slate-800/80 min-w-60">
                     AMC / Fund House
                   </th>
                   {fiscalMonths.map((m) => (
                     <th
                       key={m.key}
-                      className="py-4 px-4 text-right font-[1000] uppercase tracking-wider font-mono text-sm sm:text-base text-slate-700 dark:text-slate-300 min-w-38.75"
+                      className="py-3.5 px-4 text-right font-mono min-w-36"
                     >
                       {m.short}
                     </th>
                   ))}
-                  <th className="py-4 px-6 text-right font-[1000] uppercase tracking-wider text-sm sm:text-base text-slate-900 dark:text-white bg-slate-200/80 dark:bg-white/10 min-w-40">
+                  <th className="py-3.5 px-5 text-right text-slate-900 dark:text-white bg-slate-100/80 dark:bg-white/[0.04] min-w-38">
                     FY Total
                   </th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y-2 divide-slate-200/70 dark:divide-white/5">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                 {rows.length === 0 ? (
                   <tr>
                     <td
                       colSpan={14}
-                      className="py-20 text-center text-slate-400 text-sm font-bold"
+                      className="py-16 text-center text-slate-500 dark:text-slate-400 text-xs"
                     >
-                      No commission records match your selection for FY {selectedFY}.
+                      No commission records found for FY {selectedFY}.
                     </td>
                   </tr>
                 ) : (
@@ -299,43 +302,45 @@ const AmcReconciliationTab = ({ selectedFY }) => {
                           onClick={() => hasSubRows && toggleExpand(row.name)}
                           className={`transition-colors cursor-pointer group ${
                             isExpanded
-                              ? "bg-emerald-500/8 dark:bg-emerald-500/12"
-                              : "hover:bg-slate-50 dark:hover:bg-white/2"
+                              ? "bg-sky-50/60 dark:bg-sky-500/[0.06]"
+                              : "hover:bg-slate-50/80 dark:hover:bg-white/[0.02]"
                           }`}
                         >
-                          {/* AMC Header Cell */}
-                          <td className="py-4.5 px-6 font-bold text-slate-950 dark:text-white sticky left-0 bg-white dark:bg-[#0B1120] group-hover:bg-slate-50 dark:group-hover:bg-[#0E1626] z-20 shadow-r border-r-2 border-slate-200 dark:border-white/10">
-                            <div className="flex items-center gap-3">
+                          <td className="py-3.5 px-5 font-semibold text-slate-900 dark:text-white sticky left-0 bg-white dark:bg-[#161B26] group-hover:bg-slate-50 dark:group-hover:bg-[#1C2230] z-20 border-r border-slate-200/70 dark:border-slate-800/80">
+                            <div className="flex items-center gap-2.5">
                               {hasSubRows ? (
                                 <div
-                                  className={`w-6 h-6 rounded-md flex items-center justify-center border transition-all ${
+                                  className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${
                                     isExpanded
-                                      ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                                      : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-white/10 group-hover:border-slate-400"
+                                      ? "bg-sky-600 text-white border-sky-600"
+                                      : "bg-slate-100 dark:bg-[#1C2230] text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                                   }`}
                                 >
                                   <ChevronDown
-                                    size={16}
-                                    strokeWidth={3}
+                                    size={13}
+                                    strokeWidth={2.5}
                                     className={`transition-transform duration-200 ${
                                       isExpanded ? "rotate-180" : ""
                                     }`}
                                   />
                                 </div>
                               ) : (
-                                <div className="w-6 h-6" />
+                                <div className="w-5 h-5" />
                               )}
-                              <span className="text-base font-[1000] uppercase tracking-tight">
+                              <span className="text-xs sm:text-sm font-bold tracking-tight">
                                 {row.name}
                               </span>
                             </div>
                           </td>
 
-                          {/* 12 Months with Dual Variance Badges */}
+                          {/* 12 Months */}
                           {fiscalMonths.map((m, idx) => {
                             const curr = row.byMonth[m.key] || 0;
-                            const prevKey = idx > 0 ? fiscalMonths[idx - 1].key : null;
-                            const prev = prevKey ? row.byMonth[prevKey] || 0 : null;
+                            const prevKey =
+                              idx > 0 ? fiscalMonths[idx - 1].key : null;
+                            const prev = prevKey
+                              ? row.byMonth[prevKey] || 0
+                              : null;
 
                             let diff = 0;
                             let diffPct = 0;
@@ -347,71 +352,78 @@ const AmcReconciliationTab = ({ selectedFY }) => {
                             return (
                               <td
                                 key={m.key}
-                                className="py-4.5 px-4 text-right font-mono border-r border-slate-100 dark:border-white/5"
+                                className="py-3.5 px-4 text-right font-mono border-r border-slate-100/80 dark:border-slate-800/50"
                               >
                                 <div className="flex flex-col items-end gap-1">
                                   <span
-                                    className={`text-base sm:text-lg font-[1000] tabular-nums tracking-tight ${
+                                    className={`text-xs sm:text-sm font-bold tabular-nums ${
                                       curr > 0
-                                        ? "text-slate-950 dark:text-white"
+                                        ? "text-slate-900 dark:text-white"
                                         : "text-slate-300 dark:text-slate-600 font-normal"
                                     }`}
                                   >
                                     {curr > 0 ? formatINR(curr) : "—"}
                                   </span>
 
-                                  {/* Dual Variance Badge: Absolute ₹ and % */}
-                                  {prev !== null && prev > 0 && curr > 0 && diff !== 0 && (
-                                    <div
-                                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-mono text-[11px] font-black tracking-tight border ${
-                                        diff > 0
-                                          ? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30"
-                                          : "bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30"
-                                      }`}
-                                    >
-                                      {diff > 0 ? (
-                                        <ArrowUpRight
-                                          size={12}
-                                          strokeWidth={3}
-                                          className="shrink-0"
-                                        />
-                                      ) : (
-                                        <ArrowDownRight
-                                          size={12}
-                                          strokeWidth={3}
-                                          className="shrink-0"
-                                        />
-                                      )}
-                                      <span>{formatSignedINR(diff)}</span>
-                                      <span className="opacity-65 font-medium">
-                                        ({Math.abs(diffPct)}%)
-                                      </span>
-                                    </div>
-                                  )}
+                                  {prev !== null &&
+                                    prev > 0 &&
+                                    curr > 0 &&
+                                    diff !== 0 && (
+                                      <div
+                                        className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono text-[10px] font-semibold border ${
+                                          diff > 0
+                                            ? "bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-500/30"
+                                            : "bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30"
+                                        }`}
+                                      >
+                                        {diff > 0 ? (
+                                          <ArrowUpRight
+                                            size={10}
+                                            strokeWidth={2.5}
+                                            className="shrink-0"
+                                          />
+                                        ) : (
+                                          <ArrowDownRight
+                                            size={10}
+                                            strokeWidth={2.5}
+                                            className="shrink-0"
+                                          />
+                                        )}
+                                        <span>{formatSignedINR(diff)}</span>
+                                        <span className="opacity-70">
+                                          ({Math.abs(diffPct)}%)
+                                        </span>
+                                      </div>
+                                    )}
                                 </div>
                               </td>
                             );
                           })}
 
-                          {/* Row Total */}
-                          <td className="py-4.5 px-6 text-right font-mono font-[1000] text-lg sm:text-xl text-slate-950 dark:text-white bg-slate-50 dark:bg-white/3">
+                          {/* Row FY Total */}
+                          <td className="py-3.5 px-5 text-right font-mono font-bold text-sm text-slate-900 dark:text-white bg-slate-50/70 dark:bg-white/[0.02]">
                             {formatINR(row.total)}
                           </td>
                         </tr>
 
-                        {/* Expanded Workings / Per-ARN Contributions */}
+                        {/* Expanded Per-ARN Sub-Rows */}
                         {isExpanded &&
                           row.arnSubRows.map((arnSub, aIdx) => {
-                            const theme = ENTITY_THEMES[aIdx % ENTITY_THEMES.length];
+                            const theme =
+                              ENTITY_THEMES[aIdx % ENTITY_THEMES.length];
                             return (
                               <tr
                                 key={arnSub.arnId}
-                                className="bg-slate-100/90 dark:bg-[#070C18] border-t border-slate-200 dark:border-white/10"
+                                className="bg-slate-50/90 dark:bg-[#131720] border-t border-slate-200/70 dark:border-slate-800/80"
                               >
-                                <td className="py-3.5 pl-14 pr-6 sticky left-0 bg-slate-100 dark:bg-[#070C18] z-20 shadow-r border-r-2 border-slate-300 dark:border-white/10">
-                                  <div className="flex items-center gap-2.5">
-                                    <span className={`w-2.5 h-2.5 rounded-full ${theme.dot} shrink-0`} />
-                                    <span className={`font-mono text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded border ${theme.badge}`}>
+                                <td className="py-2.5 pl-12 pr-5 sticky left-0 bg-slate-50 dark:bg-[#131720] z-20 border-r border-slate-200/70 dark:border-slate-800/80">
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`w-2 h-2 rounded-full ${theme.dot} shrink-0`}
+                                    />
+                                    <span
+                                      className={`font-mono text-[11px] font-semibold uppercase px-2 py-0.5 rounded border ${theme.badge}`}
+                                    >
                                       {arnSub.arnNickname || arnSub.arnCode}
                                     </span>
                                   </div>
@@ -422,14 +434,14 @@ const AmcReconciliationTab = ({ selectedFY }) => {
                                   return (
                                     <td
                                       key={m.key}
-                                      className="py-3.5 px-4 text-right font-mono text-sm font-bold tabular-nums text-slate-600 dark:text-slate-300 border-r border-slate-200/60 dark:border-white/5"
+                                      className="py-2.5 px-4 text-right font-mono text-xs font-medium tabular-nums text-slate-600 dark:text-slate-300 border-r border-slate-200/50 dark:border-slate-800/40"
                                     >
                                       {val > 0 ? formatINR(val) : "—"}
                                     </td>
                                   );
                                 })}
 
-                                <td className="py-3.5 px-6 text-right font-mono text-sm font-black tabular-nums text-slate-800 dark:text-slate-200 bg-slate-200/50 dark:bg-white/4">
+                                <td className="py-2.5 px-5 text-right font-mono text-xs font-bold tabular-nums text-slate-800 dark:text-slate-200 bg-slate-100/60 dark:bg-white/[0.03]">
                                   {formatINR(arnSub.total)}
                                 </td>
                               </tr>
@@ -444,18 +456,25 @@ const AmcReconciliationTab = ({ selectedFY }) => {
               {/* Total Firm Summary Row */}
               {rows.length > 0 && (
                 <tfoot>
-                  <tr className="bg-slate-200/90 dark:bg-white/6 border-t-4 border-slate-300 dark:border-white/20 font-[1000]">
-                    <td className="py-5 px-6 uppercase tracking-wider text-base sm:text-lg text-slate-950 dark:text-white sticky left-0 bg-slate-200 dark:bg-[#0B1120] z-20 shadow-r border-r-2 border-slate-300 dark:border-white/10">
-                      Total Firm Brokerage
+                  <tr className="bg-slate-100/90 dark:bg-[#1C2230] border-t-2 border-slate-200 dark:border-slate-700 font-bold">
+                    <td className="py-4 px-5 uppercase tracking-wider text-xs text-slate-800 dark:text-slate-100 sticky left-0 bg-slate-100 dark:bg-[#1C2230] z-20 border-r border-slate-200 dark:border-slate-700">
+                      Total Brokerage
                     </td>
                     {fiscalMonths.map((m, idx) => {
                       const currTotal = monthTotals[m.key] || 0;
-                      const prevKey = idx > 0 ? fiscalMonths[idx - 1].key : null;
-                      const prevTotal = prevKey ? monthTotals[prevKey] || 0 : null;
+                      const prevKey =
+                        idx > 0 ? fiscalMonths[idx - 1].key : null;
+                      const prevTotal = prevKey
+                        ? monthTotals[prevKey] || 0
+                        : null;
 
                       let diff = 0;
                       let diffPct = 0;
-                      if (prevTotal !== null && prevTotal > 0 && currTotal > 0) {
+                      if (
+                        prevTotal !== null &&
+                        prevTotal > 0 &&
+                        currTotal > 0
+                      ) {
                         diff = currTotal - prevTotal;
                         diffPct = ((diff / prevTotal) * 100).toFixed(0);
                       }
@@ -463,44 +482,47 @@ const AmcReconciliationTab = ({ selectedFY }) => {
                       return (
                         <td
                           key={m.key}
-                          className="py-5 px-4 text-right font-mono border-r border-slate-300/60 dark:border-white/10"
+                          className="py-4 px-4 text-right font-mono border-r border-slate-200/70 dark:border-slate-800"
                         >
                           <div className="flex flex-col items-end gap-1">
-                            <span className="text-base sm:text-lg font-[1000] text-slate-950 dark:text-white tracking-tight">
+                            <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
                               {formatINR(currTotal)}
                             </span>
-                            {prevTotal !== null && prevTotal > 0 && currTotal > 0 && diff !== 0 && (
-                              <div
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-mono text-[11px] font-black tracking-tight border ${
-                                  diff > 0
-                                    ? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40"
-                                    : "bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40"
-                                }`}
-                              >
-                                {diff > 0 ? (
-                                  <ArrowUpRight
-                                    size={12}
-                                    strokeWidth={3}
-                                    className="shrink-0"
-                                  />
-                                ) : (
-                                  <ArrowDownRight
-                                    size={12}
-                                    strokeWidth={3}
-                                    className="shrink-0"
-                                  />
-                                )}
-                                <span>{formatSignedINR(diff)}</span>
-                                <span className="opacity-65 font-medium">
-                                  ({Math.abs(diffPct)}%)
-                                </span>
-                              </div>
-                            )}
+                            {prevTotal !== null &&
+                              prevTotal > 0 &&
+                              currTotal > 0 &&
+                              diff !== 0 && (
+                                <div
+                                  className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono text-[10px] font-semibold border ${
+                                    diff > 0
+                                      ? "bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-500/20 dark:text-sky-300 dark:border-sky-500/40"
+                                      : "bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40"
+                                  }`}
+                                >
+                                  {diff > 0 ? (
+                                    <ArrowUpRight
+                                      size={10}
+                                      strokeWidth={2.5}
+                                      className="shrink-0"
+                                    />
+                                  ) : (
+                                    <ArrowDownRight
+                                      size={10}
+                                      strokeWidth={2.5}
+                                      className="shrink-0"
+                                    />
+                                  )}
+                                  <span>{formatSignedINR(diff)}</span>
+                                  <span className="opacity-70">
+                                    ({Math.abs(diffPct)}%)
+                                  </span>
+                                </div>
+                              )}
                           </div>
                         </td>
                       );
                     })}
-                    <td className="py-5 px-6 text-right font-mono font-[1000] text-xl sm:text-2xl text-emerald-700 dark:text-emerald-400 bg-emerald-500/20">
+                    <td className="py-4 px-5 text-right font-mono font-bold text-sm sm:text-base text-sky-700 dark:text-sky-300 bg-sky-500/10">
                       {formatINR(grandTotal)}
                     </td>
                   </tr>

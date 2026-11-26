@@ -11,14 +11,9 @@ import {
   Loader2,
   FileSpreadsheet,
   Edit3,
-  Sparkles,
-  ShieldCheck,
-  Layers,
-  ArrowUpRight,
 } from "lucide-react";
 
 import { useApi } from "../../../../../shared/hooks/useApi";
-
 import ManualEntryTab from "./ManualEntryTab";
 import StatementUploadTab from "./StatementUploadTab";
 
@@ -49,7 +44,6 @@ const CommissionForm = ({
 }) => {
   const { request } = useApi();
 
-  // --- Core State ---
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [showMonthPicker, setShowMonthPicker] = useState(false);
@@ -57,7 +51,6 @@ const CommissionForm = ({
   const [isFetching, setIsFetching] = useState(false);
   const [formData, setFormData] = useState({});
 
-  // --- Upload State ---
   const [entryMode, setEntryMode] = useState("MANUAL");
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isProcessingFiles, setIsProcessingFiles] = useState(false);
@@ -68,7 +61,6 @@ const CommissionForm = ({
   const fileInputRef = useRef(null);
   const monthPickerRef = useRef(null);
 
-  // Close month picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -162,7 +154,6 @@ const CommissionForm = ({
     );
   }, [formData]);
 
-  // --- Handlers ---
   const handleDaySelect = (amcName, day) => {
     setFormData((prev) => ({
       ...prev,
@@ -281,41 +272,41 @@ const CommissionForm = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-9999 flex justify-end bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="w-full h-dvh sm:w-135 lg:w-215 bg-white dark:bg-[#0B1120] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-300 border-l border-slate-200 dark:border-white/10">
-        {/* --- 1. TOP DRAWER HEADER --- */}
-        <div className="px-6 py-4.5 border-b border-slate-200 dark:border-white/10 flex justify-between items-center bg-slate-50/70 dark:bg-[#0B1120] shrink-0">
+    <div className="fixed inset-0 z-9999 flex justify-end bg-slate-900/50 dark:bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="w-full h-dvh sm:w-135 lg:w-215 bg-white dark:bg-[#131720] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-300 border-l border-slate-200 dark:border-slate-800">
+        {/* 1. TOP DRAWER HEADER */}
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-[#161B26] shrink-0">
           <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-2xs">
+            <div className="w-9 h-9 rounded-lg bg-sky-50 dark:bg-sky-500/10 border border-sky-200/70 dark:border-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
               <Landmark size={18} strokeWidth={2.2} />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight truncate">
+                <h2 className="sora-font text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight truncate">
                   {arnName}
                 </h2>
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10 shrink-0">
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase tracking-wider bg-white dark:bg-[#131720] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shrink-0">
                   {arnNickname}
                 </span>
               </div>
-              <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500 mt-0.5">
-                Brokerage Reconciliation Workbench
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Log monthly commission payouts
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
             {/* Custom Month/Year Selector */}
             {entryMode === "MANUAL" && (
               <div className="relative" ref={monthPickerRef}>
                 <button
                   type="button"
                   onClick={() => setShowMonthPicker(!showMonthPicker)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-emerald-500 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 transition-all shadow-2xs cursor-pointer"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-white dark:bg-[#131720] border border-slate-200 dark:border-slate-700 hover:border-sky-500 text-xs font-mono font-semibold text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
                 >
                   <Calendar
                     size={13}
-                    className="text-emerald-600 dark:text-emerald-400"
+                    className="text-sky-600 dark:text-sky-400"
                   />
                   <span>
                     {MONTHS[selectedMonth]} {selectedYear}
@@ -324,12 +315,12 @@ const CommissionForm = ({
                 </button>
 
                 {showMonthPicker && (
-                  <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-[#0E1626] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl p-3.5 z-100 animate-in fade-in zoom-in-95">
-                    <div className="flex justify-between items-center mb-3 pb-2 border-b border-slate-100 dark:border-white/5">
+                  <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl p-3.5 z-100 animate-in fade-in zoom-in-95">
+                    <div className="flex justify-between items-center mb-3 pb-2 border-b border-slate-100 dark:border-slate-800">
                       <button
                         type="button"
                         onClick={() => setSelectedYear((y) => y - 1)}
-                        className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-md transition-colors cursor-pointer"
+                        className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors cursor-pointer"
                       >
                         <ChevronLeft size={16} />
                       </button>
@@ -339,7 +330,7 @@ const CommissionForm = ({
                       <button
                         type="button"
                         onClick={() => setSelectedYear((y) => y + 1)}
-                        className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-md transition-colors cursor-pointer"
+                        className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors cursor-pointer"
                       >
                         <ChevronRight size={16} />
                       </button>
@@ -354,10 +345,10 @@ const CommissionForm = ({
                             setSelectedMonth(idx);
                             setShowMonthPicker(false);
                           }}
-                          className={`py-2 rounded-lg text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
+                          className={`py-2 rounded-md text-xs font-mono font-semibold uppercase transition-colors cursor-pointer ${
                             selectedMonth === idx
-                              ? "bg-emerald-600 text-white shadow-xs"
-                              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
+                              ? "bg-sky-600 text-white"
+                              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                           }`}
                         >
                           {m}
@@ -369,75 +360,60 @@ const CommissionForm = ({
               </div>
             )}
 
-            {/* Close Modal Button */}
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+              className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
             >
               <X size={18} />
             </button>
           </div>
         </div>
 
-        {/* --- 2. HIGH-CONTRAST STRUCTURED TABS --- */}
-        <div className="px-6 py-3 border-b border-slate-200 dark:border-white/10 bg-slate-50/40 dark:bg-[#070B14] shrink-0">
-          <div className="flex items-center gap-3">
+        {/* 2. MODE SWITCHER TABS */}
+        <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-[#161B26]/50 shrink-0">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={() => setEntryMode("MANUAL")}
-              className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer select-none border ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-semibold transition-colors cursor-pointer select-none border ${
                 entryMode === "MANUAL"
-                  ? "bg-white dark:bg-[#0B1120] text-emerald-700 dark:text-emerald-400 border-slate-200/90 dark:border-white/15 shadow-sm ring-2 ring-emerald-500/20"
-                  : "bg-slate-100/60 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-white/10"
+                  ? "bg-white dark:bg-[#1C2230] text-sky-600 dark:text-sky-300 border-sky-300 dark:border-sky-500/40"
+                  : "bg-slate-100/70 dark:bg-[#131720] text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              <Edit3
-                size={14}
-                className={
-                  entryMode === "MANUAL"
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-slate-400"
-                }
-              />
+              <Edit3 size={14} />
               <span>Manual Entry</span>
             </button>
 
             <button
               type="button"
               onClick={() => setEntryMode("UPLOAD")}
-              className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer select-none border ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-semibold transition-colors cursor-pointer select-none border ${
                 entryMode === "UPLOAD"
-                  ? "bg-white dark:bg-[#0B1120] text-indigo-700 dark:text-indigo-400 border-slate-200/90 dark:border-white/15 shadow-sm ring-2 ring-indigo-500/20"
-                  : "bg-slate-100/60 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-white/10"
+                  ? "bg-white dark:bg-[#1C2230] text-cyan-600 dark:text-cyan-300 border-cyan-300 dark:border-cyan-500/40"
+                  : "bg-slate-100/70 dark:bg-[#131720] text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              <FileSpreadsheet
-                size={14}
-                className={
-                  entryMode === "UPLOAD"
-                    ? "text-indigo-600 dark:text-indigo-400"
-                    : "text-slate-400"
-                }
-              />
-              <span>Statement Auto-Log</span>
+              <FileSpreadsheet size={14} />
+              <span>Statement Upload</span>
             </button>
           </div>
         </div>
 
-        {/* --- 3. DYNAMIC CONTENT WORKSPACE --- */}
+        {/* 3. DYNAMIC CONTENT WORKSPACE */}
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto p-5 sm:p-6 lg:p-8 bg-slate-50/50 dark:bg-[#070B14] no-scrollbar"
+          className="flex-1 overflow-y-auto p-5 sm:p-6 bg-slate-50/50 dark:bg-[#131720] no-scrollbar"
         >
           {isFetching ? (
             <div className="h-64 flex flex-col items-center justify-center gap-3">
               <Loader2
-                className="animate-spin text-emerald-600 dark:text-emerald-400"
+                className="animate-spin text-sky-600 dark:text-sky-400"
                 size={24}
               />
-              <p className="text-xs font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                Synchronizing cycle records...
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Loading month records...
               </p>
             </div>
           ) : entryMode === "UPLOAD" ? (
@@ -471,18 +447,18 @@ const CommissionForm = ({
           )}
         </div>
 
-        {/* --- 4. TELEMETRY AUTHORIZATION FOOTER --- */}
+        {/* 4. FOOTER */}
         {entryMode === "MANUAL" && (
-          <div className="p-4 sm:p-5 px-6 sm:px-8 bg-white dark:bg-[#0B1120] border-t border-slate-200 dark:border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4 shrink-0 z-50 animate-in fade-in duration-200">
-            <div className="flex items-center gap-3.5 w-full sm:w-auto">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                <IndianRupee size={18} strokeWidth={2.2} />
+          <div className="p-4 sm:px-6 bg-white dark:bg-[#161B26] border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 shrink-0 z-50">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="w-9 h-9 rounded-lg bg-sky-50 dark:bg-sky-500/10 border border-sky-200/70 dark:border-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+                <IndianRupee size={16} strokeWidth={2.2} />
               </div>
               <div className="min-w-0">
-                <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                  Monthly Total Gross
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                  Monthly Total
                 </span>
-                <p className="text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-white tracking-tight tabular-nums mt-0.5">
+                <p className="text-lg sm:text-xl font-bold font-mono text-slate-900 dark:text-white tabular-nums">
                   ₹
                   {totalGross.toLocaleString("en-IN", {
                     minimumFractionDigits: 2,
@@ -502,14 +478,14 @@ const CommissionForm = ({
                 })
               }
               disabled={saving || isFetching || sortedAmcList.length === 0}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider shadow-md hover:shadow-emerald-600/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale cursor-pointer shrink-0"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold tracking-wide transition-all disabled:opacity-50 cursor-pointer shrink-0 active:scale-[0.99]"
             >
               {saving ? (
                 <Loader2 className="animate-spin" size={15} />
               ) : (
                 <CheckCircle2 size={15} strokeWidth={2.2} />
               )}
-              <span>{saving ? "Authorizing..." : "Authorize Ledger"}</span>
+              <span>{saving ? "Saving..." : "Save Entries"}</span>
             </button>
           </div>
         )}
