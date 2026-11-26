@@ -4,11 +4,8 @@ import {
   Loader2,
   Users,
   Search,
-  Sparkles,
-  Layers,
   UserPlus,
   X,
-  ShieldCheck,
   CreditCard,
   User,
   Network,
@@ -18,6 +15,7 @@ import {
 
 // Components
 import Navbar from "../components/Shared/Navbar";
+import WorkspaceShell from "../../../shared/components/WorkspaceShell";
 import DirectoryFilters from "../components/Directory/DirectoryFilters";
 import TierSummary from "../components/Directory/TierSummary";
 import ClientTableContainer from "../components/Directory/ClientTableContainer";
@@ -25,7 +23,6 @@ import ClientTableContainer from "../components/Directory/ClientTableContainer";
 // Hooks
 import { useApi } from "../../../shared/hooks/useApi";
 import { useClientData } from "../hooks/useClientData";
-import PageHeader from "../../../shared/components/Auth/PageHeader";
 
 const ClientDirectory = () => {
   const [clients, setClients] = useState([]);
@@ -86,7 +83,7 @@ const ClientDirectory = () => {
     searchTerm,
     filterTier,
     sortConfig,
-    thresholds,
+    thresholds
   );
 
   const handleClientClick = (client) => {
@@ -104,7 +101,7 @@ const ClientDirectory = () => {
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
   const currentRecords = filteredFamilies.slice(
     indexOfFirstRecord,
-    indexOfLastRecord,
+    indexOfLastRecord
   );
   const totalRecords = filteredFamilies.length;
 
@@ -115,7 +112,7 @@ const ClientDirectory = () => {
     return clients
       .filter(
         (c) =>
-          c.name?.toLowerCase().includes(q) || c.pan?.toLowerCase().includes(q),
+          c.name?.toLowerCase().includes(q) || c.pan?.toLowerCase().includes(q)
       )
       .slice(0, 8);
   }, [clients, familySearchQuery]);
@@ -148,7 +145,6 @@ const ClientDirectory = () => {
       return;
     }
 
-    // Standard PAN regex verification (5 letters, 4 digits, 1 letter)
     const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
     if (!panRegex.test(trimmedPan)) {
       setFormError("Invalid PAN card format (Expected: ABCDE1234F).");
@@ -157,7 +153,7 @@ const ClientDirectory = () => {
 
     if (familyMode === "existing" && !selectedFamilyClient) {
       setFormError(
-        "Please choose an existing client or family head to attach to.",
+        "Please choose an existing client or family head to attach to."
       );
       return;
     }
@@ -172,7 +168,7 @@ const ClientDirectory = () => {
         familyId:
           familyMode === "existing"
             ? selectedFamilyClient.familyId || selectedFamilyClient._id
-            : undefined, // Backend or controller will assign new UUID if omitted
+            : undefined,
       };
 
       const res = await request("/clients/", "POST", payload);
@@ -182,13 +178,13 @@ const ClientDirectory = () => {
         await fetchDirectoryData();
       } else {
         setFormError(
-          res?.message || res?.error || "Failed to register new client.",
+          res?.message || res?.error || "Failed to register new client."
         );
       }
     } catch (err) {
       console.error("Client creation failed:", err);
       setFormError(
-        err?.message || "Server error occurred while registering client.",
+        err?.message || "Server error occurred while registering client."
       );
     } finally {
       setIsSubmitting(false);
@@ -196,22 +192,16 @@ const ClientDirectory = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 dark:bg-[#0B1120] text-slate-900 dark:text-slate-200 transition-colors duration-300">
-      <Navbar />
-
-      {/* EXPANDED FLUID WORKSPACE */}
-      <main className="w-full max-w-384 mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 sm:py-12 pb-32">
-        {/* COMMAND HEADER */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end pb-8 mb-8 border-b border-slate-200 dark:border-white/10 gap-6">
-          <div className="flex flex-col gap-2">
-            <PageHeader
-              title="Client"
-              accent="Registry"
-              description={`Managing ${totalRecords} active family wealth portfolios`}
-            />
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto shrink-0">
+    <>
+      <WorkspaceShell
+        navbar={<Navbar />}
+        badge="Portfolio Registry"
+        badgeIcon={Users}
+        title="Client"
+        accent="Registry"
+        description={`Managing ${totalRecords} active family wealth portfolios`}
+        rightSlot={
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
             <DirectoryFilters
               onSearchChange={(v) => {
                 setSearchTerm(v);
@@ -223,17 +213,17 @@ const ClientDirectory = () => {
               }}
             />
 
-            {/* CREATE CLIENT BUTTON */}
             <button
+              type="button"
               onClick={() => setIsCreateModalOpen(true)}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs font-bold uppercase tracking-wider transition-all shadow-sm shadow-emerald-600/20 active:scale-[0.98] shrink-0 cursor-pointer"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-md text-xs font-bold uppercase tracking-wider transition-all shadow-sm shadow-sky-600/20 active:scale-[0.98] shrink-0 cursor-pointer"
             >
               <UserPlus size={15} strokeWidth={2.5} />
               <span>Create New Client</span>
             </button>
           </div>
-        </div>
-
+        }
+      >
         {/* HORIZONTAL SPLIT LAYOUT FOR DESKTOP */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* LEFT SIDEBAR: Tier Summary Rail */}
@@ -249,7 +239,11 @@ const ClientDirectory = () => {
 
           {/* RIGHT MAIN AREA: Client Records Table Container */}
           <div
-            className={`${thresholds && allFamilies.length > 0 ? "lg:col-span-8 xl:col-span-9" : "lg:col-span-12"} min-w-0`}
+            className={`${
+              thresholds && allFamilies.length > 0
+                ? "lg:col-span-8 xl:col-span-9"
+                : "lg:col-span-12"
+            } min-w-0`}
           >
             <ClientTableContainer
               currentRecords={currentRecords}
@@ -267,23 +261,20 @@ const ClientDirectory = () => {
             />
           </div>
         </div>
-      </main>
+      </WorkspaceShell>
 
       {/* CREATE NEW CLIENT MODAL */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          {/* Backdrop Blur */}
           <div
             className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
             onClick={handleCloseModal}
           />
 
-          {/* Modal Container */}
-          <div className="relative w-full max-w-xl bg-white dark:bg-[#0E1526] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-200">
-            {/* Modal Header */}
+          <div className="relative w-full max-w-xl bg-white dark:bg-[#1B202C] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/2">
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
                   <UserPlus size={16} strokeWidth={2.5} />
                 </div>
                 <div>
@@ -297,14 +288,14 @@ const ClientDirectory = () => {
               </div>
 
               <button
+                type="button"
                 onClick={handleCloseModal}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
               >
                 <X size={16} strokeWidth={2.5} />
               </button>
             </div>
 
-            {/* Modal Body / Form */}
             <form onSubmit={handleCreateClient} className="p-6 space-y-6">
               {formError && (
                 <div className="flex items-center gap-2 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-600 dark:text-rose-400 text-xs font-semibold">
@@ -314,7 +305,6 @@ const ClientDirectory = () => {
               )}
 
               <div className="space-y-4">
-                {/* Client Name */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                     <User size={13} className="text-slate-400" />
@@ -326,11 +316,10 @@ const ClientDirectory = () => {
                     placeholder="e.g. RAJESH HARILAL SHAH"
                     value={formName}
                     onChange={(e) => setFormName(e.target.value.toUpperCase())}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold text-slate-900 dark:text-white uppercase outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400 font-mono"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold text-slate-900 dark:text-white uppercase outline-none focus:border-sky-500 transition-all placeholder:text-slate-400 font-mono"
                   />
                 </div>
 
-                {/* PAN Number */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                     <CreditCard size={13} className="text-slate-400" />
@@ -344,14 +333,13 @@ const ClientDirectory = () => {
                     value={formPan}
                     onChange={(e) =>
                       setFormPan(
-                        e.target.value.toUpperCase().replace(/\s/g, ""),
+                        e.target.value.toUpperCase().replace(/\s/g, "")
                       )
                     }
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold text-slate-900 dark:text-white uppercase outline-none focus:border-emerald-500 transition-all placeholder:text-slate-400 font-mono tracking-wider"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold text-slate-900 dark:text-white uppercase outline-none focus:border-sky-500 transition-all placeholder:text-slate-400 font-mono tracking-wider"
                   />
                 </div>
 
-                {/* Family Configuration Toggle */}
                 <div className="pt-2 border-t border-slate-200 dark:border-white/5 space-y-3">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                     <Network size={13} className="text-slate-400" />
@@ -365,9 +353,9 @@ const ClientDirectory = () => {
                         setFamilyMode("new");
                         setSelectedFamilyClient(null);
                       }}
-                      className={`flex flex-col items-start p-3.5 rounded-lg border text-left transition-all ${
+                      className={`flex flex-col items-start p-3.5 rounded-lg border text-left transition-all cursor-pointer ${
                         familyMode === "new"
-                          ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/30"
+                          ? "bg-sky-50 dark:bg-sky-500/10 border-sky-500/40 text-sky-700 dark:text-sky-300 ring-1 ring-sky-500/30"
                           : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:border-slate-300"
                       }`}
                     >
@@ -382,9 +370,9 @@ const ClientDirectory = () => {
                     <button
                       type="button"
                       onClick={() => setFamilyMode("existing")}
-                      className={`flex flex-col items-start p-3.5 rounded-lg border text-left transition-all ${
+                      className={`flex flex-col items-start p-3.5 rounded-lg border text-left transition-all cursor-pointer ${
                         familyMode === "existing"
-                          ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/30"
+                          ? "bg-sky-50 dark:bg-sky-500/10 border-sky-500/40 text-sky-700 dark:text-sky-300 ring-1 ring-sky-500/30"
                           : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:border-slate-300"
                       }`}
                     >
@@ -397,7 +385,6 @@ const ClientDirectory = () => {
                     </button>
                   </div>
 
-                  {/* Existing Family Client Selector */}
                   {familyMode === "existing" && (
                     <div className="space-y-2 pt-2 animate-in fade-in duration-200">
                       <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">
@@ -405,7 +392,7 @@ const ClientDirectory = () => {
                       </label>
 
                       {selectedFamilyClient ? (
-                        <div className="flex items-center justify-between p-2.5 bg-slate-100 dark:bg-white/5 border border-emerald-500/30 rounded-lg">
+                        <div className="flex items-center justify-between p-2.5 bg-slate-100 dark:bg-white/5 border border-sky-500/30 rounded-lg">
                           <div className="flex flex-col">
                             <span className="text-xs font-bold text-slate-900 dark:text-white">
                               {selectedFamilyClient.name}
@@ -418,7 +405,7 @@ const ClientDirectory = () => {
                           <button
                             type="button"
                             onClick={() => setSelectedFamilyClient(null)}
-                            className="p-1 text-slate-400 hover:text-rose-500 transition-colors"
+                            className="p-1 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
                           >
                             <X size={14} />
                           </button>
@@ -437,18 +424,18 @@ const ClientDirectory = () => {
                               onChange={(e) =>
                                 setFamilySearchQuery(e.target.value)
                               }
-                              className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-xs outline-none focus:border-emerald-500 text-slate-900 dark:text-white"
+                              className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-xs outline-none focus:border-sky-500 text-slate-900 dark:text-white"
                             />
                           </div>
 
-                          <div className="max-h-36 overflow-y-auto border border-slate-200 dark:border-white/10 rounded-lg divide-y divide-slate-100 dark:divide-white/5 bg-white dark:bg-[#0B1120]">
+                          <div className="max-h-36 overflow-y-auto border border-slate-200 dark:border-white/10 rounded-lg divide-y divide-slate-100 dark:divide-white/5 bg-white dark:bg-[#131720]">
                             {eligibleExistingFamilyClients.length > 0 ? (
                               eligibleExistingFamilyClients.map((item) => (
                                 <button
                                   type="button"
                                   key={item._id}
                                   onClick={() => setSelectedFamilyClient(item)}
-                                  className="w-full px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between text-xs transition-colors"
+                                  className="w-full px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between text-xs transition-colors cursor-pointer"
                                 >
                                   <div className="flex flex-col truncate">
                                     <span className="font-bold text-slate-800 dark:text-slate-200 truncate">
@@ -458,7 +445,7 @@ const ClientDirectory = () => {
                                       {item.pan}
                                     </span>
                                   </div>
-                                  <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest px-1.5 py-0.5 bg-emerald-500/10 rounded">
+                                  <span className="text-[9px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-widest px-1.5 py-0.5 bg-sky-500/10 rounded">
                                     Select
                                   </span>
                                 </button>
@@ -476,13 +463,12 @@ const ClientDirectory = () => {
                 </div>
               </div>
 
-              {/* Form Actions */}
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-white/10">
                 <button
                   type="button"
                   onClick={handleCloseModal}
                   disabled={isSubmitting}
-                  className="px-4 py-2.5 rounded-lg border border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
+                  className="px-4 py-2.5 rounded-lg border border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -490,7 +476,7 @@ const ClientDirectory = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-sm shadow-emerald-600/20"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-sm shadow-sky-600/20 cursor-pointer"
                 >
                   {isSubmitting ? (
                     <>
@@ -509,7 +495,7 @@ const ClientDirectory = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

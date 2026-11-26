@@ -58,8 +58,8 @@ const CALCULATOR_CATALOG = [
     subtitle: "Project long-term wealth creation through disciplined monthly SIPs and yearly step-ups.",
     icon: TrendingUp,
     badgeClass:
-      "bg-emerald-50 text-emerald-600 border border-emerald-200/80 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30 group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-600",
-    hoverBorder: "hover:border-emerald-400 dark:hover:border-emerald-500/50",
+      "bg-sky-50 text-sky-600 border border-sky-200/80 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-400/30 group-hover:bg-sky-600 group-hover:text-white group-hover:border-sky-600",
+    hoverBorder: "hover:border-sky-400 dark:hover:border-sky-400/60",
   },
   {
     id: "lumpsum",
@@ -69,8 +69,8 @@ const CALCULATOR_CATALOG = [
     subtitle: "Compare one-time mutual fund compounding against post-tax bank fixed deposits.",
     icon: Wallet,
     badgeClass:
-      "bg-teal-50 text-teal-600 border border-teal-200/80 dark:bg-teal-500/15 dark:text-teal-400 dark:border-teal-500/30 group-hover:bg-teal-600 group-hover:text-white group-hover:border-teal-600",
-    hoverBorder: "hover:border-teal-400 dark:hover:border-teal-500/50",
+      "bg-cyan-50 text-cyan-700 border border-cyan-200/80 dark:bg-cyan-500/15 dark:text-cyan-300 dark:border-cyan-400/30 group-hover:bg-cyan-600 group-hover:text-white group-hover:border-cyan-600",
+    hoverBorder: "hover:border-cyan-400 dark:hover:border-cyan-400/60",
   },
   {
     id: "target-corpus",
@@ -80,8 +80,8 @@ const CALCULATOR_CATALOG = [
     subtitle: "Reverse-calculate the exact monthly SIP needed to achieve any ₹50L–₹10 Cr+ wealth goal.",
     icon: Target,
     badgeClass:
-      "bg-rose-50 text-rose-600 border border-rose-200/80 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30 group-hover:bg-rose-600 group-hover:text-white group-hover:border-rose-600",
-    hoverBorder: "hover:border-rose-400 dark:hover:border-rose-500/50",
+      "bg-rose-50 text-rose-600 border border-rose-200/80 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-400/30 group-hover:bg-rose-600 group-hover:text-white group-hover:border-rose-600",
+    hoverBorder: "hover:border-rose-400 dark:hover:border-rose-400/60",
   },
   {
     id: "capital-gains",
@@ -91,8 +91,8 @@ const CALCULATOR_CATALOG = [
     subtitle: "Calculate mutual fund LTCG / STCG tax liability and check ₹1.25L tax-free profit harvesting.",
     icon: Coins,
     badgeClass:
-      "bg-amber-50 text-amber-600 border border-amber-200/80 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30 group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600",
-    hoverBorder: "hover:border-amber-400 dark:hover:border-amber-500/50",
+      "bg-amber-50 text-amber-600 border border-amber-200/80 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-400/30 group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600",
+    hoverBorder: "hover:border-amber-400 dark:hover:border-amber-400/60",
   },
   {
     id: "sip-swp",
@@ -102,8 +102,8 @@ const CALCULATOR_CATALOG = [
     subtitle: "Model a complete 2-phase journey: build a corpus via SIP, then draw monthly income via SWP.",
     icon: Layers,
     badgeClass:
-      "bg-purple-50 text-purple-600 border border-purple-200/80 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30 group-hover:bg-purple-600 group-hover:text-white group-hover:border-purple-600",
-    hoverBorder: "hover:border-purple-400 dark:hover:border-purple-500/50",
+      "bg-purple-50 text-purple-600 border border-purple-200/80 dark:bg-purple-500/15 dark:text-purple-300 dark:border-purple-400/30 group-hover:bg-purple-600 group-hover:text-white group-hover:border-purple-600",
+    hoverBorder: "hover:border-purple-400 dark:hover:border-purple-400/60",
   },
   {
     id: "stp",
@@ -113,8 +113,8 @@ const CALCULATOR_CATALOG = [
     subtitle: "Model systematic transfers from liquid/debt funds into equity over time.",
     icon: Repeat,
     badgeClass:
-      "bg-indigo-50 text-indigo-600 border border-indigo-200/80 dark:bg-indigo-500/15 dark:text-indigo-400 dark:border-indigo-500/30 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600",
-    hoverBorder: "hover:border-indigo-400 dark:hover:border-indigo-500/50",
+      "bg-indigo-50 text-indigo-600 border border-indigo-200/80 dark:bg-indigo-500/15 dark:text-indigo-300 dark:border-indigo-400/30 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600",
+    hoverBorder: "hover:border-indigo-400 dark:hover:border-indigo-400/60",
   },
   {
     id: "stepup-stp",
@@ -124,8 +124,8 @@ const CALCULATOR_CATALOG = [
     subtitle: "Compare regular fixed STP against annual step-up STP for aggressive equity accumulation.",
     icon: Repeat,
     badgeClass:
-      "bg-sky-50 text-sky-600 border border-sky-200/80 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30 group-hover:bg-sky-600 group-hover:text-white group-hover:border-sky-600",
-    hoverBorder: "hover:border-sky-400 dark:hover:border-sky-500/50",
+      "bg-blue-50 text-blue-600 border border-blue-200/80 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-400/30 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600",
+    hoverBorder: "hover:border-blue-400 dark:hover:border-blue-400/60",
   },
   {
     id: "swp",
@@ -135,8 +135,8 @@ const CALCULATOR_CATALOG = [
     subtitle: "Plan regular monthly retirement cashflows and check corpus longevity.",
     icon: ArrowDownCircle,
     badgeClass:
-      "bg-orange-50 text-orange-600 border border-orange-200/80 dark:bg-orange-500/15 dark:text-orange-400 dark:border-orange-500/30 group-hover:bg-orange-600 group-hover:text-white group-hover:border-orange-600",
-    hoverBorder: "hover:border-orange-400 dark:hover:border-orange-500/50",
+      "bg-orange-50 text-orange-600 border border-orange-200/80 dark:bg-orange-500/15 dark:text-orange-300 dark:border-orange-400/30 group-hover:bg-orange-600 group-hover:text-white group-hover:border-orange-600",
+    hoverBorder: "hover:border-orange-400 dark:hover:border-orange-400/60",
   },
   {
     id: "emergency",
@@ -146,8 +146,8 @@ const CALCULATOR_CATALOG = [
     subtitle: "Calculate ideal liquidity buffer (3–12 months expenses & EMIs) and check cash reserves.",
     icon: ShieldAlert,
     badgeClass:
-      "bg-red-50 text-red-600 border border-red-200/80 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/30 group-hover:bg-red-600 group-hover:text-white group-hover:border-red-600",
-    hoverBorder: "hover:border-red-400 dark:hover:border-red-500/50",
+      "bg-red-50 text-red-600 border border-red-200/80 dark:bg-red-500/15 dark:text-red-300 dark:border-red-400/30 group-hover:bg-red-600 group-hover:text-white group-hover:border-red-600",
+    hoverBorder: "hover:border-red-400 dark:hover:border-red-400/60",
   },
   {
     id: "goals",
@@ -157,8 +157,8 @@ const CALCULATOR_CATALOG = [
     subtitle: "Plan inflation-adjusted funds for Retirement, Education, Marriage, Home, Car, or Vacation.",
     icon: Compass,
     badgeClass:
-      "bg-violet-50 text-violet-600 border border-violet-200/80 dark:bg-violet-500/15 dark:text-violet-400 dark:border-violet-500/30 group-hover:bg-violet-600 group-hover:text-white group-hover:border-violet-600",
-    hoverBorder: "hover:border-violet-400 dark:hover:border-violet-500/50",
+      "bg-violet-50 text-violet-600 border border-violet-200/80 dark:bg-violet-500/15 dark:text-violet-300 dark:border-violet-400/30 group-hover:bg-violet-600 group-hover:text-white group-hover:border-violet-600",
+    hoverBorder: "hover:border-violet-400 dark:hover:border-violet-400/60",
   },
   {
     id: "delay",
@@ -168,8 +168,8 @@ const CALCULATOR_CATALOG = [
     subtitle: "See the exact wealth impact of postponing your investment start date.",
     icon: Clock,
     badgeClass:
-      "bg-amber-50 text-amber-600 border border-amber-200/80 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30 group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600",
-    hoverBorder: "hover:border-amber-400 dark:hover:border-amber-500/50",
+      "bg-amber-50 text-amber-600 border border-amber-200/80 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-400/30 group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600",
+    hoverBorder: "hover:border-amber-400 dark:hover:border-amber-400/60",
   },
   {
     id: "insurance",
@@ -179,8 +179,8 @@ const CALCULATOR_CATALOG = [
     subtitle: "Determine adequate term insurance cover based on income, loans, and goals.",
     icon: Shield,
     badgeClass:
-      "bg-cyan-50 text-cyan-600 border border-cyan-200/80 dark:bg-cyan-500/15 dark:text-cyan-400 dark:border-cyan-500/30 group-hover:bg-cyan-600 group-hover:text-white group-hover:border-cyan-600",
-    hoverBorder: "hover:border-cyan-400 dark:hover:border-cyan-500/50",
+      "bg-sky-50 text-sky-600 border border-sky-200/80 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-400/30 group-hover:bg-sky-600 group-hover:text-white group-hover:border-sky-600",
+    hoverBorder: "hover:border-sky-400 dark:hover:border-sky-400/60",
   },
   {
     id: "emi",
@@ -190,8 +190,8 @@ const CALCULATOR_CATALOG = [
     subtitle: "Calculate monthly loan EMIs and see how a parallel SIP recovers your interest.",
     icon: CreditCard,
     badgeClass:
-      "bg-fuchsia-50 text-fuchsia-600 border border-fuchsia-200/80 dark:bg-fuchsia-500/15 dark:text-fuchsia-400 dark:border-fuchsia-500/30 group-hover:bg-fuchsia-600 group-hover:text-white group-hover:border-fuchsia-600",
-    hoverBorder: "hover:border-fuchsia-400 dark:hover:border-fuchsia-500/50",
+      "bg-fuchsia-50 text-fuchsia-600 border border-fuchsia-200/80 dark:bg-fuchsia-500/15 dark:text-fuchsia-300 dark:border-fuchsia-400/30 group-hover:bg-fuchsia-600 group-hover:text-white group-hover:border-fuchsia-600",
+    hoverBorder: "hover:border-fuchsia-400 dark:hover:border-fuchsia-400/60",
   },
   {
     id: "tax",
@@ -201,8 +201,8 @@ const CALCULATOR_CATALOG = [
     subtitle: "Quick side-by-side comparison of New vs. Old Income Tax Regimes.",
     icon: Landmark,
     badgeClass:
-      "bg-emerald-50 text-emerald-600 border border-emerald-200/80 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30 group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-600",
-    hoverBorder: "hover:border-emerald-400 dark:hover:border-emerald-500/50",
+      "bg-teal-50 text-teal-600 border border-teal-200/80 dark:bg-teal-500/15 dark:text-teal-300 dark:border-teal-400/30 group-hover:bg-teal-600 group-hover:text-white group-hover:border-teal-600",
+    hoverBorder: "hover:border-teal-400 dark:hover:border-teal-400/60",
   },
 ];
 
@@ -211,19 +211,22 @@ const SIDEBAR_GROUPS = [
     id: "wealth",
     label: "Wealth Creation",
     icon: TrendingUp,
-    badgeBg: "bg-emerald-100/80 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-300/70 dark:border-emerald-500/30",
+    badgeBg:
+      "bg-sky-100/90 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-300/80 dark:border-sky-400/35",
   },
   {
     id: "cashflow",
     label: "STP & SWP Cashflow",
     icon: Repeat,
-    badgeBg: "bg-purple-100/80 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-300/70 dark:border-purple-500/30",
+    badgeBg:
+      "bg-indigo-100/90 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-300/80 dark:border-indigo-400/35",
   },
   {
     id: "goals",
     label: "Goals, Risk & Tax",
     icon: Compass,
-    badgeBg: "bg-amber-100/80 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-300/70 dark:border-amber-500/30",
+    badgeBg:
+      "bg-amber-100/90 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-300/80 dark:border-amber-400/35",
   },
 ];
 
@@ -251,7 +254,8 @@ const READY_CALCULATORS = [
 ];
 
 const Calculators = () => {
-  const [isHubView, setIsHubView] = useState(true);
+  // Used on Mobile/Tablet (< lg) to toggle between Tile Directory and Active Calculator
+  const [mobileHubView, setMobileHubView] = useState(true);
   const [hubSearch, setHubSearch] = useState("");
   const [selectedMode, setSelectedMode] = useState("sip");
 
@@ -312,11 +316,13 @@ const Calculators = () => {
     };
   }, []);
 
-  const handleOpenCalculator = (modeId) => {
+  const handleSelectCalculator = (modeId, { fromMobileTile = false } = {}) => {
     setSelectedMode(modeId);
     setPinnedPlanA(null);
-    setIsHubView(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (fromMobileTile) {
+      setMobileHubView(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handleSummaryChange = useCallback((payload) => {
@@ -481,10 +487,10 @@ const Calculators = () => {
                <td>${(pinnedPlanA.assumptions || []).map((a) => `${a.label}: ${a.value}`).join(" • ")}</td>
                <td style="text-align:right; font-weight:800; color:#4f46e5;">${heroA?.value || "—"}</td>
              </tr>
-             <tr style="background:#ecfdf5;">
+             <tr style="background:#f0f9ff;">
                <td><strong>Current Plan B</strong></td>
                <td>${(sharePayload.assumptions || []).map((a) => `${a.label}: ${a.value}`).join(" • ")}</td>
-               <td style="text-align:right; font-weight:800; color:#059669;">${heroB?.value || "—"}</td>
+               <td style="text-align:right; font-weight:800; color:#0284c7;">${heroB?.value || "—"}</td>
              </tr>
            </tbody>
          </table>`
@@ -535,7 +541,7 @@ const Calculators = () => {
                 <td><strong>Yr ${m.year}</strong></td>
                 <td>${m.sip}</td>
                 <td>${m.invested}</td>
-                <td style="color:#059669; font-weight:600;">${m.profit}</td>
+                <td style="color:#0284c7; font-weight:600;">${m.profit}</td>
                 <td style="text-align:right; font-weight:700;">${m.total}</td>
               </tr>`
               )
@@ -556,9 +562,10 @@ const Calculators = () => {
         <head>
           <title>${sharePayload.title} — Dalal Investments</title>
           <style>
+            @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap');
             * { box-sizing: border-box; }
             body {
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+              font-family: 'Sora', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
               color: #0f172a;
               padding: 36px 44px;
               max-width: 800px;
@@ -569,34 +576,34 @@ const Calculators = () => {
               display: flex;
               justify-content: space-between;
               align-items: center;
-              border-bottom: 2.5px solid #059669;
+              border-bottom: 2.5px solid #0284c7;
               padding-bottom: 18px;
               margin-bottom: 24px;
             }
             .brand-left { display: flex; align-items: center; gap: 14px; }
             .brand-logo { height: 44px; width: auto; object-fit: contain; }
             .brand-name { font-family: Georgia, "Times New Roman", serif; font-size: 22px; font-weight: 700; color: #0f172a; }
-            .brand-sub { font-size: 10px; font-weight: 800; letter-spacing: 0.18em; color: #059669; text-transform: uppercase; margin-top: 3px; }
+            .brand-sub { font-size: 10px; font-weight: 700; letter-spacing: 0.16em; color: #0284c7; text-transform: uppercase; margin-top: 3px; }
             .meta { text-align: right; font-size: 11px; color: #64748b; }
             .meta strong { color: #0f172a; display: block; font-size: 12px; }
-            .doc-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
+            .doc-title { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
             .doc-sub { font-size: 12.5px; color: #475569; margin-bottom: 14px; }
-            .client-badge { display: inline-block; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 6px 14px; border-radius: 6px; font-size: 12.5px; margin-bottom: 18px; }
-            .takeaway-box { background: #f8fafc; border-left: 4px solid #059669; border: 1px solid #e2e8f0; border-left-width: 4px; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; }
-            .takeaway-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #059669; margin-bottom: 4px; }
+            .client-badge { display: inline-block; background: #f0f9ff; border: 1px solid #bae6fd; color: #0369a1; padding: 6px 14px; border-radius: 4px; font-size: 12.5px; margin-bottom: 18px; }
+            .takeaway-box { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #0284c7; border-radius: 6px; padding: 14px 16px; margin-bottom: 20px; }
+            .takeaway-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #0284c7; margin-bottom: 4px; }
             .takeaway-text { font-size: 13px; color: #1e293b; font-weight: 500; }
-            .section-heading { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #475569; margin: 22px 0 10px 0; }
+            .section-heading { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #475569; margin: 22px 0 10px 0; }
             .assumptions-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-            .assumption-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; }
+            .assumption-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; }
             .assumption-label { font-size: 10px; font-weight: 600; color: #64748b; }
-            .assumption-val { font-size: 13px; font-weight: 800; color: #0f172a; margin-top: 2px; }
+            .assumption-val { font-size: 13px; font-weight: 700; color: #0f172a; margin-top: 2px; }
             table { width: 100%; border-collapse: collapse; }
             .summary-table td { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; font-size: 13.5px; }
             .row-title { font-weight: 700; color: #0f172a; }
             .row-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
-            .row-val { text-align: right; font-weight: 800; font-size: 14.5px; white-space: nowrap; }
-            .hero-row { background: #0f172a; color: #ffffff; }
-            .hero-row .row-title { color: #6ee7b7; font-size: 14px; }
+            .row-val { text-align: right; font-weight: 700; font-size: 14.5px; white-space: nowrap; }
+            .hero-row { background: #1e293b; color: #ffffff; }
+            .hero-row .row-title { color: #7dd3fc; font-size: 14px; }
             .hero-row .row-sub { color: #cbd5e1; }
             .hero-row .row-val { color: #ffffff; font-size: 18px; }
             .hero-row td { border-bottom: none; }
@@ -678,37 +685,44 @@ const Calculators = () => {
   }, [hubSearch]);
 
   return (
-    <div className="w-full font-sans">
+    <div className="calculators-sora-root w-full">
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap');
+        .calculators-sora-root,
+        .calculators-sora-root h1,
+        .calculators-sora-root h2,
+        .calculators-sora-root h3,
+        .calculators-sora-root p,
+        .calculators-sora-root span,
+        .calculators-sora-root button,
+        .calculators-sora-root input,
+        .calculators-sora-root label {
+          font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
       {/* ===================================================================== */}
-      {/* STEP 1: CLEAN TILE DIRECTORY                                          */}
+      {/* MOBILE / TABLET (< lg): 2-STEP TILE DIRECTORY                         */}
       {/* ===================================================================== */}
-      {isHubView ? (
-        <div className="space-y-7 sm:space-y-9">
+      {mobileHubView && (
+        <div className="lg:hidden space-y-7">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs font-extrabold text-slate-700 dark:text-slate-300">
-              <Calculator size={15} className="text-emerald-600 dark:text-emerald-400" />
-              <span>Select a calculator to generate client illustrations</span>
-            </div>
-
             <div className="relative w-full sm:w-72 shrink-0">
-              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 value={hubSearch}
                 onChange={(e) => setHubSearch(e.target.value)}
                 placeholder="Search calculators..."
-                className="w-full pl-9 pr-8 py-2 rounded-xl bg-white dark:bg-[#111827] border border-slate-300 dark:border-slate-700 focus:border-emerald-600 text-xs font-semibold text-slate-900 dark:text-white outline-none shadow-xs"
+                className="w-full pl-9 pr-8 py-2 rounded-md bg-white dark:bg-[#1E2534] border border-slate-300 dark:border-slate-600/80 focus:border-sky-600 dark:focus:border-sky-400 text-xs font-medium text-slate-900 dark:text-white outline-none shadow-2xs"
               />
               {hubSearch && (
                 <button
                   type="button"
                   onClick={() => setHubSearch("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
                 >
                   <X size={14} />
                 </button>
@@ -722,37 +736,37 @@ const Calculators = () => {
             const GroupIcon = group.icon;
 
             return (
-              <section key={group.id} className="space-y-4">
-                <div className="flex items-center gap-2.5 pb-3 border-b border-slate-300/80 dark:border-slate-700/80">
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${group.badgeBg}`}>
-                    <GroupIcon size={14} strokeWidth={2.3} />
+              <section key={group.id} className="space-y-3.5">
+                <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-300/80 dark:border-slate-700/80">
+                  <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${group.badgeBg}`}>
+                    <GroupIcon size={13} strokeWidth={2.2} />
                   </div>
-                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                     {group.label}
                   </h3>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-3.5">
                   {items.map((calc) => {
                     const Icon = calc.icon;
                     return (
                       <button
                         key={calc.id}
                         type="button"
-                        onClick={() => handleOpenCalculator(calc.id)}
-                        className={`group bg-white dark:bg-[#111827] border border-slate-300/85 dark:border-slate-700/80 ${calc.hoverBorder} rounded-2xl px-3.5 py-5 sm:px-4 sm:py-6 shadow-sm hover:shadow-md transition-all duration-150 cursor-pointer flex flex-col items-center text-center active:scale-[0.98]`}
+                        onClick={() => handleSelectCalculator(calc.id, { fromMobileTile: true })}
+                        className={`group bg-white dark:bg-[#1B2230] border border-slate-300/85 dark:border-slate-700/80 ${calc.hoverBorder} rounded-lg px-3.5 py-4.5 sm:px-4 sm:py-5 shadow-2xs hover:shadow-sm transition-all duration-150 cursor-pointer flex flex-col items-center text-center active:scale-[0.98]`}
                       >
                         <div
-                          className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl ${calc.badgeClass} flex items-center justify-center mb-3 sm:mb-3.5 transition-colors duration-150`}
+                          className={`w-10 h-10 sm:w-11 sm:h-11 rounded-md ${calc.badgeClass} flex items-center justify-center mb-2.5 sm:mb-3 transition-colors duration-150`}
                         >
-                          <Icon size={21} strokeWidth={2} />
+                          <Icon size={20} strokeWidth={2} />
                         </div>
 
-                        <div className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white leading-snug">
+                        <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug">
                           {calc.name}
                         </div>
 
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1 leading-tight">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-300/80 mt-1 line-clamp-1 leading-tight">
                           {calc.shortDesc}
                         </p>
                       </button>
@@ -763,34 +777,99 @@ const Calculators = () => {
             );
           })}
         </div>
-      ) : (
-        /* ===================================================================== */
-        /* STEP 2: BORDERLESS CALCULATOR WORKSPACE (All Screen Sizes)            */
-        /* ===================================================================== */
-        <div className="w-full space-y-5 sm:space-y-6">
-          
-          {/* UNIFIED HEADER: BACK ICON + TITLE + LANGUAGE + CRM CLIENT + EXPORT BUTTONS */}
-          <div className="space-y-3.5 pb-4 sm:pb-5 border-b border-slate-300/80 dark:border-slate-700/80">
-            
-            {/* Row 1: Back Icon Button + Title on Left | Action Buttons on Right */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+      )}
+
+      {/* ===================================================================== */}
+      {/* DESKTOP (>= lg): ALWAYS SIDE-BY-SIDE                                  */}
+      {/* MOBILE / TABLET (< lg): SHOWN WHEN A TILE IS SELECTED                 */}
+      {/* ===================================================================== */}
+      <div
+        className={`${
+          mobileHubView ? "hidden lg:flex" : "flex"
+        } flex-col lg:flex-row gap-6 items-start w-full`}
+      >
+        {/* LEFT SIDEBAR RAIL (Desktop >= lg only) */}
+        <aside className="hidden lg:flex flex-col w-64 xl:w-72 shrink-0 bg-white dark:bg-[#1B2230] border border-slate-200 dark:border-slate-700/80 rounded-lg p-3 shadow-2xs space-y-5 sticky top-24">
+          {SIDEBAR_GROUPS.map((group) => {
+            const items = CALCULATOR_CATALOG.filter((c) => c.category === group.id);
+            return (
+              <div key={group.id} className="space-y-1">
+                <div className="px-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+                  {group.label}
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  {items.map((calc) => {
+                    const Icon = calc.icon;
+                    const isSelected = selectedMode === calc.id;
+
+                    return (
+                      <button
+                        key={calc.id}
+                        type="button"
+                        onClick={() => handleSelectCalculator(calc.id)}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-left text-xs font-semibold transition-all cursor-pointer outline-none ${
+                          isSelected
+                            ? "bg-sky-50 dark:bg-sky-500/20 text-sky-700 dark:text-sky-200 border border-sky-300/80 dark:border-sky-400/40 shadow-2xs"
+                            : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700/40 border border-transparent"
+                        }`}
+                      >
+                        <div
+                          className={`w-6 h-6 rounded flex items-center justify-center shrink-0 transition-colors ${
+                            isSelected
+                              ? "bg-sky-600 dark:bg-sky-500 text-white"
+                              : "bg-slate-100 dark:bg-slate-700/60 text-slate-500 dark:text-slate-300"
+                          }`}
+                        >
+                          <Icon size={13} strokeWidth={2.2} />
+                        </div>
+                        <span className="truncate">{calc.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </aside>
+
+        {/* RIGHT PRIMARY CALCULATOR WORKSPACE */}
+        <div className="flex-1 min-w-0 w-full bg-transparent lg:bg-white dark:lg:bg-[#1B2230] border-0 lg:border border-slate-200 dark:border-slate-700/80 rounded-none lg:rounded-lg p-0 lg:p-6 shadow-none lg:shadow-2xs space-y-5 sm:space-y-6">
+          {/* UNIFIED HEADER: BACK ICON (< lg) + TITLE + LANGUAGE + CRM CLIENT + EXPORT BUTTONS */}
+          <div className="space-y-3.5 pb-4 sm:pb-5 border-b border-slate-200 dark:border-slate-700/80">
+            {/* Row 1: Back Icon (< lg) / Calculator Icon (>= lg) + Title on Left | Action Buttons on Right */}
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
               <div className="flex items-center justify-between gap-2.5">
                 <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                  {/* Mobile/Tablet Back Button (< lg) */}
                   <button
                     type="button"
-                    onClick={() => setIsHubView(true)}
+                    onClick={() => setMobileHubView(true)}
                     title="Back to All Calculators"
                     aria-label="Back to All Calculators"
-                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-[#111827] hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-600 flex items-center justify-center shrink-0 transition-colors cursor-pointer active:scale-95 shadow-xs"
+                    className="lg:hidden w-9 h-9 rounded-md bg-white dark:bg-[#232B3D] hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-600 flex items-center justify-center shrink-0 transition-colors cursor-pointer active:scale-95 shadow-2xs"
                   >
-                    <ArrowLeft size={17} strokeWidth={2.5} />
+                    <ArrowLeft size={16} strokeWidth={2.4} />
                   </button>
 
+                  {/* Desktop Active Calculator Badge (>= lg) */}
+                  <div className="hidden lg:flex w-9 h-9 rounded-md bg-sky-50 dark:bg-sky-500/20 border border-sky-200/90 dark:border-sky-400/35 text-sky-600 dark:text-sky-300 items-center justify-center shrink-0">
+                    <currentCalcObj.icon size={18} strokeWidth={2.2} />
+                  </div>
+
                   <div className="min-w-0">
-                    <h2 className="text-base sm:text-xl font-black text-slate-900 dark:text-white tracking-tight truncate">
-                      {currentCalcObj.name}
-                    </h2>
-                    <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight truncate">
+                        {currentCalcObj.name}
+                      </h2>
+                    </div>
+                    {/* Segmented Sky Micro-Ticks (matching PageHeader) */}
+                    <div className="flex items-center gap-1 mt-1 mb-1">
+                      <span className="h-[2px] w-4 rounded-full bg-sky-600 dark:bg-sky-400" />
+                      <span className="h-[2px] w-1.5 rounded-full bg-sky-500/60 dark:bg-sky-400/60" />
+                      <span className="h-[2px] w-1 rounded-full bg-cyan-400/60 dark:bg-cyan-300/50" />
+                    </div>
+                    <p className="text-[11px] sm:text-xs font-normal text-slate-500 dark:text-slate-300 line-clamp-1">
                       {currentCalcObj.subtitle}
                     </p>
                   </div>
@@ -801,7 +880,7 @@ const Calculators = () => {
                   <div
                     role="group"
                     aria-label="Calculator Actions"
-                    className="inline-flex sm:hidden items-center bg-white dark:bg-[#111827] border border-slate-300 dark:border-slate-600 rounded-xl overflow-hidden divide-x divide-slate-300 dark:divide-slate-600 shadow-xs shrink-0"
+                    className="inline-flex sm:hidden items-center bg-white dark:bg-[#232B3D] border border-slate-300 dark:border-slate-600 rounded-md overflow-hidden divide-x divide-slate-300 dark:divide-slate-600 shadow-2xs shrink-0"
                   >
                     <button
                       type="button"
@@ -811,7 +890,7 @@ const Calculators = () => {
                       className={`p-2 transition-colors cursor-pointer ${
                         pinnedPlanA
                           ? "bg-indigo-600 text-white"
-                          : "text-indigo-600 dark:text-indigo-400 active:bg-indigo-50"
+                          : "text-indigo-600 dark:text-indigo-300 active:bg-indigo-50 dark:active:bg-indigo-500/20"
                       }`}
                     >
                       <Pin size={14} />
@@ -823,7 +902,7 @@ const Calculators = () => {
                       disabled={exportingPng}
                       title="Download PNG Card"
                       aria-label="Download PNG Card"
-                      className="p-2 text-amber-700 dark:text-amber-400 active:bg-amber-50 transition-colors cursor-pointer disabled:opacity-40"
+                      className="p-2 text-amber-700 dark:text-amber-300 active:bg-amber-50 dark:active:bg-amber-500/20 transition-colors cursor-pointer disabled:opacity-40"
                     >
                       <ImageIcon size={14} />
                     </button>
@@ -833,9 +912,9 @@ const Calculators = () => {
                       onClick={handleCopyWhatsApp}
                       title="Copy Summary"
                       aria-label="Copy Summary"
-                      className="p-2 text-slate-700 dark:text-slate-200 active:bg-slate-100 transition-colors cursor-pointer"
+                      className="p-2 text-slate-700 dark:text-slate-200 active:bg-slate-100 dark:active:bg-slate-700 transition-colors cursor-pointer"
                     >
-                      {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                      {copied ? <Check size={14} className="text-sky-600 dark:text-sky-400" /> : <Copy size={14} />}
                     </button>
 
                     <button
@@ -843,7 +922,7 @@ const Calculators = () => {
                       onClick={handleOpenWhatsApp}
                       title="Send on WhatsApp"
                       aria-label="Send on WhatsApp"
-                      className="p-2 bg-emerald-600 text-white active:bg-emerald-700 transition-colors cursor-pointer"
+                      className="p-2 bg-sky-600 text-white active:bg-sky-700 transition-colors cursor-pointer"
                     >
                       <Send size={14} />
                     </button>
@@ -853,7 +932,7 @@ const Calculators = () => {
                       onClick={handlePrintClientSheet}
                       title="Print / PDF"
                       aria-label="Print / PDF"
-                      className="p-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 active:opacity-80 transition-colors cursor-pointer"
+                      className="p-2 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 active:opacity-80 transition-colors cursor-pointer"
                     >
                       <Printer size={14} />
                     </button>
@@ -867,10 +946,10 @@ const Calculators = () => {
                   <button
                     type="button"
                     onClick={pinnedPlanA ? () => setPinnedPlanA(null) : handlePinPlanA}
-                    className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer shadow-2xs ${
+                    className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors cursor-pointer ${
                       pinnedPlanA
                         ? "bg-indigo-600 text-white border-indigo-700"
-                        : "bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/15 dark:hover:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/40"
+                        : "bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/20 dark:hover:bg-indigo-500/30 text-indigo-700 dark:text-indigo-200 border-indigo-300 dark:border-indigo-400/40"
                     }`}
                   >
                     <Pin size={13} />
@@ -881,27 +960,27 @@ const Calculators = () => {
                     type="button"
                     onClick={handleDownloadPngCard}
                     disabled={exportingPng}
-                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/15 dark:hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 transition-colors cursor-pointer disabled:opacity-50 shadow-2xs"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/20 dark:hover:bg-amber-500/30 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-400/40 transition-colors cursor-pointer disabled:opacity-50"
                   >
-                    <ImageIcon size={14} />
+                    <ImageIcon size={13} />
                     <span>{exportingPng ? "Rendering..." : "PNG Card"}</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={handleCopyWhatsApp}
-                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-100 dark:bg-[#111827] dark:hover:bg-slate-800 text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer shadow-2xs"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-white hover:bg-slate-100 dark:bg-[#232B3D] dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer"
                   >
-                    {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                    {copied ? <Check size={13} className="text-sky-600 dark:text-sky-400" /> : <Copy size={13} />}
                     <span>{copied ? "Copied!" : "Copy"}</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={handleOpenWhatsApp}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700 shadow-xs transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 text-white border border-sky-700 dark:border-sky-400/50 shadow-2xs transition-colors cursor-pointer"
                   >
-                    <Send size={14} />
+                    <Send size={13} />
                     <span>
                       {selectedClient?.phone
                         ? `WhatsApp ${selectedClient.name.split(" ")[0]}`
@@ -912,9 +991,9 @@ const Calculators = () => {
                   <button
                     type="button"
                     onClick={handlePrintClientSheet}
-                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 border border-slate-900 dark:border-white shadow-xs transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-slate-800 hover:bg-slate-900 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 border border-slate-800 dark:border-slate-200 shadow-2xs transition-colors cursor-pointer"
                   >
-                    <Printer size={14} />
+                    <Printer size={13} />
                     <span>Print / PDF</span>
                   </button>
                 </div>
@@ -925,8 +1004,8 @@ const Calculators = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               {/* Searchable CRM Client Auto-Fill Input */}
               <div className="relative flex-1 sm:max-w-sm" ref={clientPickerRef}>
-                <div className="flex items-center gap-2 bg-white dark:bg-[#111827] border border-slate-300 dark:border-slate-600 focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-500/20 rounded-xl px-3 py-2 shadow-xs">
-                  <User size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <div className="flex items-center gap-2 bg-white dark:bg-[#232B3D] border border-slate-300 dark:border-slate-600 focus-within:border-sky-600 dark:focus-within:border-sky-400 focus-within:ring-2 focus-within:ring-sky-500/20 rounded-md px-3 py-1.5 shadow-2xs">
+                  <User size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
                   <input
                     type="text"
                     placeholder={
@@ -941,7 +1020,7 @@ const Calculators = () => {
                       setSelectedClient(null);
                       setClientDropdownOpen(true);
                     }}
-                    className="text-xs font-bold text-slate-900 dark:text-white placeholder:font-medium placeholder:text-slate-400 bg-transparent outline-none w-full"
+                    className="text-xs font-semibold text-slate-900 dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-400 bg-transparent outline-none w-full"
                   />
                   {clientName && (
                     <button
@@ -950,7 +1029,7 @@ const Calculators = () => {
                         setClientName("");
                         setSelectedClient(null);
                       }}
-                      className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                      className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
                     >
                       <X size={13} />
                     </button>
@@ -958,8 +1037,8 @@ const Calculators = () => {
                 </div>
 
                 {clientDropdownOpen && filteredCrmClients.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-1.5 rounded-xl bg-white dark:bg-[#131C31] border border-slate-300 dark:border-slate-600 shadow-2xl p-1.5 z-50 max-h-64 overflow-y-auto no-scrollbar space-y-1 animate-in fade-in zoom-in-95 duration-100">
-                    <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <div className="absolute left-0 right-0 mt-1 rounded-md bg-white dark:bg-[#232B3D] border border-slate-300 dark:border-slate-600 shadow-xl p-1.5 z-50 max-h-64 overflow-y-auto no-scrollbar space-y-1 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-300 flex items-center gap-1.5">
                       <Search size={11} />
                       <span>CRM Client Directory Auto-Fill</span>
                     </div>
@@ -973,18 +1052,18 @@ const Calculators = () => {
                           setClientDropdownOpen(false);
                           toast.success(`Loaded CRM profile: ${client.name}`);
                         }}
-                        className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left hover:bg-emerald-50 dark:hover:bg-emerald-500/15 transition-colors cursor-pointer"
+                        className="w-full flex items-center justify-between px-2.5 py-2 rounded text-left hover:bg-sky-50 dark:hover:bg-sky-500/20 transition-colors cursor-pointer"
                       >
                         <div className="min-w-0">
-                          <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          <div className="text-xs font-semibold text-slate-900 dark:text-white truncate">
                             {client.name}
                           </div>
-                          <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                          <div className="text-[11px] text-slate-500 dark:text-slate-300 truncate">
                             {client.phone || client.email || "CRM Client"}
                           </div>
                         </div>
                         {Number(client.aum) > 0 && (
-                          <span className="text-[11px] font-extrabold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/20 px-2 py-0.5 rounded shrink-0 ml-2">
+                          <span className="text-[11px] font-bold text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-500/25 border border-sky-200/70 dark:border-sky-400/30 px-2 py-0.5 rounded shrink-0 ml-2">
                             AUM: {formatINRCompact(client.aum)}
                           </span>
                         )}
@@ -996,21 +1075,21 @@ const Calculators = () => {
 
               {/* Language Pill aligned cleanly to the right */}
               <div className="flex items-center justify-between sm:justify-end gap-2">
-                <span className="text-[11px] font-bold text-slate-500 sm:hidden inline-flex items-center gap-1">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-300 sm:hidden inline-flex items-center gap-1">
                   <Globe size={12} />
                   <span>Report Language:</span>
                 </span>
-                <div className="inline-flex items-center gap-1 bg-white dark:bg-[#111827] border border-slate-300 dark:border-slate-600 rounded-xl p-1 shadow-xs">
-                  <Globe size={13} className="text-emerald-600 dark:text-emerald-400 ml-2 mr-0.5 hidden sm:block" />
+                <div className="inline-flex items-center gap-1 bg-white dark:bg-[#232B3D] border border-slate-300 dark:border-slate-600 rounded-md p-0.5 shadow-2xs">
+                  <Globe size={13} className="text-sky-600 dark:text-sky-400 ml-2 mr-0.5 hidden sm:block" />
                   {LANGUAGES.map((item) => (
                     <button
                       key={item.code}
                       type="button"
                       onClick={() => setLang(item.code)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer ${
+                      className={`px-2.5 py-1 rounded text-[11px] sm:text-xs font-semibold transition-all cursor-pointer ${
                         lang === item.code
-                          ? "bg-emerald-600 text-white shadow-2xs"
-                          : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          ? "bg-sky-600 dark:bg-sky-500 text-white shadow-2xs"
+                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60"
                       }`}
                     >
                       {item.label}
@@ -1022,10 +1101,10 @@ const Calculators = () => {
 
             {/* Universal Plan A vs. Plan B Comparison Drawer */}
             {pinnedPlanA && (
-              <div className="rounded-2xl bg-indigo-50/90 dark:bg-indigo-500/10 border border-indigo-300 dark:border-indigo-500/35 p-3.5 sm:p-5 space-y-3 shadow-sm animate-in fade-in duration-150">
+              <div className="rounded-lg bg-sky-50/90 dark:bg-sky-500/15 border border-sky-300 dark:border-sky-400/40 p-3.5 sm:p-4 space-y-3 shadow-2xs animate-in fade-in duration-150">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="inline-flex items-center gap-2 text-xs font-extrabold text-indigo-800 dark:text-indigo-300">
-                    <Sparkles size={14} className="shrink-0" />
+                  <div className="inline-flex items-center gap-2 text-xs font-bold text-sky-800 dark:text-sky-200">
+                    <Sparkles size={14} className="shrink-0 text-sky-600 dark:text-sky-300" />
                     <span>
                       Side-by-Side Scenario Comparison Active — Adjust sliders below to test Plan B against Pinned Plan A
                     </span>
@@ -1033,7 +1112,7 @@ const Calculators = () => {
                   <button
                     type="button"
                     onClick={() => setPinnedPlanA(null)}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-rose-600 cursor-pointer"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer"
                   >
                     <X size={13} />
                     <span>Clear</span>
@@ -1041,28 +1120,28 @@ const Calculators = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-                  <div className="bg-white dark:bg-[#0B1120] border border-indigo-300 dark:border-indigo-500/40 rounded-xl p-2.5 sm:p-3.5 space-y-1 shadow-2xs">
-                    <span className="px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-500/20 text-indigo-800 dark:text-indigo-300 text-[9px] sm:text-[10px] font-extrabold uppercase inline-block">
+                  <div className="bg-white dark:bg-[#232B3D] border border-indigo-300 dark:border-indigo-400/45 rounded-md p-2.5 sm:p-3 space-y-1 shadow-2xs">
+                    <span className="px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-500/25 text-indigo-800 dark:text-indigo-200 text-[9px] sm:text-[10px] font-bold uppercase inline-block">
                       Plan A ({pinnedPlanA.pinnedAt})
                     </span>
-                    <div className="text-base sm:text-xl font-black text-slate-900 dark:text-white tabular-nums">
+                    <div className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white tabular-nums">
                       {(heroPlanA?.value || "—").split("(")[0].trim()}
                     </div>
-                    <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
+                    <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-300 line-clamp-2">
                       {(pinnedPlanA.assumptions || [])
                         .map((a) => `${a.label}: ${a.value}`)
                         .join(" • ")}
                     </div>
                   </div>
 
-                  <div className="bg-white dark:bg-[#0B1120] border border-emerald-400 dark:border-emerald-500/40 rounded-xl p-2.5 sm:p-3.5 space-y-1 shadow-2xs">
-                    <span className="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-[9px] sm:text-[10px] font-extrabold uppercase inline-block">
+                  <div className="bg-white dark:bg-[#232B3D] border border-sky-400 dark:border-sky-400/50 rounded-md p-2.5 sm:p-3 space-y-1 shadow-2xs">
+                    <span className="px-2 py-0.5 rounded bg-sky-100 dark:bg-sky-500/25 text-sky-800 dark:text-sky-200 text-[9px] sm:text-[10px] font-bold uppercase inline-block">
                       Plan B (Live)
                     </span>
-                    <div className="text-base sm:text-xl font-black text-emerald-700 dark:text-emerald-400 tabular-nums">
+                    <div className="text-base sm:text-lg font-extrabold text-sky-700 dark:text-sky-300 tabular-nums">
                       {(heroPlanB?.value || "—").split("(")[0].trim()}
                     </div>
-                    <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
+                    <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-300 line-clamp-2">
                       {(sharePayload.assumptions || [])
                         .map((a) => `${a.label}: ${a.value}`)
                         .join(" • ")}
@@ -1071,7 +1150,6 @@ const Calculators = () => {
                 </div>
               </div>
             )}
-
           </div>
 
           {/* ACTIVE CALCULATOR CONTENT */}
@@ -1200,9 +1278,8 @@ const Calculators = () => {
               onSummaryChange={handleSummaryChange}
             />
           )}
-
         </div>
-      )}
+      </div>
     </div>
   );
 };

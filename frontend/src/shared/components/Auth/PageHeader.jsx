@@ -1,18 +1,15 @@
 import React from "react";
 
 /**
- * Universal PageHeader Component (Option 8 - Oxford Azure Edition)
+ * Universal PageHeader Component (Locked: Sora Architectural Edition)
  *
- * Locked Design:
- * - High-impact Plus Jakarta Sans typography (font-[900])
- * - Luminous Oxford Azure horizon beam with radial glow
- * - Multi-word / compound accent text rendered in an Azure gradient
- * - Single-word titles render in solid high-contrast monochrome
- * - No default string values for title, accent, or description
- * - Strictly title, beam, and subtext (zero switcher UI or extra elements)
+ * - Sora technical geometric sans-serif typography
+ * - Dual-weight lockup (Bold primary title + Normal sky-blue accent)
+ * - Segmented sky micro-ticks calibrated to WorkspaceShell's palette
+ * - Clean, unobstructed title, micro-ticks, and subtitle
  *
- * @param {string} title - Primary title or single-word heading (e.g. "Wallets", "Expense")
- * @param {string} [accent] - Optional secondary title word (e.g. "Overview")
+ * @param {string} title - Primary title or single-word heading
+ * @param {string} [accent] - Optional secondary title word
  * @param {string} [description] - Optional explainer subtitle below the title
  * @param {string} [className] - Optional container styling classes
  */
@@ -27,37 +24,42 @@ const PageHeader = ({
   const hasAccent = Boolean(accent && accent.trim().length > 0);
 
   return (
-    <header className={`relative w-full select-none ${className}`}>
-      {/* Plus Jakarta Sans Typeface */}
+    <div className={`relative w-full select-none ${className}`}>
+      {/* Sora Google Font Loader */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800;900&display=swap');
-        header.opt8-azure-final h1, header.opt8-azure-final p {
-          font-family: 'Plus Jakarta Sans', sans-serif;
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+        .workspace-sora-header h1,
+        .workspace-sora-header p {
+          font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
         }
       `}</style>
 
-      <div className="opt8-azure-final flex flex-col text-left w-full min-w-0">
-        {/* Title Block */}
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl 2xl:text-6xl font-[900] tracking-tighter text-slate-950 dark:text-white leading-none">
+      <div className="workspace-sora-header flex flex-col text-left w-full min-w-0">
+        {/* Title Row */}
+        <h1 className="text-2xl sm:text-3xl lg:text-[34px] font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
           {title}
           {hasAccent && (
-            <span className="ml-2 sm:ml-2.5 font-[900] bg-gradient-to-r from-blue-700 via-sky-600 to-cyan-500 dark:from-sky-300 dark:via-blue-300 dark:to-cyan-200 bg-clip-text text-transparent">
+            <span className="ml-2 font-normal text-sky-600 dark:text-sky-300">
               {accent}
             </span>
           )}
         </h1>
 
-        {/* Oxford Azure Horizon Glow Beam */}
-        <div className="h-[2.5px] w-14 sm:w-16 rounded-full mt-3 mb-2 bg-gradient-to-r from-blue-600 via-sky-400 to-cyan-300 shadow-[0_0_14px_rgba(14,165,233,0.5)]" />
+        {/* Segmented Sky Micro-Ticks */}
+        <div className="flex items-center gap-1.5 mt-2.5 mb-2.5">
+          <span className="h-[2.5px] w-6 rounded-full bg-sky-600 dark:bg-sky-400" />
+          <span className="h-[2.5px] w-2 rounded-full bg-sky-500/60 dark:bg-sky-400/60" />
+          <span className="h-[2.5px] w-1 rounded-full bg-cyan-400/60 dark:bg-cyan-300/50" />
+        </div>
 
-        {/* Optional Explainer Subtitle */}
+        {/* Explainer Subtitle */}
         {description && (
-          <p className="text-xs sm:text-sm lg:text-[15px] font-normal text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
+          <p className="text-xs sm:text-sm font-normal text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl">
             {description}
           </p>
         )}
       </div>
-    </header>
+    </div>
   );
 };
 

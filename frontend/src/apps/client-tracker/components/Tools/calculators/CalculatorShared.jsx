@@ -66,32 +66,32 @@ export const ComparisonBar = ({
   inflationRate,
   setInflationRate,
 }) => (
-  <div className="bg-white dark:bg-[#111827] border border-slate-300 dark:border-white/15 rounded-xl p-3.5 sm:p-4 shadow-xs">
+  <div className="bg-white dark:bg-[#1B2230] border border-slate-300 dark:border-slate-700/80 rounded-lg p-3.5 sm:p-4 shadow-2xs">
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
       <label className="flex items-center gap-3 cursor-pointer select-none">
         <input
           type="checkbox"
           checked={showComparison}
           onChange={(e) => setShowComparison(e.target.checked)}
-          className="w-4 h-4 rounded border-slate-400 accent-emerald-600 cursor-pointer shrink-0"
+          className="w-4 h-4 rounded border-slate-400 accent-sky-600 cursor-pointer shrink-0"
         />
-        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-300/80 dark:border-white/15 text-slate-700 dark:text-slate-200 flex items-center justify-center shrink-0">
+        <div className="w-8 h-8 rounded-md bg-sky-50 dark:bg-sky-500/15 border border-sky-200/80 dark:border-sky-400/30 text-sky-600 dark:text-sky-300 flex items-center justify-center shrink-0">
           <Scale size={15} />
         </div>
         <div className="min-w-0">
-          <span className="text-xs font-extrabold text-slate-900 dark:text-white block">
+          <span className="text-xs font-bold text-slate-900 dark:text-white block">
             {t.compareToggle}
           </span>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 block leading-snug">
+          <span className="text-[11px] font-normal text-slate-500 dark:text-slate-300/80 block leading-snug">
             {t.compareDesc}
           </span>
         </div>
       </label>
 
       {showComparison && (
-        <div className="grid grid-cols-3 gap-2.5 sm:gap-3 lg:w-[460px] shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-200 dark:border-white/15 animate-in fade-in duration-150">
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-3 lg:w-[460px] shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-200 dark:border-slate-700/80 animate-in fade-in duration-150">
           <div>
-            <label className="text-[10px] sm:text-[11px] font-extrabold text-slate-700 dark:text-slate-300 block mb-1 truncate">
+            <label className="text-[10px] sm:text-[11px] font-bold text-slate-700 dark:text-slate-200 block mb-1 truncate">
               {t.fdRateLabel}
             </label>
             <input
@@ -100,12 +100,12 @@ export const ComparisonBar = ({
               step={0.25}
               value={fdRate}
               onChange={(e) => setFdRate(Number(e.target.value))}
-              className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-slate-50 dark:bg-[#0B1120] border border-slate-300 dark:border-white/20 focus:border-slate-900 dark:focus:border-white/50 text-xs font-extrabold text-slate-900 dark:text-white outline-none tabular-nums"
+              className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md bg-slate-50 dark:bg-[#232B3D] border border-slate-300 dark:border-slate-600 focus:border-sky-600 dark:focus:border-sky-400 text-xs font-bold text-slate-900 dark:text-white outline-none tabular-nums"
             />
           </div>
 
           <div>
-            <label className="text-[10px] sm:text-[11px] font-extrabold text-slate-700 dark:text-slate-300 block mb-1 truncate">
+            <label className="text-[10px] sm:text-[11px] font-bold text-slate-700 dark:text-slate-200 block mb-1 truncate">
               {t.taxSlabLabel}
             </label>
             <CustomDropdown
@@ -116,7 +116,7 @@ export const ComparisonBar = ({
           </div>
 
           <div>
-            <label className="text-[10px] sm:text-[11px] font-extrabold text-slate-700 dark:text-slate-300 block mb-1 truncate">
+            <label className="text-[10px] sm:text-[11px] font-bold text-slate-700 dark:text-slate-200 block mb-1 truncate">
               {t.inflationLabel}
             </label>
             <input
@@ -125,7 +125,7 @@ export const ComparisonBar = ({
               step={0.5}
               value={inflationRate}
               onChange={(e) => setInflationRate(Number(e.target.value))}
-              className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-slate-50 dark:bg-[#0B1120] border border-slate-300 dark:border-white/20 focus:border-slate-900 dark:focus:border-white/50 text-xs font-extrabold text-slate-900 dark:text-white outline-none tabular-nums"
+              className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md bg-slate-50 dark:bg-[#232B3D] border border-slate-300 dark:border-slate-600 focus:border-sky-600 dark:focus:border-sky-400 text-xs font-bold text-slate-900 dark:text-white outline-none tabular-nums"
             />
           </div>
         </div>
@@ -141,19 +141,19 @@ export const HeroResultBanner = ({
   kpis = [],
   splitBar,
 }) => (
-  <div className="rounded-2xl bg-slate-900 dark:bg-[#0F172A] border border-slate-800 dark:border-white/15 text-white p-4 sm:p-6 shadow-md space-y-4 sm:space-y-5">
+  <div className="rounded-lg bg-slate-800 dark:bg-[#222B3C] border border-slate-700 dark:border-slate-600/80 text-white p-4 sm:p-6 shadow-sm space-y-4 sm:space-y-5">
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6">
       <div>
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-sky-500/20 border border-sky-400/35 text-sky-300 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">
           <BadgeIcon size={13} />
           <span>{badgeText}</span>
         </div>
 
         <div className="mt-2 sm:mt-2.5 flex flex-wrap items-baseline gap-2 sm:gap-3">
-          <span className="text-2xl sm:text-5xl font-black tracking-tight text-white tabular-nums">
+          <span className="text-2xl sm:text-4xl lg:text-[42px] font-extrabold tracking-tight text-white tabular-nums">
             {formatINRCompact(futureValue)}
           </span>
-          <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-slate-800 border border-slate-700 text-[11px] sm:text-xs font-mono font-semibold text-emerald-300 tabular-nums">
+          <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded bg-slate-700/80 dark:bg-[#1B2230] border border-slate-600 text-[11px] sm:text-xs font-semibold text-sky-300 tabular-nums">
             {formatINR(futureValue)}
           </span>
         </div>
@@ -163,15 +163,15 @@ export const HeroResultBanner = ({
         {kpis.map((kpi, idx) => (
           <div
             key={idx}
-            className="bg-slate-800/95 border border-slate-700 rounded-xl px-2.5 py-2 sm:px-4 sm:py-3 min-w-0"
+            className="bg-slate-700/60 dark:bg-[#1B2230]/90 border border-slate-600/80 rounded-md px-2.5 py-2 sm:px-4 sm:py-3 min-w-0"
           >
             <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate ${kpi.labelColor}`}>
               {kpi.label}
             </span>
-            <span className={`text-sm sm:text-xl font-black tabular-nums mt-0.5 block truncate ${kpi.valueColor}`}>
+            <span className={`text-sm sm:text-lg font-extrabold tabular-nums mt-0.5 block truncate ${kpi.valueColor}`}>
               {kpi.value}
             </span>
-            <span className="text-[10px] sm:text-[11px] text-slate-400 block truncate">{kpi.sub}</span>
+            <span className="text-[10px] sm:text-[11px] text-slate-300/80 block truncate">{kpi.sub}</span>
           </div>
         ))}
       </div>
@@ -179,28 +179,28 @@ export const HeroResultBanner = ({
 
     {splitBar && (
       <div className="space-y-2">
-        <div className="w-full h-2.5 sm:h-3 rounded-full bg-slate-800 border border-slate-700 overflow-hidden flex p-0.5 gap-0.5">
+        <div className="w-full h-2.5 sm:h-3 rounded-full bg-slate-700 dark:bg-[#1B2230] border border-slate-600 overflow-hidden flex p-0.5 gap-0.5">
           <div
             style={{ width: `${splitBar.leftPct}%` }}
             className="h-full rounded-l-full bg-indigo-400 transition-all duration-300"
           />
           <div
             style={{ width: `${splitBar.rightPct}%` }}
-            className="h-full rounded-r-full bg-emerald-400 transition-all duration-300"
+            className="h-full rounded-r-full bg-sky-400 transition-all duration-300"
           />
         </div>
 
         <div className="flex flex-wrap justify-between items-center gap-2 text-[11px] sm:text-xs">
-          <span className="inline-flex items-center gap-1.5 text-slate-200 font-semibold">
+          <span className="inline-flex items-center gap-1.5 text-slate-200 font-medium">
             <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 shrink-0" />
             {splitBar.leftLabel}: <strong className="text-white">{splitBar.leftValue}</strong>{" "}
-            <span className="text-slate-400">({splitBar.leftPct}%)</span>
+            <span className="text-slate-300/80">({splitBar.leftPct}%)</span>
           </span>
 
-          <span className="inline-flex items-center gap-1.5 text-slate-200 font-semibold">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0" />
-            {splitBar.rightLabel}: <strong className="text-emerald-400">{splitBar.rightValue}</strong>{" "}
-            <span className="text-slate-400">({splitBar.rightPct}%)</span>
+          <span className="inline-flex items-center gap-1.5 text-slate-200 font-medium">
+            <span className="w-2.5 h-2.5 rounded-full bg-sky-400 shrink-0" />
+            {splitBar.rightLabel}: <strong className="text-sky-300">{splitBar.rightValue}</strong>{" "}
+            <span className="text-slate-300/80">({splitBar.rightPct}%)</span>
           </span>
         </div>
       </div>
@@ -221,25 +221,25 @@ export const ScheduleViewerCard = ({
   const [activeView, setActiveView] = useState("chart");
 
   return (
-    <div className="border border-slate-300 dark:border-white/15 rounded-2xl p-3.5 sm:p-6 bg-white dark:bg-[#111827] shadow-xs space-y-3.5 sm:space-y-4">
+    <div className="border border-slate-300 dark:border-slate-700/80 rounded-lg p-3.5 sm:p-5 bg-white dark:bg-[#1B2230] shadow-2xs space-y-3.5 sm:space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
         <div>
-          <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
+          <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
             {activeView === "chart" ? chartTitle : tableTitle}
           </h4>
-          <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-[11px] sm:text-xs font-normal text-slate-500 dark:text-slate-300/80 mt-0.5">
             {subtitle}
           </p>
         </div>
 
-        <div className="flex items-center w-full sm:w-auto bg-slate-100 dark:bg-[#0B1120] p-1 rounded-xl border border-slate-300 dark:border-white/15">
+        <div className="flex items-center w-full sm:w-auto bg-slate-100 dark:bg-[#232B3D] p-1 rounded-md border border-slate-300 dark:border-slate-600/80">
           <button
             type="button"
             onClick={() => setActiveView("chart")}
-            className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold transition-all cursor-pointer ${
               activeView === "chart"
-                ? "bg-white dark:bg-[#111827] text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 shadow-2xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                ? "bg-white dark:bg-[#1B2230] text-sky-700 dark:text-sky-300 border border-slate-300 dark:border-sky-400/40 shadow-2xs"
+                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             <BarChart3 size={14} />
@@ -249,10 +249,10 @@ export const ScheduleViewerCard = ({
           <button
             type="button"
             onClick={() => setActiveView("table")}
-            className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold transition-all cursor-pointer ${
               activeView === "table"
-                ? "bg-white dark:bg-[#111827] text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 shadow-2xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                ? "bg-white dark:bg-[#1B2230] text-sky-700 dark:text-sky-300 border border-slate-300 dark:border-sky-400/40 shadow-2xs"
+                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             <TableIcon size={14} />
@@ -264,7 +264,7 @@ export const ScheduleViewerCard = ({
       {activeView === "chart" ? (
         <div className="space-y-2.5 sm:space-y-3">
           {legends.length > 0 && (
-            <div className="flex flex-wrap items-center gap-3 sm:gap-5 text-[11px] sm:text-xs font-bold">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-5 text-[11px] sm:text-xs font-semibold">
               {legends.map((item, i) => (
                 <span key={i} className={`inline-flex items-center gap-1.5 ${item.textClass}`}>
                   <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${item.dotClass}`} />
@@ -276,7 +276,7 @@ export const ScheduleViewerCard = ({
           {renderChart()}
         </div>
       ) : (
-        <div className="max-h-[340px] overflow-y-auto overflow-x-auto no-scrollbar border border-slate-300 dark:border-white/15 rounded-xl">
+        <div className="max-h-[340px] overflow-y-auto overflow-x-auto no-scrollbar border border-slate-300 dark:border-slate-700/80 rounded-md">
           {renderTable()}
         </div>
       )}

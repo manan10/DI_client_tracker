@@ -11,9 +11,9 @@ import {
   CheckCircle2,
   Link2,
   Share2,
-  Copy,
   Loader2,
-  Home
+  FileCheck2,
+  BellRing
 } from "lucide-react";
 import { toast } from "sonner";
 import { useApi } from "../../../../shared/hooks/useApi";
@@ -21,6 +21,7 @@ import Logo from "../../../../assets/logo_nobrand.png";
 import { RISK_QUESTIONS, UI_LABELS } from "./riskProfiler/riskQuestions";
 import { calculateRiskAssessment } from "./riskProfiler/riskScoringEngine";
 import RiskResultReport from "./riskProfiler/RiskResultReport";
+import RemoteSubmissionInspector from "./riskProfiler/RemoteSubmissionInspector";
 import RemoteSubmissionsLedger from "./riskProfiler/RemoteSubmissionsLedger";
 
 const LANGUAGES = [
@@ -32,8 +33,12 @@ const LANGUAGES = [
 const RiskProfiler = () => {
   const { request } = useApi();
 
-  // Sequential Stage: "setup" | "questions" | "result"
-  const [step, setStep] = useState("setup");
+  // Explicit View Modes:
+  // "hub"     -> Opening screen (Investor Setup + Remote Submissions Ledger)
+  // "quiz"    -> In-person 10-question assessment
+  // "result"  -> In-person assessment result report
+  // "inspect" -> Dedicated read-only audit screen (used for both Remote Submissions & Saved CRM Reports)
+  const [view, setView] = useState("hub");
   const [lang, setLang] = useState("en");
   const [answers, setAnswers] = useState({});
 
@@ -43,18 +48,19 @@ const RiskProfiler = () => {
   const [selectedClient, setSelectedClient] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Remote Client Link & Submissions State
+  // Remote Client Link & Read-Only Inspection State
   const [invites, setInvites] = useState([]);
   const [loadingInvites, setLoadingInvites] = useState(false);
   const [generatingLink, setGeneratingLink] = useState(false);
-  const [generatedShareUrl, setGeneratedShareUrl] = useState("");
-  const [activeInviteId, setActiveInviteId] = useState(null);
+  const [inspectedRecord, setInspectedRecord] = useState(null);
+  const [ledgerFilter, setLedgerFilter] = useState("all");
 
   // Save State
   const [isSaving, setIsSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
 
   const dropdownRef = useRef(null);
+  const ledgerRef = useRef(null);
   const labels = UI_LABELS[lang] || UI_LABELS.en;
 
   const fetchInvites = useCallback(async () => {
@@ -115,13 +121,38 @@ const RiskProfiler = () => {
       .slice(0, 25);
   }, [clients, investorInput]);
 
+  const unreviewedCount = useMemo(
+    () => invites.filter((i) => i.status === "completed" && !i.isReviewed).length,
+    [invites]
+  );
+
+  // Assessment computed for active in-person quiz/result
   const assessment = useMemo(
     () => calculateRiskAssessment(answers, lang),
     [answers, lang]
   );
 
+  // Assessment computed specifically for the inspected read-only record
+  const inspectedAssessment = useMemo(() => {
+    if (!inspectedRecord?.resultSnapshot?.answers) return null;
+    return calculateRiskAssessment(inspectedRecord.resultSnapshot.answers, lang);
+  }, [inspectedRecord, lang]);
+
+  const inspectedLinkedClient = useMemo(() => {
+    if (!inspectedRecord?.clientId) return null;
+    const id = inspectedRecord.clientId._id || inspectedRecord.clientId;
+    return (
+      clients.find((c) => c._id === id) ||
+      (typeof inspectedRecord.clientId === "object" ? inspectedRecord.clientId : null)
+    );
+  }, [inspectedRecord, clients]);
+
   const activeInvestorName = selectedClient?.name || investorInput.trim();
   const canStart = Boolean(selectedClient || investorInput.trim().length > 0);
+  const hasSavedClientAnswers = Boolean(
+    selectedClient?.riskAssessment?.answers &&
+      Object.keys(selectedClient.riskAssessment.answers).length === RISK_QUESTIONS.length
+  );
 
   const handleSelectOption = (questionId, optionValue) => {
     setAnswers((prev) => ({
@@ -136,18 +167,7 @@ const RiskProfiler = () => {
     setInvestorInput(client.name);
     setIsDropdownOpen(false);
     setJustSaved(false);
-    setGeneratedShareUrl("");
-    setActiveInviteId(null);
-
-    if (
-      client?.riskAssessment?.answers &&
-      Object.keys(client.riskAssessment.answers).length > 0
-    ) {
-      setAnswers(client.riskAssessment.answers);
-      toast.info(`Loaded saved responses for ${client.name}`);
-    } else {
-      setAnswers({});
-    }
+    setAnswers({});
   };
 
   const handleClearInvestor = () => {
@@ -155,8 +175,6 @@ const RiskProfiler = () => {
     setInvestorInput("");
     setAnswers({});
     setJustSaved(false);
-    setGeneratedShareUrl("");
-    setActiveInviteId(null);
   };
 
   const handleStartProfiling = () => {
@@ -164,9 +182,29 @@ const RiskProfiler = () => {
       toast.error("Please select a CRM client or enter an investor name.");
       return;
     }
-    setActiveInviteId(null);
     setAnswers({});
-    setStep("questions");
+    setJustSaved(false);
+    setView("quiz");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Opens an existing saved CRM client assessment in the read-only Inspector
+  const handleViewSavedClientReport = () => {
+    if (!hasSavedClientAnswers || !selectedClient) return;
+
+    setInspectedRecord({
+      source: "crm",
+      clientId: selectedClient,
+      investorName: selectedClient.name,
+      pan: selectedClient.pan,
+      completedAt: selectedClient.riskAssessedAt || selectedClient.updatedAt,
+      isReviewed: true,
+      syncedToCrm: true,
+      resultSnapshot: {
+        answers: selectedClient.riskAssessment.answers
+      }
+    });
+    setView("inspect");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -174,6 +212,14 @@ const RiskProfiler = () => {
     if (!canStart) {
       toast.error("Please select a CRM client or enter an investor name first.");
       return;
+    }
+
+    // Open blank tab synchronously during the click event so browser pop-up blockers allow it
+    const waWindow = openWhatsapp ? window.open("", "_blank") : null;
+    if (waWindow) {
+      waWindow.document.write(
+        "<p style='font-family:Sora,sans-serif;padding:24px;color:#334155;'>Preparing WhatsApp assessment link...</p>"
+      );
     }
 
     setGeneratingLink(true);
@@ -184,65 +230,82 @@ const RiskProfiler = () => {
         lang
       });
 
-      if (res?.success && res?.data?.token) {
-        const shareUrl = `${window.location.origin}/assess/${res.data.token}`;
-        setGeneratedShareUrl(shareUrl);
-        setInvites((prev) => [res.data, ...prev]);
+      const token = res?.data?.token || res?.token;
+      if (!res?.success || !token) {
+        if (waWindow && !waWindow.closed) waWindow.close();
+        toast.error(res?.message || "Failed to generate client assessment link.");
+        return;
+      }
 
+      const shareUrl = `${window.location.origin}/assess/${token}`;
+      if (res?.data) {
+        setInvites((prev) => [res.data, ...prev]);
+      } else {
+        fetchInvites();
+      }
+      setLedgerFilter("pending");
+
+      // Best-effort clipboard copy (isolated so permission denial never blocks WhatsApp)
+      try {
         if (navigator.clipboard?.writeText) {
           await navigator.clipboard.writeText(shareUrl);
         }
+      } catch {
+        // Ignore clipboard denial on non-focused/HTTP contexts
+      }
 
-        if (openWhatsapp) {
-          const msg = [
-            `Namaste *${activeInvestorName}*,`,
-            ``,
-            `Please complete your brief *SEBI Investor Risk Profile Assessment* for *Dalal Investments* using this secure link:`,
-            `${shareUrl}`,
-            ``,
-            `It takes less than 2 minutes and helps us tailor your investment portfolio.`
-          ].join("\n");
+      if (openWhatsapp) {
+        const msg = [
+          `Namaste *${activeInvestorName}*,`,
+          ``,
+          `Please complete your brief *SEBI Investor Risk Profile Assessment* for *Dalal Investments* using this secure link:`,
+          `${shareUrl}`,
+          ``,
+          `It takes less than 2 minutes and helps us tailor your investment portfolio.`
+        ].join("\n");
 
-          const encoded = encodeURIComponent(msg);
-          const phone = selectedClient?.contactDetails?.phoneNo?.replace(/\D/g, "");
-          const waUrl =
-            phone && phone.length >= 10
-              ? `https://wa.me/${phone.length === 10 ? `91${phone}` : phone}?text=${encoded}`
-              : `https://wa.me/?text=${encoded}`;
+        const encoded = encodeURIComponent(msg);
+        const phone = selectedClient?.contactDetails?.phoneNo?.replace(/\D/g, "");
+        const waUrl =
+          phone && phone.length >= 10
+            ? `https://wa.me/${phone.length === 10 ? `91${phone}` : phone}?text=${encoded}`
+            : `https://wa.me/?text=${encoded}`;
 
-          window.open(waUrl, "_blank", "noopener,noreferrer");
+        if (waWindow && !waWindow.closed) {
+          waWindow.location.href = waUrl;
         } else {
-          toast.success("Client assessment link copied & logged below!");
+          window.location.assign(waUrl);
         }
+        toast.success("WhatsApp opened & link logged in ledger below");
+      } else {
+        toast.success("Client link copied to clipboard & logged below");
       }
     } catch (err) {
+      if (waWindow && !waWindow.closed) waWindow.close();
       toast.error(err.message || "Failed to generate client link");
     } finally {
       setGeneratingLink(false);
     }
   };
 
+  // Opens a remote client submission in the read-only Inspector
   const handleInspectInvite = (inv) => {
     if (!inv?.resultSnapshot?.answers) {
       toast.error("No answers found on this submission.");
       return;
     }
-
-    const fullClient = inv.clientId?._id
-      ? clients.find((c) => c._id === inv.clientId._id) || inv.clientId
-      : null;
-
-    setSelectedClient(fullClient);
-    setInvestorInput(fullClient ? fullClient.name : inv.investorName);
-    setAnswers(inv.resultSnapshot.answers);
+    setInspectedRecord({
+      ...inv,
+      source: "invite"
+    });
     if (inv.lang) setLang(inv.lang);
-    setActiveInviteId(inv._id);
-    setJustSaved(Boolean(inv.syncedToCrm));
-    setStep("result");
+    setView("inspect");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSyncAndCompleteInvite = async (inv) => {
+    if (!inv?._id) return;
+    setIsSaving(true);
     try {
       const res = await request(`/risk-invites/${inv._id}/review`, "PATCH", {
         syncToCrm: true,
@@ -261,14 +324,21 @@ const RiskProfiler = () => {
             setSelectedClient(res.client);
           }
         }
+        if (inspectedRecord?._id === inv._id) {
+          setInspectedRecord({ ...res.data, source: "invite" });
+        }
         toast.success(`Saved to ${inv.investorName}'s CRM profile & marked completed!`);
       }
     } catch (err) {
       toast.error(err.message || "Failed to sync submission to CRM");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleToggleReviewedInvite = async (inviteId, markReviewed) => {
+    if (!inviteId) return;
+    setIsSaving(true);
     try {
       const res = await request(`/risk-invites/${inviteId}/review`, "PATCH", {
         markReviewed
@@ -277,10 +347,15 @@ const RiskProfiler = () => {
         setInvites((prev) =>
           prev.map((item) => (item._id === inviteId ? res.data : item))
         );
+        if (inspectedRecord?._id === inviteId) {
+          setInspectedRecord({ ...res.data, source: "invite" });
+        }
         toast.success("Submission marked as completed");
       }
     } catch (err) {
       toast.error(err.message || "Failed to update status");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -289,7 +364,10 @@ const RiskProfiler = () => {
       const res = await request(`/risk-invites/${inviteId}`, "DELETE");
       if (res?.success) {
         setInvites((prev) => prev.filter((item) => item._id !== inviteId));
-        if (activeInviteId === inviteId) setActiveInviteId(null);
+        if (inspectedRecord?._id === inviteId) {
+          setInspectedRecord(null);
+          setView("hub");
+        }
         toast.success("Assessment record removed");
       }
     } catch (err) {
@@ -305,24 +383,20 @@ const RiskProfiler = () => {
       );
       return;
     }
-    setActiveInviteId(null);
-    setStep("result");
+    setView("result");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleEditAnswers = () => {
-    setStep("questions");
+    setView("quiz");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleStartNew = () => {
-    setSelectedClient(null);
-    setInvestorInput("");
+  const handleReturnToHub = () => {
+    setInspectedRecord(null);
     setAnswers({});
     setJustSaved(false);
-    setGeneratedShareUrl("");
-    setActiveInviteId(null);
-    setStep("setup");
+    setView("hub");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -359,24 +433,6 @@ const RiskProfiler = () => {
           prev.map((c) => (c._id === res.data._id ? res.data : c))
         );
         setJustSaved(true);
-
-        if (activeInviteId) {
-          const invRes = await request(
-            `/risk-invites/${activeInviteId}/review`,
-            "PATCH",
-            { syncToCrm: false, markReviewed: true }
-          );
-          if (invRes?.success) {
-            setInvites((prev) =>
-              prev.map((item) =>
-                item._id === activeInviteId
-                  ? { ...invRes.data, syncedToCrm: true }
-                  : item
-              )
-            );
-          }
-        }
-
         toast.success(`Saved ${assessment.tier.key} profile to ${res.data.name}`);
       }
     } catch (err) {
@@ -386,19 +442,18 @@ const RiskProfiler = () => {
     }
   };
 
-  const handleShareWhatsapp = () => {
-    if (!assessment.isComplete) return;
-    const clientLabel = activeInvestorName || "Investor";
-    const t = assessment.tier;
+  const shareAssessmentWhatsapp = (targetAssessment, clientName, phoneRaw) => {
+    if (!targetAssessment?.isComplete) return;
+    const t = targetAssessment.tier;
     const allocLines = t.allocation
       .map((a) => `• ${a.name[lang] || a.name.en}: *${a.value}%*`)
       .join("\n");
 
     const message = [
       `*DALAL INVESTMENTS — INVESTOR RISK PROFILE*`,
-      `Client: *${clientLabel}*`,
-      `Risk Category: *${t.title[lang] || t.title.en}* (${assessment.compositeScore}/100)`,
-      `Capacity: ${assessment.capacityScore}% | Tolerance: ${assessment.toleranceScore}%`,
+      `Client: *${clientName || "Investor"}*`,
+      `Risk Category: *${t.title[lang] || t.title.en}* (${targetAssessment.compositeScore}/100)`,
+      `Capacity: ${targetAssessment.capacityScore}% | Tolerance: ${targetAssessment.toleranceScore}%`,
       ``,
       `*Recommended Asset Allocation:*`,
       allocLines,
@@ -407,7 +462,7 @@ const RiskProfiler = () => {
     ].join("\n");
 
     const encoded = encodeURIComponent(message);
-    const phone = selectedClient?.contactDetails?.phoneNo?.replace(/\D/g, "");
+    const phone = phoneRaw?.replace(/\D/g, "");
     const url =
       phone && phone.length >= 10
         ? `https://wa.me/${phone.length === 10 ? `91${phone}` : phone}?text=${encoded}`
@@ -416,11 +471,11 @@ const RiskProfiler = () => {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const handlePrintReport = () => {
-    if (!assessment.isComplete) return;
-    const clientLabel = activeInvestorName || "Valued Investor";
-    const panLabel = selectedClient?.pan ? `PAN: ${selectedClient.pan}` : "";
-    const t = assessment.tier;
+  const printAssessmentReport = (targetAssessment, targetAnswers, clientName, pan) => {
+    if (!targetAssessment?.isComplete) return;
+    const clientLabel = clientName || "Valued Investor";
+    const panLabel = pan ? `PAN: ${pan}` : "";
+    const t = targetAssessment.tier;
     const dateStr = new Date().toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "short",
@@ -446,7 +501,7 @@ const RiskProfiler = () => {
       <svg width="108" height="108" viewBox="0 0 100 100" style="flex-shrink:0;">
         <circle cx="50" cy="50" r="${radius}" fill="transparent" stroke="#e2e8f0" stroke-width="14" />
         ${svgCircles}
-        <text x="50" y="48" text-anchor="middle" font-size="13" font-weight="800" fill="#0f172a">${assessment.compositeScore}</text>
+        <text x="50" y="48" text-anchor="middle" font-size="13" font-weight="800" fill="#0f172a">${targetAssessment.compositeScore}</text>
         <text x="50" y="60" text-anchor="middle" font-size="7.5" font-weight="700" fill="#64748b">SCORE</text>
       </svg>
     `;
@@ -465,7 +520,7 @@ const RiskProfiler = () => {
       .join("");
 
     const qaRows = RISK_QUESTIONS.map((q) => {
-      const chosen = q.options.find((o) => o.value === answers[q.id]);
+      const chosen = q.options.find((o) => o.value === targetAnswers[q.id]);
       return `
         <tr>
           <td class="q-cell">${q.text[lang] || q.text.en}</td>
@@ -487,33 +542,34 @@ const RiskProfiler = () => {
           <meta charset="utf-8" />
           <title>Risk Profile Report - ${clientLabel}</title>
           <style>
+            @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap');
             @page { size: A4 portrait; margin: 10mm 13mm; }
             * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0f172a; margin: 0; padding: 0; font-size: 11px; line-height: 1.35; background: #ffffff; }
+            body { font-family: 'Sora', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0f172a; margin: 0; padding: 0; font-size: 11px; line-height: 1.35; background: #ffffff; }
             .page-wrap { width: 100%; max-width: 780px; margin: 0 auto; }
-            .header { display: flex; justify-content: space-between; align-items: center; background: #0f172a; color: #ffffff; padding: 10px 14px; border-radius: 6px; border-bottom: 3px solid #d97706; margin-bottom: 11px; }
+            .header { display: flex; justify-content: space-between; align-items: center; background: #1e293b; color: #ffffff; padding: 10px 14px; border-radius: 6px; border-bottom: 3px solid #0284c7; margin-bottom: 11px; }
             .brand-left { display: flex; align-items: center; gap: 10px; }
             .brand-logo { height: 36px; width: auto; object-fit: contain; }
             .brand-title { font-family: Georgia, serif; font-size: 16px; font-weight: 700; letter-spacing: 0.3px; color: #ffffff; }
-            .brand-sub { font-size: 9.5px; color: #cbd5e1; margin-top: 2px; }
+            .brand-sub { font-size: 9.5px; color: #bae6fd; margin-top: 2px; }
             .meta-right { text-align: right; font-size: 10px; color: #e2e8f0; }
             .top-grid { display: grid; grid-template-columns: 1.2fr 1.15fr; gap: 10px; margin-bottom: 10px; }
             .box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 12px; }
             .verdict-box { border-left: 4px solid ${t.color}; }
             .eyebrow { font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.6px; color: #64748b; font-weight: 700; }
-            .investor-name { font-size: 14px; font-weight: 800; color: #0f172a; margin-top: 2px; }
+            .investor-name { font-size: 14px; font-weight: 700; color: #0f172a; margin-top: 2px; }
             .tier-pill { display: inline-block; background: ${t.color}; color: #ffffff; padding: 3px 9px; border-radius: 4px; font-size: 10.5px; font-weight: 700; margin-top: 5px; }
             .summary-text { font-size: 10px; color: #334155; margin: 6px 0; line-height: 1.38; }
             .metrics-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding-top: 6px; border-top: 1px solid #e2e8f0; font-size: 9.5px; }
             .metric-pill { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 6px; }
             .guardrail { margin-top: 6px; padding: 5px 8px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 4px; font-size: 9px; color: #92400e; }
-            .alloc-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: #0f172a; margin-bottom: 6px; }
+            .alloc-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #0f172a; margin-bottom: 6px; }
             .alloc-flex { display: flex; align-items: center; gap: 12px; }
             .alloc-list { flex: 1; }
             .alloc-row { display: flex; justify-content: space-between; padding: 3.5px 0; border-bottom: 1px dashed #cbd5e1; font-size: 10.5px; }
             .alloc-row:last-of-type { border-bottom: none; }
             .suitability { font-size: 9.5px; color: #0369a1; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 4px; padding: 5px 8px; margin-top: 7px; line-height: 1.35; }
-            .section-heading { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #0f172a; margin: 6px 0 4px 0; }
+            .section-heading { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #0f172a; margin: 6px 0 4px 0; }
             table { width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1; }
             .q-cell { width: 54%; padding: 4px 8px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; font-size: 9.5px; color: #334155; vertical-align: top; }
             .a-cell { width: 46%; padding: 4px 8px; border-bottom: 1px solid #e2e8f0; font-size: 9.5px; font-weight: 600; color: #0f172a; vertical-align: top; }
@@ -543,25 +599,25 @@ const RiskProfiler = () => {
               <div class="box verdict-box">
                 <div class="eyebrow">Investor Name</div>
                 <div class="investor-name">${clientLabel}</div>
-                <div class="tier-pill">${t.title[lang] || t.title.en} • ${assessment.compositeScore}/100</div>
+                <div class="tier-pill">${t.title[lang] || t.title.en} • ${targetAssessment.compositeScore}/100</div>
                 <p class="summary-text">${t.summary[lang] || t.summary.en}</p>
                 <div class="metrics-strip">
                   <div class="metric-pill">
                     <span class="eyebrow" style="display:block;">Capacity</span>
-                    <strong style="color:#0284c7;">${assessment.capacityScore}%</strong>
+                    <strong style="color:#0284c7;">${targetAssessment.capacityScore}%</strong>
                   </div>
                   <div class="metric-pill">
                     <span class="eyebrow" style="display:block;">Tolerance</span>
-                    <strong style="color:#d97706;">${assessment.toleranceScore}%</strong>
+                    <strong style="color:#d97706;">${targetAssessment.toleranceScore}%</strong>
                   </div>
                   <div class="metric-pill">
                     <span class="eyebrow" style="display:block;">Target Band</span>
-                    <strong style="color:#059669;">${t.expectedCagr}</strong>
+                    <strong style="color:#0369a1;">${t.expectedCagr}</strong>
                   </div>
                 </div>
                 ${
-                  assessment.overrideApplied
-                    ? `<div class="guardrail"><strong>Advisory Guardrail:</strong> ${assessment.overrideReason}</div>`
+                  targetAssessment.overrideApplied
+                    ? `<div class="guardrail"><strong>Advisory Guardrail:</strong> ${targetAssessment.overrideReason}</div>`
                     : ""
                 }
               </div>
@@ -601,102 +657,118 @@ const RiskProfiler = () => {
     printWindow.document.close();
   };
 
-  const stepsMeta = [
-    { id: "setup", label: labels.step1Label },
-    { id: "questions", label: labels.step2Label },
-    { id: "result", label: labels.step3Label }
-  ];
-  const currentStepIdx = stepsMeta.findIndex((s) => s.id === step);
-
   return (
-    <div className="w-full space-y-6">
-      {/* Flush Underline Progress Track & Language Control */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-white/10">
-        <div className="flex items-center gap-2 sm:gap-5 overflow-x-auto no-scrollbar">
-          {stepsMeta.map((s, idx) => {
-            const isActive = s.id === step;
-            const isDone = idx < currentStepIdx;
-            const isClickable =
-              s.id === "setup" ||
-              (s.id === "questions" && canStart && !activeInviteId) ||
-              (s.id === "result" && canStart && assessment.isComplete);
+    <div className="risk-sora-root w-full space-y-6">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap');
+        .risk-sora-root,
+        .risk-sora-root h1,
+        .risk-sora-root h2,
+        .risk-sora-root h3,
+        .risk-sora-root p,
+        .risk-sora-root span,
+        .risk-sora-root button,
+        .risk-sora-root input,
+        .risk-sora-root label,
+        .risk-sora-root th,
+        .risk-sora-root td,
+        .risk-sora-root a {
+          font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+      `}</style>
 
-            return (
-              <React.Fragment key={s.id}>
-                <button
-                  type="button"
-                  disabled={!isClickable}
-                  onClick={() => isClickable && setStep(s.id)}
-                  className={`flex items-center gap-2 text-xs font-bold whitespace-nowrap transition-colors ${
-                    isActive
-                      ? "text-slate-900 dark:text-white"
-                      : isDone
-                      ? "text-sky-600 dark:text-sky-400 cursor-pointer"
-                      : "text-slate-400 dark:text-slate-600 cursor-not-allowed"
-                  }`}
-                >
-                  <span
-                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-extrabold ${
-                      isActive
-                        ? "bg-slate-900 text-white dark:bg-sky-500 dark:text-slate-950"
-                        : isDone
-                        ? "bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300"
-                        : "bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-600"
-                    }`}
-                  >
-                    {isDone ? "✓" : idx + 1}
-                  </span>
-                  <span>{s.label}</span>
-                </button>
-                {idx < stepsMeta.length - 1 && (
-                  <span className="text-slate-300 dark:text-slate-700 text-xs">/</span>
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
-
-        {/* Top Control Bar: Return to Opening View & Language Switcher */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+      {/* Clean Top Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-700/80">
+        {view === "hub" ? (
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              SEBI Risk Suitability Profiler
+            </h2>
+            <div className="flex items-center gap-1 mt-1 mb-1">
+              <span className="h-[2px] w-4 rounded-full bg-sky-600 dark:bg-sky-400" />
+              <span className="h-[2px] w-1.5 rounded-full bg-sky-500/60 dark:bg-sky-400/60" />
+              <span className="h-[2px] w-1 rounded-full bg-cyan-400/60 dark:bg-cyan-300/50" />
+            </div>
+            <p className="text-xs font-normal text-slate-500 dark:text-slate-300/80">
+              Assess an investor in office or manage remote client links
+            </p>
+          </div>
+        ) : (
           <button
             type="button"
-            onClick={handleStartNew}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+            onClick={handleReturnToHub}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#232B3D] text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
           >
-            <Home className="w-3.5 h-3.5" />
-            <span>Risk Profiler Home</span>
+            <ArrowLeft className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+            <span>
+              {view === "inspect"
+                ? inspectedRecord?.source === "crm"
+                  ? "Back to Risk Profiler"
+                  : "Back to Submissions"
+                : "Back to Risk Profiler"}
+            </span>
           </button>
+        )}
 
-          <div className="inline-flex items-center rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] p-0.5">
-            {LANGUAGES.map((item) => (
-              <button
-                key={item.code}
-                type="button"
-                onClick={() => setLang(item.code)}
-                className={`px-3 py-1 rounded-sm text-xs font-bold transition-colors cursor-pointer ${
-                  lang === item.code
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+        {/* Language Switcher */}
+        <div className="inline-flex items-center rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#232B3D] p-0.5 ml-auto">
+          {LANGUAGES.map((item) => (
+            <button
+              key={item.code}
+              type="button"
+              onClick={() => setLang(item.code)}
+              className={`px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                lang === item.code
+                  ? "bg-sky-600 dark:bg-sky-500 text-white"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* STAGE 1: SETUP + REMOTE SUBMISSIONS TRACKING LEDGER */}
-      {step === "setup" && (
-        <div className="animate-in fade-in duration-200">
-          <div className="py-4 sm:py-6 max-w-2xl space-y-6">
+      {/* ===================================================================== */}
+      {/* VIEW 1: HUB (INVESTOR SETUP + REMOTE SUBMISSIONS LEDGER)              */}
+      {/* ===================================================================== */}
+      {view === "hub" && (
+        <div className="animate-in fade-in duration-200 space-y-6">
+          {/* Inbox Alert if unreviewed submissions exist */}
+          {unreviewedCount > 0 && (
+            <div className="p-3.5 rounded-md bg-sky-50/90 dark:bg-sky-500/15 border border-sky-300 dark:border-sky-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 text-xs font-medium text-sky-950 dark:text-sky-100">
+                <BellRing className="w-4 h-4 text-sky-600 dark:text-sky-300 shrink-0" />
+                <span>
+                  <strong>
+                    {unreviewedCount} client assessment{unreviewedCount > 1 ? "s" : ""}
+                  </strong>{" "}
+                  submitted online and awaiting CRM review.
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setLedgerFilter("received");
+                  ledgerRef.current?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="self-start sm:self-auto px-3 py-1.5 rounded text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white transition-colors cursor-pointer shrink-0"
+              >
+                Review Submissions ↓
+              </button>
+            </div>
+          )}
+
+          {/* Investor Setup Form */}
+          <div className="py-2 max-w-2xl space-y-6">
             <div className="space-y-2" ref={dropdownRef}>
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
                   {labels.investorFieldLabel}
                 </label>
                 {selectedClient && (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300">
                     <UserCheck className="w-3.5 h-3.5" />
                     CRM Linked • {labels.currentSavedProfile}:{" "}
                     <strong>
@@ -709,13 +781,13 @@ const RiskProfiler = () => {
               <div className="relative">
                 <div
                   onClick={() => setIsDropdownOpen(true)}
-                  className={`flex items-center gap-2.5 px-3.5 py-3 rounded-md bg-white dark:bg-slate-900 border transition-colors ${
+                  className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-md bg-white dark:bg-[#232B3D] border transition-colors ${
                     selectedClient
-                      ? "border-slate-900 dark:border-sky-500"
-                      : "border-slate-300 dark:border-white/15 focus-within:border-sky-600"
+                      ? "border-sky-600 dark:border-sky-400"
+                      : "border-slate-300 dark:border-slate-600 focus-within:border-sky-600 dark:focus-within:border-sky-400"
                   }`}
                 >
-                  <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                  <Search className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
                   <input
                     type="text"
                     value={investorInput}
@@ -723,7 +795,6 @@ const RiskProfiler = () => {
                     onChange={(e) => {
                       setInvestorInput(e.target.value);
                       if (selectedClient) setSelectedClient(null);
-                      setGeneratedShareUrl("");
                       setIsDropdownOpen(true);
                     }}
                     onKeyDown={(e) => {
@@ -750,23 +821,23 @@ const RiskProfiler = () => {
                 </div>
 
                 {isDropdownOpen && filteredClients.length > 0 && (
-                  <div className="absolute z-30 mt-1.5 w-full max-h-64 overflow-y-auto rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/15 shadow-lg divide-y divide-slate-100 dark:divide-white/5">
+                  <div className="absolute z-30 mt-1 w-full max-h-64 overflow-y-auto rounded-md bg-white dark:bg-[#232B3D] border border-slate-300 dark:border-slate-600 shadow-xl divide-y divide-slate-100 dark:divide-slate-700/80">
                     {filteredClients.map((client) => (
                       <button
                         key={client._id}
                         type="button"
                         onClick={() => handleSelectClient(client)}
-                        className="w-full px-4 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between gap-2 transition-colors cursor-pointer"
+                        className="w-full px-4 py-2.5 text-left hover:bg-sky-50 dark:hover:bg-sky-500/20 flex items-center justify-between gap-2 transition-colors cursor-pointer"
                       >
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
                             {client.name}
                           </p>
-                          <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                          <p className="text-xs text-slate-500 dark:text-slate-300/80">
                             {client.pan}
                           </p>
                         </div>
-                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 shrink-0">
+                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-sky-50 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-200/70 dark:border-sky-400/30 shrink-0">
                           {client.riskTier || client.riskProfile || "Moderate"}
                         </span>
                       </button>
@@ -774,130 +845,135 @@ const RiskProfiler = () => {
                   </div>
                 )}
               </div>
+
+              {/* Saved Assessment Quick-View Strip (Opens Read-Only Inspector) */}
+              {selectedClient && hasSavedClientAnswers && (
+                <div className="p-3 rounded-md bg-slate-50 dark:bg-[#1B2230] border border-slate-200 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-200">
+                    <FileCheck2 className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+                    <span>
+                      Existing assessment on file
+                      {selectedClient.riskAssessedAt
+                        ? ` (${new Date(selectedClient.riskAssessedAt).toLocaleDateString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric"
+                          })})`
+                        : ""}
+                      .
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleViewSavedClientReport}
+                    className="self-start sm:self-auto px-3 py-1.5 rounded text-xs font-semibold bg-white hover:bg-sky-50 dark:bg-[#232B3D] dark:hover:bg-slate-700 text-sky-700 dark:text-sky-300 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer shrink-0"
+                  >
+                    View Saved Report →
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* In-Person Start CTA */}
             <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Conduct live in office, or send an online self-assessment form below.
+              <p className="text-xs text-slate-500 dark:text-slate-300/80">
+                Conduct live in office, or send an online self-assessment link below.
               </p>
 
               <button
                 type="button"
                 onClick={handleStartProfiling}
                 disabled={!canStart}
-                className="w-full sm:w-auto px-6 py-3 rounded-md text-xs sm:text-sm font-bold bg-slate-900 hover:bg-slate-800 dark:bg-sky-600 dark:hover:bg-sky-500 text-white flex items-center justify-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-md text-xs sm:text-sm font-semibold bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 text-white flex items-center justify-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
               >
-                {labels.startProfilingBtn}
+                {selectedClient && hasSavedClientAnswers
+                  ? "Start New Reassessment"
+                  : labels.startProfilingBtn}
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
 
             {/* Remote Client Link Generator */}
-            <div className="pt-5 border-t border-slate-200 dark:border-white/10 space-y-3">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
-                Client Not in Office? Generate Online Form Link
+            <div className="pt-5 border-t border-slate-200 dark:border-slate-700/80 space-y-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300/80 block">
+                Client Not in Office? Send Online Assessment Link
               </span>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <button
                   type="button"
                   disabled={!canStart || generatingLink}
-                  onClick={() => handleGenerateRemoteLink(false)}
-                  className="py-2.5 px-3.5 rounded-md text-xs font-bold bg-white hover:bg-slate-50 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-white/15 flex items-center justify-center gap-2 transition-colors disabled:opacity-40 cursor-pointer"
+                  onClick={() => handleGenerateRemoteLink(true)}
+                  className="py-2.5 px-3.5 rounded-md text-xs font-semibold bg-white hover:bg-sky-50/70 dark:bg-[#232B3D] dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-600 flex items-center justify-center gap-2 transition-colors disabled:opacity-40 cursor-pointer"
                 >
                   {generatingLink ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-600" />
                   ) : (
-                    <Link2 className="w-3.5 h-3.5 text-sky-600" />
+                    <Share2 className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
                   )}
-                  Copy Client Form Link
+                  Send Link on WhatsApp
                 </button>
 
                 <button
                   type="button"
                   disabled={!canStart || generatingLink}
-                  onClick={() => handleGenerateRemoteLink(true)}
-                  className="py-2.5 px-3.5 rounded-md text-xs font-bold bg-white hover:bg-slate-50 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-white/15 flex items-center justify-center gap-2 transition-colors disabled:opacity-40 cursor-pointer"
+                  onClick={() => handleGenerateRemoteLink(false)}
+                  className="py-2.5 px-3.5 rounded-md text-xs font-semibold bg-white hover:bg-sky-50/70 dark:bg-[#232B3D] dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-600 flex items-center justify-center gap-2 transition-colors disabled:opacity-40 cursor-pointer"
                 >
-                  <Share2 className="w-3.5 h-3.5 text-emerald-600" />
-                  Send Link on WhatsApp
+                  <Link2 className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                  Copy Form Link Only
                 </button>
               </div>
-
-              {generatedShareUrl && (
-                <div className="p-2.5 rounded-md bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-between gap-2">
-                  <span className="text-xs font-mono text-slate-600 dark:text-slate-300 truncate">
-                    {generatedShareUrl}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await navigator.clipboard.writeText(generatedShareUrl);
-                      toast.success("Link copied");
-                    }}
-                    className="px-2 py-1 rounded text-xs font-bold text-sky-700 dark:text-sky-400 hover:bg-slate-200/60 dark:hover:bg-white/10 flex items-center gap-1 shrink-0 cursor-pointer"
-                  >
-                    <Copy className="w-3 h-3" />
-                    Copy
-                  </button>
-                </div>
-              )}
             </div>
           </div>
 
           {/* SENT FORMS & RECEIVED SUBMISSIONS LEDGER */}
-          <RemoteSubmissionsLedger
-            invites={invites}
-            loading={loadingInvites}
-            onRefresh={fetchInvites}
-            onInspectInvite={handleInspectInvite}
-            onSyncAndComplete={handleSyncAndCompleteInvite}
-            onToggleReviewed={handleToggleReviewedInvite}
-            onDeleteInvite={handleDeleteInvite}
-          />
+          <div ref={ledgerRef}>
+            <RemoteSubmissionsLedger
+              invites={invites}
+              loading={loadingInvites}
+              filterTab={ledgerFilter}
+              onFilterChange={setLedgerFilter}
+              onRefresh={fetchInvites}
+              onInspectInvite={handleInspectInvite}
+              onSyncAndComplete={handleSyncAndCompleteInvite}
+              onToggleReviewed={handleToggleReviewedInvite}
+              onDeleteInvite={handleDeleteInvite}
+            />
+          </div>
         </div>
       )}
 
       {/* ===================================================================== */}
-      {/* STAGE 2: CLEAN DOCUMENT QUESTIONNAIRE                                 */}
+      {/* VIEW 2: IN-PERSON 10-POINT QUESTIONNAIRE                              */}
       {/* ===================================================================== */}
-      {step === "questions" && (
+      {view === "quiz" && (
         <div className="animate-in fade-in duration-200 space-y-6">
-          <div className="pb-4 border-b border-slate-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <button
-                type="button"
-                onClick={() => setStep("setup")}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white cursor-pointer"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                {labels.backToSetup}
-              </button>
-              <span className="text-slate-300 dark:text-slate-700">|</span>
-              <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate">
+          <div className="pb-4 border-b border-slate-200 dark:border-slate-700/80 flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400 block">
+                In-Office Assessment
+              </span>
+              <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate block">
                 {activeInvestorName}
+                {selectedClient?.pan ? (
+                  <span className="ml-2 text-xs font-medium text-slate-500 dark:text-slate-300">
+                    ({selectedClient.pan})
+                  </span>
+                ) : null}
               </span>
             </div>
 
             <div className="flex items-center gap-4">
-              <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300">
+              <span className="text-xs font-bold tabular-nums text-slate-700 dark:text-slate-200">
                 {assessment.answeredCount}/{assessment.totalQuestions} {labels.questionsAnswered}
               </span>
 
               <button
                 type="button"
-                onClick={handleStartNew}
-                className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
                 onClick={handleResetQuiz}
                 disabled={assessment.answeredCount === 0}
-                className="text-xs font-bold text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 flex items-center gap-1 disabled:opacity-40 cursor-pointer"
+                className="text-xs font-semibold text-slate-500 hover:text-rose-600 dark:text-slate-300 dark:hover:text-rose-400 flex items-center gap-1 disabled:opacity-40 cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 {labels.resetQuiz}
@@ -905,7 +981,7 @@ const RiskProfiler = () => {
             </div>
           </div>
 
-          <div className="divide-y divide-slate-200/80 dark:divide-white/10">
+          <div className="divide-y divide-slate-200/80 dark:divide-slate-700/80">
             {RISK_QUESTIONS.map((q) => {
               const selectedVal = answers[q.id];
               const isCapacity = q.dimension === "capacity";
@@ -919,8 +995,8 @@ const RiskProfiler = () => {
                     <span
                       className={`text-[10px] font-bold uppercase tracking-wider shrink-0 ${
                         isCapacity
-                          ? "text-sky-700 dark:text-sky-400"
-                          : "text-amber-700 dark:text-amber-400"
+                          ? "text-sky-700 dark:text-sky-300"
+                          : "text-amber-700 dark:text-amber-300"
                       }`}
                     >
                       {isCapacity ? labels.capacityLabel : labels.toleranceLabel}
@@ -937,8 +1013,8 @@ const RiskProfiler = () => {
                           onClick={() => handleSelectOption(q.id, opt.value)}
                           className={`w-full text-left px-3.5 py-2.5 rounded-md border text-xs flex items-start justify-between gap-3 transition-colors cursor-pointer ${
                             isSelected
-                              ? "bg-slate-900 dark:bg-sky-600 border-slate-900 dark:border-sky-500 text-white font-semibold"
-                              : "bg-white hover:bg-slate-50 dark:bg-white/[0.02] dark:hover:bg-white/[0.05] border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-medium"
+                              ? "bg-sky-600 dark:bg-sky-500 border-sky-600 dark:border-sky-400 text-white font-semibold"
+                              : "bg-white hover:bg-slate-50 dark:bg-[#1B2230] dark:hover:bg-[#232B3D] border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 font-medium"
                           }`}
                         >
                           <span className="leading-relaxed">
@@ -947,8 +1023,8 @@ const RiskProfiler = () => {
                           <span
                             className={`w-4 h-4 rounded-xs flex items-center justify-center shrink-0 mt-0.5 border ${
                               isSelected
-                                ? "border-white bg-white text-slate-900 dark:text-sky-600"
-                                : "border-slate-300 dark:border-slate-600"
+                                ? "border-white bg-white text-sky-600"
+                                : "border-slate-300 dark:border-slate-500"
                             }`}
                           >
                             {isSelected && <Check className="w-3 h-3" strokeWidth={3} />}
@@ -962,11 +1038,11 @@ const RiskProfiler = () => {
             })}
           </div>
 
-          <div className="pt-5 border-t border-slate-200 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
+          <div className="pt-5 border-t border-slate-200 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
               <CheckCircle2
                 className={`w-4 h-4 shrink-0 ${
-                  assessment.isComplete ? "text-emerald-600" : "text-slate-400"
+                  assessment.isComplete ? "text-sky-600 dark:text-sky-400" : "text-slate-400"
                 }`}
               />
               <span>
@@ -979,10 +1055,10 @@ const RiskProfiler = () => {
             <button
               type="button"
               onClick={handleViewResults}
-              className={`w-full sm:w-auto px-6 py-3 rounded-md text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+              className={`w-full sm:w-auto px-5 py-2.5 rounded-md text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
                 assessment.isComplete
-                  ? "bg-slate-900 hover:bg-slate-800 dark:bg-sky-600 dark:hover:bg-sky-500 text-white"
-                  : "bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400"
+                  ? "bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 text-white"
+                  : "bg-slate-200 dark:bg-[#232B3D] text-slate-500 dark:text-slate-400"
               }`}
             >
               {labels.viewResultsBtn}
@@ -993,9 +1069,9 @@ const RiskProfiler = () => {
       )}
 
       {/* ===================================================================== */}
-      {/* STAGE 3: SUITABILITY REPORT & ALLOCATION                              */}
+      {/* VIEW 3: IN-PERSON ASSESSMENT RESULT REPORT                            */}
       {/* ===================================================================== */}
-      {step === "result" && (
+      {view === "result" && (
         <RiskResultReport
           assessment={assessment}
           lang={lang}
@@ -1004,10 +1080,61 @@ const RiskProfiler = () => {
           onSaveToClient={handleSaveToClient}
           isSaving={isSaving}
           justSaved={justSaved}
-          onShareWhatsapp={handleShareWhatsapp}
-          onPrint={handlePrintReport}
-          onEditAnswers={activeInviteId ? null : handleEditAnswers}
-          onStartNew={handleStartNew}
+          onShareWhatsapp={() =>
+            shareAssessmentWhatsapp(
+              assessment,
+              activeInvestorName,
+              selectedClient?.contactDetails?.phoneNo
+            )
+          }
+          onPrint={() =>
+            printAssessmentReport(
+              assessment,
+              answers,
+              activeInvestorName,
+              selectedClient?.pan
+            )
+          }
+          onEditAnswers={handleEditAnswers}
+          onStartNew={handleReturnToHub}
+        />
+      )}
+
+      {/* ===================================================================== */}
+      {/* VIEW 4: DEDICATED READ-ONLY REPORT & SUBMISSION INSPECTOR             */}
+      {/* ===================================================================== */}
+      {view === "inspect" && inspectedRecord && inspectedAssessment && (
+        <RemoteSubmissionInspector
+          invite={inspectedRecord}
+          assessment={inspectedAssessment}
+          linkedClient={inspectedLinkedClient}
+          lang={lang}
+          isSaving={isSaving}
+          onSyncAndComplete={
+            inspectedRecord.source === "invite"
+              ? () => handleSyncAndCompleteInvite(inspectedRecord)
+              : null
+          }
+          onMarkReviewed={
+            inspectedRecord.source === "invite"
+              ? () => handleToggleReviewedInvite(inspectedRecord._id, true)
+              : null
+          }
+          onShareWhatsapp={() =>
+            shareAssessmentWhatsapp(
+              inspectedAssessment,
+              inspectedLinkedClient?.name || inspectedRecord.investorName,
+              inspectedLinkedClient?.contactDetails?.phoneNo
+            )
+          }
+          onPrint={() =>
+            printAssessmentReport(
+              inspectedAssessment,
+              inspectedRecord.resultSnapshot.answers,
+              inspectedLinkedClient?.name || inspectedRecord.investorName,
+              inspectedLinkedClient?.pan || inspectedRecord.pan
+            )
+          }
         />
       )}
     </div>

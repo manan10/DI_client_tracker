@@ -1,45 +1,73 @@
 import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
-import { Wallet, PieChart, FileText, ShieldCheck, Lock } from "lucide-react";
+import { Wallet, PieChart, FileText, ShieldCheck, Landmark } from "lucide-react";
 import { toast } from "sonner";
 
 import Navbar from "../components/Shared/Navbar";
+import WorkspaceShell from "../../../shared/components/WorkspaceShell";
 import AccountBalances from "../components/Accounts/AccountBalances";
 import Commissions from "../components/Accounts/Commissions";
 import AuditManager from "../components/Accounts/AuditManager";
 import Insurance from "../components/Accounts/Insurance";
 import AccessDenied from "../components/Shared/AccessDenied";
 import { useAuth } from "../../../shared/hooks/useAuth";
-import PageHeader from "../../../shared/components/Auth/PageHeader";
 
 const Accounts = () => {
   const { user } = useAuth();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(
-    location.state?.activeTab || "balances",
+    location.state?.activeTab || "balances"
   );
 
   const tabs = [
-    { id: "balances", name: "Account Balances", icon: Wallet, isLocked: false },
-    { id: "insurance", name: "Insurance", icon: ShieldCheck, isLocked: false },
-    { id: "commissions", name: "Commissions", icon: PieChart, isLocked: false },
-    { id: "audit", name: "Tally Zone", icon: FileText, isLocked: false },
+    {
+      id: "balances",
+      name: "Account Balances",
+      mobileName: "Balances",
+      subtitle: "Bank & Cash Ledgers",
+      icon: Wallet,
+      isLocked: false,
+    },
+    {
+      id: "insurance",
+      name: "Insurance",
+      mobileName: "Insurance",
+      subtitle: "Policies & Renewals",
+      icon: ShieldCheck,
+      isLocked: false,
+    },
+    {
+      id: "commissions",
+      name: "Commissions",
+      mobileName: "Commissions",
+      subtitle: "Trail & Brokerage Payouts",
+      icon: PieChart,
+      isLocked: false,
+    },
+    {
+      id: "audit",
+      name: "Tally Zone",
+      mobileName: "Tally",
+      subtitle: "Voucher & Ledger Sync",
+      icon: FileText,
+      isLocked: false,
+    },
   ];
 
-  const handleTabClick = (tab) => {
-    if (tab.isLocked) {
+  const handleTabChange = (tabId, tabObj) => {
+    if (tabObj?.isLocked) {
       toast.info("Tally Sync module is currently in final audit.", {
         description:
           "This feature will be enabled following system verification.",
       });
       return;
     }
-    setActiveTab(tab.id);
+    setActiveTab(tabId);
   };
 
   if (user && !user.isAdmin) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-[#0B1120] text-slate-900 dark:text-slate-200 transition-colors duration-300">
+      <div className="min-h-screen bg-[#F6F8FB] dark:bg-[#131720] text-slate-900 dark:text-slate-100 transition-colors duration-300">
         <Navbar />
         <AccessDenied />
       </div>
@@ -47,117 +75,22 @@ const Accounts = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 dark:bg-[#0B1120] text-slate-900 dark:text-slate-200 transition-colors duration-300 relative">
-      <Navbar />
-
-      {/* CONTINUOUS FLUID DOCUMENT WORKSPACE */}
-      <main className="w-full max-w-384 mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 sm:py-12 pb-32">
-        {/* BORDERLESS COMMAND HEADER */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end pb-8 mb-8 border-b border-slate-200 dark:border-white/10 gap-6">
-          <PageHeader
-            title="Accounting"
-            accent="Hub"
-            description="Track account balances, manage commissions, and access insurance and audit tools from one centralized hub."
-          />
-
-          {/* ========================================== */}
-          {/* CONTINUOUS ENTERPRISE NAVIGATION           */}
-          {/* ========================================== */}
-          <div className="w-full lg:w-auto">
-            {/* Desktop & Tablet: Clean Underline-Border Tabs */}
-            <nav className="hidden sm:flex items-center gap-8">
-              {tabs.map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => handleTabClick(tab)}
-                    className={`
-                      flex items-center gap-2 pb-2 text-xs font-bold uppercase tracking-wider transition-all relative outline-none cursor-pointer
-                      ${
-                        isActive
-                          ? "text-slate-900 dark:text-white font-black"
-                          : tab.isLocked
-                            ? "text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-50"
-                            : "text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                      }
-                    `}
-                  >
-                    {tab.isLocked ? (
-                      <Lock size={14} strokeWidth={2.5} />
-                    ) : (
-                      <tab.icon
-                        size={15}
-                        strokeWidth={isActive ? 2.5 : 2}
-                        className={
-                          isActive
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-slate-400"
-                        }
-                      />
-                    )}
-                    <span>{tab.name}</span>
-
-                    {/* Active Bottom Indicator Line */}
-                    {isActive && (
-                      <span className="absolute -bottom-8 left-0 right-0 h-0.5 bg-emerald-600 dark:bg-emerald-400 animate-in fade-in duration-200" />
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-
-            {/* Mobile View: High-Visibility Equal-Width Grid */}
-            <div className="sm:hidden grid grid-cols-4 gap-1 bg-slate-100 dark:bg-white/3 p-1 rounded-xl border border-slate-200 dark:border-white/10 w-full">
-              {tabs.map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => handleTabClick(tab)}
-                    className={`
-                      flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all outline-none cursor-pointer
-                      ${
-                        isActive
-                          ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs font-black"
-                          : tab.isLocked
-                            ? "text-slate-400 dark:text-slate-600 cursor-not-allowed opacity-50"
-                            : "text-slate-600 dark:text-slate-400 font-bold"
-                      }
-                    `}
-                  >
-                    {tab.isLocked ? (
-                      <Lock size={14} strokeWidth={2.5} />
-                    ) : (
-                      <tab.icon
-                        size={15}
-                        strokeWidth={isActive ? 2.5 : 2}
-                        className={
-                          isActive
-                            ? "text-emerald-400 dark:text-emerald-600"
-                            : "text-slate-400"
-                        }
-                      />
-                    )}
-                    <span className="text-[9px] uppercase tracking-wider text-center leading-tight truncate w-full">
-                      {tab.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* CONTENT AREA (Continuous Document Flow) */}
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out w-full min-w-0">
-          {activeTab === "balances" && <AccountBalances />}
-          {activeTab === "commissions" && <Commissions />}
-          {activeTab === "audit" && <AuditManager />}
-          {activeTab === "insurance" && <Insurance />}
-        </div>
-      </main>
-    </div>
+    <WorkspaceShell
+      navbar={<Navbar />}
+      badge="Finance & Treasury"
+      badgeIcon={Landmark}
+      title="Accounting"
+      accent="Hub"
+      description="Track account balances, manage commissions, and access insurance and audit tools from one centralized hub."
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
+    >
+      {activeTab === "balances" && <AccountBalances />}
+      {activeTab === "commissions" && <Commissions />}
+      {activeTab === "audit" && <AuditManager />}
+      {activeTab === "insurance" && <Insurance />}
+    </WorkspaceShell>
   );
 };
 

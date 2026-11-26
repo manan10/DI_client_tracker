@@ -3,31 +3,24 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   Activity,
   Files,
-  Lock,
-  Users,
   ChevronRight,
   Phone,
   Mail,
   CreditCard,
   Briefcase,
-  Layers,
   ArrowUpRight,
   ShieldAlert,
   FolderTree,
   IndianRupee,
   Sparkles,
   Plus,
-  Compass,
-  ArrowRight,
-  PieChart,
-  CalendarDays,
   ShieldCheck,
   TrendingUp,
-  UserCheck,
 } from "lucide-react";
 
 import { useApi } from "../../../shared/hooks/useApi";
 import Navbar from "../components/Shared/Navbar";
+import WorkspaceShell from "../../../shared/components/WorkspaceShell";
 import InteractionModal from "../components/Shared/InteractionModal";
 import ConfirmationModal from "../components/ClientDetail/ConfirmationModal";
 import ClientDocumentManager from "../components/ClientDetail/ClientDocumentManager";
@@ -79,7 +72,7 @@ const ClientDetail = () => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   /**
-   * DATA FIX: Ensure family interactions are fetched
+   * Ensure family interactions are fetched cleanly
    */
   const loadFamilyData = useCallback(
     async (clientData, isMounted = { current: true }) => {
@@ -93,7 +86,7 @@ const ClientDetail = () => {
       ) {
         try {
           const familyRes = await request(
-            `/clients?familyId=${encodeURIComponent(validFamId)}`,
+            `/clients?familyId=${encodeURIComponent(validFamId)}`
           );
           if (!isMounted.current) return;
 
@@ -102,17 +95,17 @@ const ClientDetail = () => {
             familyRes?.clients ||
             (Array.isArray(familyRes) ? familyRes : []);
           membersList = membersList.filter(
-            (m) => m?.familyId?.trim() === validFamId,
+            (m) => m?.familyId?.trim() === validFamId
           );
 
           // Explicitly fetch full profiles for members if interaction logs are not populated
           const needsFullFetch = membersList.some(
-            (m) => !m.interactions || !Array.isArray(m.interactions),
+            (m) => !m.interactions || !Array.isArray(m.interactions)
           );
 
           if (needsFullFetch) {
             const fullMembersData = await Promise.all(
-              membersList.map((m) => request(`/clients/${m._id || m.id}`)),
+              membersList.map((m) => request(`/clients/${m._id || m.id}`))
             );
             membersList = fullMembersData
               .map((res) => res?.data || res)
@@ -123,7 +116,7 @@ const ClientDetail = () => {
             membersList.push(clientData);
           } else {
             membersList = membersList.map((m) =>
-              m._id === clientData._id ? clientData : m,
+              m._id === clientData._id ? clientData : m
             );
           }
 
@@ -136,7 +129,7 @@ const ClientDetail = () => {
         if (isMounted.current) setFamilyMembers([clientData]);
       }
     },
-    [request],
+    [request]
   );
 
   const refreshClientData = useCallback(async () => {
@@ -192,7 +185,7 @@ const ClientDetail = () => {
     let head = familyMembers.find((m) => m.isFamilyHead);
     if (!head) {
       const sorted = [...familyMembers].sort(
-        (a, b) => (b.aum || 0) - (a.aum || 0),
+        (a, b) => (b.aum || 0) - (a.aum || 0)
       );
       head = sorted[0];
     }
@@ -215,7 +208,7 @@ const ClientDetail = () => {
         .sort(
           (a, b) =>
             new Date(b.date || b.createdAt || 0) -
-            new Date(a.date || a.createdAt || 0),
+            new Date(a.date || a.createdAt || 0)
         );
     }
 
@@ -242,7 +235,7 @@ const ClientDetail = () => {
     return allLogs.sort(
       (a, b) =>
         new Date(b.date || b.createdAt || 0) -
-        new Date(a.date || a.createdAt || 0),
+        new Date(a.date || a.createdAt || 0)
     );
   }, [auditScope, familyMembers, client]);
 
@@ -257,7 +250,7 @@ const ClientDetail = () => {
     try {
       const res = await request(
         `/interactions/${interactionToDelete}`,
-        "DELETE",
+        "DELETE"
       );
       if (res?.success || res?.status === 200) {
         await refreshClientData();
@@ -278,12 +271,12 @@ const ClientDetail = () => {
 
   if (!client) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-[#07090E] text-slate-900 dark:text-slate-100 transition-colors duration-300">
+      <div className="min-h-screen bg-[#F6F8FB] dark:bg-[#131720] text-slate-900 dark:text-slate-100 transition-colors duration-300">
         <Navbar />
         <div className="h-[calc(100vh-80px)] flex flex-col items-center justify-center gap-4">
           <div className="relative flex items-center justify-center">
-            <div className="size-16 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin" />
-            <ShieldAlert className="size-6 text-emerald-500 absolute animate-pulse" />
+            <div className="size-16 rounded-full border-4 border-sky-500/20 border-t-sky-500 animate-spin" />
+            <ShieldAlert className="size-6 text-sky-500 absolute animate-pulse" />
           </div>
           <div className="animate-pulse text-xs font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">
             Loading Client Portfolio...
@@ -294,22 +287,21 @@ const ClientDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-slate-100/80 via-slate-50 to-slate-100 dark:from-[#06080F] dark:via-[#090D16] dark:to-[#06080F] text-slate-900 dark:text-slate-100 pb-24 transition-colors duration-300 overflow-x-hidden">
-      <Navbar />
-
-      <ClientProfileHeader client={client} />
-
-      {/* MAIN DOCUMENT PAGE CONTAINER */}
-      <main className="w-full max-w-384 mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 -mt-4 relative z-20 animate-in fade-in duration-300">
+    <>
+      <WorkspaceShell
+        navbar={<Navbar />}
+        customHeader={<ClientProfileHeader client={client} />}
+        mainClassName="w-full max-w-[96rem] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 -mt-4 relative z-20 pb-28"
+      >
         {/* UNIFIED PAGE SURFACE CONTAINER */}
-        <div className="bg-white/95 dark:bg-[#0C111C]/95 backdrop-blur-xl border border-slate-200/90 dark:border-white/10 rounded-2xl shadow-xl shadow-slate-900/3 dark:shadow-none overflow-hidden">
+        <div className="bg-white dark:bg-[#1B202C] border border-slate-200/90 dark:border-white/[0.08] rounded-2xl shadow-lg shadow-slate-900/5 dark:shadow-none overflow-hidden">
           {/* ======================================================== */}
           {/* SECTION 1: TOP HERO OVERVIEW BAR WITH AMBIENT GRADIENTS   */}
           {/* ======================================================== */}
-          <div className="relative p-6 sm:p-8 lg:p-10 border-b border-slate-200 dark:border-white/10 overflow-hidden bg-linear-to-r from-emerald-500/5 via-teal-500/2 to-transparent dark:from-emerald-500/8 dark:via-cyan-500/3 dark:to-transparent">
-            {/* Cinematic Background Glows */}
-            <div className="absolute top-0 right-1/4 w-96 h-96 bg-emerald-500/10 dark:bg-emerald-500/15 blur-[90px] pointer-events-none rounded-full" />
-            <div className="absolute -bottom-20 right-0 w-80 h-80 bg-teal-500/10 dark:bg-cyan-500/10 blur-[80px] pointer-events-none rounded-full" />
+          <div className="relative p-6 sm:p-8 lg:p-10 border-b border-slate-200/90 dark:border-white/[0.08] overflow-hidden bg-gradient-to-r from-sky-500/[0.05] via-emerald-500/[0.02] to-transparent dark:from-sky-500/[0.08] dark:via-emerald-500/[0.03] dark:to-transparent">
+            {/* Subtle Ambient Glows */}
+            <div className="absolute top-0 right-1/4 w-96 h-96 bg-sky-500/10 dark:bg-sky-500/10 blur-[90px] pointer-events-none rounded-full" />
+            <div className="absolute -bottom-20 right-0 w-80 h-80 bg-emerald-500/10 dark:bg-emerald-500/10 blur-[80px] pointer-events-none rounded-full" />
 
             <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               {/* Financial Key Figures */}
@@ -325,7 +317,7 @@ const ClientDetail = () => {
                     </span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl sm:text-4xl font-[1000] text-slate-900 dark:text-white font-mono tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                    <span className="text-3xl sm:text-4xl font-[1000] text-slate-900 dark:text-white font-mono tracking-tight group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
                       ₹{client.aum?.toLocaleString("en-IN") || 0}
                     </span>
                   </div>
@@ -339,20 +331,20 @@ const ClientDetail = () => {
                 {/* Total Family Wealth */}
                 <div className="flex flex-col group">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <div className="size-6 rounded-md bg-teal-500/15 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0 border border-teal-500/30">
+                    <div className="size-6 rounded-md bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 border border-sky-500/30">
                       <TrendingUp className="size-3.5" strokeWidth={2.5} />
                     </div>
-                    <span className="text-[11px] font-black uppercase tracking-widest text-teal-600 dark:text-teal-400">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-sky-600 dark:text-sky-400">
                       Family Portfolio
                     </span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl sm:text-4xl font-[1000] text-teal-700 dark:text-teal-400 font-mono tracking-tight">
+                    <span className="text-3xl sm:text-4xl font-[1000] text-sky-700 dark:text-sky-400 font-mono tracking-tight">
                       ₹{totalFamilyAum.toLocaleString("en-IN")}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
+                    <span className="text-[10px] font-mono font-bold text-sky-600 dark:text-sky-400 bg-sky-500/10 px-1.5 py-0.2 rounded border border-sky-500/20">
                       {clientShare}% Share
                     </span>
                     <span className="text-[10px] font-medium text-slate-400">
@@ -381,17 +373,18 @@ const ClientDetail = () => {
                           : "text-slate-700 dark:text-slate-300 font-black"
                       }
                     >
-                      {client.riskProfile || "Moderate"}
+                      {client.riskTier || client.riskProfile || "Moderate"}
                     </span>
                   </span>
                 </div>
               </div>
 
-              {/* Action Button with Micro-Animation */}
+              {/* Action Button */}
               <div className="flex items-center gap-3">
                 <button
+                  type="button"
                   onClick={() => setIsInteractionModalOpen(true)}
-                  className="px-5 py-3 bg-linear-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/35 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2.5 cursor-pointer select-none"
+                  className="px-5 py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-lg shadow-sky-600/20 hover:shadow-sky-600/35 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2.5 cursor-pointer select-none"
                 >
                   <Plus className="size-4" strokeWidth={3} />
                   <span>Log Interaction</span>
@@ -403,24 +396,24 @@ const ClientDetail = () => {
           {/* ======================================================== */}
           {/* SECTION 2: CLIENT DETAILS & FAMILY TREE STRIP            */}
           {/* ======================================================== */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 border-b border-slate-200 dark:border-white/10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 border-b border-slate-200/90 dark:border-white/[0.08]">
             {/* Left Column: Key Parameters */}
-            <div className="lg:col-span-5 p-6 sm:p-8 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/1.5">
+            <div className="lg:col-span-5 p-6 sm:p-8 border-b lg:border-b-0 lg:border-r border-slate-200/90 dark:border-white/[0.08] bg-slate-50/60 dark:bg-[#151923]/60">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
                   <ShieldCheck
-                    className="size-4 text-emerald-500"
+                    className="size-4 text-sky-500"
                     strokeWidth={2.5}
                   />
                   Client Details
                 </h3>
-                <span className="text-[10px] font-mono font-bold text-slate-400 bg-white dark:bg-white/5 px-2 py-0.5 rounded border border-slate-200 dark:border-white/10">
+                <span className="text-[10px] font-mono font-bold text-slate-400 bg-white dark:bg-[#1B202C] px-2 py-0.5 rounded border border-slate-200 dark:border-white/10">
                   ID #{client._id?.slice(-6).toUpperCase() || "RECORD"}
                 </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div className="p-3 bg-white dark:bg-[#0E1626] rounded-xl border border-slate-200/80 dark:border-white/10 hover:border-emerald-500/40 transition-colors shadow-xs">
+                <div className="p-3 bg-white dark:bg-[#1B202C] rounded-xl border border-slate-200/80 dark:border-white/[0.08] hover:border-sky-500/40 transition-colors shadow-2xs">
                   <div className="flex items-center gap-2 mb-1 text-slate-400 dark:text-slate-500">
                     <CreditCard className="size-3.5 text-emerald-500" />
                     <span className="text-[10px] font-black uppercase tracking-wider">
@@ -432,21 +425,25 @@ const ClientDetail = () => {
                   </span>
                 </div>
 
-                <div className="p-3 bg-white dark:bg-[#0E1626] rounded-xl border border-slate-200/80 dark:border-white/10 hover:border-emerald-500/40 transition-colors shadow-xs">
+                <div className="p-3 bg-white dark:bg-[#1B202C] rounded-xl border border-slate-200/80 dark:border-white/[0.08] hover:border-sky-500/40 transition-colors shadow-2xs">
                   <div className="flex items-center gap-2 mb-1 text-slate-400 dark:text-slate-500">
-                    <Briefcase className="size-3.5 text-blue-500" />
+                    <Briefcase className="size-3.5 text-sky-500" />
                     <span className="text-[10px] font-black uppercase tracking-wider">
                       Risk Level
                     </span>
                   </div>
                   <span
-                    className={`font-black text-xs uppercase ${client.riskProfile === "Aggressive" ? "text-rose-500" : "text-slate-900 dark:text-white"}`}
+                    className={`font-black text-xs uppercase ${
+                      client.riskProfile === "Aggressive"
+                        ? "text-rose-500"
+                        : "text-slate-900 dark:text-white"
+                    }`}
                   >
-                    {client.riskProfile || "Moderate"}
+                    {client.riskTier || client.riskProfile || "Moderate"}
                   </span>
                 </div>
 
-                <div className="p-3 bg-white dark:bg-[#0E1626] rounded-xl border border-slate-200/80 dark:border-white/10 hover:border-emerald-500/40 transition-colors shadow-xs sm:col-span-2">
+                <div className="p-3 bg-white dark:bg-[#1B202C] rounded-xl border border-slate-200/80 dark:border-white/[0.08] hover:border-sky-500/40 transition-colors shadow-2xs sm:col-span-2">
                   <div className="flex items-center gap-2 mb-1 text-slate-400 dark:text-slate-500">
                     <Mail className="size-3.5 text-teal-500" />
                     <span className="text-[10px] font-black uppercase tracking-wider">
@@ -461,7 +458,7 @@ const ClientDetail = () => {
                   </span>
                 </div>
 
-                <div className="p-3 bg-white dark:bg-[#0E1626] rounded-xl border border-slate-200/80 dark:border-white/10 hover:border-emerald-500/40 transition-colors shadow-xs sm:col-span-2">
+                <div className="p-3 bg-white dark:bg-[#1B202C] rounded-xl border border-slate-200/80 dark:border-white/[0.08] hover:border-sky-500/40 transition-colors shadow-2xs sm:col-span-2">
                   <div className="flex items-center gap-2 mb-1 text-slate-400 dark:text-slate-500">
                     <Phone className="size-3.5 text-amber-500" />
                     <span className="text-[10px] font-black uppercase tracking-wider">
@@ -476,16 +473,16 @@ const ClientDetail = () => {
             </div>
 
             {/* Right Column: Family Tree */}
-            <div className="lg:col-span-7 p-6 sm:p-8 bg-white dark:bg-[#0C111C]">
+            <div className="lg:col-span-7 p-6 sm:p-8 bg-white dark:bg-[#1B202C]">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
                   <FolderTree
-                    className="size-4 text-emerald-500"
+                    className="size-4 text-sky-500"
                     strokeWidth={2.5}
                   />
                   Family Members
                 </h3>
-                <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                <span className="text-[10px] font-mono font-bold text-sky-700 dark:text-sky-300 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/20">
                   {familyMembers.length || 1}{" "}
                   {familyMembers.length === 1 ? "Member" : "Members"} Total
                 </span>
@@ -501,8 +498,8 @@ const ClientDetail = () => {
                     }
                     className={`p-3.5 rounded-xl border transition-all duration-200 flex items-center justify-between gap-4 ${
                       familyHead._id === client._id
-                        ? "bg-emerald-500/10 border-emerald-500/40 shadow-xs ring-1 ring-emerald-500/30"
-                        : "bg-slate-50/70 dark:bg-[#0E1626] border-slate-200/80 dark:border-white/10 hover:border-emerald-500/50 hover:bg-white dark:hover:bg-slate-800/80 cursor-pointer shadow-xs"
+                        ? "bg-sky-500/10 border-sky-500/40 shadow-xs ring-1 ring-sky-500/30"
+                        : "bg-slate-50/70 dark:bg-[#151923] border-slate-200/80 dark:border-white/[0.08] hover:border-sky-500/50 hover:bg-white dark:hover:bg-[#232A3B] cursor-pointer shadow-2xs"
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
@@ -518,7 +515,7 @@ const ClientDetail = () => {
                             Head
                           </span>
                           {familyHead._id === client._id && (
-                            <span className="px-1.5 py-0.2 rounded text-[8px] font-black uppercase bg-emerald-600 text-white shadow-2xs">
+                            <span className="px-1.5 py-0.2 rounded text-[8px] font-black uppercase bg-sky-600 text-white shadow-2xs">
                               Current
                             </span>
                           )}
@@ -531,7 +528,7 @@ const ClientDetail = () => {
 
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-right">
-                        <div className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        <div className="text-xs font-mono font-bold text-sky-600 dark:text-sky-400">
                           ₹{(familyHead.aum || 0).toLocaleString("en-IN")}
                         </div>
                         <div className="text-[9px] font-mono text-slate-400">
@@ -543,7 +540,7 @@ const ClientDetail = () => {
                         </div>
                       </div>
                       {familyHead._id !== client._id && (
-                        <ArrowUpRight className="size-4 text-slate-400 hover:text-emerald-500 transition-colors" />
+                        <ArrowUpRight className="size-4 text-slate-400 hover:text-sky-500 transition-colors" />
                       )}
                     </div>
                   </div>
@@ -561,8 +558,8 @@ const ClientDetail = () => {
                         }
                         className={`p-3 rounded-xl border transition-all duration-200 flex items-center justify-between gap-2.5 ${
                           child._id === client._id
-                            ? "bg-emerald-500/10 border-emerald-500/40 shadow-xs ring-1 ring-emerald-500/30"
-                            : "bg-slate-50/70 dark:bg-[#0E1626] border-slate-200/80 dark:border-white/10 hover:border-emerald-500/50 hover:bg-white dark:hover:bg-slate-800/80 cursor-pointer shadow-xs"
+                            ? "bg-sky-500/10 border-sky-500/40 shadow-xs ring-1 ring-sky-500/30"
+                            : "bg-slate-50/70 dark:bg-[#151923] border-slate-200/80 dark:border-white/[0.08] hover:border-sky-500/50 hover:bg-white dark:hover:bg-[#232A3B] cursor-pointer shadow-2xs"
                         }`}
                       >
                         <div className="flex flex-col min-w-0 pr-1">
@@ -571,7 +568,7 @@ const ClientDetail = () => {
                               {child.name}
                             </span>
                             {child._id === client._id && (
-                              <span className="shrink-0 px-1.5 py-0.2 rounded text-[8px] font-black uppercase bg-emerald-600 text-white shadow-2xs">
+                              <span className="shrink-0 px-1.5 py-0.2 rounded text-[8px] font-black uppercase bg-sky-600 text-white shadow-2xs">
                                 Current
                               </span>
                             )}
@@ -598,7 +595,7 @@ const ClientDetail = () => {
 
                 {children.length === 0 && (
                   <div className="pt-2 text-center">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 bg-slate-100/70 dark:bg-white/2 px-3 py-1.5 rounded-lg border border-slate-200/80 dark:border-white/5 inline-block">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 bg-slate-100/70 dark:bg-white/[0.03] px-3 py-1.5 rounded-lg border border-slate-200/80 dark:border-white/[0.06] inline-block">
                       Independent / Solo Portfolio
                     </span>
                   </div>
@@ -612,7 +609,7 @@ const ClientDetail = () => {
           {/* ======================================================== */}
           <div className="p-6 sm:p-8 lg:p-10">
             {/* TAB CONTROLS & FILTER ROW */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-white/10 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200/90 dark:border-white/[0.08] mb-6">
               {/* Primary Navigation Tabs */}
               <div className="flex items-center gap-2">
                 {[
@@ -628,15 +625,20 @@ const ClientDetail = () => {
                   return (
                     <button
                       key={tab.id}
+                      type="button"
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer border ${
                         isActive
-                          ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md"
-                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
+                          ? "bg-white border-sky-300/80 text-slate-900 shadow-xs dark:bg-[#232A3B] dark:border-sky-400/40 dark:text-white"
+                          : "border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
                       }`}
                     >
                       <TabIcon
-                        className={`size-3.5 ${isActive ? "text-emerald-400 dark:text-emerald-600" : "text-slate-400"}`}
+                        className={`size-3.5 ${
+                          isActive
+                            ? "text-sky-600 dark:text-sky-400"
+                            : "text-slate-400"
+                        }`}
                         strokeWidth={2.5}
                       />
                       <span>{tab.label}</span>
@@ -647,22 +649,24 @@ const ClientDetail = () => {
 
               {/* View Scope Toggle */}
               {activeTab === "interactions" && familyMembers.length > 1 && (
-                <div className="inline-flex p-1 bg-slate-100 dark:bg-[#0B1120] rounded-xl border border-slate-200/80 dark:border-white/10 self-start sm:self-auto shadow-inner">
+                <div className="inline-flex p-1 bg-slate-100 dark:bg-[#151923] rounded-xl border border-slate-200/80 dark:border-white/[0.08] self-start sm:self-auto shadow-inner">
                   <button
+                    type="button"
                     onClick={() => setAuditScope("family")}
                     className={`px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all duration-200 cursor-pointer ${
                       auditScope === "family"
-                        ? "bg-white dark:bg-[#0E1626] text-emerald-600 dark:text-emerald-400 shadow-xs border border-slate-200/50 dark:border-white/10"
+                        ? "bg-white dark:bg-[#232A3B] text-sky-600 dark:text-sky-400 shadow-xs border border-slate-200/50 dark:border-sky-400/30"
                         : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
                     All Family Logs
                   </button>
                   <button
+                    type="button"
                     onClick={() => setAuditScope("client")}
                     className={`px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all duration-200 cursor-pointer ${
                       auditScope === "client"
-                        ? "bg-white dark:bg-[#0E1626] text-emerald-600 dark:text-emerald-400 shadow-xs border border-slate-200/50 dark:border-white/10"
+                        ? "bg-white dark:bg-[#232A3B] text-sky-600 dark:text-sky-400 shadow-xs border border-slate-200/50 dark:border-sky-400/30"
                         : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
@@ -699,7 +703,7 @@ const ClientDetail = () => {
             </div>
           </div>
         </div>
-      </main>
+      </WorkspaceShell>
 
       {/* GLOBAL MODALS */}
       <InteractionModal
@@ -724,7 +728,7 @@ const ClientDetail = () => {
         title="Delete Interaction Entry"
         message="Are you sure you want to permanently remove this interaction log? This will also update the client's last met record."
       />
-    </div>
+    </>
   );
 };
 

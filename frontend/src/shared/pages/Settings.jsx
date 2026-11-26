@@ -18,12 +18,12 @@ import {
   Terminal,
   Users,
   GitBranch,
-  Grid,
   LogOut,
   Building2,
   Receipt,
   SlidersHorizontal,
   Home,
+  Settings as SettingsIcon,
 } from "lucide-react";
 
 // Hooks
@@ -31,9 +31,9 @@ import { useApi } from "../hooks/useApi";
 import { useAuth } from "../hooks/useAuth";
 import { toast } from "sonner";
 
-// Assets & Headers
+// Assets & Layout
 import Logo from "../../assets/logo_nobrand.png";
-import PageHeader from "../components/Auth/PageHeader";
+import WorkspaceShell from "../components/WorkspaceShell";
 
 // Modular Subcomponents
 import SettingsSection from "../components/Settings/SettingsSection";
@@ -43,7 +43,7 @@ import SettingsDetailView from "../components/Settings/SettingsDetailView";
  * Settings Orchestrator
  * Controls app scoping, theme state, API synchronization, and card routing.
  */
-const Settings = ({ mode, hideTopBar = false }) => {
+const Settings = ({ mode, hideTopBar = false, navbar = null }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { request, loading } = useApi();
@@ -52,7 +52,6 @@ const Settings = ({ mode, hideTopBar = false }) => {
   const [activeItem, setActiveItem] = useState(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // Determine current routing mode
   const currentPath = location.pathname.toLowerCase();
   const effectiveMode =
     mode ||
@@ -66,7 +65,6 @@ const Settings = ({ mode, hideTopBar = false }) => {
   const isClientOnly = effectiveMode === "client";
   const isExpenseOnly = effectiveMode === "expense";
 
-  // App Permissions for standalone route
   const userAllowedApps = user?.allowedApps || [];
   const canAccessClientApp =
     user?.isAdmin ||
@@ -80,7 +78,6 @@ const Settings = ({ mode, hideTopBar = false }) => {
   const showClientSection = isClientOnly || (isStandalone && canAccessClientApp);
   const showExpenseSection = isExpenseOnly || (isStandalone && canAccessExpenseApp);
 
-  // User Initials Glyph
   const userInitials = useMemo(() => {
     if (!user?.name) return "U";
     const parts = user.name.trim().split(" ");
@@ -90,7 +87,6 @@ const Settings = ({ mode, hideTopBar = false }) => {
     return user.name.slice(0, 2).toUpperCase();
   }, [user?.name]);
 
-  // Business state
   const [thresholds, setThresholds] = useState({
     diamond: 5,
     gold: 2,
@@ -103,20 +99,29 @@ const Settings = ({ mode, hideTopBar = false }) => {
     disclaimer: "",
   });
 
-  // Expense state
   const [wallets, setWallets] = useState([]);
+
+  // Read the active DOM theme first so switching tabs never overrides Light/Dark mode
   const [isDark, setIsDark] = useState(() => {
-    return (
-      localStorage.theme === "dark" ||
-      localStorage.getItem("app-theme") === "dark" ||
-      (!("theme" in localStorage) &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches)
-    );
+    if (typeof document !== "undefined") {
+      return document.documentElement.classList.contains("dark");
+    }
+    return localStorage.getItem("theme") === "dark";
   });
 
+  // Keep Settings state in sync if the user toggles theme via the top Navbar
   useEffect(() => {
     const root = document.documentElement;
-    if (isDark) {
+    const observer = new MutationObserver(() => {
+      setIsDark(root.classList.contains("dark"));
+    });
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  const applyTheme = useCallback((nextDark) => {
+    const root = document.documentElement;
+    if (nextDark) {
       root.classList.add("dark");
       localStorage.setItem("theme", "dark");
       localStorage.setItem("app-theme", "dark");
@@ -125,7 +130,8 @@ const Settings = ({ mode, hideTopBar = false }) => {
       localStorage.setItem("theme", "light");
       localStorage.setItem("app-theme", "light");
     }
-  }, [isDark]);
+    setIsDark(nextDark);
+  }, []);
 
   const loadInitialData = useCallback(async () => {
     try {
@@ -160,8 +166,9 @@ const Settings = ({ mode, hideTopBar = false }) => {
   }, [loadInitialData]);
 
   const toggleTheme = async () => {
-    const nextTheme = !isDark ? "dark" : "light";
-    setIsDark(!isDark);
+    const nextDark = !isDark;
+    const nextTheme = nextDark ? "dark" : "light";
+    applyTheme(nextDark);
     try {
       await request("/settings/preferences", "PATCH", { theme: nextTheme });
       if (setUser && user) {
@@ -192,7 +199,6 @@ const Settings = ({ mode, hideTopBar = false }) => {
     }
   };
 
-  // 1. General System Modules
   const generalCards = useMemo(
     () => [
       {
@@ -233,7 +239,6 @@ const Settings = ({ mode, hideTopBar = false }) => {
     [isDark]
   );
 
-  // 2. Client Tracker Business Modules
   const businessCards = useMemo(
     () => [
       {
@@ -329,7 +334,6 @@ const Settings = ({ mode, hideTopBar = false }) => {
     []
   );
 
-  // 3. Expense Modules
   const expenseCards = useMemo(
     () => [
       {
@@ -389,215 +393,197 @@ const Settings = ({ mode, hideTopBar = false }) => {
 
   if (isInitialLoading) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 dark:bg-[#060913]">
-        <Loader2 className="animate-spin text-emerald-600 dark:text-emerald-400" size={32} />
+      <div className="min-h-screen w-full flex items-center justify-center bg-[#F6F8FB] dark:bg-[#131720]">
+        <Loader2 className="animate-spin text-sky-600 dark:text-sky-400" size={32} />
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#060913] text-slate-900 dark:text-slate-100 font-sans selection:bg-emerald-500/20 pb-28">
-      {/* Background Atmosphere */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-32 left-1/4 w-[600px] h-[300px] bg-emerald-500/5 dark:bg-emerald-500/[0.03] blur-[120px] rounded-full" />
-      </div>
+  const standaloneTopBar = isStandalone ? (
+    <nav className="sticky top-0 z-40 bg-[#232730]/95 dark:bg-[#16181D]/95 backdrop-blur-2xl border-b border-stone-400/20 dark:border-white/10 text-white shadow-md dark:shadow-[0_10px_35px_rgba(0,0,0,0.5)] transition-all duration-300 font-sans">
+      <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-stone-400/40 to-transparent pointer-events-none" />
 
-      {/* ========================================================================= */}
-      {/* TOP COMMAND BAR (Inspired by Dalal Portal Navbar UI)                       */}
-      {/* ========================================================================= */}
-      {isStandalone && (
-        <nav className="sticky top-0 z-40 bg-[#232730]/95 dark:bg-[#16181D]/95 backdrop-blur-2xl border-b border-stone-400/20 dark:border-white/10 text-white shadow-md dark:shadow-[0_10px_35px_rgba(0,0,0,0.5)] transition-all duration-300 font-sans">
-          {/* Subtle horizon line flare */}
-          <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-stone-400/40 to-transparent pointer-events-none" />
-
-          <div className="w-full max-w-[1840px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-16">
-            <div className="relative flex justify-between items-center h-[72px]">
-              
-              {/* --- LEFT: LOGO & BRAND TITLE --- */}
-              <div className="flex items-center shrink-0 min-w-0 z-20">
-                <Link to="/settings" className="group outline-none min-w-0">
-                  <div className="flex items-center gap-2.5 sm:gap-3">
-                    <img
-                      src={Logo}
-                      alt="Dalal Investments"
-                      className="h-8 sm:h-8.5 w-auto transition-transform duration-300 group-hover:scale-105 shrink-0"
-                    />
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2.5">
-                      <span className="text-[13px] sm:text-base font-serif font-bold text-white tracking-tight leading-tight sm:leading-none">
-                        Dalal Investments
-                      </span>
-                      <span className="hidden sm:inline text-stone-500 font-light select-none text-xs">
-                        |
-                      </span>
-                      <span className="text-[10px] sm:text-xs font-sans font-medium text-stone-400 leading-tight sm:leading-none tracking-wide sm:tracking-normal">
-                        All Settings
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-
-              {/* --- CENTER: TACTILE DECK RAIL (When active item is selected) --- */}
-              {activeItem && (
-                <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center rounded-xl p-1 shadow-inner z-10 bg-black/45 border border-white/10 backdrop-blur-md">
-                  <button
-                    type="button"
-                    onClick={() => setActiveItem(null)}
-                    className="relative flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide text-slate-300 hover:text-white hover:bg-white/10 transition-all outline-none cursor-pointer"
-                  >
-                    <ArrowLeft size={14} className="text-emerald-400" />
-                    <span>All Settings</span>
-                  </button>
-                  <span className="text-stone-600 text-xs px-1 select-none">/</span>
-                  <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-white/[0.12] border border-white/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]">
-                    {selectedSetting?.label}
+      <div className="w-full max-w-[1840px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-16">
+        <div className="relative flex justify-between items-center h-[72px]">
+          <div className="flex items-center shrink-0 min-w-0 z-20">
+            <Link to="/settings" className="group outline-none min-w-0">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <img
+                  src={Logo}
+                  alt="Dalal Investments"
+                  className="h-8 sm:h-8.5 w-auto transition-transform duration-300 group-hover:scale-105 shrink-0"
+                />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2.5">
+                  <span className="text-[13px] sm:text-base font-serif font-bold text-white tracking-tight leading-tight sm:leading-none">
+                    Dalal Investments
+                  </span>
+                  <span className="hidden sm:inline text-stone-500 font-light select-none text-xs">
+                    |
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-sans font-medium text-stone-400 leading-tight sm:leading-none tracking-wide sm:tracking-normal">
+                    All Settings
                   </span>
                 </div>
-              )}
+              </div>
+            </Link>
+          </div>
 
-              {/* --- RIGHT: ACTIONS & DISCRETE GLYPH USER PROFILE --- */}
-              <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0 z-20 font-sans">
-                
-                {/* Utility Dock (App Switcher & Theme Toggle) */}
-                <div className="flex items-center p-0.5 rounded-lg bg-black/25 border border-white/10">
-                  <Link
-                    to="/app-picker"
-                    className="flex items-center justify-center w-8 h-8 rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-all outline-none"
-                    aria-label="App Switcher"
-                    title="App Switcher"
-                  >
-                    <Home size={16} strokeWidth={2.2} />
-                  </Link>
+          {activeItem && (
+            <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center rounded-xl p-1 shadow-inner z-10 bg-black/45 border border-white/10 backdrop-blur-md">
+              <button
+                type="button"
+                onClick={() => setActiveItem(null)}
+                className="relative flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide text-slate-300 hover:text-white hover:bg-white/10 transition-all outline-none cursor-pointer"
+              >
+                <ArrowLeft size={14} className="text-sky-400" />
+                <span>All Settings</span>
+              </button>
+              <span className="text-stone-600 text-xs px-1 select-none">/</span>
+              <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-white/[0.12] border border-white/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]">
+                {selectedSetting?.label}
+              </span>
+            </div>
+          )}
 
-                  <div className="w-px h-4 bg-white/10 mx-0.5" />
+          <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0 z-20 font-sans">
+            <div className="flex items-center p-0.5 rounded-lg bg-black/25 border border-white/10">
+              <Link
+                to="/app-picker"
+                className="flex items-center justify-center w-8 h-8 rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-all outline-none"
+                aria-label="App Switcher"
+                title="App Switcher"
+              >
+                <Home size={16} strokeWidth={2.2} />
+              </Link>
 
-                  <button
-                    type="button"
-                    onClick={toggleTheme}
-                    className="flex items-center justify-center w-8 h-8 rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-all outline-none cursor-pointer"
-                    aria-label="Toggle Theme"
-                    title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-                  >
-                    {isDark ? (
-                      <Sun size={16} strokeWidth={2.2} className="text-amber-400" />
-                    ) : (
-                      <Moon size={16} strokeWidth={2.2} className="text-slate-300" />
-                    )}
-                  </button>
-                </div>
+              <div className="w-px h-4 bg-white/10 mx-0.5" />
 
-                {/* Hardware Vertical Divider */}
-                <div className="hidden sm:block w-px h-6 bg-white/15 mx-0.5" />
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="flex items-center justify-center w-8 h-8 rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-all outline-none cursor-pointer"
+                aria-label="Toggle Theme"
+                title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              >
+                {isDark ? (
+                  <Sun size={16} strokeWidth={2.2} className="text-amber-400" />
+                ) : (
+                  <Moon size={16} strokeWidth={2.2} className="text-slate-300" />
+                )}
+              </button>
+            </div>
 
-                {/* User Profile Glyph & Logout */}
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-8 h-8 rounded-full bg-white/15 text-white border border-white/30 flex items-center justify-center font-bold text-xs select-none shadow-xs"
-                    title={
-                      user?.name
-                        ? `${user.name} (${user?.isAdmin ? "Admin" : "Staff"})`
-                        : "User"
-                    }
-                  >
-                    {userInitials}
-                  </div>
+            <div className="hidden sm:block w-px h-6 bg-white/15 mx-0.5" />
 
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer outline-none"
-                    title="Sign Out"
-                    aria-label="Sign Out"
-                  >
-                    <LogOut size={16} />
-                  </button>
-                </div>
+            <div className="flex items-center gap-2">
+              <div
+                className="w-8 h-8 rounded-full bg-white/15 text-white border border-white/30 flex items-center justify-center font-bold text-xs select-none shadow-xs"
+                title={
+                  user?.name
+                    ? `${user.name} (${user?.isAdmin ? "Admin" : "Staff"})`
+                    : "User"
+                }
+              >
+                {userInitials}
               </div>
 
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer outline-none"
+                title="Sign Out"
+                aria-label="Sign Out"
+              >
+                <LogOut size={16} />
+              </button>
             </div>
           </div>
-        </nav>
-      )}
+        </div>
+      </div>
+    </nav>
+  ) : null;
 
-      {/* ========================================================================= */}
-      {/* MAIN VIEWPORT CONTAINER                                                   */}
-      {/* ========================================================================= */}
-      <div className="relative z-10 w-full max-w-[1840px] mx-auto px-4 sm:px-8 xl:px-14 2xl:px-20 pt-6 sm:pt-8 flex flex-col gap-8">
-        
-        {/* VIEW 1: OVERVIEW CARD GRID */}
-        {!activeItem ? (
-          <div className="space-y-10 animate-in fade-in duration-200">
-            <div className="pt-1">
-              <PageHeader
-                title="Application"
-                accent="Settings"
-                description={
-                  isExpenseOnly
-                    ? "Manage family cash vaults, spending tags, top-ups, and appearance preferences."
-                    : isClientOnly
-                    ? "Manage client tier rules, mutual fund AMCs, synchronization pipelines, and system users."
-                    : "Manage general platform preferences, client tracking rules, integrations, and treasury vaults."
-                }
-              />
-            </div>
+  const pageDescription = isExpenseOnly
+    ? "Manage family cash vaults, spending tags, top-ups, and appearance preferences."
+    : isClientOnly
+    ? "Manage client tier rules, mutual fund AMCs, synchronization pipelines, and system users."
+    : "Manage general platform preferences, client tracking rules, integrations, and treasury vaults.";
 
-            {/* General Settings Section */}
+  return (
+    <WorkspaceShell
+      navbar={navbar || standaloneTopBar}
+      badge="System Configuration"
+      badgeIcon={SettingsIcon}
+      title="Application"
+      accent="Settings"
+      description={pageDescription}
+      rightSlot={
+        activeItem ? (
+          <button
+            type="button"
+            onClick={() => setActiveItem(null)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-[#232A3B] dark:hover:bg-[#2A3347] text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white border border-slate-200 dark:border-white/10 transition-colors cursor-pointer"
+          >
+            <ArrowLeft size={14} className="text-sky-600 dark:text-sky-400" />
+            <span>Back to All Settings</span>
+          </button>
+        ) : null
+      }
+    >
+      {!activeItem ? (
+        <div className="space-y-10 animate-in fade-in duration-200">
+          <SettingsSection
+            title="General Settings"
+            icon={SlidersHorizontal}
+            iconColor="text-purple-600 dark:text-purple-400"
+            iconBg="bg-purple-500/10 border-purple-500/20"
+            cards={generalCards}
+            isAdmin={user?.isAdmin}
+            onCardClick={setActiveItem}
+          />
+
+          {showClientSection && (
             <SettingsSection
-              title="General Settings"
-              icon={SlidersHorizontal}
-              iconColor="text-purple-600 dark:text-purple-400"
-              iconBg="bg-purple-500/10 border-purple-500/20"
-              cards={generalCards}
+              title="Client Tracker Operations"
+              icon={Building2}
+              iconColor="text-emerald-600 dark:text-emerald-400"
+              iconBg="bg-emerald-500/10 border-emerald-500/20"
+              cards={businessCards}
               isAdmin={user?.isAdmin}
               onCardClick={setActiveItem}
             />
+          )}
 
-            {/* Client Tracker Operations Section */}
-            {showClientSection && (
-              <SettingsSection
-                title="Client Tracker Operations"
-                icon={Building2}
-                iconColor="text-emerald-600 dark:text-emerald-400"
-                iconBg="bg-emerald-500/10 border-emerald-500/20"
-                cards={businessCards}
-                isAdmin={user?.isAdmin}
-                onCardClick={setActiveItem}
-              />
-            )}
-
-            {/* Expense Tracker Management Section */}
-            {showExpenseSection && (
-              <SettingsSection
-                title="Expense Tracker Management"
-                icon={Receipt}
-                iconColor="text-rose-600 dark:text-rose-400"
-                iconBg="bg-rose-500/10 border-rose-500/20"
-                cards={expenseCards}
-                isAdmin={user?.isAdmin}
-                onCardClick={setActiveItem}
-              />
-            )}
-          </div>
-        ) : (
-          /* VIEW 2: ACTIVE DETAIL VIEW */
-          <SettingsDetailView
-            selectedSetting={selectedSetting}
-            isAdmin={user?.isAdmin}
-            thresholds={thresholds}
-            setThresholds={setThresholds}
-            compliance={compliance}
-            setCompliance={setCompliance}
-            wallets={wallets}
-            loadInitialData={loadInitialData}
-            isDark={isDark}
-            toggleTheme={toggleTheme}
-            handlePocketRefill={handlePocketRefill}
-            loading={loading}
-            onBack={() => setActiveItem(null)}
-          />
-        )}
-      </div>
-    </div>
+          {showExpenseSection && (
+            <SettingsSection
+              title="Expense Tracker Management"
+              icon={Receipt}
+              iconColor="text-rose-600 dark:text-rose-400"
+              iconBg="bg-rose-500/10 border-rose-500/20"
+              cards={expenseCards}
+              isAdmin={user?.isAdmin}
+              onCardClick={setActiveItem}
+            />
+          )}
+        </div>
+      ) : (
+        <SettingsDetailView
+          selectedSetting={selectedSetting}
+          isAdmin={user?.isAdmin}
+          thresholds={thresholds}
+          setThresholds={setThresholds}
+          compliance={compliance}
+          setCompliance={setCompliance}
+          wallets={wallets}
+          loadInitialData={loadInitialData}
+          isDark={isDark}
+          toggleTheme={toggleTheme}
+          handlePocketRefill={handlePocketRefill}
+          loading={loading}
+          onBack={() => setActiveItem(null)}
+        />
+      )}
+    </WorkspaceShell>
   );
 };
 
