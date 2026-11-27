@@ -190,7 +190,7 @@ const Catalog = () => {
       return (
         <span 
           key={idx}
-          className="px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider bg-[#0284c7] text-white border border-[#0284c7] rounded-none shrink-0"
+          className="px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider bg-pink-500 text-white border border-pink-600 rounded-2xs shrink-0"
         >
           {tag.label}
         </span>
@@ -200,7 +200,7 @@ const Catalog = () => {
       return (
         <span 
           key={idx}
-          className="px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider bg-[#38bdf8]/20 dark:bg-[#38bdf8]/15 text-[#0369a1] dark:text-[#38bdf8] border border-[#38bdf8]/40 rounded-none shrink-0"
+          className="px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider bg-pink-500/15 dark:bg-pink-500/15 text-pink-600 dark:text-pink-400 border border-pink-500/30 rounded-2xs shrink-0"
         >
           {tag.label}
         </span>
@@ -209,7 +209,7 @@ const Catalog = () => {
     return (
       <span 
         key={idx}
-        className="px-1.5 py-0.5 text-[9px] font-mono font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700 bg-transparent rounded-none shrink-0"
+        className="px-1.5 py-0.5 text-[9px] font-mono font-medium uppercase tracking-wider text-slate-500 dark:text-stone-400 border border-slate-300 dark:border-[#2C3545] bg-transparent rounded-2xs shrink-0"
       >
         {tag.label}
       </span>
@@ -220,10 +220,17 @@ const Catalog = () => {
   const currentDisplayEnd = Math.min(startIndex + pageSize, totalCount);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#070A10] text-slate-900 dark:text-stone-100 font-sans selection:bg-[#40bcf4]/20 selection:text-slate-950 dark:selection:bg-[#40bcf4]/30 dark:selection:text-white transition-colors duration-300 pb-20 relative overflow-x-hidden">
+    <div
+      className="min-h-screen bg-[#F8FAFC] dark:bg-[#1B2230] text-slate-950 dark:text-stone-100 font-sans selection:bg-pink-500/20 selection:text-slate-950 dark:selection:bg-pink-500/30 dark:selection:text-white transition-colors duration-300 pb-20 relative overflow-x-hidden"
+      style={{
+        '--font-sans': "'Space Grotesk', sans-serif",
+        '--font-mono': "'Space Mono', monospace",
+        fontFamily: "'Space Grotesk', sans-serif",
+      }}
+    >
       
       {/* Precision Ambient Background */}
-      <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-[#40bcf4]/10 dark:from-[#40bcf4]/5 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-pink-500/10 dark:from-pink-500/5 via-transparent to-transparent pointer-events-none" />
 
       {/* Top Navbar */}
       <ShowNavbar
@@ -240,15 +247,18 @@ const Catalog = () => {
             
             {/* Title, Badge & Subtitle */}
             <div className="space-y-2 max-w-2xl min-w-0">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-slate-200/60 dark:bg-white/5 border border-slate-300/60 dark:border-white/10 shadow-2xs">
-                <Sparkles size={10} className="text-[#40bcf4] animate-pulse" />
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-700 dark:text-stone-300">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-2xs bg-slate-200/60 dark:bg-white/5 border border-slate-300 dark:border-[#2C3545] shadow-2xs">
+                <Sparkles size={10} className="text-pink-500 animate-pulse" />
+                <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-stone-300">
                   Master Title Directory
                 </span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-[1000] uppercase tracking-tight text-slate-950 dark:text-white leading-[1.04]">
-                Show <span className="text-[#40bcf4]">Catalog</span>
+              <h1
+                className="text-3xl sm:text-4xl lg:text-5xl font-normal uppercase tracking-[0.02em] text-slate-950 dark:text-white leading-[1.04]"
+                style={{ fontFamily: "'Bungee', sans-serif" }}
+              >
+                Show <span className="text-pink-600 dark:text-pink-400">Catalog</span>
               </h1>
 
               <p className="text-xs sm:text-sm text-slate-600 dark:text-stone-400 font-medium leading-relaxed max-w-xl">
@@ -261,17 +271,17 @@ const Catalog = () => {
               <button
                 type="button"
                 onClick={() => setIsImportOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-[#111927] hover:bg-slate-100 dark:hover:bg-[#182337] text-slate-800 dark:text-stone-200 text-xs font-bold uppercase tracking-wider border border-slate-300 dark:border-[#2C3440] border-b-[3px] border-b-slate-400 dark:border-b-black active:border-b active:translate-y-[2px] transition-all cursor-pointer rounded-none shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-[#12171F] hover:bg-slate-100 dark:hover:bg-[#161B22] text-slate-800 dark:text-stone-200 text-xs font-mono font-bold uppercase tracking-wider border border-slate-300 dark:border-[#2C3545] border-b-[3px] border-b-slate-400 dark:border-b-black active:border-b active:translate-y-[2px] transition-all cursor-pointer rounded-xs shadow-xs"
                 title="Bulk Import Notes Archive"
               >
-                <UploadCloud size={14} className="text-[#40bcf4]" />
+                <UploadCloud size={14} className="text-pink-500" />
                 <span>Bulk Import</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsAddShowOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#00e054] hover:bg-[#00c94b] text-[#14181C] text-xs font-black uppercase tracking-wider border border-[#00c94b] border-b-[3px] border-b-[#009e3a] active:border-b active:translate-y-[2px] transition-all cursor-pointer shadow-[0_4px_12px_rgba(0,224,84,0.3)] rounded-none"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-mono font-bold uppercase tracking-wider border border-pink-600 border-b-[3px] border-b-pink-700 active:border-b active:translate-y-[2px] transition-all cursor-pointer shadow-[0_4px_12px_rgba(236,72,153,0.3)] rounded-xs"
               >
                 <Plus size={15} strokeWidth={3} />
                 <span>Add Show</span>
@@ -281,7 +291,7 @@ const Catalog = () => {
           </div>
 
           {/* Docked Baseline Tabs */}
-          <div className="w-full border-b border-slate-200/90 dark:border-white/10 pt-1">
+          <div className="w-full border-b border-slate-200/90 dark:border-[#262E3B] pt-1">
             <div className="grid grid-cols-4 sm:flex items-center gap-1 sm:gap-2 w-full sm:w-auto -mb-px">
               {CATEGORIES.map((cat) => {
                 const isActive = activeCategory === cat.id;
@@ -296,16 +306,16 @@ const Catalog = () => {
                       setActiveCategory(cat.id);
                       setCurrentPage(1);
                     }}
-                    className={`group relative flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-2 sm:px-4 py-2.5 text-xs font-bold transition-all duration-150 cursor-pointer text-center border-b-2 ${
+                    className={`group relative flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-2 sm:px-4 py-2.5 text-xs font-mono font-bold transition-all duration-150 cursor-pointer text-center border-b-2 ${
                       isActive
-                        ? 'border-[#40bcf4] text-slate-950 dark:text-[#40bcf4]'
-                        : 'border-transparent text-slate-500 dark:text-stone-400 hover:text-slate-900 dark:hover:text-stone-200 hover:border-slate-300 dark:hover:border-white/20'
+                        ? 'border-pink-500 text-slate-950 dark:text-pink-400'
+                        : 'border-transparent text-slate-500 dark:text-stone-400 hover:text-slate-900 dark:hover:text-stone-200 hover:border-slate-300 dark:hover:border-[#2C3545]'
                     }`}
                   >
                     <Icon 
                       size={13} 
                       className={`hidden sm:inline shrink-0 transition-colors ${
-                        isActive ? 'text-[#40bcf4]' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-stone-300'
+                        isActive ? 'text-pink-500' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-stone-300'
                       }`} 
                     />
 
@@ -313,9 +323,9 @@ const Catalog = () => {
                     <span className="hidden sm:inline tracking-wide">{cat.label}</span>
 
                     <span
-                      className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.2 rounded font-[1000] shrink-0 transition-colors ${
+                      className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.2 rounded-2xs font-bold shrink-0 transition-colors ${
                         isActive
-                          ? 'bg-[#40bcf4]/15 text-[#40bcf4]'
+                          ? 'bg-pink-500/15 text-pink-600 dark:text-pink-400'
                           : 'bg-slate-200/80 dark:bg-white/10 text-slate-500 dark:text-stone-400'
                       }`}
                     >
@@ -334,9 +344,9 @@ const Catalog = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs select-none">
           
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#38bdf8]" />
-            <span className="font-mono text-xs text-slate-600 dark:text-slate-400">
-              Showing <span className="font-bold text-[#0284c7] dark:text-[#38bdf8] underline">{currentDisplayStart}–{currentDisplayEnd}</span> of {totalCount} titles
+            <span className="w-2 h-2 rounded-full bg-pink-500" />
+            <span className="font-mono text-xs text-slate-600 dark:text-stone-400">
+              Showing <span className="font-bold text-pink-600 dark:text-pink-400 underline">{currentDisplayStart}–{currentDisplayEnd}</span> of {totalCount} titles
             </span>
           </div>
 
@@ -351,7 +361,7 @@ const Catalog = () => {
                   setCurrentPage(1);
                 }}
                 placeholder="Search catalog..."
-                className="w-48 sm:w-60 h-8 pl-8 pr-7 bg-white dark:bg-[#101726] border border-slate-300 dark:border-slate-800 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-[#40bcf4] rounded-none transition-colors"
+                className="w-48 sm:w-60 h-8 pl-8 pr-7 bg-white dark:bg-[#12171F] border border-slate-300 dark:border-[#2C3545] text-xs font-mono font-medium text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-pink-500 rounded-xs transition-colors"
               />
               {searchQuery && (
                 <button
@@ -369,9 +379,9 @@ const Catalog = () => {
               onClick={fetchShows}
               disabled={isLoading}
               title="Refresh Show Directory"
-              className="h-8 px-2.5 bg-white dark:bg-[#101726] border border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center rounded-none"
+              className="h-8 px-2.5 bg-white dark:bg-[#12171F] border border-slate-300 dark:border-[#2C3545] text-slate-600 dark:text-stone-300 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center rounded-xs font-mono"
             >
-              <RefreshCw size={13} className={isLoading ? 'animate-spin text-[#40bcf4]' : ''} />
+              <RefreshCw size={13} className={isLoading ? 'animate-spin text-pink-500' : ''} />
             </button>
 
             <select
@@ -380,7 +390,7 @@ const Catalog = () => {
                 setPageSize(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="h-8 px-2 bg-white dark:bg-[#101726] border border-slate-300 dark:border-slate-800 text-xs font-mono font-medium text-slate-700 dark:text-slate-300 outline-none cursor-pointer rounded-none"
+              className="h-8 px-2 bg-white dark:bg-[#12171F] border border-slate-300 dark:border-[#2C3545] text-xs font-mono font-medium text-slate-700 dark:text-stone-300 outline-none cursor-pointer rounded-xs"
             >
               <option value={20}>20 / view</option>
               <option value={50}>50 / view</option>
@@ -393,27 +403,30 @@ const Catalog = () => {
         {/* ========================================================================= */}
         {/* 3. COMPACT FLAT LEDGER TABLE                                              */}
         {/* ========================================================================= */}
-        <div className="w-full border-2 border-slate-900 dark:border-black bg-white dark:bg-[#0C121D] shadow-sm rounded-none overflow-hidden">
+        <div className="w-full border border-slate-300 dark:border-[#2C3545] bg-white dark:bg-[#12171F] shadow-sm rounded-xs overflow-hidden">
           
           {isLoading ? (
             <div className="h-80 flex flex-col items-center justify-center gap-2">
-              <Loader2 size={28} className="animate-spin text-[#40bcf4]" />
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
+              <Loader2 size={28} className="animate-spin text-pink-500" />
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-stone-400">
                 Loading Master Catalog...
               </span>
             </div>
           ) : paginatedShows.length === 0 ? (
             <div className="py-20 px-4 text-center space-y-2">
-              <Film size={34} className="mx-auto text-slate-400 dark:text-slate-600 stroke-1" />
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              <Film size={34} className="mx-auto text-slate-400 dark:text-stone-500 stroke-1" />
+              <h3
+                className="text-sm font-normal uppercase tracking-[0.02em] text-slate-900 dark:text-white"
+                style={{ fontFamily: "'Bungee', sans-serif" }}
+              >
                 {searchQuery ? `No shows match "${searchQuery}"` : 'No titles currently registered'}
-              </p>
-              <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+              </h3>
+              <p className="text-[11px] font-mono text-slate-500 dark:text-stone-400 max-w-xs mx-auto">
                 Use the Add Show button above to register a new entry.
               </p>
             </div>
           ) : (
-            <div className="divide-y-2 divide-slate-900 dark:divide-black">
+            <div className="divide-y divide-slate-200/90 dark:divide-[#262E3B]">
               {paginatedShows.map((show, index) => {
                 const globalIndex = startIndex + index + 1;
                 const formatTags = getFormatTags(show);
@@ -422,17 +435,17 @@ const Catalog = () => {
                 return (
                   <div
                     key={show._id || index}
-                    className="flex items-center justify-between px-3 sm:px-4 py-2 hover:bg-slate-50 dark:hover:bg-[#111927] transition-colors gap-3 group"
+                    className="flex items-center justify-between px-3 sm:px-4 py-2 hover:bg-slate-50 dark:hover:bg-[#161B22] transition-colors gap-3 group"
                   >
                     
                     {/* Left: #Rank + Thumbnail + Title + Tags */}
                     <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
                       
-                      <span className="w-7 text-center font-mono text-xs font-black text-slate-800 dark:text-slate-300 shrink-0">
+                      <span className="w-7 text-center font-mono text-xs font-bold text-slate-800 dark:text-stone-300 shrink-0">
                         #{globalIndex}
                       </span>
 
-                      <div className="w-8 h-11 sm:w-9 sm:h-12 bg-black shrink-0 overflow-hidden border border-slate-900 dark:border-white/20 rounded-none relative">
+                      <div className="w-8 h-11 sm:w-9 sm:h-12 bg-black shrink-0 overflow-hidden border border-slate-300 dark:border-[#2C3545] rounded-2xs relative">
                         {show.posterUrl ? (
                           <img 
                             src={show.posterUrl} 
@@ -448,7 +461,7 @@ const Catalog = () => {
                       </div>
 
                       <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
-                        <span className="font-[1000] text-xs sm:text-sm uppercase tracking-tight text-slate-950 dark:text-white truncate">
+                        <span className="font-bold text-xs sm:text-sm uppercase tracking-tight text-slate-950 dark:text-white truncate">
                           {show.title}
                         </span>
 
@@ -456,7 +469,7 @@ const Catalog = () => {
                           {formatTags.map((tag, tIdx) => renderBadge(tag, tIdx))}
 
                           {year && (
-                            <span className="text-[10px] font-mono text-slate-400 font-bold ml-0.5">
+                            <span className="text-[10px] font-mono text-slate-400 dark:text-stone-400 font-bold ml-0.5">
                               {year}
                             </span>
                           )}
@@ -470,7 +483,7 @@ const Catalog = () => {
                       <button
                         type="button"
                         onClick={() => setEditingShow(show)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-[#40bcf4] dark:bg-[#162030] dark:hover:bg-[#40bcf4] text-slate-700 hover:text-black dark:text-slate-300 dark:hover:text-black border border-slate-300 dark:border-slate-700 text-[10px] font-mono font-bold uppercase transition-colors cursor-pointer rounded-none"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-pink-500 dark:bg-[#161B22] dark:hover:bg-pink-500 text-slate-700 hover:text-white dark:text-stone-300 dark:hover:text-white border border-slate-300 dark:border-[#2C3545] hover:border-pink-500 text-[10px] font-mono font-bold uppercase transition-colors cursor-pointer rounded-2xs"
                         title="Edit show details"
                       >
                         <Edit3 size={11} strokeWidth={2.5} />
@@ -480,7 +493,7 @@ const Catalog = () => {
                       <button
                         type="button"
                         onClick={() => setDeletingShow(show)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 hover:bg-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-600 text-rose-600 hover:text-white dark:text-rose-400 dark:hover:text-white border border-rose-200 dark:border-rose-500/30 text-[10px] font-mono font-bold uppercase transition-colors cursor-pointer rounded-none"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 hover:bg-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-600 text-rose-600 hover:text-white dark:text-rose-400 dark:hover:text-white border border-rose-200 dark:border-rose-500/30 text-[10px] font-mono font-bold uppercase transition-colors cursor-pointer rounded-2xs"
                         title="Delete show"
                       >
                         <Trash2 size={11} strokeWidth={2.5} />
@@ -501,7 +514,7 @@ const Catalog = () => {
         {/* ========================================================================= */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between pt-1 select-none text-xs font-mono">
-            <span className="text-slate-500 dark:text-slate-400">
+            <span className="text-slate-500 dark:text-stone-400">
               Page <span className="font-bold text-slate-900 dark:text-white">{currentPage}</span> of {totalPages}
             </span>
 
@@ -510,7 +523,7 @@ const Catalog = () => {
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 bg-white dark:bg-[#101726] border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer font-bold rounded-none"
+                className="px-3 py-1 bg-white dark:bg-[#12171F] border border-slate-300 dark:border-[#2C3545] text-slate-700 dark:text-stone-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer font-bold rounded-xs"
               >
                 Prev
               </button>
@@ -519,7 +532,7 @@ const Catalog = () => {
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 bg-white dark:bg-[#101726] border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer font-bold rounded-none"
+                className="px-3 py-1 bg-white dark:bg-[#12171F] border border-slate-300 dark:border-[#2C3545] text-slate-700 dark:text-stone-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer font-bold rounded-xs"
               >
                 Next
               </button>
@@ -536,32 +549,32 @@ const Catalog = () => {
           onClick={() => setDeletingShow(null)}
         >
           <div 
-            className="w-full max-w-md bg-white dark:bg-[#121926] border-2 border-black rounded-none p-5 space-y-3.5 shadow-2xl text-left"
+            className="w-full max-w-md bg-white dark:bg-[#12171F] border border-slate-300 dark:border-[#2C3545] rounded-xs p-5 space-y-3.5 shadow-2xl text-left"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-none bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-600 shrink-0">
+              <div className="w-8 h-8 rounded-2xs bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-600 shrink-0">
                 <AlertTriangle size={17} />
               </div>
               <div>
                 <h3 className="text-sm font-extrabold uppercase text-slate-900 dark:text-white leading-tight">
                   Delete Catalog Entry
                 </h3>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                <p className="text-[10px] text-slate-500 dark:text-stone-400 font-mono">
                   Permanent removal
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            <p className="text-xs text-slate-600 dark:text-stone-300 leading-relaxed">
               Are you sure you want to delete <span className="font-bold text-slate-900 dark:text-white">"{deletingShow.title}"</span>? This will permanently remove this record from the database.
             </p>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-white/10">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/90 dark:border-[#262E3B]">
               <button
                 type="button"
                 onClick={() => setDeletingShow(null)}
-                className="px-3.5 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer rounded-none"
+                className="px-3.5 py-1.5 text-xs font-mono font-bold text-slate-600 dark:text-stone-400 hover:text-slate-900 dark:hover:text-white cursor-pointer rounded-xs"
               >
                 Cancel
               </button>
@@ -570,7 +583,7 @@ const Catalog = () => {
                 type="button"
                 onClick={handleDeleteShow}
                 disabled={apiLoading}
-                className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer rounded-none disabled:opacity-50"
+                className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer rounded-xs disabled:opacity-50"
               >
                 {apiLoading ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                 <span>Delete</span>

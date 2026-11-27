@@ -88,21 +88,21 @@ const allApps = [
     icon: Clapperboard,
     badge: "Cinema Vault",
     theme: {
-      primary: "bg-[#40bcf4]",
-      text: "text-sky-700 dark:text-[#40bcf4]",
+      primary: "bg-pink-500",
+      text: "text-pink-600 dark:text-pink-400",
       accentBg:
-        "bg-sky-50 dark:bg-[#1F242B] text-sky-600 dark:text-[#40bcf4] border border-sky-200/90 dark:border-[#2C3440]",
+        "bg-pink-50 dark:bg-[#161B22] text-pink-600 dark:text-pink-400 border border-pink-200/90 dark:border-[#2C3545]",
       border:
-        "border-2 border-sky-300/80 dark:border-[#2C3440] hover:border-[#40bcf4] dark:hover:border-[#40bcf4]",
+        "border-2 border-pink-300/80 dark:border-[#2C3545] hover:border-pink-500 dark:hover:border-pink-400",
       cardHover:
-        "hover:shadow-[0_18px_40px_rgba(64,188,244,0.17)] dark:hover:shadow-[0_18px_40px_rgba(64,188,244,0.14)]",
+        "hover:shadow-[0_18px_40px_rgba(236,72,153,0.16)] dark:hover:shadow-[0_18px_40px_rgba(236,72,153,0.14)]",
       badgeBg:
-        "bg-sky-50 dark:bg-[#1F242B] text-sky-800 dark:text-stone-300 border border-sky-200 dark:border-[#2C3440]",
+        "bg-pink-50 dark:bg-[#161B22] text-pink-700 dark:text-pink-400 border border-pink-200 dark:border-[#2C3545]",
       pillBg:
-        "bg-sky-50/90 dark:bg-[#14181C] text-sky-900 dark:text-stone-300 border border-sky-200/90 dark:border-[#2C3440]",
-      glow: "from-[#40bcf4]/20 via-[#00e054]/10 to-transparent",
+        "bg-pink-50/90 dark:bg-[#161B22] text-pink-900 dark:text-stone-300 border border-pink-200/90 dark:border-[#2C3545]",
+      glow: "from-pink-500/20 via-fuchsia-500/10 to-transparent",
       arrowHover:
-        "group-hover:bg-[#00e054] group-hover:text-[#14181C] group-hover:border-[#00e054]",
+        "group-hover:bg-pink-500 group-hover:text-white group-hover:border-pink-500",
     },
   },
   {
@@ -193,27 +193,24 @@ const renderAppTitle = (app, variant = "desktop") => {
 
     case "SHOW_RATER":
       return (
-        <div className="flex items-center gap-1.5 select-none">
-          <div className="flex items-baseline leading-none">
-            <span
-              className={`font-[1000] tracking-[-0.03em] text-slate-900 dark:text-white font-sans ${
-                isMobile ? "text-[18px]" : "text-2xl xl:text-[26px]"
-              }`}
-            >
+        <div className="flex items-center gap-2 select-none">
+          <div
+            style={{ fontFamily: "'Bungee', sans-serif" }}
+            className={`flex items-baseline leading-none font-normal tracking-[0.02em] ${
+              isMobile ? "text-[17px]" : "text-xl xl:text-[23px]"
+            }`}
+          >
+            <span className="text-slate-950 dark:text-white">
               plot
             </span>
-            <span
-              className={`font-[1000] tracking-[-0.03em] text-[#40bcf4] font-sans ${
-                isMobile ? "text-[18px]" : "text-2xl xl:text-[26px]"
-              }`}
-            >
+            <span className="text-pink-600 dark:text-pink-400">
               twist
             </span>
           </div>
           <div className="flex items-center gap-1 shrink-0 pb-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ff8000]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#00e054]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#40bcf4]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-pink-500" />
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400" />
           </div>
         </div>
       );
@@ -270,6 +267,23 @@ const AppPicker = () => {
   }, [isDark]);
 
   const toggleTheme = () => setIsDark((prev) => !prev);
+
+  // Load Bungee, Space Grotesk & Space Mono fonts for the Plot Twist card
+  useEffect(() => {
+    const fontLinkId = "plottwist-locked-fonts";
+    const fontHref =
+      "https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@600;700&family=Space+Mono:wght@400;700&display=swap";
+    const existing = document.getElementById(fontLinkId);
+    if (!existing) {
+      const link = document.createElement("link");
+      link.id = fontLinkId;
+      link.rel = "stylesheet";
+      link.href = fontHref;
+      document.head.appendChild(link);
+    } else if (existing.href !== fontHref) {
+      existing.href = fontHref;
+    }
+  }, []);
 
   // Strict check: only render apps included in allowedApps
   const authorizedApps = useMemo(() => {
@@ -402,11 +416,24 @@ const AppPicker = () => {
             {/* 📱 MOBILE VIEW: SCROLL-SAFE ACTION PODS (< lg)           */}
             {/* ======================================================== */}
             <div className="flex lg:hidden flex-col gap-2.5 w-full max-w-md mx-auto overflow-y-auto no-scrollbar max-h-[54dvh] py-1 px-1">
-              {authorizedApps.map((app) => (
+              {authorizedApps.map((app) => {
+                const isPlotTwist = app.id === "SHOW_RATER";
+                return (
                 <div
                   key={`mob-${app.id}`}
                   onClick={() => navigate(app.path)}
-                  className={`group relative flex items-center justify-between p-3.5 rounded-xl bg-white dark:bg-slate-900/90 ${app.theme.border} transition-all duration-200 active:scale-[0.98] shadow-xs hover:shadow-md cursor-pointer overflow-hidden shrink-0`}
+                  style={
+                    isPlotTwist
+                      ? {
+                          "--font-sans": "'Space Grotesk', sans-serif",
+                          "--font-mono": "'Space Mono', monospace",
+                          fontFamily: "'Space Grotesk', sans-serif",
+                        }
+                      : undefined
+                  }
+                  className={`group relative flex items-center justify-between p-3.5 rounded-xl ${
+                    isPlotTwist ? "bg-white dark:bg-[#12171F]" : "bg-white dark:bg-slate-900/90"
+                  } ${app.theme.border} transition-all duration-200 active:scale-[0.98] shadow-xs hover:shadow-md cursor-pointer overflow-hidden shrink-0`}
                 >
                   <div
                     className={`absolute top-0 right-0 w-28 h-28 bg-linear-to-bl ${app.theme.glow} rounded-bl-full pointer-events-none opacity-80`}
@@ -421,12 +448,12 @@ const AppPicker = () => {
                     <div className="min-w-0 text-left">
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <span
-                          className={`font-serif italic text-xs font-semibold ${app.theme.text}`}
+                          className={`${isPlotTwist ? "font-mono uppercase tracking-wider text-[10px] font-bold" : "font-serif italic text-xs font-semibold"} ${app.theme.text}`}
                         >
                           {app.category}
                         </span>
                         <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                        <span className="font-sans text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                        <span className={`${isPlotTwist ? "font-mono text-[10px]" : "font-sans text-[11px]"} font-semibold text-slate-500 dark:text-stone-400`}>
                           {app.badge}
                         </span>
                       </div>
@@ -441,7 +468,8 @@ const AppPicker = () => {
                     <ArrowRight size={14} strokeWidth={2.2} />
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* ======================================================== */}
@@ -450,7 +478,9 @@ const AppPicker = () => {
             <div
               className={`hidden lg:grid gap-5 xl:gap-6 2xl:gap-7 mx-auto py-1 px-1 ${desktopGridClass}`}
             >
-              {authorizedApps.map((app, idx) => (
+              {authorizedApps.map((app, idx) => {
+                const isPlotTwist = app.id === "SHOW_RATER";
+                return (
                 <div
                   key={`desk-${app.id}`}
                   role="button"
@@ -464,7 +494,20 @@ const AppPicker = () => {
                       navigate(app.path);
                     }
                   }}
-                  className={`group relative flex flex-col justify-between p-4 xl:p-5 rounded-2xl bg-white dark:bg-slate-900/95 backdrop-blur-md ${app.theme.border} transition-all duration-300 ${app.theme.cardHover} cursor-pointer overflow-hidden shadow-xs hover:-translate-y-1 active:scale-[0.99] outline-none`}
+                  style={
+                    isPlotTwist
+                      ? {
+                          "--font-sans": "'Space Grotesk', sans-serif",
+                          "--font-mono": "'Space Mono', monospace",
+                          fontFamily: "'Space Grotesk', sans-serif",
+                        }
+                      : undefined
+                  }
+                  className={`group relative flex flex-col justify-between p-4 xl:p-5 rounded-2xl ${
+                    isPlotTwist
+                      ? "bg-white dark:bg-[#12171F]"
+                      : "bg-white dark:bg-slate-900/95"
+                  } backdrop-blur-md ${app.theme.border} transition-all duration-300 ${app.theme.cardHover} cursor-pointer overflow-hidden shadow-xs hover:-translate-y-1 active:scale-[0.99] outline-none`}
                 >
                   {/* Internal Glow */}
                   <div
@@ -472,7 +515,13 @@ const AppPicker = () => {
                   />
 
                   {/* Background Index Marker */}
-                  <div className="absolute bottom-2.5 right-4 text-3xl xl:text-4xl font-serif italic leading-none pointer-events-none select-none text-slate-200/55 dark:text-slate-800/45 group-hover:text-slate-300/80 dark:group-hover:text-slate-700/60 transition-colors">
+                  <div
+                    className={`absolute bottom-2.5 right-4 text-3xl xl:text-4xl leading-none pointer-events-none select-none transition-colors ${
+                      isPlotTwist
+                        ? "font-mono font-bold text-pink-500/15 dark:text-pink-400/15 group-hover:text-pink-500/30 dark:group-hover:text-pink-400/30"
+                        : "font-serif italic text-slate-200/55 dark:text-slate-800/45 group-hover:text-slate-300/80 dark:group-hover:text-slate-700/60"
+                    }`}
+                  >
                     0{idx + 1}
                   </div>
 
@@ -486,7 +535,9 @@ const AppPicker = () => {
 
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-sans font-semibold tracking-wide ${app.theme.badgeBg}`}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded ${
+                          isPlotTwist ? "font-mono text-[10px] font-bold uppercase tracking-wider" : "text-[11px] font-sans font-semibold tracking-wide"
+                        } ${app.theme.badgeBg}`}
                       >
                         <Zap size={11} />
                         {app.badge}
@@ -511,7 +562,11 @@ const AppPicker = () => {
                         className={`w-1.5 h-1.5 rounded-full ${app.theme.primary} opacity-90`}
                       />
                       <p
-                        className={`font-serif italic text-xs font-semibold tracking-wide ${app.theme.text}`}
+                        className={`${
+                          isPlotTwist
+                            ? "font-mono text-[11px] font-bold uppercase tracking-wider"
+                            : "font-serif italic text-xs font-semibold tracking-wide"
+                        } ${app.theme.text}`}
                       >
                         {app.category}
                       </p>
@@ -521,7 +576,13 @@ const AppPicker = () => {
                       {renderAppTitle(app, "desktop")}
                     </div>
 
-                    <p className="font-sans text-xs xl:text-[13px] font-normal text-slate-600 dark:text-slate-300 leading-snug pt-0.5 line-clamp-2">
+                    <p
+                      className={`${
+                        isPlotTwist
+                          ? "font-mono text-[11px] xl:text-xs text-slate-600 dark:text-stone-400"
+                          : "font-sans text-xs xl:text-[13px] text-slate-600 dark:text-slate-300"
+                      } font-normal leading-snug pt-0.5 line-clamp-2`}
+                    >
                       {app.description}
                     </p>
                   </div>
@@ -531,14 +592,19 @@ const AppPicker = () => {
                     {app.features.map((feat) => (
                       <span
                         key={feat}
-                        className={`font-sans text-[10.5px] font-medium px-2 py-0.5 rounded ${app.theme.pillBg}`}
+                        className={`${
+                          isPlotTwist
+                            ? "font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
+                            : "font-sans text-[10.5px] font-medium px-2 py-0.5 rounded"
+                        } ${app.theme.pillBg}`}
                       >
                         {feat}
                       </span>
                     ))}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}

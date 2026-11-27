@@ -172,21 +172,21 @@ const HomeShowCatalog = ({
 
   const getScoreBadge = (score) => {
     if (!score || score === 0) {
-      return 'bg-slate-200 text-slate-700 border-slate-400 dark:bg-white/10 dark:text-slate-400 dark:border-white/20';
+      return 'bg-[#12171F]/90 text-stone-400 border border-[#2C3545] font-bold backdrop-blur-xs';
     }
     if (score >= 9.0) {
-      return 'bg-amber-400 text-slate-950 font-black border-2 border-amber-500 shadow-[0_0_12px_rgba(251,191,36,0.5)] dark:bg-amber-400/20 dark:text-amber-300 dark:border-amber-400';
+      return 'bg-[#12171F]/95 text-amber-400 border border-amber-400/60 font-bold shadow-[0_2px_10px_rgba(0,0,0,0.45)] backdrop-blur-xs';
     }
     if (score >= 8.5) {
-      return 'bg-[#40bcf4] text-slate-950 font-black border-2 border-[#0284c7] shadow-[0_0_12px_rgba(64,188,244,0.5)] dark:bg-[#40bcf4]/20 dark:text-[#40bcf4] dark:border-[#40bcf4]';
+      return 'bg-[#12171F]/95 text-pink-400 border border-pink-400/60 font-bold shadow-[0_2px_10px_rgba(0,0,0,0.45)] backdrop-blur-xs';
     }
     if (score >= 8.0) {
-      return 'bg-orange-400 text-slate-950 font-black border-2 border-orange-500 dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-400';
+      return 'bg-[#12171F]/95 text-orange-400 border border-orange-400/60 font-bold shadow-[0_2px_10px_rgba(0,0,0,0.45)] backdrop-blur-xs';
     }
     if (score >= 7.0) {
-      return 'bg-cyan-400 text-slate-950 font-bold border-2 border-cyan-500 dark:bg-cyan-500/20 dark:text-cyan-300 dark:border-cyan-400';
+      return 'bg-[#12171F]/95 text-cyan-400 border border-cyan-400/60 font-bold shadow-[0_2px_10px_rgba(0,0,0,0.45)] backdrop-blur-xs';
     }
-    return 'bg-slate-200 text-slate-900 border-2 border-slate-400 dark:bg-white/10 dark:text-slate-300 dark:border-white/20 font-bold';
+    return 'bg-[#12171F]/95 text-stone-300 border border-[#2C3545] font-bold shadow-[0_2px_10px_rgba(0,0,0,0.45)] backdrop-blur-xs';
   };
 
   const getFormatLabel = (item) => {
@@ -223,11 +223,12 @@ const HomeShowCatalog = ({
       <div 
         ref={listDropdownRef}
         onClick={(e) => e.stopPropagation()}
-        className={`absolute ${placementClasses} w-52 sm:w-56 rounded-none bg-white dark:bg-[#121926] border-2 border-slate-900 dark:border-black shadow-2xl p-1 z-50 text-left select-none animate-in fade-in zoom-in-95 duration-100`}
+        style={{ fontFamily: "'Space Mono', monospace" }}
+        className={`absolute ${placementClasses} w-52 sm:w-56 rounded-xs bg-white dark:bg-[#161B22] border-2 border-slate-300 dark:border-[#2C3545] shadow-2xl p-1 z-50 text-left select-none animate-in fade-in zoom-in-95 duration-100`}
       >
-        <div className="px-2.5 py-1.5 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
+        <div className="px-2.5 py-1.5 border-b border-slate-200 dark:border-[#262E3B] flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-stone-400">
-            <ListPlus size={11} className="text-[#40bcf4]" />
+            <ListPlus size={11} className="text-pink-500 dark:text-pink-400" />
             <span>Add to List</span>
           </div>
           <button
@@ -241,12 +242,12 @@ const HomeShowCatalog = ({
 
         <div className="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5 py-1">
           {isLoadingLists ? (
-            <div className="py-4 flex items-center justify-center gap-2 text-xs font-mono text-slate-400">
-              <Loader2 size={13} className="animate-spin text-[#40bcf4]" />
+            <div className="py-4 flex items-center justify-center gap-2 text-xs font-mono text-slate-400 dark:text-stone-400">
+              <Loader2 size={13} className="animate-spin text-pink-500 dark:text-pink-400" />
               <span>Loading lists...</span>
             </div>
           ) : userLists.length === 0 ? (
-            <div className="py-3 px-2 text-center text-[10px] font-mono text-slate-400">
+            <div className="py-3 px-2 text-center text-[10px] font-mono text-slate-400 dark:text-stone-400">
               No custom lists found.
             </div>
           ) : (
@@ -262,10 +263,10 @@ const HomeShowCatalog = ({
                   type="button"
                   disabled={isAlreadyInList || isAdding}
                   onClick={() => handleAddShowToList(list._id, showId, showTitle)}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs font-mono text-left transition-colors cursor-pointer disabled:cursor-default ${
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-2xs text-xs font-mono text-left transition-colors cursor-pointer disabled:cursor-default ${
                     isAlreadyInList
                       ? 'bg-slate-50 dark:bg-white/5 text-slate-400 dark:text-stone-500'
-                      : 'text-slate-800 dark:text-stone-200 hover:bg-[#40bcf4]/10 hover:text-[#0284c7] dark:hover:text-[#40bcf4]'
+                      : 'text-slate-800 dark:text-stone-200 hover:bg-pink-500/10 hover:text-pink-600 dark:hover:text-pink-400'
                   }`}
                 >
                   <span className="truncate pr-2 font-bold text-[11px] uppercase">
@@ -274,14 +275,14 @@ const HomeShowCatalog = ({
 
                   <div className="shrink-0 flex items-center gap-1">
                     {isAdding ? (
-                      <Loader2 size={12} className="animate-spin text-[#40bcf4]" />
+                      <Loader2 size={12} className="animate-spin text-pink-500 dark:text-pink-400" />
                     ) : isAlreadyInList ? (
-                      <span className="flex items-center gap-0.5 text-[9px] font-bold text-[#00e054]">
+                      <span className="flex items-center gap-0.5 text-[9px] font-bold text-amber-500 dark:text-amber-400">
                         <Check size={11} strokeWidth={3} />
                         In list
                       </span>
                     ) : (
-                      <Plus size={12} strokeWidth={2.5} className="text-slate-400" />
+                      <Plus size={12} strokeWidth={2.5} className="text-slate-400 dark:text-stone-400" />
                     )}
                   </div>
                 </button>
@@ -296,8 +297,11 @@ const HomeShowCatalog = ({
   if (isLoading) {
     return (
       <div className="w-full h-80 flex flex-col items-center justify-center gap-3 transition-colors duration-300">
-        <Loader2 size={32} className="text-[#40bcf4] animate-spin" />
-        <p className="text-xs font-mono font-black uppercase tracking-widest text-slate-700 dark:text-slate-300">
+        <Loader2 size={32} className="text-pink-500 dark:text-pink-400 animate-spin" />
+        <p
+          style={{ fontFamily: "'Space Mono', monospace" }}
+          className="text-xs font-bold uppercase tracking-widest text-slate-700 dark:text-stone-300"
+        >
           Syncing Catalog Ledger...
         </p>
       </div>
@@ -317,19 +321,25 @@ const HomeShowCatalog = ({
         {/* Left: Summary Counter */}
         <div className="flex items-center gap-2 sm:gap-2.5">
           <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#40bcf4] opacity-80" />
-            <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-[#40bcf4]" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-500 opacity-80" />
+            <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-pink-500" />
           </span>
-          <p className="font-mono text-[11px] sm:text-xs text-slate-700 dark:text-stone-300 font-medium">
-            Showing <strong className="text-slate-950 dark:text-white font-black underline decoration-[#40bcf4] decoration-2">{totalRecords > 0 ? indexOfFirstRecord + 1 : 0}</strong>–
-            <strong className="text-slate-950 dark:text-white font-black underline decoration-[#40bcf4] decoration-2">{Math.min(indexOfLastRecord, totalRecords)}</strong> of{' '}
-            <strong className="text-[#0284c7] dark:text-[#40bcf4] font-black">{totalRecords}</strong> titles
+          <p
+            style={{ fontFamily: "'Space Mono', monospace" }}
+            className="text-[11px] sm:text-xs text-slate-700 dark:text-stone-300 font-medium"
+          >
+            Showing <strong className="text-slate-950 dark:text-white font-bold underline decoration-pink-500 decoration-2">{totalRecords > 0 ? indexOfFirstRecord + 1 : 0}</strong>–
+            <strong className="text-slate-950 dark:text-white font-bold underline decoration-pink-500 decoration-2">{Math.min(indexOfLastRecord, totalRecords)}</strong> of{' '}
+            <strong className="text-pink-600 dark:text-pink-400 font-bold">{totalRecords}</strong> titles
           </p>
         </div>
 
         {/* Right: Page Density Dropdown */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-stone-400 font-bold hidden xs:inline">
+          <span
+            style={{ fontFamily: "'Space Mono', monospace" }}
+            className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-stone-400 font-bold hidden xs:inline"
+          >
             Density:
           </span>
 
@@ -337,18 +347,22 @@ const HomeShowCatalog = ({
             <button
               type="button"
               onClick={() => setIsPageSizeOpen((prev) => !prev)}
-              className="h-7 sm:h-8 px-2 sm:px-3 flex items-center gap-1.5 sm:gap-2 rounded-xs bg-white dark:bg-[#161B22] border-2 border-slate-300 dark:border-[#2C3545] text-[11px] sm:text-xs font-mono font-black text-slate-900 dark:text-stone-200 hover:border-[#40bcf4] hover:text-slate-950 dark:hover:text-white transition-all cursor-pointer outline-none shadow-xs"
+              style={{ fontFamily: "'Space Mono', monospace" }}
+              className="h-7 sm:h-8 px-2 sm:px-3 flex items-center gap-1.5 sm:gap-2 rounded-xs bg-white dark:bg-[#12171F] border-2 border-slate-300 dark:border-[#2C3545] text-[11px] sm:text-xs font-bold text-slate-900 dark:text-stone-200 hover:border-pink-500 dark:hover:border-pink-400 hover:text-slate-950 dark:hover:text-white transition-all cursor-pointer outline-none shadow-xs"
             >
               <span>{itemsPerPage} / view</span>
               <ChevronDown 
                 size={12} 
-                className={`text-[#40bcf4] transition-transform duration-200 ${isPageSizeOpen ? 'rotate-180' : ''}`} 
+                className={`text-pink-500 dark:text-pink-400 transition-transform duration-200 ${isPageSizeOpen ? 'rotate-180' : ''}`} 
               />
             </button>
 
             {isPageSizeOpen && (
-              <div className="absolute right-0 top-[calc(100%+6px)] w-32 sm:w-36 rounded-xs bg-white dark:bg-[#161B22] border-2 border-slate-300 dark:border-[#2C3545] shadow-2xl p-1 z-50 animate-in fade-in zoom-in-95 duration-100">
-                <div className="px-2 py-1 text-[8px] font-mono tracking-wider uppercase text-slate-400 select-none">
+              <div
+                style={{ fontFamily: "'Space Mono', monospace" }}
+                className="absolute right-0 top-[calc(100%+6px)] w-32 sm:w-36 rounded-xs bg-white dark:bg-[#161B22] border-2 border-slate-300 dark:border-[#2C3545] shadow-2xl p-1 z-50 animate-in fade-in zoom-in-95 duration-100"
+              >
+                <div className="px-2 py-1 text-[8px] tracking-wider uppercase text-slate-400 dark:text-stone-400 select-none">
                   Page Density
                 </div>
                 {PAGE_SIZE_OPTIONS.map((size) => {
@@ -362,14 +376,14 @@ const HomeShowCatalog = ({
                         setCurrentPage(1);
                         setIsPageSizeOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-2xs text-xs font-mono font-bold transition-colors cursor-pointer text-left ${
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-2xs text-xs font-bold transition-colors cursor-pointer text-left ${
                         isSelected
-                          ? 'bg-[#40bcf4] text-slate-950 font-black'
+                          ? 'bg-pink-500 text-white'
                           : 'text-slate-700 dark:text-stone-300 hover:bg-slate-100 dark:hover:bg-white/5'
                       }`}
                     >
                       <span>{size} rows</span>
-                      {isSelected && <Check size={12} strokeWidth={3} className="text-slate-950" />}
+                      {isSelected && <Check size={12} strokeWidth={3} className="text-white" />}
                     </button>
                   );
                 })}
@@ -386,15 +400,21 @@ const HomeShowCatalog = ({
         
         {/* Empty State */}
         {filteredShows.length === 0 && (
-          <div className="p-8 sm:p-14 text-center rounded-xs bg-white dark:bg-[#0A0F17] border-2 border-dashed border-slate-300 dark:border-[#22334A] space-y-3 shadow-sm">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xs bg-slate-100 dark:bg-white/5 border-2 border-slate-300 dark:border-white/10 flex items-center justify-center mx-auto text-slate-500">
+          <div className="p-8 sm:p-14 text-center rounded-xs bg-white dark:bg-[#12171F] border-2 border-dashed border-slate-300 dark:border-[#2C3545] space-y-3 shadow-sm">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xs bg-pink-500/10 border-2 border-pink-500/30 flex items-center justify-center mx-auto text-pink-600 dark:text-pink-400">
               <Clapperboard size={20} className="sm:hidden" />
               <Clapperboard size={24} className="hidden sm:block" />
             </div>
-            <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-950 dark:text-white">
+            <h3
+              style={{ fontFamily: "'Bungee', sans-serif" }}
+              className="text-sm sm:text-base font-normal uppercase tracking-wide text-slate-950 dark:text-white"
+            >
               No Matching Titles
             </h3>
-            <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto font-mono">
+            <p
+              style={{ fontFamily: "'Space Mono', monospace" }}
+              className="text-[11px] sm:text-xs text-slate-600 dark:text-stone-400 max-w-sm mx-auto"
+            >
               Adjust your category filter, tier rating, or search parameters to populate records.
             </p>
           </div>
@@ -417,10 +437,10 @@ const HomeShowCatalog = ({
                 <div
                   key={item._id}
                   onClick={() => onSelectItem(item)}
-                  className="group relative rounded-xs bg-white dark:bg-[#0A0F16] border-2 border-slate-900 dark:border-[#1F2E42] hover:border-[#40bcf4] dark:hover:border-[#40bcf4] shadow-[2.5px_2.5px_0px_0px_rgba(15,23,42,1)] sm:shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.8)] sm:dark:shadow-[0_12px_28px_rgba(0,0,0,0.9),0_0_12px_rgba(64,188,244,0.15)] hover:shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] sm:hover:shadow-[6px_6px_0px_0px_rgba(15,23,42,1)] dark:hover:shadow-[0_16px_36px_rgba(0,0,0,1),0_0_24px_rgba(64,188,244,0.4)] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-row sm:flex-col justify-between overflow-visible text-left"
+                  className="group relative rounded-xs bg-white dark:bg-[#12171F] border-2 border-slate-300 dark:border-[#2C3545] hover:border-pink-500 dark:hover:border-pink-400 shadow-[2.5px_2.5px_0px_0px_rgba(15,23,42,0.85)] sm:shadow-[4px_4px_0px_0px_rgba(15,23,42,0.85)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.65)] sm:dark:shadow-[0_12px_28px_rgba(0,0,0,0.75)] hover:shadow-[4px_4px_0px_0px_rgba(236,72,153,0.9)] sm:hover:shadow-[6px_6px_0px_0px_rgba(236,72,153,0.9)] dark:hover:shadow-[0_16px_36px_rgba(0,0,0,0.9),0_0_20px_rgba(236,72,153,0.28)] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-row sm:flex-col justify-between overflow-visible text-left"
                 >
                   {/* Photo Container */}
-                  <div className="relative w-20 xs:w-24 min-h-[105px] max-h-[125px] sm:min-h-0 sm:max-h-none sm:w-full sm:h-48 shrink-0 bg-slate-950 overflow-hidden border-r-2 sm:border-r-0 sm:border-b-2 border-slate-900 dark:border-[#1F2E42]">
+                  <div className="relative w-20 xs:w-24 min-h-[105px] max-h-[125px] sm:min-h-0 sm:max-h-none sm:w-full sm:h-48 shrink-0 bg-slate-950 overflow-hidden border-r-2 sm:border-r-0 sm:border-b-2 border-slate-300 dark:border-[#2C3545]">
                     <img
                       src={poster}
                       alt={title}
@@ -430,47 +450,62 @@ const HomeShowCatalog = ({
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 sm:from-black/60 via-transparent to-transparent" />
 
                     {/* Rank Badge */}
-                    <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded-xs bg-slate-950 text-white font-mono text-[8px] sm:text-[9px] font-black border border-white/30 shadow-md">
+                    <div
+                      style={{ fontFamily: "'Space Mono', monospace" }}
+                      className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded-xs bg-slate-950 text-white text-[8px] sm:text-[9px] font-bold border border-white/30 shadow-md"
+                    >
                       #{globalIndex}
                     </div>
 
                     {/* Score Badge (Desktop) */}
                     <div className="hidden sm:block absolute top-2 right-2">
-                      <div className={`px-2 py-0.5 rounded-xs text-xs font-mono ${getScoreBadge(item.rating)}`}>
+                      <div
+                        style={{ fontFamily: "'Space Mono', monospace" }}
+                        className={`px-2 py-0.5 rounded-xs text-xs ${getScoreBadge(item.rating)}`}
+                      >
                         {item.rating ? item.rating.toFixed(1) : 'N/A'}
                       </div>
                     </div>
                   </div>
 
                   {/* Details Container */}
-                  <div className="p-2 xs:p-2.5 sm:p-3.5 flex-1 flex flex-col justify-between gap-1.5 sm:gap-2.5 bg-white dark:bg-[#0A0F16] min-w-0">
+                  <div className="p-2 xs:p-2.5 sm:p-3.5 flex-1 flex flex-col justify-between gap-1.5 sm:gap-2.5 bg-white dark:bg-[#12171F] min-w-0">
                     
                     {/* Top Row: Meta & Title */}
                     <div className="space-y-1 sm:space-y-1.5">
-                      <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
-                        <span className="px-1 sm:px-1.5 py-0.2 rounded-xs text-[8px] sm:text-[9px] font-mono font-black uppercase bg-[#40bcf4]/15 border border-[#40bcf4]/40 text-[#0284c7] dark:text-[#40bcf4]">
+                      <div
+                        style={{ fontFamily: "'Space Mono', monospace" }}
+                        className="flex items-center gap-1 sm:gap-1.5 flex-wrap"
+                      >
+                        <span className="px-1 sm:px-1.5 py-0.2 rounded-xs text-[8px] sm:text-[9px] font-bold uppercase bg-pink-500/15 border border-pink-500/40 dark:border-pink-400/40 text-pink-700 dark:text-pink-400">
                           {genre}
                         </span>
-                        <span className="px-1 sm:px-1.5 py-0.2 rounded-xs text-[8px] sm:text-[9px] font-mono font-bold uppercase bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-300">
+                        <span className="px-1 sm:px-1.5 py-0.2 rounded-xs text-[8px] sm:text-[9px] font-bold uppercase bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-[#2C3545] text-slate-700 dark:text-stone-300">
                           {format}
                         </span>
                       </div>
 
-                      <h4 className="text-xs sm:text-base font-[1000] uppercase text-slate-950 dark:text-white tracking-tight line-clamp-2 leading-tight">
+                      <h4
+                        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                        className="text-xs sm:text-base font-bold uppercase text-slate-950 dark:text-white tracking-tight line-clamp-2 leading-tight"
+                      >
                         {title}
                       </h4>
                     </div>
 
                     {/* Score Row for Mobile Only */}
-                    <div className="flex sm:hidden items-center justify-between gap-1.5 pt-0.5 border-t border-slate-100 dark:border-white/5">
-                      <span className="text-[9px] font-mono font-bold uppercase text-slate-400">Score</span>
-                      <div className={`px-1.5 py-0.2 rounded-xs text-[10px] font-mono font-black ${getScoreBadge(item.rating)}`}>
+                    <div
+                      style={{ fontFamily: "'Space Mono', monospace" }}
+                      className="flex sm:hidden items-center justify-between gap-1.5 pt-0.5 border-t border-slate-200 dark:border-[#262E3B]"
+                    >
+                      <span className="text-[9px] font-bold uppercase text-slate-400 dark:text-stone-400">Score</span>
+                      <div className={`px-1.5 py-0.2 rounded-xs text-[10px] font-bold ${getScoreBadge(item.rating)}`}>
                         {item.rating ? item.rating.toFixed(1) : 'N/A'}
                       </div>
                     </div>
 
                     {/* Bottom Action Strip: Wishlist + Add To List + Edit Score */}
-                    <div className="pt-1.5 sm:pt-2 border-t sm:border-t-2 border-slate-200 dark:border-[#1A2536] flex items-center justify-between gap-1 sm:gap-1.5 relative">
+                    <div className="pt-1.5 sm:pt-2 border-t sm:border-t-2 border-slate-200 dark:border-[#262E3B] flex items-center justify-between gap-1 sm:gap-1.5 relative">
                       <div className="flex items-center gap-1">
                         {/* Wishlist */}
                         <button
@@ -481,8 +516,8 @@ const HomeShowCatalog = ({
                           }}
                           className={`p-1 sm:p-1.5 rounded-xs transition-colors cursor-pointer border ${
                             item.isFavorite 
-                              ? 'text-rose-600 bg-rose-50 border-rose-300 dark:bg-rose-500/20 dark:border-rose-500/40' 
-                              : 'text-slate-500 border-slate-300 hover:text-rose-600 hover:border-rose-400 dark:border-slate-700 dark:text-slate-400'
+                              ? 'text-rose-600 bg-rose-50 border-rose-300 dark:bg-rose-500/20 dark:border-rose-500/40 dark:text-rose-400' 
+                              : 'text-slate-500 border-slate-300 hover:text-rose-600 hover:border-rose-400 dark:border-[#2C3545] dark:text-stone-400'
                           }`}
                           title={item.isFavorite ? 'Remove from Wishlist' : 'Add to Wishlist'}
                         >
@@ -500,8 +535,8 @@ const HomeShowCatalog = ({
                             }}
                             className={`p-1 sm:p-1.5 rounded-xs transition-colors cursor-pointer border ${
                               activeListDropdownShowId === String(showId)
-                                ? 'bg-[#40bcf4] text-slate-950 border-[#40bcf4]'
-                                : 'text-slate-500 border-slate-300 hover:text-[#40bcf4] hover:border-[#40bcf4] dark:border-slate-700 dark:text-slate-400'
+                                ? 'bg-pink-500 text-white border-pink-500'
+                                : 'text-slate-500 border-slate-300 hover:text-pink-500 hover:border-pink-500 dark:border-[#2C3545] dark:text-stone-400 dark:hover:text-pink-400 dark:hover:border-pink-400'
                             }`}
                             title="Add to List"
                           >
@@ -521,7 +556,8 @@ const HomeShowCatalog = ({
                           e.stopPropagation();
                           onSelectItem(item);
                         }}
-                        className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-xs bg-slate-900 dark:bg-white text-white dark:text-slate-950 text-[9px] sm:text-[10px] font-mono font-black uppercase tracking-wider hover:bg-[#0284c7] dark:hover:bg-[#40bcf4] transition-colors"
+                        style={{ fontFamily: "'Space Mono', monospace" }}
+                        className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-xs bg-slate-950 dark:bg-white text-white dark:text-slate-950 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider hover:bg-pink-500 hover:text-white dark:hover:bg-pink-500 dark:hover:text-white transition-colors cursor-pointer"
                       >
                         Edit Score
                       </button>
@@ -549,7 +585,7 @@ const HomeShowCatalog = ({
                 <div
                   key={item._id}
                   onClick={() => onSelectItem(item)}
-                  className="group relative aspect-2/3 rounded-xs bg-slate-950 border-2 border-slate-900 dark:border-[#1E2E42] hover:border-[#40bcf4] shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] sm:shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.8)] hover:-translate-y-0.5 sm:hover:-translate-y-1 cursor-pointer text-left transition-all duration-200"
+                  className="group relative aspect-2/3 rounded-xs bg-slate-950 border-2 border-slate-300 dark:border-[#2C3545] hover:border-pink-500 dark:hover:border-pink-400 shadow-[2px_2px_0px_0px_rgba(15,23,42,0.85)] sm:shadow-[3px_3px_0px_0px_rgba(15,23,42,0.85)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.7)] hover:-translate-y-0.5 sm:hover:-translate-y-1 cursor-pointer text-left transition-all duration-200"
                 >
                   <img
                     src={poster}
@@ -560,13 +596,19 @@ const HomeShowCatalog = ({
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none" />
 
                   {/* Top Index */}
-                  <div className="absolute top-1 left-1 sm:top-1.5 sm:left-1.5 px-1 py-0.2 rounded-xs bg-black/85 text-white font-mono text-[8px] sm:text-[9px] font-black border border-white/25">
+                  <div
+                    style={{ fontFamily: "'Space Mono', monospace" }}
+                    className="absolute top-1 left-1 sm:top-1.5 sm:left-1.5 px-1 py-0.2 rounded-xs bg-black/85 text-white text-[8px] sm:text-[9px] font-bold border border-white/25"
+                  >
                     #{globalIndex}
                   </div>
 
                   {/* Score Tag */}
                   <div className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5">
-                    <div className={`px-1 sm:px-2 py-0.2 sm:py-0.5 rounded-xs text-[9px] sm:text-[11px] font-mono font-black ${getScoreBadge(item.rating)}`}>
+                    <div
+                      style={{ fontFamily: "'Space Mono', monospace" }}
+                      className={`px-1 sm:px-2 py-0.2 sm:py-0.5 rounded-xs text-[9px] sm:text-[11px] font-bold ${getScoreBadge(item.rating)}`}
+                    >
                       {item.rating ? item.rating.toFixed(1) : '—'}
                     </div>
                   </div>
@@ -579,7 +621,7 @@ const HomeShowCatalog = ({
                         e.stopPropagation();
                         setActiveListDropdownShowId((prev) => prev === String(showId) ? null : String(showId));
                       }}
-                      className="p-1 rounded-xs bg-black/80 hover:bg-[#40bcf4] text-white hover:text-black border border-white/30 transition-colors shadow-md"
+                      className="p-1 rounded-xs bg-black/80 hover:bg-pink-500 text-white border border-white/30 transition-colors shadow-md cursor-pointer"
                       title="Add to List"
                     >
                       <ListPlus size={11} strokeWidth={2.5} />
@@ -591,7 +633,10 @@ const HomeShowCatalog = ({
                   {/* Bottom Strip: Title & Wishlist */}
                   <div className="absolute bottom-1 sm:bottom-2 left-1 sm:left-2 right-1 sm:right-2">
                     <div className="flex items-end justify-between gap-1">
-                      <p className="text-[10px] sm:text-xs font-[1000] uppercase text-white truncate leading-tight drop-shadow-md flex-1">
+                      <p
+                        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                        className="text-[10px] sm:text-xs font-bold uppercase text-white truncate leading-tight drop-shadow-md flex-1"
+                      >
                         {title}
                       </p>
                       {item.isFavorite && (
@@ -612,7 +657,7 @@ const HomeShowCatalog = ({
         {/* VIEW 3: LIST VIEW                                                         */}
         {/* ========================================================================= */}
         {filteredShows.length > 0 && layoutView === 'LIST' && (
-          <div className="flex flex-col divide-y-2 divide-slate-900 dark:divide-[#1E2E42] border-2 border-slate-900 dark:border-[#1E2E42] rounded-xs bg-white dark:bg-[#0A0F16] shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] sm:shadow-[4px_4px_0px_0px_rgba(15,23,42,1)]">
+          <div className="flex flex-col divide-y-2 divide-slate-200 dark:divide-[#262E3B] border-2 border-slate-300 dark:border-[#2C3545] rounded-xs bg-white dark:bg-[#12171F] shadow-[3px_3px_0px_0px_rgba(15,23,42,0.85)] sm:shadow-[4px_4px_0px_0px_rgba(15,23,42,0.85)]">
             {currentShows.map((item, index) => {
               const showId = item.show?._id || item.show || item._id;
               const title = item.show?.title || item.title || 'Untitled Show';
@@ -625,30 +670,42 @@ const HomeShowCatalog = ({
                 <div
                   key={item._id}
                   onClick={() => onSelectItem(item)}
-                  className="p-2 sm:p-3.5 hover:bg-slate-100 dark:hover:bg-[#121A26] transition-colors cursor-pointer flex items-center justify-between gap-2.5 sm:gap-4 text-left relative"
+                  className="p-2 sm:p-3.5 hover:bg-slate-50 dark:hover:bg-[#161B22] transition-colors cursor-pointer flex items-center justify-between gap-2.5 sm:gap-4 text-left relative"
                 >
                   {/* Left Cluster: Index, Poster & Full Title Block */}
                   <div className="flex items-center gap-2 sm:gap-3.5 min-w-0 flex-1">
-                    <span className="font-mono text-[10px] sm:text-xs font-black text-slate-900 dark:text-slate-300 w-5 sm:w-6 text-right shrink-0">
+                    <span
+                      style={{ fontFamily: "'Space Mono', monospace" }}
+                      className="text-[10px] sm:text-xs font-bold text-slate-900 dark:text-stone-300 w-5 sm:w-6 text-right shrink-0"
+                    >
                       #{globalIndex}
                     </span>
 
-                    <div className="w-7 h-9 sm:w-10 sm:h-12 rounded-xs overflow-hidden bg-slate-950 shrink-0 border sm:border-2 border-slate-900 dark:border-white/20 shadow-xs">
+                    <div className="w-7 h-9 sm:w-10 sm:h-12 rounded-xs overflow-hidden bg-slate-950 shrink-0 border sm:border-2 border-slate-300 dark:border-[#2C3545] shadow-xs">
                       <img src={poster} alt="" className="w-full h-full object-cover" />
                     </div>
 
                     {/* Unbroken Title Container */}
                     <div className="flex flex-col min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                        <h4 className="text-[11px] sm:text-sm font-[1000] uppercase text-slate-950 dark:text-white break-words leading-tight">
+                        <h4
+                          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                          className="text-[11px] sm:text-sm font-bold uppercase text-slate-950 dark:text-white break-words leading-tight"
+                        >
                           {title}
                         </h4>
                         
-                        <span className="px-1 sm:px-1.5 py-0.2 rounded-xs text-[8px] sm:text-[9px] font-mono font-black uppercase bg-[#40bcf4] text-slate-950 border border-[#0284c7] shrink-0">
+                        <span
+                          style={{ fontFamily: "'Space Mono', monospace" }}
+                          className="px-1 sm:px-1.5 py-0.2 rounded-xs text-[8px] sm:text-[9px] font-bold uppercase bg-pink-500/15 text-pink-700 dark:text-pink-400 border border-pink-500/40 dark:border-pink-400/40 shrink-0"
+                        >
                           {genre}
                         </span>
 
-                        <span className="hidden sm:inline-block px-1.5 py-0.2 rounded-xs text-[9px] font-mono font-bold uppercase bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-300 shrink-0">
+                        <span
+                          style={{ fontFamily: "'Space Mono', monospace" }}
+                          className="hidden sm:inline-block px-1.5 py-0.2 rounded-xs text-[9px] font-bold uppercase bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-[#2C3545] text-slate-700 dark:text-stone-300 shrink-0"
+                        >
                           {format}
                         </span>
                       </div>
@@ -667,8 +724,8 @@ const HomeShowCatalog = ({
                         }}
                         className={`p-1 sm:p-1.5 rounded-xs transition-colors cursor-pointer border ${
                           activeListDropdownShowId === String(showId)
-                            ? 'bg-[#40bcf4] text-slate-950 border-[#40bcf4]'
-                            : 'text-slate-400 border-slate-300 hover:text-[#40bcf4] dark:border-slate-700'
+                            ? 'bg-pink-500 text-white border-pink-500'
+                            : 'text-slate-400 border-slate-300 hover:text-pink-500 hover:border-pink-500 dark:border-[#2C3545] dark:text-stone-400 dark:hover:text-pink-400 dark:hover:border-pink-400'
                         }`}
                         title="Add to List"
                       >
@@ -688,8 +745,8 @@ const HomeShowCatalog = ({
                       }}
                       className={`p-1 sm:p-1.5 rounded-xs transition-colors cursor-pointer border ${
                         item.isFavorite 
-                          ? 'text-rose-600 bg-rose-50 border-rose-300 dark:bg-rose-500/20 dark:border-rose-500/40' 
-                          : 'text-slate-400 border-slate-300 hover:text-rose-600 dark:border-slate-700'
+                          ? 'text-rose-600 bg-rose-50 border-rose-300 dark:bg-rose-500/20 dark:border-rose-500/40 dark:text-rose-400' 
+                          : 'text-slate-400 border-slate-300 hover:text-rose-600 dark:border-[#2C3545] dark:text-stone-400'
                       }`}
                       title={item.isFavorite ? 'Remove Wishlist' : 'Add Wishlist'}
                     >
@@ -698,7 +755,10 @@ const HomeShowCatalog = ({
                     </button>
 
                     {/* Score */}
-                    <div className={`px-1.5 sm:px-2.5 py-0.2 sm:py-0.5 rounded-xs text-[10px] sm:text-xs font-mono ${getScoreBadge(item.rating)}`}>
+                    <div
+                      style={{ fontFamily: "'Space Mono', monospace" }}
+                      className={`px-1.5 sm:px-2.5 py-0.2 sm:py-0.5 rounded-xs text-[10px] sm:text-xs ${getScoreBadge(item.rating)}`}
+                    >
                       {item.rating ? item.rating.toFixed(1) : 'N/A'}
                     </div>
                   </div>
@@ -714,11 +774,14 @@ const HomeShowCatalog = ({
       {/* 3. DOCKED BOTTOM PAGINATION                                               */}
       {/* ========================================================================= */}
       {filteredShows.length > 0 && (
-        <div className="pt-3 sm:pt-4 border-t-2 border-slate-300 dark:border-[#262E3B] flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3 text-xs transition-colors duration-300">
+        <div
+          style={{ fontFamily: "'Space Mono', monospace" }}
+          className="pt-3 sm:pt-4 border-t-2 border-slate-300 dark:border-[#262E3B] flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3 text-xs transition-colors duration-300"
+        >
           
           {/* Direct Jump Indicator */}
-          <div className="text-[10px] sm:text-[11px] font-mono text-slate-700 dark:text-stone-300">
-            Page <span className="font-black text-[#0284c7] dark:text-[#40bcf4]">{currentPage}</span> of <span className="font-black text-slate-900 dark:text-white">{totalPages}</span>
+          <div className="text-[10px] sm:text-[11px] text-slate-700 dark:text-stone-300">
+            Page <span className="font-bold text-pink-600 dark:text-pink-400">{currentPage}</span> of <span className="font-bold text-slate-900 dark:text-white">{totalPages}</span>
           </div>
 
           {/* Stepped Number Pills */}
@@ -729,12 +792,12 @@ const HomeShowCatalog = ({
               type="button"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="flex items-center gap-1 sm:gap-1.5 h-7 sm:h-8 px-2 sm:px-3 rounded-xs border-2 border-slate-900 dark:border-[#2C3545] bg-white dark:bg-[#161B22] text-slate-900 dark:text-stone-200 hover:border-[#40bcf4] hover:text-[#0284c7] dark:hover:text-[#40bcf4] text-[11px] sm:text-xs font-mono font-black shadow-xs transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+              className="flex items-center gap-1 sm:gap-1.5 h-7 sm:h-8 px-2 sm:px-3 rounded-xs border-2 border-slate-300 dark:border-[#2C3545] bg-white dark:bg-[#12171F] text-slate-900 dark:text-stone-200 hover:border-pink-500 dark:hover:border-pink-400 hover:text-pink-600 dark:hover:text-pink-400 text-[11px] sm:text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
               aria-label="Previous Page"
             >
               <ChevronLeft size={12} className="sm:hidden" strokeWidth={3} />
               <ChevronLeft size={13} className="hidden sm:block" strokeWidth={3} />
-              <span className="text-[9px] sm:text-[10px] uppercase font-mono tracking-tight hidden xs:inline">Prev</span>
+              <span className="text-[9px] sm:text-[10px] uppercase tracking-tight hidden xs:inline">Prev</span>
             </button>
 
             {/* Page Chips */}
@@ -742,7 +805,7 @@ const HomeShowCatalog = ({
               {paginationRange.map((page, index) => {
                 if (page === '...') {
                   return (
-                    <span key={`ellipsis-${index}`} className="px-1 sm:px-1.5 py-0.5 sm:py-1 text-slate-400 dark:text-stone-500 font-mono text-[11px] sm:text-xs">
+                    <span key={`ellipsis-${index}`} className="px-1 sm:px-1.5 py-0.5 sm:py-1 text-slate-400 dark:text-stone-500 text-[11px] sm:text-xs">
                       ...
                     </span>
                   );
@@ -754,10 +817,10 @@ const HomeShowCatalog = ({
                     key={`page-${page}`}
                     type="button"
                     onClick={() => setCurrentPage(page)}
-                    className={`h-7 sm:h-8 min-w-[28px] sm:min-w-[34px] px-1.5 sm:px-2 rounded-xs text-[11px] sm:text-xs font-mono font-black transition-all cursor-pointer border-2 ${
+                    className={`h-7 sm:h-8 min-w-[28px] sm:min-w-[34px] px-1.5 sm:px-2 rounded-xs text-[11px] sm:text-xs font-bold transition-all cursor-pointer border-2 ${
                       isSelected
-                        ? 'bg-[#40bcf4] border-[#40bcf4] text-slate-950 shadow-[0_0_12px_rgba(64,188,244,0.5)]'
-                        : 'bg-white dark:bg-[#161B22] border-slate-900 dark:border-[#2C3545] text-slate-900 dark:text-stone-200 hover:border-[#40bcf4]'
+                        ? 'bg-pink-500 border-pink-500 text-white shadow-[0_0_12px_rgba(236,72,153,0.4)]'
+                        : 'bg-white dark:bg-[#12171F] border-slate-300 dark:border-[#2C3545] text-slate-900 dark:text-stone-200 hover:border-pink-500 dark:hover:border-pink-400'
                     }`}
                   >
                     {page}
@@ -771,10 +834,10 @@ const HomeShowCatalog = ({
               type="button"
               disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="flex items-center gap-1 sm:gap-1.5 h-7 sm:h-8 px-2 sm:px-3 rounded-xs border-2 border-[#40bcf4] bg-[#40bcf4] text-slate-950 hover:bg-[#38aade] text-[11px] sm:text-xs font-mono font-black shadow-[0_0_12px_rgba(64,188,244,0.35)] transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+              className="flex items-center gap-1 sm:gap-1.5 h-7 sm:h-8 px-2 sm:px-3 rounded-xs border-2 border-pink-500 bg-pink-500 text-white hover:bg-pink-600 text-[11px] sm:text-xs font-bold shadow-[0_0_12px_rgba(236,72,153,0.3)] transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
               aria-label="Next Page"
             >
-              <span className="text-[9px] sm:text-[10px] uppercase font-mono tracking-tight hidden xs:inline">Next</span>
+              <span className="text-[9px] sm:text-[10px] uppercase tracking-tight hidden xs:inline">Next</span>
               <ChevronRight size={12} className="sm:hidden" strokeWidth={3} />
               <ChevronRight size={13} className="hidden sm:block" strokeWidth={3} />
             </button>

@@ -18,7 +18,7 @@ const STATUS_OPTIONS = [
     value: 'WATCHING', 
     label: 'Watching', 
     icon: PlayCircle,
-    active: 'bg-[#40bcf4]/15 text-[#0284c7] dark:text-[#40bcf4] border-[#40bcf4]/50 shadow-[0_2px_0_0_rgba(64,188,244,0.3)]' 
+    active: 'bg-pink-500/15 text-pink-600 dark:text-pink-400 border-pink-500/50 shadow-[0_2px_0_0_rgba(236,72,153,0.3)]' 
   },
   { 
     value: 'PLAN_TO_WATCH', 
@@ -188,7 +188,7 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
     if (val >= 9.0) {
       return { 
         label: 'Masterpiece', 
-        badge: 'text-[#40bcf4] bg-[#40bcf4]/15 border-[#40bcf4]/40 shadow-[0_2px_0_0_rgba(64,188,244,0.3)]' 
+        badge: 'text-pink-600 dark:text-pink-400 bg-pink-500/15 border-pink-500/40 shadow-[0_2px_0_0_rgba(236,72,153,0.3)]' 
       };
     }
     if (val >= 8.0) {
@@ -205,7 +205,7 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
     }
     return { 
       label: 'Casual', 
-      badge: 'text-slate-600 dark:text-slate-300 bg-slate-200 dark:bg-[#1E2636] border-slate-300 dark:border-[#38455C] shadow-[0_2px_0_0_rgba(0,0,0,0.15)]' 
+      badge: 'text-slate-600 dark:text-stone-300 bg-slate-200 dark:bg-[#12171F] border-slate-300 dark:border-[#2C3545] shadow-[0_2px_0_0_rgba(0,0,0,0.15)]' 
     };
   };
 
@@ -261,17 +261,18 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
   return (
     <div 
       className="fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm select-none font-sans"
+      style={{ '--font-sans': "'Space Grotesk', sans-serif", '--font-mono': "'Space Mono', monospace", fontFamily: "'Space Grotesk', sans-serif" }}
       onClick={onClose}
     >
       <div 
-        className="w-full sm:w-[520px] md:w-[560px] bg-[#E9EEF5] dark:bg-[#151C28] border-t-2 sm:border-t-0 sm:border-l-2 border-slate-300 dark:border-[#2C384D] shadow-[0_15px_45px_rgba(0,0,0,0.25)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.85)] flex flex-col max-h-[94dvh] sm:max-h-screen rounded-t-2xl sm:rounded-none text-slate-800 dark:text-slate-100 overflow-hidden relative"
+        className="w-full sm:w-[520px] md:w-[560px] bg-white dark:bg-[#161B22] border-t-2 sm:border-t-0 sm:border-l-2 border-slate-300 dark:border-[#2C3545] shadow-[0_15px_45px_rgba(0,0,0,0.25)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.85)] flex flex-col max-h-[94dvh] sm:max-h-screen rounded-t-xs sm:rounded-none text-slate-800 dark:text-stone-200 overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#40bcf4] to-transparent pointer-events-none z-30" />
+        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-pink-500 to-transparent pointer-events-none z-30" />
 
         {/* VIEW A: AFTER SHOW SELECTION */}
         {selectedShow ? (
-          <div className="relative w-full bg-gradient-to-r from-[#0d131f] via-[#101726] to-[#0c121e] border-b-2 border-slate-300 dark:border-[#2C384D] shrink-0 overflow-hidden select-none">
+          <div className="relative w-full bg-gradient-to-r from-[#0d131f] via-[#101726] to-[#0c121e] border-b-2 border-slate-200/90 dark:border-[#262E3B] shrink-0 overflow-hidden select-none">
             
             {posterImage && (
               <div 
@@ -279,24 +280,24 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
                 style={{ backgroundImage: `url(${posterImage})` }}
               />
             )}
-            <div className="absolute top-0 right-0 w-72 h-full bg-gradient-to-l from-[#40bcf4]/10 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute top-0 right-0 w-72 h-full bg-gradient-to-l from-pink-500/10 via-transparent to-transparent pointer-events-none" />
 
             {/* Top Utility Controls */}
             <div className="relative z-20 flex items-center justify-between px-4 sm:px-5 pt-3 pb-1">
               <button
                 type="button"
                 onClick={handleClearSelectedShow}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 active:scale-95 text-slate-300 hover:text-white border border-white/15 text-[10px] font-mono font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xs bg-white/10 hover:bg-white/20 active:scale-95 text-stone-300 hover:text-white border border-white/15 text-[10px] font-mono font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"
                 title="Choose a different show"
               >
-                <RefreshCw size={11} className="text-[#40bcf4]" />
+                <RefreshCw size={11} className="text-pink-400" />
                 <span>Change Show</span>
               </button>
               
               <button
                 type="button"
                 onClick={onClose}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-slate-300 hover:text-white border border-white/10 flex items-center justify-center transition-all cursor-pointer shadow-md"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-stone-300 hover:text-white border border-white/10 flex items-center justify-center transition-all cursor-pointer shadow-md font-mono"
                 title="Close"
               >
                 <X size={15} strokeWidth={2.4} />
@@ -306,8 +307,8 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
             {/* Main Show Info Header */}
             <div className="px-4 sm:px-5 pb-4.5 pt-0.5 flex items-center justify-between gap-4 relative z-20">
               <div className="relative shrink-0 group">
-                <div className="w-16 h-24 sm:w-20 sm:h-28 rounded-xl bg-slate-950 p-1 border border-white/20 shadow-[0_12px_28px_rgba(0,0,0,0.85),0_4px_10px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.3)] transition-transform duration-300 group-hover:scale-105">
-                  <div className="w-full h-full rounded-lg overflow-hidden bg-slate-900 relative">
+                <div className="w-16 h-24 sm:w-20 sm:h-28 rounded-xs bg-slate-950 p-1 border border-white/20 shadow-[0_12px_28px_rgba(0,0,0,0.85),0_4px_10px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.3)] transition-transform duration-300 group-hover:scale-105">
+                  <div className="w-full h-full rounded-2xs overflow-hidden bg-slate-900 relative">
                     {posterImage ? (
                       <img 
                         src={posterImage} 
@@ -315,7 +316,7 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
                         className="w-full h-full object-cover object-top" 
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-500">
+                      <div className="w-full h-full flex items-center justify-center text-stone-400">
                         <Film size={20} />
                       </div>
                     )}
@@ -326,24 +327,24 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
 
               <div className="min-w-0 flex-1 space-y-1.5">
                 <div className="flex items-center gap-2 flex-wrap text-[10px] font-mono">
-                  <span className="font-black uppercase tracking-wider text-[#40bcf4]">
+                  <span className="font-bold uppercase tracking-wider text-pink-400">
                     {selectedShow.type?.replace('_', ' ') || 'SERIES'}
                   </span>
-                  <span className="text-slate-500">•</span>
-                  <span className="font-bold text-slate-300">
+                  <span className="text-stone-400">•</span>
+                  <span className="font-bold text-stone-300">
                     {selectedShow.releaseYear || '—'}
                   </span>
                   {selectedShow.totalSeasons && (
                     <>
-                      <span className="text-slate-500">•</span>
-                      <span className="font-bold text-slate-300">
+                      <span className="text-stone-400">•</span>
+                      <span className="font-bold text-stone-300">
                         {selectedShow.totalSeasons} Season{selectedShow.totalSeasons > 1 ? 's' : ''}
                       </span>
                     </>
                   )}
                 </div>
 
-                <h1 className="text-base sm:text-xl font-[1000] text-white tracking-tight leading-tight line-clamp-2 drop-shadow-sm">
+                <h1 className="text-base sm:text-xl font-bold text-white tracking-tight leading-tight line-clamp-2 drop-shadow-sm">
                   {selectedShow.title || 'Untitled Show'}
                 </h1>
 
@@ -352,7 +353,7 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
                     {selectedShow.genres.slice(0, 3).map((g) => (
                       <span 
                         key={g} 
-                        className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-stone-300"
+                        className="px-2 py-0.5 rounded-2xs text-[9px] font-mono font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-stone-300"
                       >
                         {g}
                       </span>
@@ -362,15 +363,15 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
               </div>
 
               <div className="shrink-0 pl-1">
-                <div className="flex flex-col items-center justify-center px-3.5 py-2 rounded-xl bg-gradient-to-b from-[#1b2537] to-[#111824] border border-[#2e3e57] shadow-[0_8px_20px_rgba(0,0,0,0.6),0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)] ring-1 ring-black/40">
-                  <span className="text-[9px] font-mono font-black uppercase tracking-[0.2em] text-slate-400 leading-none">
+                <div className="flex flex-col items-center justify-center px-3.5 py-2 rounded-xs bg-gradient-to-b from-[#1b2537] to-[#111824] border border-[#2C3545] shadow-[0_8px_20px_rgba(0,0,0,0.6),0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)] ring-1 ring-black/40">
+                  <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-stone-400 leading-none">
                     SCORE
                   </span>
                   <div className="flex items-baseline gap-0.5 mt-1">
-                    <span className="text-2xl sm:text-3xl font-[1000] font-mono tracking-tight text-[#40bcf4] leading-none drop-shadow-[0_2px_8px_rgba(64,188,244,0.4)]">
+                    <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-pink-400 leading-none drop-shadow-[0_2px_8px_rgba(236,72,153,0.4)]">
                       {rating.toFixed(1)}
                     </span>
-                    <span className="text-[10px] font-mono font-bold text-slate-500 leading-none">
+                    <span className="text-[10px] font-mono font-bold text-stone-400 leading-none">
                       /10
                     </span>
                   </div>
@@ -380,27 +381,30 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
           </div>
         ) : (
           /* VIEW B: PRE-SELECTION HEADER */
-          <div className="shrink-0 border-b-2 border-slate-300 dark:border-[#263143] bg-[#DEE5EF] dark:bg-[#121824] shadow-[0_2px_8px_rgba(0,0,0,0.05)] relative z-20">
+          <div className="shrink-0 border-b-2 border-slate-200/90 dark:border-[#262E3B] bg-slate-50 dark:bg-[#12171F] shadow-[0_2px_8px_rgba(0,0,0,0.05)] relative z-20">
             <div className="w-full flex sm:hidden items-center justify-center pt-2 pb-1">
-              <div className="w-12 h-1.5 bg-slate-400 dark:bg-slate-600 rounded-full" />
+              <div className="w-12 h-1.5 bg-slate-400 dark:bg-stone-600 rounded-full" />
             </div>
 
             <div className="px-5 sm:px-6 pt-3 pb-3.5 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#40bcf4]/15 border border-[#40bcf4]/30 flex items-center justify-center text-[#0284c7] dark:text-[#40bcf4]">
+                <div className="w-9 h-9 rounded-xs bg-pink-500/15 border border-pink-500/30 flex items-center justify-center text-pink-600 dark:text-pink-400">
                   <Clapperboard size={18} strokeWidth={2.4} />
                 </div>
                 
                 <div className="flex flex-col text-left">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-slate-900 dark:text-white leading-none">
+                    <h2
+                      className="text-sm sm:text-base font-normal uppercase tracking-[0.02em] text-slate-900 dark:text-white leading-none"
+                      style={{ fontFamily: "'Bungee', sans-serif" }}
+                    >
                       Pick a Show
                     </h2>
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#0284c7] dark:text-[#40bcf4] bg-[#40bcf4]/10 border border-[#40bcf4]/30 px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-pink-600 dark:text-pink-400 bg-pink-500/10 border border-pink-500/30 px-2 py-0.5 rounded-2xs">
                       {unratedShows.length} Pending
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                  <p className="text-[11px] font-mono text-slate-500 dark:text-stone-400 mt-1 font-medium">
                     Select any unrated show to score it
                   </p>
                 </div>
@@ -409,7 +413,7 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="w-8 h-8 rounded-full bg-white/80 dark:bg-[#1E2838] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-300 dark:border-[#38465E] active:scale-95 transition-all flex items-center justify-center cursor-pointer"
+                className="w-8 h-8 rounded-full bg-white/80 dark:bg-[#161B22] text-slate-500 dark:text-stone-400 hover:text-slate-900 dark:hover:text-white border border-slate-300 dark:border-[#2C3545] active:scale-95 transition-all flex items-center justify-center cursor-pointer font-mono"
                 title="Close"
               >
                 <X size={15} strokeWidth={2.4} />
@@ -433,13 +437,13 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search series, anime, genre, year..."
-                  className="w-full h-11 pl-10 pr-9 rounded-xl bg-white dark:bg-[#101621] border-2 border-slate-300 dark:border-[#2C384D] text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-stone-500 outline-none focus:border-[#40bcf4] focus:ring-1 focus:ring-[#40bcf4]/30 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14] transition-all"
+                  className="w-full h-11 pl-10 pr-9 rounded-xs bg-white dark:bg-[#12171F] border-2 border-slate-300 dark:border-[#2C3545] text-xs font-mono font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-stone-400 outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14] transition-all"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-3 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+                    className="absolute right-3 p-1 text-slate-400 dark:text-stone-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
                   >
                     <X size={14} />
                   </button>
@@ -454,10 +458,10 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
                       key={pill.id}
                       type="button"
                       onClick={() => setTypeFilter(pill.id)}
-                      className={`px-3 py-1 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider shrink-0 transition-all cursor-pointer border ${
+                      className={`px-3 py-1 rounded-xs text-[11px] font-mono font-bold uppercase tracking-wider shrink-0 transition-all cursor-pointer border ${
                         isSelected
-                          ? 'bg-[#40bcf4] text-[#0A1017] border-[#29a8e2] shadow-xs'
-                          : 'bg-white dark:bg-[#131B27] text-slate-600 dark:text-slate-300 border-slate-300 dark:border-[#2A374C] hover:border-slate-400 dark:hover:border-slate-500'
+                          ? 'bg-pink-500 text-white border-pink-600 shadow-xs'
+                          : 'bg-white dark:bg-[#12171F] text-slate-600 dark:text-stone-300 border-slate-300 dark:border-[#2C3545] hover:border-slate-400 dark:hover:border-stone-500'
                       }`}
                     >
                       {pill.label}
@@ -465,21 +469,21 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
                   );
                 })}
 
-                <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 ml-auto shrink-0 pl-1 font-semibold">
+                <span className="text-[10px] font-mono text-slate-400 dark:text-stone-400 ml-auto shrink-0 pl-1 font-semibold">
                   {filteredUnratedShows.length} found
                 </span>
               </div>
 
               <div className="flex-1 min-h-[300px] overflow-y-auto space-y-2 pr-0.5 no-scrollbar">
                 {loadingCatalog ? (
-                  <div className="h-64 flex flex-col items-center justify-center gap-2 text-xs font-mono text-slate-400">
-                    <Loader2 size={20} className="animate-spin text-[#40bcf4]" />
+                  <div className="h-64 flex flex-col items-center justify-center gap-2 text-xs font-mono text-slate-400 dark:text-stone-400">
+                    <Loader2 size={20} className="animate-spin text-pink-500 dark:text-pink-400" />
                     <span>Indexing unrated collection...</span>
                   </div>
                 ) : filteredUnratedShows.length === 0 ? (
-                  <div className="h-64 flex flex-col items-center justify-center text-center p-6 rounded-2xl bg-white dark:bg-[#101621] border-2 border-slate-300 dark:border-[#2C384D] shadow-sm">
-                    <Film size={34} className="text-slate-400 dark:text-slate-600 mb-2 stroke-1" />
-                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                  <div className="h-64 flex flex-col items-center justify-center text-center p-6 rounded-xs bg-white dark:bg-[#12171F] border-2 border-slate-300 dark:border-[#2C3545] shadow-sm">
+                    <Film size={34} className="text-slate-400 dark:text-stone-400 mb-2 stroke-1" />
+                    <p className="text-xs font-mono font-bold text-slate-700 dark:text-stone-300 uppercase tracking-wide">
                       {searchQuery ? `No unrated shows match "${searchQuery}"` : 'All database shows are already rated'}
                     </p>
                     <p className="text-[11px] text-slate-400 dark:text-stone-400 mt-1 max-w-xs">
@@ -491,10 +495,10 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
                     <div
                       key={show._id}
                       onClick={() => handleSelectShow(show)}
-                      className="group flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-[#101621] border-2 border-slate-300 dark:border-[#253043] hover:border-[#40bcf4] dark:hover:border-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14] transition-all cursor-pointer text-left active:translate-y-[1px]"
+                      className="group flex items-center justify-between p-2.5 rounded-xs bg-white dark:bg-[#12171F] border-2 border-slate-300 dark:border-[#2C3545] hover:border-pink-500 dark:hover:border-pink-400 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14] transition-all cursor-pointer text-left active:translate-y-[1px]"
                     >
                       <div className="flex items-center gap-3 min-w-0 pr-2">
-                        <div className="w-11 h-15 rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0 overflow-hidden border border-slate-300 dark:border-white/10 shadow-xs relative">
+                        <div className="w-11 h-15 rounded-2xs bg-slate-200 dark:bg-slate-800 shrink-0 overflow-hidden border border-slate-300 dark:border-[#2C3545] shadow-xs relative">
                           {show.posterUrl ? (
                             <img 
                               src={show.posterUrl} 
@@ -502,23 +506,26 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" 
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-400">
+                            <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-stone-400">
                               <Film size={16} />
                             </div>
                           )}
                         </div>
 
                         <div className="min-w-0">
-                          <h3 className="text-xs sm:text-sm font-extrabold truncate text-slate-900 dark:text-white group-hover:text-[#40bcf4] transition-colors leading-snug">
+                          <h3
+                            className="text-xs sm:text-sm font-normal uppercase tracking-[0.02em] truncate text-slate-900 dark:text-white group-hover:text-pink-500 dark:group-hover:text-pink-400 transition-colors leading-snug"
+                            style={{ fontFamily: "'Bungee', sans-serif" }}
+                          >
                             {show.title}
                           </h3>
 
-                          <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500 dark:text-slate-400 mt-1 flex-wrap">
-                            <span className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-white/5 font-bold text-slate-700 dark:text-slate-300">
+                          <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500 dark:text-stone-400 mt-1 flex-wrap">
+                            <span className="px-1.5 py-0.2 rounded-2xs bg-slate-100 dark:bg-white/5 font-bold text-slate-700 dark:text-stone-300">
                               {show.releaseYear || '—'}
                             </span>
                             <span>•</span>
-                            <span className="uppercase text-[#0284c7] dark:text-[#40bcf4] font-bold">
+                            <span className="uppercase text-pink-600 dark:text-pink-400 font-bold">
                               {show.type?.replace('_', ' ') || 'SERIES'}
                             </span>
                             {show.totalSeasons && (
@@ -530,7 +537,7 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
                           </div>
 
                           {Array.isArray(show.genres) && show.genres.length > 0 && (
-                            <p className="text-[10px] font-medium text-slate-400 dark:text-stone-400 truncate mt-0.5">
+                            <p className="text-[10px] font-mono font-medium text-slate-400 dark:text-stone-400 truncate mt-0.5">
                               {show.genres.slice(0, 3).join(', ')}
                             </p>
                           )}
@@ -538,7 +545,7 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
                       </div>
 
                       <div className="shrink-0 pl-1">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1A2332] group-hover:bg-[#40bcf4] text-slate-600 dark:text-slate-300 group-hover:text-[#0A1017] border border-slate-300 dark:border-[#2C384D] group-hover:border-[#40bcf4] text-[10px] font-mono font-black uppercase tracking-wider transition-all shadow-2xs">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xs bg-slate-100 dark:bg-[#161B22] group-hover:bg-pink-500 text-slate-600 dark:text-stone-300 group-hover:text-white border border-slate-300 dark:border-[#2C3545] group-hover:border-pink-600 text-[10px] font-mono font-bold uppercase tracking-wider transition-all shadow-2xs">
                           <span>Rate</span>
                           <ArrowUpRight size={12} strokeWidth={2.8} />
                         </span>
@@ -552,48 +559,48 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
             /* SCREEN 2: SCORING CONSOLE */
             <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-4.5">
               
-              <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#101621] border-2 border-slate-300 dark:border-[#2C384D] shadow-[0_3px_0_0_#CBD5E1] dark:shadow-[0_3px_0_0_#0F1520] space-y-3 sm:space-y-3.5 relative">
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#222E42] pb-2.5 sm:pb-3">
+              <div className="p-3.5 sm:p-4 rounded-xs bg-white dark:bg-[#12171F] border-2 border-slate-300 dark:border-[#2C3545] shadow-[0_3px_0_0_#CBD5E1] dark:shadow-[0_3px_0_0_#0B0E14] space-y-3 sm:space-y-3.5 relative">
+                <div className="flex items-center justify-between border-b border-slate-200/90 dark:border-[#262E3B] pb-2.5 sm:pb-3">
                   <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300 block">
                       Your Score
                     </span>
-                    <span className="text-[10px] font-mono text-slate-400 dark:text-slate-400">
+                    <span className="text-[10px] font-mono text-slate-400 dark:text-stone-400">
                       Scale of 0.0 to 10.0
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider border transition-all ${tier.badge}`}>
+                    <span className={`px-2.5 py-0.5 rounded-2xs text-[10px] font-mono font-bold uppercase tracking-wider border transition-all ${tier.badge}`}>
                       {tier.label}
                     </span>
 
                     <button
                       type="button"
                       onClick={() => setIsFavorite((prev) => !prev)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold border transition-all cursor-pointer active:translate-y-[1px] ${
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xs text-xs font-mono font-bold border transition-all cursor-pointer active:translate-y-[1px] ${
                         isFavorite
                           ? 'bg-rose-500/15 border-rose-500/40 text-rose-600 dark:text-rose-400 shadow-[0_2px_0_0_rgba(244,63,94,0.3)]'
-                          : 'bg-slate-100 dark:bg-[#1E2838] border-slate-300 dark:border-[#38465E] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#101621]'
+                          : 'bg-slate-100 dark:bg-[#161B22] border-slate-300 dark:border-[#2C3545] text-slate-600 dark:text-stone-300 hover:text-slate-900 dark:hover:text-white shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14]'
                       }`}
                       title={isFavorite ? 'Saved to Favorites' : 'Add to Favorites'}
                     >
                       <Heart 
                         size={12} 
-                        className={`transition-colors ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} 
+                        className={`transition-colors ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-slate-400 dark:text-stone-400'}`} 
                       />
                       <span>Favorite</span>
                     </button>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-[#F5F8FC] dark:bg-[#0A0E15] border border-slate-300 dark:border-[#232F42] shadow-inner">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xs bg-slate-50 dark:bg-[#0D1117] border border-slate-300 dark:border-[#2C3545] shadow-inner">
                   <div className="flex items-baseline justify-between sm:justify-start gap-1">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white font-mono leading-none">
+                      <span className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white font-mono leading-none">
                         {rating.toFixed(1)}
                       </span>
-                      <span className="text-xs font-bold text-slate-400">/ 10</span>
+                      <span className="text-xs font-mono font-bold text-slate-400 dark:text-stone-400">/ 10</span>
                     </div>
                   </div>
 
@@ -603,10 +610,10 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
                         key={val}
                         type="button"
                         onClick={() => setRating(val)}
-                        className={`h-8 sm:h-auto px-1 sm:px-2.5 py-1 text-center rounded text-xs font-mono font-bold border transition-all cursor-pointer active:translate-y-[1px] active:shadow-none ${
+                        className={`h-8 sm:h-auto px-1 sm:px-2.5 py-1 text-center rounded-2xs text-xs font-mono font-bold border transition-all cursor-pointer active:translate-y-[1px] active:shadow-none ${
                           Math.abs(rating - val) < 0.05
-                            ? 'bg-[#40bcf4] text-[#0A1017] border-[#29a8e2] font-black shadow-[0_2px_0_0_#1c86b8]'
-                            : 'bg-white dark:bg-[#1F293A] text-slate-700 dark:text-slate-300 border-slate-300 dark:border-[#34425A] hover:border-slate-400 dark:hover:border-slate-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520]'
+                            ? 'bg-pink-500 text-white border-pink-600 font-bold shadow-[0_2px_0_0_#be185d]'
+                            : 'bg-white dark:bg-[#161B22] text-slate-700 dark:text-stone-300 border-slate-300 dark:border-[#2C3545] hover:border-slate-400 dark:hover:border-stone-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14]'
                         }`}
                       >
                         {val === 10 ? '10' : val.toFixed(1)}
@@ -619,7 +626,7 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
                   <button
                     type="button"
                     onClick={() => adjustScore(-0.1)}
-                    className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1E2838] hover:bg-slate-200 dark:hover:bg-[#253246] border border-slate-300 dark:border-[#34425A] flex items-center justify-center text-slate-700 dark:text-slate-300 transition-all cursor-pointer active:translate-y-[1px] active:shadow-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] shrink-0"
+                    className="w-8 h-8 rounded-xs bg-slate-100 dark:bg-[#161B22] hover:bg-slate-200 dark:hover:bg-[#1E242E] border border-slate-300 dark:border-[#2C3545] flex items-center justify-center text-slate-700 dark:text-stone-300 font-mono transition-all cursor-pointer active:translate-y-[1px] active:shadow-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14] shrink-0"
                     title="-0.1"
                   >
                     <Minus size={13} strokeWidth={2.5} />
@@ -632,13 +639,13 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
                     step="0.1"
                     value={rating}
                     onChange={(e) => setRating(parseFloat(e.target.value))}
-                    className="flex-1 h-2 bg-slate-200 dark:bg-[#0A0E15] rounded-lg appearance-none accent-[#40bcf4] cursor-pointer"
+                    className="flex-1 h-2 bg-slate-200 dark:bg-[#0D1117] rounded-xs appearance-none accent-pink-500 cursor-pointer"
                   />
 
                   <button
                     type="button"
                     onClick={() => adjustScore(0.1)}
-                    className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1E2838] hover:bg-slate-200 dark:hover:bg-[#253246] border border-slate-300 dark:border-[#34425A] flex items-center justify-center text-slate-700 dark:text-slate-300 transition-all cursor-pointer active:translate-y-[1px] active:shadow-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] shrink-0"
+                    className="w-8 h-8 rounded-xs bg-slate-100 dark:bg-[#161B22] hover:bg-slate-200 dark:hover:bg-[#1E242E] border border-slate-300 dark:border-[#2C3545] flex items-center justify-center text-slate-700 dark:text-stone-300 font-mono transition-all cursor-pointer active:translate-y-[1px] active:shadow-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14] shrink-0"
                     title="+0.1"
                   >
                     <Plus size={13} strokeWidth={2.5} />
@@ -648,7 +655,7 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
 
               {/* Status Selector */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+                <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300 block">
                   Watch Status
                 </label>
 
@@ -662,12 +669,12 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
                         key={opt.value}
                         type="button"
                         onClick={() => setStatus(opt.value)}
-                        className={`flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-lg border-2 text-xs font-bold transition-all cursor-pointer text-left active:translate-y-[1px] ${
+                        className={`flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xs border-2 text-xs font-mono font-bold transition-all cursor-pointer text-left active:translate-y-[1px] ${
                           isLastOnMobile ? 'col-span-2 sm:col-span-1' : ''
                         } ${
                           isSelected
                             ? opt.active
-                            : 'bg-white dark:bg-[#101621] border-slate-300 dark:border-[#2C384D] text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520]'
+                            : 'bg-white dark:bg-[#12171F] border-slate-300 dark:border-[#2C3545] text-slate-600 dark:text-stone-300 hover:border-slate-400 dark:hover:border-stone-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14]'
                         }`}
                       >
                         <Icon size={14} className="shrink-0" />
@@ -680,7 +687,7 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
 
               {/* Review Input */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+                <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300 block">
                   Review & Notes
                 </label>
                 <textarea
@@ -688,7 +695,7 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
                   value={review}
                   onChange={(e) => setReview(e.target.value)}
                   placeholder="What stood out? Story, acting, pacing, ending..."
-                  className="w-full p-3 rounded-xl bg-white dark:bg-[#101621] border-2 border-slate-300 dark:border-[#2C384D] text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-stone-500 outline-none focus:border-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] transition-colors resize-none"
+                  className="w-full p-3 rounded-xs bg-white dark:bg-[#12171F] border-2 border-slate-300 dark:border-[#2C3545] text-xs font-mono font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-stone-400 outline-none focus:border-pink-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14] transition-colors resize-none"
                 />
               </div>
             </form>
@@ -697,11 +704,11 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
         </div>
 
         {/* MODAL FOOTER */}
-        <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-t-2 border-slate-300 dark:border-[#263143] bg-[#DEE5EF] dark:bg-[#121824] flex items-center justify-between gap-3 shrink-0 shadow-[0_-2px_6px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.25)] pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))] sm:pb-4">
+        <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-t-2 border-slate-200/90 dark:border-[#262E3B] bg-slate-50 dark:bg-[#12171F] flex items-center justify-between gap-3 shrink-0 shadow-[0_-2px_6px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.25)] pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))] sm:pb-4">
           <button
             type="button"
             onClick={selectedShow ? handleClearSelectedShow : onClose}
-            className="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-xs text-xs font-mono font-bold text-slate-600 dark:text-stone-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
           >
             {selectedShow ? 'Back' : 'Cancel'}
           </button>
@@ -710,11 +717,11 @@ const AddRatingModal = ({ isOpen, onClose, onCreated }) => {
             type="button"
             onClick={handleSubmit}
             disabled={loading || !selectedShow}
-            className="flex items-center gap-2 px-5 sm:px-6 py-2.5 rounded-lg bg-[#00e054] hover:bg-[#00c94b] text-[#14181C] text-xs font-black uppercase tracking-wider border border-[#00c94b] border-b-[3px] border-b-[#009e3a] active:border-b active:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-[0_4px_12px_rgba(0,224,84,0.3)]"
+            className="flex items-center gap-2 px-5 sm:px-6 py-2.5 rounded-xs bg-pink-500 hover:bg-pink-600 text-white text-xs font-mono font-bold uppercase tracking-wider border border-pink-600 border-b-[3px] border-b-pink-700 active:border-b active:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-[0_4px_12px_rgba(236,72,153,0.3)]"
           >
             {loading ? (
               <>
-                <Loader2 size={14} className="animate-spin text-[#14181C]" />
+                <Loader2 size={14} className="animate-spin text-white" />
                 <span>Saving...</span>
               </>
             ) : (

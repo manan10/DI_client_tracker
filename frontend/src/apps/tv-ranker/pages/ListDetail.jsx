@@ -169,10 +169,17 @@ const ListDetail = () => {
   const totalItemsCount = list?.items?.length || 0;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#070A10] text-slate-900 dark:text-stone-100 font-sans selection:bg-[#40bcf4]/20 selection:text-slate-950 dark:selection:bg-[#40bcf4]/30 dark:selection:text-white transition-colors duration-300 pb-20 relative overflow-x-hidden">
+    <div
+      className="min-h-screen bg-[#F8FAFC] dark:bg-[#1B2230] text-slate-950 dark:text-stone-100 font-sans selection:bg-pink-500/20 selection:text-slate-950 dark:selection:bg-pink-500/30 dark:selection:text-white transition-colors duration-300 pb-20 relative overflow-x-hidden"
+      style={{
+        '--font-sans': "'Space Grotesk', sans-serif",
+        '--font-mono': "'Space Mono', monospace",
+        fontFamily: "'Space Grotesk', sans-serif",
+      }}
+    >
       
       {/* Precision Ambient Background */}
-      <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-[#40bcf4]/10 dark:from-[#40bcf4]/5 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-pink-500/10 dark:from-pink-500/5 via-transparent to-transparent pointer-events-none" />
 
       {/* Primary Top Navbar */}
       <ShowNavbar
@@ -191,10 +198,10 @@ const ListDetail = () => {
             <button
               type="button"
               onClick={() => navigate('/tv-rater/lists')}
-              className="group inline-flex items-center gap-2.5 px-3.5 py-2 bg-white dark:bg-[#111927] hover:bg-slate-100 dark:hover:bg-[#182337] text-slate-800 dark:text-stone-200 border border-slate-300 dark:border-[#2C3440] border-b-[3px] border-b-slate-400 dark:border-b-black active:border-b active:translate-y-[2px] transition-all cursor-pointer rounded-none shadow-xs select-none"
+              className="group inline-flex items-center gap-2.5 px-3.5 py-2 bg-white dark:bg-[#12171F] hover:bg-slate-100 dark:hover:bg-[#161B22] text-slate-800 dark:text-stone-200 border border-slate-300 dark:border-[#2C3545] border-b-[3px] border-b-slate-400 dark:border-b-black active:border-b active:translate-y-[2px] transition-all cursor-pointer rounded-xs shadow-xs select-none"
               title="Back to Show Lists"
             >
-              <div className="w-5 h-5 flex items-center justify-center bg-slate-100 dark:bg-[#1B2537] text-slate-700 dark:text-stone-300 group-hover:text-[#40bcf4] transition-colors pointer-events-none">
+              <div className="w-5 h-5 flex items-center justify-center bg-slate-100 dark:bg-[#161B22] text-slate-700 dark:text-stone-300 group-hover:text-pink-500 transition-colors pointer-events-none rounded-2xs">
                 <ArrowLeft size={13} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
               </div>
               <span className="text-xs font-mono font-bold uppercase tracking-wider">
@@ -206,18 +213,21 @@ const ListDetail = () => {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 sm:pb-5">
             
             <div className="space-y-2 max-w-3xl min-w-0">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-slate-200/60 dark:bg-white/5 border border-slate-300/60 dark:border-white/10 shadow-2xs">
-                <Sparkles size={10} className="text-[#40bcf4] animate-pulse" />
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-700 dark:text-stone-300">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-2xs bg-slate-200/60 dark:bg-white/5 border border-slate-300 dark:border-[#2C3545] shadow-2xs">
+                <Sparkles size={10} className="text-pink-500 animate-pulse" />
+                <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-stone-300">
                   {isSystem ? 'System Default Vault' : 'Curated Custom Dossier'}
                 </span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-[1000] uppercase tracking-tight text-slate-950 dark:text-white leading-[1.04]">
+              <h1
+                className="text-3xl sm:text-4xl lg:text-5xl font-normal uppercase tracking-[0.02em] text-slate-950 dark:text-white leading-[1.04]"
+                style={{ fontFamily: "'Bungee', sans-serif" }}
+              >
                 {list?.title ? (
                   <>
                     {list.title.split(' ').slice(0, -1).join(' ')}{' '}
-                    <span className="text-[#40bcf4]">
+                    <span className="text-pink-600 dark:text-pink-400">
                       {list.title.split(' ').slice(-1)}
                     </span>
                   </>
@@ -237,7 +247,7 @@ const ListDetail = () => {
                 <button
                   type="button"
                   onClick={() => setIsAddShowsOpen(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#00e054] hover:bg-[#00c94b] text-[#14181C] text-xs font-black uppercase tracking-wider border border-[#00c94b] border-b-[3px] border-b-[#009e3a] active:border-b active:translate-y-[2px] transition-all cursor-pointer shadow-[0_4px_12px_rgba(0,224,84,0.3)] rounded-none"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-mono font-bold uppercase tracking-wider border border-pink-600 border-b-[3px] border-b-pink-700 active:border-b active:translate-y-[2px] transition-all cursor-pointer shadow-[0_4px_12px_rgba(236,72,153,0.3)] rounded-xs"
                 >
                   <Plus size={15} strokeWidth={3} />
                   <span>Add Shows</span>
@@ -246,17 +256,17 @@ const ListDetail = () => {
                 <button
                   type="button"
                   onClick={() => setIsEditDrawerOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-[#111927] hover:bg-slate-100 dark:hover:bg-[#182337] text-slate-800 dark:text-stone-200 text-xs font-bold uppercase tracking-wider border border-slate-300 dark:border-[#2C3440] border-b-[3px] border-b-slate-400 dark:border-b-black active:border-b active:translate-y-[2px] transition-all cursor-pointer rounded-none shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-[#12171F] hover:bg-slate-100 dark:hover:bg-[#161B22] text-slate-800 dark:text-stone-200 text-xs font-mono font-bold uppercase tracking-wider border border-slate-300 dark:border-[#2C3545] border-b-[3px] border-b-slate-400 dark:border-b-black active:border-b active:translate-y-[2px] transition-all cursor-pointer rounded-xs shadow-xs"
                   title="Edit List Metadata"
                 >
-                  <Edit3 size={13} strokeWidth={2.5} className="text-[#40bcf4]" />
+                  <Edit3 size={13} strokeWidth={2.5} className="text-pink-500" />
                   <span>Edit</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setIsDeleteModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 hover:bg-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-600 text-rose-600 hover:text-white dark:text-rose-400 dark:hover:text-white border border-rose-200 dark:border-rose-500/30 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer rounded-none"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 hover:bg-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-600 text-rose-600 hover:text-white dark:text-rose-400 dark:hover:text-white border border-rose-200 dark:border-rose-500/30 text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer rounded-xs"
                   title="Delete List"
                 >
                   <Trash2 size={13} strokeWidth={2.5} />
@@ -265,7 +275,7 @@ const ListDetail = () => {
               </div>
             ) : (
               <div className="self-start sm:self-end shrink-0">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300 bg-purple-500/10 border border-purple-500/30">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300 bg-purple-500/10 border border-purple-500/30 rounded-xs">
                   <Lock size={12} />
                   Auto-Synchronized System List
                 </span>
@@ -275,25 +285,25 @@ const ListDetail = () => {
           </div>
 
           {/* Status strip */}
-          <div className="w-full border-b border-slate-200/90 dark:border-white/10 pt-1 pb-3 flex items-center justify-between flex-wrap gap-2 text-xs font-mono">
+          <div className="w-full border-b border-slate-200/90 dark:border-[#262E3B] pt-1 pb-3 flex items-center justify-between flex-wrap gap-2 text-xs font-mono">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-[#38bdf8]/20 dark:bg-[#38bdf8]/15 text-[#0369a1] dark:text-[#38bdf8] border border-[#38bdf8]/40 rounded-none shrink-0">
+              <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-pink-500/15 dark:bg-pink-500/15 text-pink-600 dark:text-pink-400 border border-pink-500/30 rounded-2xs shrink-0">
                 {totalItemsCount} {totalItemsCount === 1 ? 'SHOW' : 'SHOWS'}
               </span>
 
               {list?.isRanked && (
-                <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-[#0284c7] text-white border border-[#0284c7] rounded-none shrink-0 flex items-center gap-1">
+                <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-pink-500 text-white border border-pink-600 rounded-2xs shrink-0 flex items-center gap-1">
                   <ArrowUpDown size={10} strokeWidth={3} />
                   RANKED
                 </span>
               )}
 
               {isSystem ? (
-                <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 rounded-none shrink-0">
+                <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 rounded-2xs shrink-0">
                   SYSTEM DEFAULT
                 </span>
               ) : (
-                <span className="px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700 bg-transparent rounded-none shrink-0 flex items-center gap-1">
+                <span className="px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider text-slate-500 dark:text-stone-400 border border-slate-300 dark:border-[#2C3545] bg-transparent rounded-2xs shrink-0 flex items-center gap-1">
                   {list?.isPublic ? <Globe size={10} /> : <Lock size={10} />}
                   {list?.isPublic ? 'PUBLIC' : 'PRIVATE'}
                 </span>
@@ -307,7 +317,7 @@ const ListDetail = () => {
             </div>
 
             {list?.updatedAt && (
-              <span className="text-[10px] text-slate-400">
+              <span className="text-[10px] text-slate-400 dark:text-stone-400">
                 Updated {new Date(list.updatedAt).toLocaleDateString()}
               </span>
             )}
@@ -319,9 +329,9 @@ const ListDetail = () => {
         {/* ========================================================================= */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs select-none">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#38bdf8]" />
-            <span className="font-mono text-xs text-slate-600 dark:text-slate-400">
-              Showing <span className="font-bold text-[#0284c7] dark:text-[#38bdf8] underline">{filteredListItems.length}</span> of {totalItemsCount} titles
+            <span className="w-2 h-2 rounded-full bg-pink-500" />
+            <span className="font-mono text-xs text-slate-600 dark:text-stone-400">
+              Showing <span className="font-bold text-pink-600 dark:text-pink-400 underline">{filteredListItems.length}</span> of {totalItemsCount} titles
             </span>
           </div>
 
@@ -333,7 +343,7 @@ const ListDetail = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search in this list..."
-                className="w-56 sm:w-64 h-8 pl-8 pr-7 bg-white dark:bg-[#101726] border border-slate-300 dark:border-slate-800 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-[#40bcf4] rounded-none transition-colors"
+                className="w-56 sm:w-64 h-8 pl-8 pr-7 bg-white dark:bg-[#12171F] border border-slate-300 dark:border-[#2C3545] text-xs font-mono font-medium text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-pink-500 rounded-xs transition-colors"
               />
               {searchQuery && (
                 <button
@@ -351,9 +361,9 @@ const ListDetail = () => {
               onClick={fetchListDetails}
               disabled={isLoading}
               title="Refresh List"
-              className="h-8 px-2.5 bg-white dark:bg-[#101726] border border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center rounded-none"
+              className="h-8 px-2.5 bg-white dark:bg-[#12171F] border border-slate-300 dark:border-[#2C3545] text-slate-600 dark:text-stone-300 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center rounded-xs font-mono"
             >
-              <RefreshCw size={13} className={isLoading ? 'animate-spin text-[#40bcf4]' : ''} />
+              <RefreshCw size={13} className={isLoading ? 'animate-spin text-pink-500' : ''} />
             </button>
           </div>
         </div>
@@ -361,22 +371,25 @@ const ListDetail = () => {
         {/* ========================================================================= */}
         {/* 3. SHOWS INTERACTIVE LEDGER TABLE                                         */}
         {/* ========================================================================= */}
-        <div className="w-full border-2 border-slate-900 dark:border-black bg-white dark:bg-[#0C121D] shadow-sm rounded-none overflow-hidden">
+        <div className="w-full border border-slate-300 dark:border-[#2C3545] bg-white dark:bg-[#12171F] shadow-sm rounded-xs overflow-hidden">
           
           {isLoading ? (
             <div className="h-80 flex flex-col items-center justify-center gap-2">
-              <Loader2 size={28} className="animate-spin text-[#40bcf4]" />
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
+              <Loader2 size={28} className="animate-spin text-pink-500" />
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-stone-400">
                 Loading List Entries...
               </span>
             </div>
           ) : filteredListItems.length === 0 ? (
             <div className="py-20 px-4 text-center space-y-2">
-              <Film size={34} className="mx-auto text-slate-400 dark:text-slate-600 stroke-1" />
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              <Film size={34} className="mx-auto text-slate-400 dark:text-stone-500 stroke-1" />
+              <h3
+                className="text-sm font-normal uppercase tracking-[0.02em] text-slate-900 dark:text-white"
+                style={{ fontFamily: "'Bungee', sans-serif" }}
+              >
                 {searchQuery ? `No shows match "${searchQuery}" in this list` : 'No titles currently in this collection'}
-              </p>
-              <p className="text-[11px] text-slate-400 max-w-xs mx-auto mb-2">
+              </h3>
+              <p className="text-[11px] font-mono text-slate-500 dark:text-stone-400 max-w-xs mx-auto mb-2">
                 {isSystem 
                   ? 'Add or update shows from the Home dashboard to populate this system list automatically.'
                   : 'Use the Add Shows button above to append titles from the catalog.'}
@@ -385,7 +398,7 @@ const ListDetail = () => {
                 <button
                   type="button"
                   onClick={() => setIsAddShowsOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#00e054] hover:bg-[#00c94b] text-[#14181C] text-xs font-black uppercase tracking-wider rounded-none cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink-500 hover:bg-pink-600 text-white text-xs font-mono font-bold uppercase tracking-wider rounded-xs cursor-pointer"
                 >
                   <Plus size={13} strokeWidth={3} />
                   <span>Add Shows</span>
@@ -393,7 +406,7 @@ const ListDetail = () => {
               )}
             </div>
           ) : (
-            <div className="divide-y-2 divide-slate-900 dark:divide-black">
+            <div className="divide-y divide-slate-200/90 dark:divide-[#262E3B]">
               {filteredListItems.map((item, index) => {
                 const show = item.show || {};
                 const showId = show._id;
@@ -403,7 +416,7 @@ const ListDetail = () => {
                 return (
                   <div
                     key={showId || index}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between px-3 sm:px-4 py-2 hover:bg-slate-50 dark:hover:bg-[#111927] transition-colors gap-3 group"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between px-3 sm:px-4 py-2 hover:bg-slate-50 dark:hover:bg-[#161B22] transition-colors gap-3 group"
                   >
                     
                     {/* Left: Reorder Steppers + #Rank + Poster + Title + Tags + Note */}
@@ -416,7 +429,7 @@ const ListDetail = () => {
                             type="button"
                             onClick={() => handleMoveOrder(index, 'UP')}
                             disabled={index === 0}
-                            className="p-0.5 text-slate-400 hover:text-[#40bcf4] disabled:opacity-20 disabled:hover:text-slate-400 transition-colors cursor-pointer"
+                            className="p-0.5 text-slate-400 hover:text-pink-500 disabled:opacity-20 disabled:hover:text-slate-400 transition-colors cursor-pointer"
                             title="Move up"
                           >
                             <ChevronUp size={14} strokeWidth={3} />
@@ -425,7 +438,7 @@ const ListDetail = () => {
                             type="button"
                             onClick={() => handleMoveOrder(index, 'DOWN')}
                             disabled={index === filteredListItems.length - 1}
-                            className="p-0.5 text-slate-400 hover:text-[#40bcf4] disabled:opacity-20 disabled:hover:text-slate-400 transition-colors cursor-pointer"
+                            className="p-0.5 text-slate-400 hover:text-pink-500 disabled:opacity-20 disabled:hover:text-slate-400 transition-colors cursor-pointer"
                             title="Move down"
                           >
                             <ChevronDown size={14} strokeWidth={3} />
@@ -434,12 +447,12 @@ const ListDetail = () => {
                       ) : null}
 
                       {/* Rank # */}
-                      <span className="w-6 text-center font-mono text-xs font-black text-slate-800 dark:text-slate-300 shrink-0">
+                      <span className="w-6 text-center font-mono text-xs font-bold text-slate-800 dark:text-stone-300 shrink-0">
                         #{displayRank}
                       </span>
 
                       {/* Thumbnail Poster */}
-                      <div className="w-8 h-11 sm:w-9 sm:h-12 bg-black shrink-0 overflow-hidden border border-slate-900 dark:border-white/20 rounded-none relative">
+                      <div className="w-8 h-11 sm:w-9 sm:h-12 bg-black shrink-0 overflow-hidden border border-slate-300 dark:border-[#2C3545] rounded-2xs relative">
                         {show.posterUrl ? (
                           <img 
                             src={show.posterUrl} 
@@ -457,18 +470,18 @@ const ListDetail = () => {
                       {/* Show Details */}
                       <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                          <span className="font-[1000] text-xs sm:text-sm uppercase tracking-tight text-slate-950 dark:text-white truncate">
+                          <span className="font-bold text-xs sm:text-sm uppercase tracking-tight text-slate-950 dark:text-white truncate">
                             {show.title || 'Untitled Show'}
                           </span>
 
                           {show.type && (
-                            <span className="px-1.5 py-0.2 text-[9px] font-mono font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700 bg-transparent rounded-none shrink-0">
+                            <span className="px-1.5 py-0.2 text-[9px] font-mono font-medium uppercase tracking-wider text-slate-500 dark:text-stone-400 border border-slate-300 dark:border-[#2C3545] bg-transparent rounded-2xs shrink-0">
                               {show.type.replace('_', ' ')}
                             </span>
                           )}
 
                           {show.releaseYear && (
-                            <span className="text-[10px] font-mono text-slate-400 font-bold">
+                            <span className="text-[10px] font-mono text-slate-400 dark:text-stone-400 font-bold">
                               {show.releaseYear}
                             </span>
                           )}
@@ -482,27 +495,27 @@ const ListDetail = () => {
                               value={noteInputText}
                               onChange={(e) => setNoteInputText(e.target.value)}
                               placeholder="Add an annotation for this pick..."
-                              className="w-full h-7 px-2 bg-slate-50 dark:bg-[#070e1b] border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:border-[#40bcf4] rounded-none"
+                              className="w-full h-7 px-2 bg-slate-50 dark:bg-[#12171F] border border-slate-300 dark:border-[#2C3545] text-xs font-mono text-slate-900 dark:text-white outline-none focus:border-pink-500 rounded-xs"
                             />
                             <button
                               type="button"
                               onClick={() => handleSaveShowNote(showId)}
-                              className="px-2 py-1 bg-[#00e054] text-[#14181C] text-[10px] font-mono font-bold uppercase rounded-none cursor-pointer shrink-0"
+                              className="px-2 py-1 bg-pink-500 hover:bg-pink-600 text-white text-[10px] font-mono font-bold uppercase rounded-2xs cursor-pointer shrink-0"
                             >
                               Save
                             </button>
                             <button
                               type="button"
                               onClick={() => setEditingNoteShowId(null)}
-                              className="px-2 py-1 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-mono uppercase rounded-none cursor-pointer shrink-0"
+                              className="px-2 py-1 bg-slate-200 dark:bg-[#161B22] text-slate-600 dark:text-stone-300 text-[10px] font-mono font-bold uppercase rounded-2xs cursor-pointer shrink-0"
                             >
                               Cancel
                             </button>
                           </div>
                         ) : (
                           item.note ? (
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono italic flex items-center gap-1.5 line-clamp-1">
-                              <MessageSquare size={10} className="text-[#40bcf4] shrink-0" />
+                            <p className="text-[11px] text-slate-500 dark:text-stone-400 font-mono italic flex items-center gap-1.5 line-clamp-1">
+                              <MessageSquare size={10} className="text-pink-500 shrink-0" />
                               "{item.note}"
                             </p>
                           ) : null
@@ -520,7 +533,7 @@ const ListDetail = () => {
                             setEditingNoteShowId(showId);
                             setNoteInputText(item.note || '');
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-[#40bcf4] dark:bg-[#162030] dark:hover:bg-[#40bcf4] text-slate-700 hover:text-black dark:text-slate-300 dark:hover:text-black border border-slate-300 dark:border-slate-700 text-[10px] font-mono font-bold uppercase transition-colors cursor-pointer rounded-none"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-pink-500 dark:bg-[#161B22] dark:hover:bg-pink-500 text-slate-700 hover:text-white dark:text-stone-300 dark:hover:text-white border border-slate-300 dark:border-[#2C3545] hover:border-pink-500 text-[10px] font-mono font-bold uppercase transition-colors cursor-pointer rounded-2xs"
                           title={item.note ? 'Edit Note' : 'Add Note'}
                         >
                           <MessageSquare size={11} strokeWidth={2.5} />
@@ -530,7 +543,7 @@ const ListDetail = () => {
                         <button
                           type="button"
                           onClick={() => handleRemoveShow(showId, show.title)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 hover:bg-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-600 text-rose-600 hover:text-white dark:text-rose-400 dark:hover:text-white border border-rose-200 dark:border-rose-500/30 text-[10px] font-mono font-bold uppercase transition-colors cursor-pointer rounded-none"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 hover:bg-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-600 text-rose-600 hover:text-white dark:text-rose-400 dark:hover:text-white border border-rose-200 dark:border-rose-500/30 text-[10px] font-mono font-bold uppercase transition-colors cursor-pointer rounded-2xs"
                           title="Remove from list"
                         >
                           <Trash2 size={11} strokeWidth={2.5} />
@@ -577,32 +590,32 @@ const ListDetail = () => {
           onClick={() => setIsDeleteModalOpen(false)}
         >
           <div 
-            className="w-full max-w-md bg-white dark:bg-[#121926] border-2 border-black rounded-none p-5 space-y-3.5 shadow-2xl text-left"
+            className="w-full max-w-md bg-white dark:bg-[#12171F] border border-slate-300 dark:border-[#2C3545] rounded-xs p-5 space-y-3.5 shadow-2xl text-left"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-none bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-600 shrink-0">
+              <div className="w-8 h-8 rounded-2xs bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-600 shrink-0">
                 <AlertTriangle size={17} />
               </div>
               <div>
                 <h3 className="text-sm font-extrabold uppercase text-slate-900 dark:text-white leading-tight">
                   Delete Custom List
                 </h3>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                <p className="text-[10px] text-slate-500 dark:text-stone-400 font-mono">
                   Permanent removal
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            <p className="text-xs text-slate-600 dark:text-stone-300 leading-relaxed">
               Are you sure you want to delete <span className="font-bold text-slate-900 dark:text-white">"{list?.title}"</span>? The shows will remain in the master catalog, but this grouping will be removed.
             </p>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-white/10">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/90 dark:border-[#262E3B]">
               <button
                 type="button"
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="px-3.5 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer rounded-none"
+                className="px-3.5 py-1.5 text-xs font-mono font-bold text-slate-600 dark:text-stone-400 hover:text-slate-900 dark:hover:text-white cursor-pointer rounded-xs"
               >
                 Cancel
               </button>
@@ -611,7 +624,7 @@ const ListDetail = () => {
                 type="button"
                 onClick={handleDeleteList}
                 disabled={apiLoading}
-                className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer rounded-none disabled:opacity-50"
+                className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer rounded-xs disabled:opacity-50"
               >
                 {apiLoading ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                 <span>Delete</span>

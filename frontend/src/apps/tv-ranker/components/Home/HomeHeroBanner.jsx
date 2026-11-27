@@ -37,7 +37,7 @@ const VIEW_MODES = [
 const TIERS = [
   { id: 'ALL', label: 'All', icon: null },
   { id: 'GOD_TIER', label: '9.0+', icon: Trophy, color: 'text-amber-400' },
-  { id: 'ACCLAIMED', label: '8.5+', icon: Sparkles, color: 'text-[#40bcf4]' },
+  { id: 'ACCLAIMED', label: '8.5+', icon: Sparkles, color: 'text-pink-400' },
   { id: 'BANGER', label: '8.0+', icon: Flame, color: 'text-orange-400' },
   { id: 'CASUAL', label: '<8.0', icon: Eye, color: 'text-cyan-400' },
   { id: 'FAVORITES', label: 'Favs', icon: Heart, color: 'text-rose-400' },
@@ -81,6 +81,23 @@ const HomeHeroBanner = ({
 
   const sortRef = useRef(null);
 
+  // Load Bungee (Arcade), Space Grotesk (Titles) & Space Mono (Screenplay Logline) fonts
+  useEffect(() => {
+    const fontLinkId = 'plottwist-locked-fonts';
+    const fontHref =
+      'https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@600;700&family=Space+Mono:wght@400;700&display=swap';
+    const existing = document.getElementById(fontLinkId);
+    if (!existing) {
+      const link = document.createElement('link');
+      link.id = fontLinkId;
+      link.rel = 'stylesheet';
+      link.href = fontHref;
+      document.head.appendChild(link);
+    } else if (existing.href !== fontHref) {
+      existing.href = fontHref;
+    }
+  }, []);
+
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (sortRef.current && !sortRef.current.contains(e.target)) {
@@ -113,9 +130,9 @@ const HomeHeroBanner = ({
   };
 
   const typeCounts = [
-    { label: 'Hollywood', count: stats.hollywoodCount || 0, dot: 'bg-cyan-400', text: 'text-cyan-600 dark:text-[#40bcf4]' },
+    { label: 'Hollywood', count: stats.hollywoodCount || 0, dot: 'bg-pink-500', text: 'text-pink-600 dark:text-pink-400' },
     { label: 'Indian', count: stats.indianCount || 0, dot: 'bg-amber-400', text: 'text-amber-500 dark:text-amber-400' },
-    { label: 'Anime', count: stats.animeCount || 0, dot: 'bg-rose-400', text: 'text-rose-500 dark:text-rose-400' }
+    { label: 'Anime', count: stats.animeCount || 0, dot: 'bg-fuchsia-400', text: 'text-fuchsia-600 dark:text-fuchsia-400' }
   ];
 
   return (
@@ -126,13 +143,22 @@ const HomeHeroBanner = ({
       {/* ========================================================================= */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 pb-2 pt-6 sm:pb-3">
         
-        {/* Title, Badge & Subtitle */}
-        <div className="space-y-2 max-w-2xl min-w-0">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-[1000] uppercase tracking-tight text-slate-950 dark:text-white leading-[1.04]">
-            The <span className="text-[#40bcf4]">Couch Hierarchy</span>
+        {/* Title & Subtitle */}
+        <div className="space-y-3 max-w-2xl min-w-0">
+          <h1
+            style={{ fontFamily: "'Bungee', sans-serif" }}
+            className="text-2xl sm:text-3xl lg:text-[40px] font-normal uppercase tracking-[0.02em] leading-[1.06] text-slate-950 dark:text-white"
+          >
+            The{' '}
+            <span className="text-pink-600 dark:text-pink-400">
+              Couch Hierarchy
+            </span>
           </h1>
 
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-stone-400 font-medium leading-relaxed max-w-xl">
+          <p
+            style={{ fontFamily: "'Space Mono', monospace" }}
+            className="text-[11px] sm:text-xs font-normal text-slate-600 dark:text-stone-400 leading-[1.75] max-w-xl"
+          >
             An unfiltered ranking of every series, season, and miniseries watched. Scored critically, ranked comparatively, and re-evaluated whenever a rewatch demands it.
           </p>
         </div>
@@ -146,7 +172,7 @@ const HomeHeroBanner = ({
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-stone-400">
                   {item.label}
                 </span>
-                <span className={`text-sm sm:text-base font-mono font-[1000] tabular-nums leading-none ${item.text}`}>
+                <span className={`text-sm sm:text-base font-mono font-bold tabular-nums leading-none ${item.text}`}>
                   {item.count}
                 </span>
               </div>
@@ -172,7 +198,7 @@ const HomeHeroBanner = ({
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search series, genres, tags..."
-              className="w-full h-9 pl-9 pr-8 rounded-xs bg-white dark:bg-[#12171F] border-2 border-slate-300 dark:border-[#2C3545] text-xs font-mono font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-stone-500 outline-none focus:border-[#40bcf4] transition-all shadow-xs"
+              className="w-full h-9 pl-9 pr-8 rounded-xs bg-white dark:bg-[#12171F] border-2 border-slate-300 dark:border-[#2C3545] text-xs font-mono font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-stone-500 outline-none focus:border-pink-500 dark:focus:border-pink-400 transition-all shadow-xs"
             />
             {searchQuery && (
               <button
@@ -194,15 +220,15 @@ const HomeHeroBanner = ({
               <button
                 type="button"
                 onClick={() => setIsSortOpen((prev) => !prev)}
-                className={`w-full sm:w-auto flex items-center justify-center h-9 px-3 rounded-xs border-2 text-xs font-mono font-black transition-all cursor-pointer shadow-xs ${
+                className={`w-full sm:w-auto flex items-center justify-center h-9 px-3 rounded-xs border-2 text-xs font-mono font-bold transition-all cursor-pointer shadow-xs ${
                   sortBy !== 'RATING_DESC'
-                    ? 'bg-[#40bcf4]/15 border-[#40bcf4] text-[#0284c7] dark:text-[#40bcf4]'
-                    : 'bg-white dark:bg-[#12171F] border-slate-300 dark:border-[#2C3545] text-slate-900 dark:text-stone-200 hover:border-[#40bcf4]'
+                    ? 'bg-pink-500/15 border-pink-500 dark:border-pink-400 text-pink-700 dark:text-pink-400'
+                    : 'bg-white dark:bg-[#12171F] border-slate-300 dark:border-[#2C3545] text-slate-900 dark:text-stone-200 hover:border-pink-500 dark:hover:border-pink-400'
                 }`}
                 title="Sort Order"
                 aria-label="Sort Order"
               >
-                <ArrowUpDown size={13} strokeWidth={2.4} className={sortBy !== 'RATING_DESC' ? 'text-[#40bcf4]' : 'text-slate-400'} />
+                <ArrowUpDown size={13} strokeWidth={2.4} className={sortBy !== 'RATING_DESC' ? 'text-pink-500 dark:text-pink-400' : 'text-slate-400'} />
                 <span className="ml-1.5 text-[10px] uppercase font-mono tracking-tight truncate max-w-[90px] sm:max-w-none">
                   {SORTS.find((s) => s.value === sortBy)?.label}
                 </span>
@@ -226,12 +252,12 @@ const HomeHeroBanner = ({
                           }}
                           className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-2xs text-xs font-mono font-bold transition-colors cursor-pointer text-left ${
                             isSelected
-                              ? 'bg-[#40bcf4] text-slate-950 font-black'
+                              ? 'bg-pink-500 text-white font-black'
                               : 'text-slate-700 dark:text-stone-300 hover:bg-slate-100 dark:hover:bg-white/5'
                           }`}
                         >
                           <span className="text-[11px] truncate">{opt.label}</span>
-                          {isSelected && <Check size={11} strokeWidth={3} className="text-slate-950 shrink-0" />}
+                          {isSelected && <Check size={11} strokeWidth={3} className="shrink-0" />}
                         </button>
                       );
                     })}
@@ -244,10 +270,10 @@ const HomeHeroBanner = ({
             <button
               type="button"
               onClick={() => setIsMoreFiltersOpen((prev) => !prev)}
-              className={`flex items-center justify-center gap-1.5 h-9 px-3 rounded-xs border-2 text-xs font-mono font-black transition-all cursor-pointer shrink-0 shadow-xs ${
+              className={`flex items-center justify-center gap-1.5 h-9 px-3 rounded-xs border-2 text-xs font-mono font-bold transition-all cursor-pointer shrink-0 shadow-xs ${
                 isMoreFiltersOpen || activeExtraFiltersCount > 0
-                  ? 'bg-[#40bcf4]/15 border-[#40bcf4] text-[#0284c7] dark:text-[#40bcf4]'
-                  : 'bg-white dark:bg-[#12171F] border-slate-300 dark:border-[#2C3545] text-slate-900 dark:text-stone-200 hover:border-[#40bcf4]'
+                  ? 'bg-pink-500/15 border-pink-500 dark:border-pink-400 text-pink-700 dark:text-pink-400'
+                  : 'bg-white dark:bg-[#12171F] border-slate-300 dark:border-[#2C3545] text-slate-900 dark:text-stone-200 hover:border-pink-500 dark:hover:border-pink-400'
               }`}
               title="Toggle More Filters"
             >
@@ -262,7 +288,7 @@ const HomeHeroBanner = ({
               )}
               <ChevronDown 
                 size={12} 
-                className={`transition-transform duration-200 ${isMoreFiltersOpen ? 'rotate-180 text-[#40bcf4]' : 'text-slate-400'}`} 
+                className={`transition-transform duration-200 ${isMoreFiltersOpen ? 'rotate-180 text-pink-500 dark:text-pink-400' : 'text-slate-400'}`} 
               />
             </button>
 
@@ -281,14 +307,13 @@ const HomeHeroBanner = ({
                     aria-label={mode.label}
                     className={`p-1.5 rounded-2xs transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-[#40bcf4] text-slate-950 shadow-xs'
+                        ? 'bg-pink-500 text-white shadow-xs'
                         : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
                     <Icon 
                       size={14} 
                       strokeWidth={isSelected ? 3 : 2} 
-                      className={isSelected ? 'text-slate-950' : ''} 
                     />
                   </button>
                 );
@@ -317,14 +342,14 @@ const HomeHeroBanner = ({
                     onClick={() => onSelectCategory(cat.id)}
                     className={`group relative flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-2 sm:px-4 py-2.5 text-xs font-bold transition-all duration-150 cursor-pointer text-center border-b-2 ${
                       isActive
-                        ? 'border-[#40bcf4] text-slate-950 dark:text-[#40bcf4]'
+                        ? 'border-pink-500 dark:border-pink-400 text-slate-950 dark:text-pink-400'
                         : 'border-transparent text-slate-500 dark:text-stone-400 hover:text-slate-900 dark:hover:text-stone-200 hover:border-slate-300 dark:hover:border-white/20'
                     }`}
                   >
                     <Icon 
                       size={13} 
                       className={`hidden sm:inline shrink-0 transition-colors ${
-                        isActive ? 'text-[#40bcf4]' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-stone-300'
+                        isActive ? 'text-pink-500 dark:text-pink-400' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-stone-300'
                       }`} 
                     />
 
@@ -333,9 +358,9 @@ const HomeHeroBanner = ({
                     <span className="hidden sm:inline tracking-wide">{cat.label}</span>
 
                     <span
-                      className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.2 rounded font-[1000] shrink-0 transition-colors ${
+                      className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.2 rounded font-bold shrink-0 transition-colors ${
                         isActive
-                          ? 'bg-[#40bcf4]/15 text-[#40bcf4]'
+                          ? 'bg-pink-500/15 text-pink-700 dark:text-pink-400'
                           : 'bg-slate-200/80 dark:bg-white/10 text-slate-500 dark:text-stone-400'
                       }`}
                     >
@@ -347,7 +372,7 @@ const HomeHeroBanner = ({
             </div>
 
             <span className="text-[11px] font-mono text-slate-500 dark:text-stone-400 shrink-0 ml-auto pb-2 hidden sm:inline font-bold">
-              <strong className="text-slate-950 dark:text-white font-black">{totalVisible}</strong> titles cataloged
+              <strong className="text-slate-950 dark:text-white font-bold">{totalVisible}</strong> titles cataloged
             </span>
           </div>
         </div>
@@ -386,11 +411,11 @@ const HomeHeroBanner = ({
                       onClick={() => onTierChange(tier.id)}
                       className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-xs border-2 text-[10px] font-mono font-black transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-[#40bcf4] border-[#40bcf4] text-slate-950 shadow-xs'
-                          : 'bg-white dark:bg-[#12171F] border-slate-300 dark:border-[#2C3545] text-slate-700 dark:text-stone-300 hover:border-[#40bcf4]'
+                          ? 'bg-pink-500 border-pink-500 text-white shadow-xs'
+                          : 'bg-white dark:bg-[#12171F] border-slate-300 dark:border-[#2C3545] text-slate-700 dark:text-stone-300 hover:border-pink-500 dark:hover:border-pink-400'
                       }`}
                     >
-                      {Icon && <Icon size={12} className={isSelected ? 'text-slate-950' : tier.color} />}
+                      {Icon && <Icon size={12} className={isSelected ? 'text-white' : tier.color} />}
                       <span className="truncate">{tier.label}</span>
                     </button>
                   );
@@ -414,8 +439,8 @@ const HomeHeroBanner = ({
                       onClick={() => onStatusChange(st.value)}
                       className={`py-1.5 px-0.5 text-center rounded-xs border-2 text-[10px] font-mono font-black transition-all cursor-pointer truncate ${
                         isSelected
-                          ? 'bg-[#40bcf4] border-[#40bcf4] text-slate-950 shadow-xs'
-                          : 'bg-white dark:bg-[#12171F] border-slate-300 dark:border-[#2C3545] text-slate-700 dark:text-stone-300 hover:border-[#40bcf4]'
+                          ? 'bg-pink-500 border-pink-500 text-white shadow-xs'
+                          : 'bg-white dark:bg-[#12171F] border-slate-300 dark:border-[#2C3545] text-slate-700 dark:text-stone-300 hover:border-pink-500 dark:hover:border-pink-400'
                       }`}
                     >
                       {st.label}
@@ -435,7 +460,7 @@ const HomeHeroBanner = ({
               <span className="text-slate-400 dark:text-stone-400 uppercase font-bold">Filters:</span>
               
               {tierFilter !== 'ALL' && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xs bg-[#40bcf4]/15 border border-[#40bcf4]/40 text-[#0284c7] dark:text-[#40bcf4] font-black">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xs bg-pink-500/15 border border-pink-500/40 dark:border-pink-400/40 text-pink-700 dark:text-pink-400 font-black">
                   {TIERS.find((t) => t.id === tierFilter)?.label}
                   <button type="button" onClick={() => onTierChange('ALL')} className="hover:text-rose-500 cursor-pointer ml-0.5">
                     <X size={11} />
@@ -444,7 +469,7 @@ const HomeHeroBanner = ({
               )}
 
               {statusFilter !== 'ALL' && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xs bg-[#40bcf4]/15 border border-[#40bcf4]/40 text-[#0284c7] dark:text-[#40bcf4] font-black">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xs bg-pink-500/15 border border-pink-500/40 dark:border-pink-400/40 text-pink-700 dark:text-pink-400 font-black">
                   {STATUSES.find((s) => s.value === statusFilter)?.label}
                   <button type="button" onClick={() => onStatusChange('ALL')} className="hover:text-rose-500 cursor-pointer ml-0.5">
                     <X size={11} />

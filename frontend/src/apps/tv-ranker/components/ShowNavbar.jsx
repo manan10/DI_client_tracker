@@ -13,7 +13,6 @@ import {
   ReceiptIndianRupee,
   Clapperboard,
   Check,
-  Grid,
   Tv,
   UtensilsCrossed
 } from 'lucide-react';
@@ -54,6 +53,23 @@ const ShowNavbar = ({ onOpenAddShow }) => {
 
   const [isAppDropdownOpen, setIsAppDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Load Bungee, Space Grotesk & Space Mono fonts
+  useEffect(() => {
+    const fontLinkId = 'plottwist-locked-fonts';
+    const fontHref =
+      'https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@600;700&family=Space+Mono:wght@400;700&display=swap';
+    const existing = document.getElementById(fontLinkId);
+    if (!existing) {
+      const link = document.createElement('link');
+      link.id = fontLinkId;
+      link.rel = 'stylesheet';
+      link.href = fontHref;
+      document.head.appendChild(link);
+    } else if (existing.href !== fontHref) {
+      existing.href = fontHref;
+    }
+  }, []);
 
   // Filter apps strictly based on user.allowedApps permissions
   const authorizedApps = useMemo(() => {
@@ -137,12 +153,19 @@ const ShowNavbar = ({ onOpenAddShow }) => {
   return (
     <>
       {/* ========================================================================= */}
-      {/* TOP NAVIGATION BAR (Letterboxd Smoked Onyx)                                */}
+      {/* TOP NAVIGATION BAR                                                        */}
       {/* ========================================================================= */}
-      <header className="sticky top-0 z-40 w-full transition-colors duration-300 bg-[#14181C] border-b border-[#2C3440] shadow-[0_4px_25px_rgba(0,0,0,0.5)] select-none font-sans">
+      <header
+        style={{
+          '--font-sans': "'Space Grotesk', sans-serif",
+          '--font-mono': "'Space Mono', monospace",
+          fontFamily: "'Space Grotesk', sans-serif",
+        }}
+        className="sticky top-0 z-40 w-full transition-colors duration-300 bg-[#12171F] border-b border-[#2C3545] shadow-[0_4px_25px_rgba(0,0,0,0.5)] select-none font-sans"
+      >
         
-        {/* Fine Cyan Horizon Accent Line */}
-        <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-[#40bcf4]/50 to-transparent pointer-events-none" />
+        {/* Fine Pink Horizon Accent Line */}
+        <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-pink-500/60 to-transparent pointer-events-none" />
 
         <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 2xl:px-16 relative z-10">
           <div className="relative flex justify-between items-center h-[72px]">
@@ -155,10 +178,10 @@ const ShowNavbar = ({ onOpenAddShow }) => {
                 {/* TV Glyph Container */}
                 <Link
                   to="/tv-rater"
-                  className="group flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#1F242B] border border-[#2C3440] hover:border-[#40bcf4]/50 hover:bg-[#252C35] text-stone-300 hover:text-[#40bcf4] shadow-inner transition-all duration-200 outline-none shrink-0"
+                  className="group flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xs bg-[#161B22] border border-[#2C3545] hover:border-pink-400/60 hover:bg-[#1B2230] text-stone-300 hover:text-pink-400 shadow-inner transition-all duration-200 outline-none shrink-0"
                   title="Plot Twist Home"
                 >
-                  <Clapperboard size={18} strokeWidth={2.3} className="text-[#40bcf4] group-hover:scale-105 transition-transform" />
+                  <Clapperboard size={18} strokeWidth={2.3} className="text-pink-400 group-hover:scale-105 transition-transform" />
                 </Link>
 
                 {/* Responsive Container: Stacks vertically on mobile, horizontal row on sm+ */}
@@ -170,20 +193,23 @@ const ShowNavbar = ({ onOpenAddShow }) => {
                     className="group/brand flex items-center gap-2 outline-none py-0.5"
                     title="Plot Twist — Screen Vault"
                   >
-                    <div className="flex items-baseline leading-none">
-                      <span className="text-[17px] sm:text-[20px] font-[1000] tracking-[-0.03em] text-white">
+                    <div
+                      style={{ fontFamily: "'Bungee', sans-serif" }}
+                      className="flex items-baseline leading-none text-base sm:text-lg font-normal tracking-[0.02em]"
+                    >
+                      <span className="text-white">
                         plot
                       </span>
-                      <span className="text-[17px] sm:text-[20px] font-[1000] tracking-[-0.03em] text-[#40bcf4]">
+                      <span className="text-pink-400">
                         twist
                       </span>
                     </div>
 
-                    {/* Letterboxd Cinephile Tri-Dot Trio */}
+                    {/* Tri-Dot Trio */}
                     <div className="flex items-center gap-1 shrink-0 pb-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#ff8000] shadow-[0_0_6px_rgba(255,128,0,0.6)]" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#00e054] shadow-[0_0_6px_rgba(0,224,84,0.6)]" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#40bcf4] shadow-[0_0_6px_rgba(64,188,244,0.6)]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-pink-500 shadow-[0_0_6px_rgba(236,72,153,0.6)]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.6)]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400 shadow-[0_0_6px_rgba(232,121,249,0.6)]" />
                     </div>
                   </Link>
 
@@ -197,32 +223,32 @@ const ShowNavbar = ({ onOpenAddShow }) => {
                     <button
                       type="button"
                       onClick={() => setIsAppDropdownOpen((prev) => !prev)}
-                      className="group/switcher inline-flex items-center gap-1 text-[10px] sm:text-xs font-sans font-medium text-stone-400 hover:text-white leading-tight px-1.5 sm:px-2 py-0.5 -mx-1.5 sm:-mx-2 rounded-md hover:bg-white/5 transition-all cursor-pointer outline-none"
+                      className="group/switcher inline-flex items-center gap-1 text-[10px] sm:text-xs font-mono font-bold text-stone-400 hover:text-white leading-tight px-1.5 sm:px-2 py-0.5 -mx-1.5 sm:-mx-2 rounded-xs hover:bg-white/5 transition-all cursor-pointer outline-none"
                       title="Switch Workspace Application"
                       aria-haspopup="true"
                       aria-expanded={isAppDropdownOpen}
                     >
-                      <span className="font-semibold text-stone-300 group-hover/switcher:text-white">
+                      <span className="text-stone-300 group-hover/switcher:text-white">
                         Show Rater
                       </span>
                       <ChevronDown
                         size={11}
                         className={`text-stone-500 group-hover/switcher:text-white transition-transform duration-200 ${
-                          isAppDropdownOpen ? 'rotate-180 text-white' : ''
+                          isAppDropdownOpen ? 'rotate-180 text-pink-400' : ''
                         }`}
                       />
                     </button>
 
                     {/* APP DROPDOWN MENU */}
                     {isAppDropdownOpen && (
-                      <div className="absolute left-0 mt-1.5 w-56 rounded-xl bg-[#14181C]/98 backdrop-blur-xl border border-[#2C3440] shadow-[0_12px_36px_rgba(0,0,0,0.8)] p-1 z-50 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="absolute left-0 mt-1.5 w-56 rounded-xs bg-[#161B22]/98 backdrop-blur-xl border-2 border-[#2C3545] shadow-[0_12px_36px_rgba(0,0,0,0.8)] p-1 z-50 animate-in fade-in zoom-in-95 duration-150">
                         <div className="px-2.5 py-1.5 text-[9px] font-mono tracking-wider uppercase text-stone-400 select-none">
                           Switch Workspace
                         </div>
 
                         <div className="flex flex-col gap-0.5">
                           {authorizedApps.length === 0 ? (
-                            <div className="px-3 py-2 text-center text-xs text-stone-400">
+                            <div className="px-3 py-2 text-center text-xs font-mono text-stone-400">
                               No accessible apps
                             </div>
                           ) : (
@@ -241,16 +267,16 @@ const ShowNavbar = ({ onOpenAddShow }) => {
                                   key={app.id}
                                   type="button"
                                   onClick={() => handleAppSelect(app.path)}
-                                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs transition-colors cursor-pointer outline-none text-left ${
+                                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-2xs text-xs font-mono transition-colors cursor-pointer outline-none text-left ${
                                     isCurrent
-                                      ? 'bg-[#2C3440] text-white font-semibold'
+                                      ? 'bg-pink-500/15 text-pink-400 font-bold'
                                       : 'text-stone-300 hover:text-white hover:bg-white/5 font-normal'
                                   }`}
                                 >
                                   <div className="flex items-center gap-2.5 min-w-0">
                                     <AppIcon
                                       size={14}
-                                      className={isCurrent ? 'text-[#40bcf4]' : 'text-stone-400'}
+                                      className={isCurrent ? 'text-pink-400' : 'text-stone-400'}
                                       strokeWidth={isCurrent ? 2.5 : 2}
                                     />
                                     <span className="truncate">{app.title}</span>
@@ -260,7 +286,7 @@ const ShowNavbar = ({ onOpenAddShow }) => {
                                     <Check
                                       size={13}
                                       strokeWidth={2.5}
-                                      className="text-[#40bcf4] shrink-0 ml-1.5"
+                                      className="text-pink-400 shrink-0 ml-1.5"
                                     />
                                   )}
                                 </button>
@@ -278,7 +304,7 @@ const ShowNavbar = ({ onOpenAddShow }) => {
             {/* ========================================================================= */}
             {/* CENTER: DESKTOP TACTILE DECK RAIL (Home, Lists, Stats, Catalog)           */}
             {/* ========================================================================= */}
-            <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center rounded-xl p-1 shadow-inner z-10 bg-black/45 border border-[#2C3440] backdrop-blur-md">
+            <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center rounded-xs p-1 shadow-inner z-10 bg-[#161B22]/90 border border-[#2C3545] backdrop-blur-md">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
@@ -287,15 +313,15 @@ const ShowNavbar = ({ onOpenAddShow }) => {
                   <Link
                     key={item.name}
                     to={item.path}
-                    className={`relative flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs tracking-wide transition-all outline-none select-none ${
+                    className={`relative flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-2xs text-xs font-mono tracking-wide transition-all outline-none select-none ${
                       isActive
-                        ? 'bg-[#2C3440] text-white border border-white/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)] font-bold'
-                        : 'text-stone-400 hover:text-white hover:bg-white/5 border border-transparent font-medium'
+                        ? 'bg-[#1B2230] text-white border border-pink-400/50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] font-bold'
+                        : 'text-stone-400 hover:text-white hover:bg-white/5 border border-transparent font-normal'
                     }`}
                   >
                     <Icon
                       size={15}
-                      className={isActive ? 'text-[#40bcf4]' : 'text-stone-400'}
+                      className={isActive ? 'text-pink-400' : 'text-stone-400'}
                       strokeWidth={isActive ? 2.5 : 2}
                     />
                     <span>{item.name}</span>
@@ -309,53 +335,53 @@ const ShowNavbar = ({ onOpenAddShow }) => {
             {/* ========================================================================= */}
             <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 z-20 font-sans">
               
-              {/* Rate New Show Button (Letterboxd Green - Hidden on mobile view) */}
+              {/* Rate New Show Button (Hidden on mobile view) */}
               {onOpenAddShow && (
                 <button
                   type="button"
                   onClick={onOpenAddShow}
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-md bg-[#00e054] hover:bg-[#00c94b] text-[#14181C] font-bold border border-[#00e054] text-[11px] font-sans tracking-wide active:scale-95 transition-all cursor-pointer outline-none shadow-xs shrink-0"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xs bg-pink-500 hover:bg-pink-600 text-white font-mono font-bold border border-pink-400/60 text-[11px] uppercase tracking-wider active:scale-95 transition-all cursor-pointer outline-none shadow-xs shrink-0"
                 >
-                  <Plus size={14} strokeWidth={3} className="shrink-0 text-[#14181C]" />
+                  <Plus size={14} strokeWidth={3} className="shrink-0 text-white" />
                   <span>Add Rating</span>
                 </button>
               )}
 
               {/* Utility Dock (App Picker & Theme Toggle) */}
-              <div className="flex items-center p-0.5 rounded-lg bg-black/40 border border-[#2C3440] shrink-0">
+              <div className="flex items-center p-0.5 rounded-xs bg-[#161B22] border border-[#2C3545] shrink-0">
                 <Link
                   to="/app-picker"
-                  className="flex items-center justify-center w-8 h-8 rounded-md text-stone-400 hover:text-white hover:bg-white/10 transition-all outline-none"
+                  className="flex items-center justify-center w-8 h-8 rounded-2xs text-stone-400 hover:text-white hover:bg-white/10 transition-all outline-none"
                   aria-label="App Switcher"
                   title="App Switcher"
                 >
-                  <Grid size={16} strokeWidth={2.2} />
+                  <Home size={16} strokeWidth={2.2} />
                 </Link>
 
-                <div className="w-px h-4 bg-[#2C3440] mx-0.5" />
+                <div className="w-px h-4 bg-[#2C3545] mx-0.5" />
 
                 <button
                   type="button"
                   onClick={toggleTheme}
-                  className="flex items-center justify-center w-8 h-8 rounded-md text-stone-400 hover:text-white hover:bg-white/10 transition-all outline-none cursor-pointer"
+                  className="flex items-center justify-center w-8 h-8 rounded-2xs text-stone-400 hover:text-white hover:bg-white/10 transition-all outline-none cursor-pointer"
                   aria-label="Toggle Theme"
                   title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                 >
                   {isDark ? (
                     <Sun size={16} strokeWidth={2.2} className="text-amber-400" />
                   ) : (
-                    <Moon size={16} strokeWidth={2.2} className="text-sky-300" />
+                    <Moon size={16} strokeWidth={2.2} className="text-pink-400" />
                   )}
                 </button>
               </div>
 
               {/* Hardware Vertical Divider */}
-              <div className="hidden sm:block w-px h-6 bg-[#2C3440] mx-0.5 shrink-0" />
+              <div className="hidden sm:block w-px h-6 bg-[#2C3545] mx-0.5 shrink-0" />
 
               {/* User Profile Glyph & Logout */}
               <div className="flex items-center gap-2 shrink-0">
                 <div
-                  className="w-8 h-8 rounded-full bg-[#1F242B] text-stone-200 border border-[#2C3440] flex items-center justify-center font-bold text-xs select-none shadow-xs"
+                  className="w-8 h-8 rounded-full bg-[#161B22] text-stone-200 border border-[#2C3545] flex items-center justify-center font-mono font-bold text-xs select-none shadow-xs"
                   title={user?.name || 'User'}
                 >
                   {userInitials}
@@ -364,7 +390,7 @@ const ShowNavbar = ({ onOpenAddShow }) => {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="p-1.5 rounded-lg text-stone-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer outline-none"
+                  className="p-1.5 rounded-xs text-stone-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer outline-none"
                   title="Sign Out"
                 >
                   <LogOut size={16} />
@@ -379,7 +405,14 @@ const ShowNavbar = ({ onOpenAddShow }) => {
       {/* ========================================================================= */}
       {/* MOBILE BOTTOM NAVIGATION BAR (Home, Lists, Stats, Catalog, Rate New)      */}
       {/* ========================================================================= */}
-      <div className="md:hidden fixed bottom-0 left-0 w-full z-40 pb-[env(safe-area-inset-bottom)] font-sans border-t bg-[#14181C]/95 border-[#2C3440] backdrop-blur-2xl transition-all shadow-[0_-8px_30px_rgba(0,0,0,0.7)]">
+      <div
+        style={{
+          '--font-sans': "'Space Grotesk', sans-serif",
+          '--font-mono': "'Space Mono', monospace",
+          fontFamily: "'Space Grotesk', sans-serif",
+        }}
+        className="md:hidden fixed bottom-0 left-0 w-full z-40 pb-[env(safe-area-inset-bottom)] font-sans border-t bg-[#12171F]/95 border-[#2C3545] backdrop-blur-2xl transition-all shadow-[0_-8px_30px_rgba(0,0,0,0.7)]"
+      >
         <div className="flex items-center justify-around h-16 px-3 max-w-md mx-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -392,17 +425,17 @@ const ShowNavbar = ({ onOpenAddShow }) => {
                 className="relative flex flex-col items-center justify-center w-full h-full gap-1 outline-none select-none"
               >
                 {isActive && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] rounded-b-full bg-[#40bcf4] shadow-[0_2px_8px_rgba(64,188,244,0.8)]" />
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] rounded-b-full bg-pink-400 shadow-[0_2px_8px_rgba(244,114,182,0.7)]" />
                 )}
                 <div
                   className={`mt-0.5 transition-colors ${
-                    isActive ? 'text-[#40bcf4]' : 'text-stone-400 hover:text-white'
+                    isActive ? 'text-pink-400' : 'text-stone-400 hover:text-white'
                   }`}
                 >
                   <Icon size={19} strokeWidth={isActive ? 2.5 : 2} />
                 </div>
                 <span
-                  className={`text-[10px] font-medium tracking-wide ${
+                  className={`text-[10px] font-mono tracking-wide ${
                     isActive ? 'text-white font-bold' : 'text-stone-400'
                   }`}
                 >
@@ -419,10 +452,10 @@ const ShowNavbar = ({ onOpenAddShow }) => {
               onClick={onOpenAddShow}
               className="relative flex flex-col items-center justify-center w-full h-full gap-1 outline-none select-none text-stone-300 hover:text-white cursor-pointer"
             >
-              <div className="mt-0.5 p-1 rounded-md bg-[#00e054] text-[#14181C] shadow-xs">
+              <div className="mt-0.5 p-1 rounded-xs bg-pink-500 text-white shadow-xs">
                 <Plus size={15} strokeWidth={3} />
               </div>
-              <span className="text-[10px] font-medium tracking-wide text-stone-300">
+              <span className="text-[10px] font-mono tracking-wide text-stone-300">
                 Add Rating
               </span>
             </button>

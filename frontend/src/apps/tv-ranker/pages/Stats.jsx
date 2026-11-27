@@ -129,7 +129,7 @@ const Stats = () => {
       const typeFavs = typeShows.filter((r) => r.isFavorite).length;
 
       const metaMap = {
-        HOLLYWOOD: { label: 'Hollywood', dot: 'bg-cyan-400', color: 'text-[#40bcf4]' },
+        HOLLYWOOD: { label: 'Hollywood', dot: 'bg-pink-400', color: 'text-pink-400' },
         INDIAN: { label: 'Indian', dot: 'bg-amber-400', color: 'text-amber-400' },
         ANIME: { label: 'Anime', dot: 'bg-rose-400', color: 'text-rose-400' }
       };
@@ -286,10 +286,17 @@ const Stats = () => {
   }, [ratings, activeRegionFilter, categorizeShow]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#070A10] text-slate-900 dark:text-stone-100 font-sans selection:bg-[#40bcf4]/20 selection:text-slate-950 dark:selection:bg-[#40bcf4]/30 dark:selection:text-white transition-colors duration-300 pb-28 lg:pb-16 relative overflow-x-hidden">
+    <div
+      className="min-h-screen bg-[#F8FAFC] dark:bg-[#1B2230] text-slate-950 dark:text-stone-100 font-sans selection:bg-pink-500/20 selection:text-slate-950 dark:selection:bg-pink-500/30 dark:selection:text-white transition-colors duration-300 pb-28 lg:pb-16 relative overflow-x-hidden"
+      style={{
+        '--font-sans': "'Space Grotesk', sans-serif",
+        '--font-mono': "'Space Mono', monospace",
+        fontFamily: "'Space Grotesk', sans-serif",
+      }}
+    >
       
       {/* Precision Ambient Atmosphere */}
-      <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-[#40bcf4]/10 dark:from-[#40bcf4]/5 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-pink-500/10 dark:from-pink-500/5 via-transparent to-transparent pointer-events-none" />
 
       <ShowNavbar
         onOpenImport={() => setIsImportOpen(true)}
@@ -306,9 +313,9 @@ const Stats = () => {
         />
 
         {isLoading ? (
-          <div className="h-96 flex flex-col items-center justify-center gap-4 bg-white dark:bg-[#161B22] rounded-lg border border-slate-200 dark:border-[#262E3B] shadow-sm">
-            <Loader2 size={36} className="text-[#40bcf4] animate-spin" />
-            <span className="text-xs font-black uppercase tracking-widest text-slate-400 font-mono">
+          <div className="h-96 flex flex-col items-center justify-center gap-4 bg-white dark:bg-[#12171F] rounded-xs border border-slate-300 dark:border-[#2C3545] shadow-sm">
+            <Loader2 size={36} className="text-pink-500 animate-spin" />
+            <span className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-stone-400 font-mono">
               Loading Report Card Telemetry...
             </span>
           </div>

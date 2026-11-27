@@ -18,7 +18,7 @@ const STATUS_OPTIONS = [
     value: 'WATCHING', 
     label: 'Watching', 
     icon: PlayCircle,
-    active: 'bg-[#40bcf4]/15 text-[#0284c7] dark:text-[#40bcf4] border-[#40bcf4]/50 shadow-[0_2px_0_0_rgba(64,188,244,0.3)]' 
+    active: 'bg-pink-500/15 text-pink-600 dark:text-pink-400 border-pink-500/50 shadow-[0_2px_0_0_rgba(236,72,153,0.3)]' 
   },
   { 
     value: 'PLAN_TO_WATCH', 
@@ -75,7 +75,7 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
     if (val >= 9.0) {
       return { 
         label: 'Masterpiece', 
-        badge: 'text-[#40bcf4] bg-[#40bcf4]/15 border-[#40bcf4]/40 shadow-[0_2px_0_0_rgba(64,188,244,0.3)]' 
+        badge: 'text-pink-600 dark:text-pink-400 bg-pink-500/15 border-pink-500/40 shadow-[0_2px_0_0_rgba(236,72,153,0.3)]' 
       };
     }
     if (val >= 8.0) {
@@ -92,7 +92,7 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
     }
     return { 
       label: 'Average', 
-      badge: 'text-slate-600 dark:text-slate-300 bg-slate-200 dark:bg-[#1E2636] border-slate-300 dark:border-[#38455C] shadow-[0_2px_0_0_rgba(0,0,0,0.15)]' 
+      badge: 'text-slate-600 dark:text-stone-300 bg-slate-200 dark:bg-[#12171F] border-slate-300 dark:border-[#2C3545] shadow-[0_2px_0_0_rgba(0,0,0,0.15)]' 
     };
   };
 
@@ -133,19 +133,20 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
   return (
     <div 
       className="fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm select-none font-sans"
+      style={{ '--font-sans': "'Space Grotesk', sans-serif", '--font-mono': "'Space Mono', monospace", fontFamily: "'Space Grotesk', sans-serif" }}
       onClick={onClose}
     >
       {/* Slide-over Drawer Frame */}
       <div 
-        className="w-full sm:w-[500px] md:w-[540px] bg-[#E9EEF5] dark:bg-[#1E2636] border-t-2 sm:border-t-0 sm:border-l-2 border-slate-300 dark:border-[#334158] shadow-[0_15px_45px_rgba(0,0,0,0.25)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col max-h-[92dvh] sm:max-h-screen rounded-t-2xl sm:rounded-none text-slate-800 dark:text-slate-100 overflow-hidden relative"
+        className="w-full sm:w-[500px] md:w-[540px] bg-white dark:bg-[#161B22] border-t-2 sm:border-t-0 sm:border-l-2 border-slate-300 dark:border-[#2C3545] shadow-[0_15px_45px_rgba(0,0,0,0.25)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col max-h-[92dvh] sm:max-h-screen rounded-t-xs sm:rounded-none text-slate-800 dark:text-stone-200 overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#40bcf4] to-transparent pointer-events-none z-30" />
+        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-pink-500 to-transparent pointer-events-none z-30" />
 
 {/* ========================================================================= */}
         {/* RE-ARCHITECTED CINEMATIC HERO SECTION                                      */}
         {/* ========================================================================= */}
-        <div className="relative w-full bg-gradient-to-r from-[#0d131f] via-[#101726] to-[#0c121e] border-b-2 border-slate-300 dark:border-[#2C384D] shrink-0 overflow-hidden select-none">
+        <div className="relative w-full bg-gradient-to-r from-[#0d131f] via-[#101726] to-[#0c121e] border-b-2 border-slate-200/90 dark:border-[#262E3B] shrink-0 overflow-hidden select-none">
           
           {/* Ambient Lighting & Horizon Glow */}
           {posterImage && (
@@ -154,7 +155,7 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
               style={{ backgroundImage: `url(${posterImage})` }}
             />
           )}
-          <div className="absolute top-0 right-0 w-72 h-full bg-gradient-to-l from-[#40bcf4]/10 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute top-0 right-0 w-72 h-full bg-gradient-to-l from-pink-500/10 via-transparent to-transparent pointer-events-none" />
 
           {/* Top Utility Layer: Mobile Handle + Floating Close Button */}
           <div className="relative z-20 flex items-center justify-between px-4 sm:px-5 pt-3 pb-1">
@@ -165,7 +166,7 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
             <button
               type="button"
               onClick={onClose}
-              className="ml-auto w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-slate-300 hover:text-white border border-white/10 flex items-center justify-center transition-all cursor-pointer shadow-md"
+              className="ml-auto w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-stone-300 hover:text-white border border-white/10 flex items-center justify-center transition-all cursor-pointer shadow-md font-mono"
               title="Close"
             >
               <X size={15} strokeWidth={2.4} />
@@ -177,8 +178,8 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
             
             {/* 1. Left: Poster with 3D Depth Elevation */}
             <div className="relative shrink-0 group">
-              <div className="w-16 h-24 sm:w-20 sm:h-28 rounded-xl bg-slate-950 p-1 border border-white/20 shadow-[0_12px_28px_rgba(0,0,0,0.85),0_4px_10px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.3)] transition-transform duration-300 group-hover:scale-105">
-                <div className="w-full h-full rounded-lg overflow-hidden bg-slate-900 relative">
+              <div className="w-16 h-24 sm:w-20 sm:h-28 rounded-xs bg-slate-950 p-1 border border-white/20 shadow-[0_12px_28px_rgba(0,0,0,0.85),0_4px_10px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.3)] transition-transform duration-300 group-hover:scale-105">
+                <div className="w-full h-full rounded-2xs overflow-hidden bg-slate-900 relative">
                   {posterImage ? (
                     <img 
                       src={posterImage} 
@@ -186,7 +187,7 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
                       className="w-full h-full object-cover object-top" 
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-500">
+                    <div className="w-full h-full flex items-center justify-center text-stone-400">
                       <Film size={20} />
                     </div>
                   )}
@@ -199,24 +200,24 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
             {/* 2. Middle Content Stack */}
             <div className="min-w-0 flex-1 space-y-1.5">
               <div className="flex items-center gap-2 flex-wrap text-[10px] font-mono">
-                <span className="font-black uppercase tracking-wider text-[#40bcf4]">
+                <span className="font-bold uppercase tracking-wider text-pink-400">
                   {show.type?.replace('_', ' ') || 'SERIES'}
                 </span>
-                <span className="text-slate-500">•</span>
-                <span className="font-bold text-slate-300">
+                <span className="text-stone-400">•</span>
+                <span className="font-bold text-stone-300">
                   {show.releaseYear || '—'}
                 </span>
                 {show.totalSeasons && (
                   <>
-                    <span className="text-slate-500">•</span>
-                    <span className="font-bold text-slate-300">
+                    <span className="text-stone-400">•</span>
+                    <span className="font-bold text-stone-300">
                       {show.totalSeasons} Season{show.totalSeasons > 1 ? 's' : ''}
                     </span>
                   </>
                 )}
               </div>
 
-              <h1 className="text-base sm:text-xl font-[1000] text-white tracking-tight leading-tight line-clamp-2 drop-shadow-sm">
+              <h1 className="text-base sm:text-xl font-bold text-white tracking-tight leading-tight line-clamp-2 drop-shadow-sm">
                 {show.title || 'Untitled Show'}
               </h1>
 
@@ -226,7 +227,7 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
                   {show.genres.slice(0, 3).map((g) => (
                     <span 
                       key={g} 
-                      className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-stone-300 shadow-2xs"
+                      className="px-2 py-0.5 rounded-2xs text-[9px] font-mono font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-stone-300 shadow-2xs"
                     >
                       {g}
                     </span>
@@ -237,15 +238,15 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
 
             {/* 3. Right: Tactile 3D Score Badge */}
             <div className="shrink-0 pl-1">
-              <div className="flex flex-col items-center justify-center px-3.5 py-2 rounded-xl bg-gradient-to-b from-[#1b2537] to-[#111824] border border-[#2e3e57] shadow-[0_8px_20px_rgba(0,0,0,0.6),0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)] ring-1 ring-black/40">
-                <span className="text-[9px] font-mono font-black uppercase tracking-[0.2em] text-slate-400 leading-none">
+              <div className="flex flex-col items-center justify-center px-3.5 py-2 rounded-xs bg-gradient-to-b from-[#1b2537] to-[#111824] border border-[#2C3545] shadow-[0_8px_20px_rgba(0,0,0,0.6),0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)] ring-1 ring-black/40">
+                <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-stone-400 leading-none">
                   SCORE
                 </span>
                 <div className="flex items-baseline gap-0.5 mt-1">
-                  <span className="text-2xl sm:text-3xl font-[1000] font-mono tracking-tight text-[#40bcf4] leading-none drop-shadow-[0_2px_8px_rgba(64,188,244,0.4)]">
+                  <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-pink-400 leading-none drop-shadow-[0_2px_8px_rgba(236,72,153,0.4)]">
                     {(item.rating ?? 0).toFixed(1)}
                   </span>
-                  <span className="text-[10px] font-mono font-bold text-slate-500 leading-none">
+                  <span className="text-[10px] font-mono font-bold text-stone-400 leading-none">
                     /10
                   </span>
                 </div>
@@ -259,35 +260,35 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-4.5 no-scrollbar flex-1 text-left">
           
           {/* Rating Console */}
-          <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#2C384D] shadow-[0_3px_0_0_#CBD5E1] dark:shadow-[0_3px_0_0_#0F1520] space-y-3 sm:space-y-3.5 relative">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#222E42] pb-2.5 sm:pb-3">
+          <div className="p-3.5 sm:p-4 rounded-xs bg-white dark:bg-[#12171F] border-2 border-slate-300 dark:border-[#2C3545] shadow-[0_3px_0_0_#CBD5E1] dark:shadow-[0_3px_0_0_#0B0E14] space-y-3 sm:space-y-3.5 relative">
+            <div className="flex items-center justify-between border-b border-slate-200/90 dark:border-[#262E3B] pb-2.5 sm:pb-3">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300 block">
                   New Score
                 </span>
-                <span className="text-[10px] font-mono text-slate-400 dark:text-slate-400">
+                <span className="text-[10px] font-mono text-slate-400 dark:text-stone-400">
                   Choose from 0.0 to 10.0
                 </span>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider border transition-all ${tier.badge}`}>
+                <span className={`px-2.5 py-0.5 rounded-2xs text-[10px] font-mono font-bold uppercase tracking-wider border transition-all ${tier.badge}`}>
                   {tier.label}
                 </span>
 
                 <button
                   type="button"
                   onClick={() => setIsFavorite((prev) => !prev)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold border transition-all cursor-pointer active:translate-y-[1px] ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xs text-xs font-mono font-bold border transition-all cursor-pointer active:translate-y-[1px] ${
                     isFavorite
                       ? 'bg-rose-500/15 border-rose-500/40 text-rose-600 dark:text-rose-400 shadow-[0_2px_0_0_rgba(244,63,94,0.3)]'
-                      : 'bg-slate-100 dark:bg-[#1E2838] border-slate-300 dark:border-[#38465E] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#101621]'
+                      : 'bg-slate-100 dark:bg-[#161B22] border-slate-300 dark:border-[#2C3545] text-slate-600 dark:text-stone-300 hover:text-slate-900 dark:hover:text-white shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14]'
                   }`}
                   title={isFavorite ? 'Saved as favorite' : 'Add to favorites'}
                 >
                   <Heart 
                     size={12} 
-                    className={`transition-colors ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} 
+                    className={`transition-colors ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-slate-400 dark:text-stone-400'}`} 
                   />
                   <span>Favorite</span>
                 </button>
@@ -295,13 +296,13 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
             </div>
 
             {/* Score Display Card + Presets */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-[#F5F8FC] dark:bg-[#0F1622] border border-slate-300 dark:border-[#232F42] shadow-inner">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xs bg-slate-50 dark:bg-[#0D1117] border border-slate-300 dark:border-[#2C3545] shadow-inner">
               <div className="flex items-baseline justify-between sm:justify-start gap-1">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white font-mono leading-none">
+                  <span className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white font-mono leading-none">
                     {rating.toFixed(1)}
                   </span>
-                  <span className="text-xs font-bold text-slate-400">/ 10</span>
+                  <span className="text-xs font-mono font-bold text-slate-400 dark:text-stone-400">/ 10</span>
                 </div>
               </div>
 
@@ -312,10 +313,10 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
                     key={val}
                     type="button"
                     onClick={() => setRating(val)}
-                    className={`h-8 sm:h-auto px-1 sm:px-2.5 py-1 text-center rounded text-xs font-mono font-bold border transition-all cursor-pointer active:translate-y-[1px] active:shadow-none ${
+                    className={`h-8 sm:h-auto px-1 sm:px-2.5 py-1 text-center rounded-2xs text-xs font-mono font-bold border transition-all cursor-pointer active:translate-y-[1px] active:shadow-none ${
                       Math.abs(rating - val) < 0.05
-                        ? 'bg-[#40bcf4] text-[#0A1017] border-[#29a8e2] font-black shadow-[0_2px_0_0_#1c86b8]'
-                        : 'bg-white dark:bg-[#1F293A] text-slate-700 dark:text-slate-300 border-slate-300 dark:border-[#34425A] hover:border-slate-400 dark:hover:border-slate-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520]'
+                        ? 'bg-pink-500 text-white border-pink-600 font-bold shadow-[0_2px_0_0_#be185d]'
+                        : 'bg-white dark:bg-[#161B22] text-slate-700 dark:text-stone-300 border-slate-300 dark:border-[#2C3545] hover:border-slate-400 dark:hover:border-stone-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14]'
                     }`}
                   >
                     {val === 10 ? '10' : val.toFixed(1)}
@@ -329,7 +330,7 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
               <button
                 type="button"
                 onClick={() => adjustScore(-0.1)}
-                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1E2838] hover:bg-slate-200 dark:hover:bg-[#253246] border border-slate-300 dark:border-[#34425A] flex items-center justify-center text-slate-700 dark:text-slate-300 transition-all cursor-pointer active:translate-y-[1px] active:shadow-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] shrink-0"
+                className="w-8 h-8 rounded-xs bg-slate-100 dark:bg-[#161B22] hover:bg-slate-200 dark:hover:bg-[#1E242E] border border-slate-300 dark:border-[#2C3545] flex items-center justify-center text-slate-700 dark:text-stone-300 font-mono transition-all cursor-pointer active:translate-y-[1px] active:shadow-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14] shrink-0"
                 title="Subtract 0.1"
               >
                 <Minus size={13} strokeWidth={2.5} />
@@ -342,13 +343,13 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
                 step="0.1"
                 value={rating}
                 onChange={(e) => setRating(parseFloat(e.target.value))}
-                className="flex-1 h-2 bg-slate-200 dark:bg-[#0E1520] rounded-lg appearance-none accent-[#40bcf4] cursor-pointer"
+                className="flex-1 h-2 bg-slate-200 dark:bg-[#0D1117] rounded-xs appearance-none accent-pink-500 cursor-pointer"
               />
 
               <button
                 type="button"
                 onClick={() => adjustScore(0.1)}
-                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1E2838] hover:bg-slate-200 dark:hover:bg-[#253246] border border-slate-300 dark:border-[#34425A] flex items-center justify-center text-slate-700 dark:text-slate-300 transition-all cursor-pointer active:translate-y-[1px] active:shadow-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] shrink-0"
+                className="w-8 h-8 rounded-xs bg-slate-100 dark:bg-[#161B22] hover:bg-slate-200 dark:hover:bg-[#1E242E] border border-slate-300 dark:border-[#2C3545] flex items-center justify-center text-slate-700 dark:text-stone-300 font-mono transition-all cursor-pointer active:translate-y-[1px] active:shadow-none shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14] shrink-0"
                 title="Add 0.1"
               >
                 <Plus size={13} strokeWidth={2.5} />
@@ -358,7 +359,7 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
 
           {/* Watch Status Buttons */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+            <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300 block">
               Watch Status
             </label>
 
@@ -372,12 +373,12 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
                     key={opt.value}
                     type="button"
                     onClick={() => setStatus(opt.value)}
-                    className={`flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-lg border-2 text-xs font-bold transition-all cursor-pointer text-left active:translate-y-[1px] ${
+                    className={`flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xs border-2 text-xs font-mono font-bold transition-all cursor-pointer text-left active:translate-y-[1px] ${
                       isLastOnMobile ? 'col-span-2 sm:col-span-1' : ''
                     } ${
                       isSelected
                         ? opt.active
-                        : 'bg-white dark:bg-[#141C28] border-slate-300 dark:border-[#2C384D] text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520]'
+                        : 'bg-white dark:bg-[#12171F] border-slate-300 dark:border-[#2C3545] text-slate-600 dark:text-stone-300 hover:border-slate-400 dark:hover:border-stone-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14]'
                     }`}
                   >
                     <Icon size={14} className="shrink-0" />
@@ -390,7 +391,7 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
 
           {/* Reason for Change */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+            <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300 block">
               Why are you changing this score?
             </label>
             <input
@@ -398,13 +399,13 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="e.g., Rewatched season 2, loved the ending, lost interest..."
-              className="w-full h-11 px-3.5 rounded-xl bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#2C384D] text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] transition-colors"
+              className="w-full h-11 px-3.5 rounded-xs bg-white dark:bg-[#12171F] border-2 border-slate-300 dark:border-[#2C3545] text-xs font-mono font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-stone-400 outline-none focus:border-pink-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14] transition-colors"
             />
           </div>
 
           {/* Review & Thoughts */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+            <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300 block">
               Your Review & Thoughts
             </label>
             <textarea
@@ -412,43 +413,43 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
               value={review}
               onChange={(e) => setReview(e.target.value)}
               placeholder="Write your thoughts on the story, characters, acting..."
-              className="w-full p-3 rounded-xl bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#2C384D] text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#40bcf4] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] transition-colors resize-none"
+              className="w-full p-3 rounded-xs bg-white dark:bg-[#12171F] border-2 border-slate-300 dark:border-[#2C3545] text-xs font-mono font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-stone-400 outline-none focus:border-pink-500 shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14] transition-colors resize-none"
             />
           </div>
 
           {/* Past Score Changes */}
           <div className="space-y-2 pt-1">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <Clock size={13} className="text-[#0284c7] dark:text-[#40bcf4]" />
+              <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-stone-300 flex items-center gap-1.5">
+                <Clock size={13} className="text-pink-600 dark:text-pink-400" />
                 <span>Past Score Changes ({history.length})</span>
               </label>
-              <span className="text-[10px] font-mono text-slate-400 font-semibold uppercase">
+              <span className="text-[10px] font-mono text-slate-400 dark:text-stone-400 font-semibold uppercase">
                 History
               </span>
             </div>
 
             <div className="space-y-1.5 max-h-36 overflow-y-auto no-scrollbar">
               {history.length === 0 ? (
-                <div className="p-3 rounded-xl bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#2C384D] text-center shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520]">
-                  <p className="text-xs text-slate-400 dark:text-slate-500 italic">No past changes logged yet.</p>
+                <div className="p-3 rounded-xs bg-white dark:bg-[#12171F] border-2 border-slate-300 dark:border-[#2C3545] text-center shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14]">
+                  <p className="text-xs font-mono text-slate-400 dark:text-stone-400 italic">No past changes logged yet.</p>
                 </div>
               ) : (
                 history.map((entry, idx) => (
                   <div
                     key={idx}
-                    className="p-2.5 rounded-xl bg-white dark:bg-[#141C28] border-2 border-slate-300 dark:border-[#2C384D] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0F1520] flex items-center justify-between gap-3 text-xs"
+                    className="p-2.5 rounded-xs bg-white dark:bg-[#12171F] border-2 border-slate-300 dark:border-[#2C3545] shadow-[0_2px_0_0_#CBD5E1] dark:shadow-[0_2px_0_0_#0B0E14] flex items-center justify-between gap-3 text-xs"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="font-mono font-black text-[#0284c7] dark:text-[#40bcf4] text-xs px-2 py-0.5 rounded bg-[#40bcf4]/10 border border-[#40bcf4]/30 shrink-0">
+                      <span className="font-mono font-bold text-pink-600 dark:text-pink-400 text-xs px-2 py-0.5 rounded-2xs bg-pink-500/10 border border-pink-500/30 shrink-0">
                         {entry.score.toFixed(1)}
                       </span>
-                      <span className="text-slate-700 dark:text-slate-300 font-semibold truncate text-xs">
+                      <span className="text-slate-700 dark:text-stone-300 font-semibold truncate text-xs">
                         {entry.reason || 'Score updated'}
                       </span>
                     </div>
 
-                    <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                    <span className="text-[10px] font-mono text-slate-400 dark:text-stone-400 shrink-0">
                       {new Date(entry.changedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </span>
                   </div>
@@ -460,11 +461,11 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
         </form>
 
         {/* Footer Bar */}
-        <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-t-2 border-slate-300 dark:border-[#2C384D] bg-[#DEE5EF] dark:bg-[#171F2C] flex items-center justify-between gap-3 shrink-0 shadow-[0_-2px_6px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.25)] pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))] sm:pb-4">
+        <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-t-2 border-slate-200/90 dark:border-[#262E3B] bg-slate-50 dark:bg-[#12171F] flex items-center justify-between gap-3 shrink-0 shadow-[0_-2px_6px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.25)] pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))] sm:pb-4">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-xs text-xs font-mono font-bold text-slate-600 dark:text-stone-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -473,11 +474,11 @@ const ScoreHistoryModal = ({ item, isOpen, onClose, onUpdated }) => {
             type="button"
             onClick={handleSubmit}
             disabled={loading}
-            className="flex items-center gap-2 px-5 sm:px-6 py-2.5 rounded-lg bg-[#00e054] hover:bg-[#00c94b] text-[#14181C] text-xs font-black uppercase tracking-wider border border-[#00c94b] border-b-[3px] border-b-[#009e3a] active:border-b active:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-[0_4px_12px_rgba(0,224,84,0.3)]"
+            className="flex items-center gap-2 px-5 sm:px-6 py-2.5 rounded-xs bg-pink-500 hover:bg-pink-600 text-white text-xs font-mono font-bold uppercase tracking-wider border border-pink-600 border-b-[3px] border-b-pink-700 active:border-b active:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-[0_4px_12px_rgba(236,72,153,0.3)]"
           >
             {loading ? (
               <>
-                <Loader2 size={14} className="animate-spin text-[#14181C]" />
+                <Loader2 size={14} className="animate-spin text-white" />
                 <span>Saving...</span>
               </>
             ) : (
