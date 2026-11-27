@@ -4,19 +4,28 @@ import {
   Search,
   Mic,
   Lock,
-  ChevronDown,
   Check,
-  Calendar as CalendarIcon,
-  Clock,
   Sparkles,
   Loader2,
   RotateCcw,
-  CornerDownLeft,
   Activity,
+  Phone,
+  MessageSquare,
+  Mail,
+  Users,
 } from "lucide-react";
 import { Dialog, Transition } from "@headlessui/react";
 import { useApi } from "../../../../shared/hooks/useApi";
 import DateTimePicker from "./DateTimePicker";
+
+const CHANNELS = [
+  { id: "In-Person", label: "In-Person", icon: Users },
+  { id: "Call", label: "Call", icon: Phone },
+  { id: "WhatsApp", label: "WhatsApp", icon: MessageSquare },
+  { id: "Email", label: "Email", icon: Mail },
+];
+
+const TOPIC_TAGS = ["MF", "PMS", "AIF", "SIF", "Debt", "Tax Planning"];
 
 const InteractionModal = ({
   isOpen,
@@ -34,10 +43,6 @@ const InteractionModal = ({
   const [isRefining, setIsRefining] = useState(false);
   const [originalSummary, setOriginalSummary] = useState("");
   const dropdownRef = useRef(null);
-
-  // New States for Custom SaaS Dropdowns (Replacing Native UI)
-  const [isChannelOpen, setIsChannelOpen] = useState(false);
-  const channelRef = useRef(null);
 
   // Helper to get current local date and time in YYYY-MM-DDTHH:mm format
   const getNowLocal = () => {
@@ -125,17 +130,28 @@ const InteractionModal = ({
     }
   }, [isOpen, request, isClientLocked]);
 
-  // Combined Outside Click Handler for Custom Dropdowns
+  // Outside Click Handler for Client Search Dropdown
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target))
         setIsDropdownOpen(false);
-      if (channelRef.current && !channelRef.current.contains(e.target))
-        setIsChannelOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const setFollowUpPresetDays = (days) => {
+    const target = new Date();
+    target.setDate(target.getDate() + days);
+    target.setHours(11, 0, 0, 0);
+    const offset = target.getTimezoneOffset() * 60000;
+    const formatted = new Date(target.getTime() - offset).toISOString().slice(0, 16);
+    setFormData((prev) => ({
+      ...prev,
+      followUpRequired: true,
+      followUpDate: formatted,
+    }));
+  };
 
   const handleAiRefine = async () => {
     if (!formData.summary || formData.summary.trim().length < 5) return;
@@ -230,46 +246,51 @@ const InteractionModal = ({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-slate-900/60 dark:bg-[#0B1120]/80 backdrop-blur-sm transition-opacity" />
+          <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm transition-opacity" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-hidden">
           <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full">
             <Transition.Child
               as={Fragment}
-              enter="transform transition ease-in-out duration-500 sm:duration-500"
+              enter="transform transition ease-in-out duration-400"
               enterFrom="translate-x-full"
               enterTo="translate-x-0"
-              leave="transform transition ease-in-out duration-500 sm:duration-500"
+              leave="transform transition ease-in-out duration-300"
               leaveFrom="translate-x-0"
               leaveTo="translate-x-full"
             >
-              {/* ZERO SCROLL, FULL HEIGHT SAAS DRAWER */}
-              <Dialog.Panel className="pointer-events-auto w-screen lg:w-250 transform text-left align-middle transition-all bg-white dark:bg-[#0B1120] shadow-2xl border-l border-slate-200 dark:border-white/10 flex flex-col h-dvh">
-                {/* --- VIBRANT HEADER --- */}
-                <div
-                  className={`px-6 py-5 border-b border-slate-200 dark:border-white/10 flex justify-between items-center shrink-0 transition-colors duration-500 ${editingData ? "bg-amber-50 dark:bg-amber-950/30" : "bg-linear-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30"}`}
-                >
-                  <div className="flex items-center gap-4">
+              <Dialog.Panel className="pointer-events-auto w-screen lg:w-[940px] xl:w-[1020px] max-w-full transform text-left align-middle transition-all bg-white dark:bg-[#161B26] shadow-2xl border-l border-slate-200 dark:border-slate-800/80 flex flex-col h-dvh">
+                {/* --- CLEAN ENTERPRISE HEADER --- */}
+                <div className="px-6 py-4.5 border-b border-slate-200 dark:border-slate-800/80 bg-white dark:bg-[#161B26] flex justify-between items-center shrink-0">
+                  <div className="flex items-center gap-3.5">
                     <div
-                      className={`p-2.5 rounded-xl shadow-sm ${editingData ? "bg-amber-500 text-white" : "bg-emerald-500 text-white"}`}
+                      className={`p-2.5 rounded-md shadow-xs border ${
+                        editingData
+                          ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25"
+                          : "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/25"
+                      }`}
                     >
-                      <Activity size={22} strokeWidth={2.5} />
+                      <Activity size={20} strokeWidth={2.25} />
                     </div>
                     <div>
-                      <div className="flex items-center gap-3">
-                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <h2 className="sora-font text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
                           {editingData
                             ? "Modify Interaction"
                             : "Log Interaction"}
                         </h2>
                         <span
-                          className={`text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-widest ${editingData ? "bg-amber-200 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300" : "bg-emerald-200 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300"}`}
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider border ${
+                            editingData
+                              ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25"
+                              : "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/25"
+                          }`}
                         >
                           {editingData ? "Revision Mode" : "New Entry"}
                         </span>
                       </div>
-                      <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
                         Client Intelligence & Action Mapping
                       </p>
                     </div>
@@ -277,13 +298,13 @@ const InteractionModal = ({
                   <button
                     type="button"
                     onClick={resetAndClose}
-                    className="group flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                    className="group flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#1C2230] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sky-500 cursor-pointer"
                   >
-                    <kbd className="hidden sm:inline-flex items-center justify-center px-1.5 py-0.5 border border-slate-200 dark:border-slate-700 rounded text-[10px] font-bold text-slate-400 bg-slate-50 dark:bg-slate-900 shadow-sm">
+                    <kbd className="hidden sm:inline-flex items-center justify-center px-1.5 py-0.5 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] font-mono font-semibold text-slate-400 bg-slate-50 dark:bg-[#131720]">
                       ESC
                     </kbd>
                     <X
-                      size={24}
+                      size={20}
                       className="text-slate-400 group-hover:text-slate-700 dark:group-hover:text-white transition-colors"
                     />
                   </button>
@@ -294,235 +315,282 @@ const InteractionModal = ({
                   onSubmit={handleSubmit}
                   className="flex flex-col flex-1 overflow-hidden"
                 >
-                  <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden bg-slate-50/30 dark:bg-[#0B1120]">
+                  <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden bg-[#F6F8FB] dark:bg-[#131720]">
                     {/* LEFT COLUMN: Metadata & Configuration */}
-                    <div className="w-full lg:w-105 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-900/20 p-6 sm:p-8 flex flex-col gap-8 lg:overflow-y-auto custom-scrollbar relative">
-                      {/* CSS Relational Focus Magic Wrapper */}
-                      <div className="flex flex-col gap-6 [&_.form-field:focus-within+.form-field_.tab-hint]:opacity-100 [&_.form-field:focus-within+.form-field_.tab-hint]:translate-y-0">
-                        {/* Client Search */}
-                        <div className="form-field relative" ref={dropdownRef}>
-                          <label className="flex items-center justify-between text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3">
-                            <span>Client</span>
-                            <Lock
-                              size={12}
-                              className={
-                                isClientLocked ? "text-amber-500" : "opacity-0"
-                              }
-                            />
-                          </label>
-                          <div className="relative group">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-                              {isClientLocked ? (
-                                <Lock size={16} />
-                              ) : (
-                                <Search size={16} />
-                              )}
-                            </div>
-                            <input
-                              type="text"
-                              disabled={isClientLocked}
-                              className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:border-indigo-500 dark:focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all disabled:opacity-60 font-bold text-slate-900 dark:text-white shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                              placeholder="Search by name or PAN..."
-                              value={searchTerm}
-                              onChange={(e) => {
-                                setSearchTerm(e.target.value);
+                    <div className="w-full lg:w-[400px] shrink-0 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800/80 bg-slate-50/70 dark:bg-[#161B26]/60 p-5 sm:p-6 flex flex-col gap-5 lg:overflow-y-auto custom-scrollbar relative">
+                      {/* Client Search */}
+                      <div className="relative" ref={dropdownRef}>
+                        <label className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                          <span>
+                            Client <span className="text-rose-500">*</span>
+                          </span>
+                          {isClientLocked && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-400 normal-case tracking-normal">
+                              <Lock size={11} className="text-sky-500" /> Locked
+                            </span>
+                          )}
+                        </label>
+                        <div className="relative group">
+                          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors">
+                            {isClientLocked ? (
+                              <Lock size={15} />
+                            ) : (
+                              <Search size={15} />
+                            )}
+                          </div>
+                          <input
+                            type="text"
+                            disabled={isClientLocked}
+                            onFocus={() => {
+                              if (!isClientLocked) setIsDropdownOpen(true);
+                            }}
+                            className="w-full h-11 pl-10 pr-9 bg-white dark:bg-[#131720] border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:border-sky-500 dark:focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15 outline-none transition-all disabled:opacity-65 font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                            placeholder="Search by name or PAN..."
+                            value={searchTerm}
+                            onChange={(e) => {
+                              setSearchTerm(e.target.value);
+                              setFormData((prev) => ({
+                                ...prev,
+                                client: "",
+                                clientName: "",
+                              }));
+                              setIsDropdownOpen(true);
+                            }}
+                            required
+                          />
+                          {!isClientLocked && searchTerm && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSearchTerm("");
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  client: "",
+                                  clientName: "",
+                                }));
                                 setIsDropdownOpen(true);
                               }}
-                              required
-                            />
-                          </div>
-
-                          {/* Custom Dropdown List */}
-                          {!isClientLocked &&
-                            isDropdownOpen &&
-                            searchTerm.length > 0 && (
-                              <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl max-h-60 overflow-y-auto custom-scrollbar">
-                                {filteredClients.length > 0 ? (
-                                  filteredClients.map((c) => (
-                                    <div
-                                      key={c._id}
-                                      onClick={() => {
-                                        setFormData({
-                                          ...formData,
-                                          client: c._id,
-                                          clientName: c.name,
-                                        });
-                                        setSearchTerm(c.name);
-                                        setIsDropdownOpen(false);
-                                      }}
-                                      className="px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 cursor-pointer border-b border-slate-50 dark:border-slate-800/50 last:border-0 transition-colors"
-                                    >
-                                      <p className="text-sm font-bold text-slate-900 dark:text-white">
-                                        {c.name}
-                                      </p>
-                                      <p className="text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase mt-0.5">
-                                        {c.pan}
-                                      </p>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="px-4 py-6 text-center text-sm font-bold text-slate-400">
-                                    No clients found.
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                        </div>
-
-                        {/* Date & Time */}
-                        <div className="form-field relative">
-                          <div className="flex items-center justify-between mb-3">
-                            <label className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                              Interaction Time
-                            </label>
-                            <span className="tab-hint opacity-0 translate-y-1 transition-all duration-300 inline-flex items-center gap-1.5 px-2 py-0.5 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-[9px] font-bold rounded">
-                              Tab <CornerDownLeft size={10} />
-                            </span>
-                          </div>
-                          <DateTimePicker
-                            value={formData.date}
-                            onChange={(newDate) =>
-                              setFormData({ ...formData, date: newDate })
-                            }
-                          />
-                        </div>
-
-                        {/* Channel (Custom Dropdown replacing Native Select) */}
-                        <div className="form-field relative" ref={channelRef}>
-                          <div className="flex items-center justify-between mb-3">
-                            <label className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                              Channel
-                            </label>
-                            <span className="tab-hint opacity-0 translate-y-1 transition-all duration-300 inline-flex items-center gap-1.5 px-2 py-0.5 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-[9px] font-bold rounded">
-                              Tab <CornerDownLeft size={10} />
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setIsChannelOpen(!isChannelOpen)}
-                            className={`w-full flex items-center justify-between pl-4 pr-4 py-3.5 bg-white dark:bg-slate-900 border ${isChannelOpen ? "border-indigo-500 ring-4 ring-indigo-500/10" : "border-slate-200 dark:border-white/10"} rounded-xl text-sm outline-none transition-all font-bold text-slate-900 dark:text-white shadow-sm`}
-                          >
-                            <span>{formData.type}</span>
-                            <ChevronDown
-                              size={16}
-                              className={`text-slate-400 transition-transform duration-300 ${isChannelOpen ? "rotate-180 text-indigo-500" : ""}`}
-                            />
-                          </button>
-
-                          {/* Custom Options */}
-                          {isChannelOpen && (
-                            <div className="absolute z-40 w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                              {["In-Person", "Call", "WhatsApp", "Email"].map(
-                                (t) => (
-                                  <div
-                                    key={t}
-                                    onClick={() => {
-                                      setFormData({ ...formData, type: t });
-                                      setIsChannelOpen(false);
-                                    }}
-                                    className="px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-300 cursor-pointer transition-colors"
-                                  >
-                                    {t}
-                                  </div>
-                                ),
-                              )}
-                            </div>
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                              title="Clear client"
+                            >
+                              <X size={14} />
+                            </button>
                           )}
                         </div>
 
-                        {/* Follow Up Requirement */}
-                        <div className="form-field relative">
-                          <div className="flex items-center justify-between mb-3">
-                            <label className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                              Follow-Up Required
-                            </label>
-                            <span className="tab-hint opacity-0 translate-y-1 transition-all duration-300 inline-flex items-center gap-1.5 px-2 py-0.5 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-[9px] font-bold rounded">
-                              Tab <CornerDownLeft size={10} />
-                            </span>
+                        {/* Custom Dropdown List */}
+                        {!isClientLocked && isDropdownOpen && (
+                          <div className="absolute z-50 w-full mt-1.5 bg-white dark:bg-[#1C2230] border border-slate-200 dark:border-slate-800 rounded-lg shadow-2xl max-h-60 overflow-y-auto custom-scrollbar">
+                            {filteredClients.length > 0 ? (
+                              filteredClients.slice(0, 30).map((c) => (
+                                <div
+                                  key={c._id}
+                                  onClick={() => {
+                                    setFormData({
+                                      ...formData,
+                                      client: c._id,
+                                      clientName: c.name,
+                                    });
+                                    setSearchTerm(c.name);
+                                    setIsDropdownOpen(false);
+                                  }}
+                                  className={`px-3.5 py-2.5 hover:bg-sky-50 dark:hover:bg-sky-500/10 cursor-pointer border-b border-slate-100 dark:border-slate-800/70 last:border-0 transition-colors flex items-center justify-between gap-2 ${
+                                    formData.client === c._id
+                                      ? "bg-sky-50/80 dark:bg-sky-500/10"
+                                      : ""
+                                  }`}
+                                >
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                                      {c.name}
+                                    </p>
+                                    <p className="text-[10px] font-mono font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase mt-0.5">
+                                      {c.pan || "NO PAN"}
+                                    </p>
+                                  </div>
+                                  {formData.client === c._id && (
+                                    <Check
+                                      size={14}
+                                      className="text-sky-600 dark:text-sky-400 shrink-0"
+                                    />
+                                  )}
+                                </div>
+                              ))
+                            ) : (
+                              <div className="px-4 py-5 text-center text-xs font-semibold text-slate-400">
+                                No matching clients found.
+                              </div>
+                            )}
                           </div>
+                        )}
+                      </div>
 
-                          {/* SaaS Custom Toggle & Date Container */}
-                          <div
-                            className={`flex flex-col sm:flex-row sm:items-center gap-3 p-1.5 rounded-2xl border transition-all ${formData.followUpRequired ? "bg-indigo-50/50 dark:bg-indigo-900/10 border-indigo-200 dark:border-indigo-500/30" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 shadow-sm"}`}
-                          >
-                            {/* The Pill Toggle */}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setFormData({
-                                  ...formData,
-                                  followUpRequired: !formData.followUpRequired,
-                                })
-                              }
-                              className={`relative w-16 h-8 rounded-full transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 shrink-0 ${formData.followUpRequired ? "bg-indigo-600" : "bg-slate-200 dark:bg-slate-700"}`}
-                            >
-                              <div
-                                className={`absolute top-1 bottom-1 w-6 bg-white rounded-full shadow-sm transition-transform duration-300 ${formData.followUpRequired ? "left-9" : "left-1"}`}
-                              />
-                            </button>
+                      {/* Date & Time */}
+                      <div className="relative">
+                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                          Interaction Time{" "}
+                          <span className="text-rose-500">*</span>
+                        </label>
+                        <DateTimePicker
+                          value={formData.date}
+                          onChange={(newDate) =>
+                            setFormData({ ...formData, date: newDate })
+                          }
+                        />
+                      </div>
 
-                            {/* The Custom Date Picker (Replacing Native Input) */}
-                            <div
-                              className={`flex-1 transition-all duration-300 ${formData.followUpRequired ? "opacity-100 pointer-events-auto" : "opacity-40 pointer-events-none"}`}
-                            >
-                              <DateTimePicker
-                                value={formData.followUpDate || getNowLocal()}
-                                onChange={(newDate) =>
-                                  setFormData({
-                                    ...formData,
-                                    followUpDate: newDate,
-                                  })
+                      {/* Channel (1-Click Segmented Grid) */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                          Channel
+                        </label>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2">
+                          {CHANNELS.map(({ id, label, icon: Icon }) => {
+                            const isActive = formData.type === id;
+                            return (
+                              <button
+                                key={id}
+                                type="button"
+                                onClick={() =>
+                                  setFormData({ ...formData, type: id })
                                 }
-                              />
-                            </div>
-                          </div>
+                                className={`flex items-center justify-center gap-2 h-10 px-3 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                                  isActive
+                                    ? "bg-sky-600 text-white border-sky-600 shadow-sm"
+                                    : "bg-white dark:bg-[#131720] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-sky-400/60 hover:text-sky-600 dark:hover:text-sky-400"
+                                }`}
+                              >
+                                <Icon size={14} />
+                                <span>{label}</span>
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 
                       {/* Focus Topics (Pills) */}
-                      <div className="mt-4">
-                        <label className="flex items-center gap-2 text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4">
-                          <Sparkles size={14} className="text-amber-500" />{" "}
+                      <div>
+                        <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                          <Sparkles size={13} className="text-sky-500" />
                           Topic Tags
                         </label>
-                        <div className="flex flex-wrap gap-2.5">
-                          {[
-                            "MF",
-                            "PMS",
-                            "AIF",
-                            "SIF",
-                            "Debt",
-                            "Tax Planning",
-                          ].map((point) => (
-                            <button
-                              key={point}
-                              type="button"
-                              onClick={() => toggleDiscussionPoint(point)}
-                              className={`px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                                formData.discussionPoints.includes(point)
-                                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20 border border-indigo-600"
-                                  : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-indigo-300 dark:hover:border-indigo-500/50"
-                              }`}
-                            >
-                              {point}
-                            </button>
-                          ))}
+                        <div className="flex flex-wrap gap-2">
+                          {TOPIC_TAGS.map((point) => {
+                            const isSelected =
+                              formData.discussionPoints.includes(point);
+                            return (
+                              <button
+                                key={point}
+                                type="button"
+                                onClick={() => toggleDiscussionPoint(point)}
+                                className={`px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-sky-500 cursor-pointer border ${
+                                  isSelected
+                                    ? "bg-sky-600 text-white shadow-sm border-sky-600"
+                                    : "bg-white dark:bg-[#131720] border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-sky-400/60 hover:text-sky-600 dark:hover:text-sky-300"
+                                }`}
+                              >
+                                {point}
+                              </button>
+                            );
+                          })}
                         </div>
+                      </div>
+
+                      {/* Follow Up Requirement */}
+                      <div
+                        className={`p-3.5 rounded-lg border transition-all ${
+                          formData.followUpRequired
+                            ? "bg-sky-500/[0.06] dark:bg-sky-500/[0.08] border-sky-500/30"
+                            : "bg-white dark:bg-[#131720] border-slate-200 dark:border-slate-800"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <span className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                              Follow-Up Required
+                            </span>
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                              Schedule a reminder date
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={formData.followUpRequired}
+                            onClick={() =>
+                              setFormData({
+                                ...formData,
+                                followUpRequired: !formData.followUpRequired,
+                              })
+                            }
+                            className={`relative w-12 h-6.5 rounded-full transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-sky-500 shrink-0 cursor-pointer ${
+                              formData.followUpRequired
+                                ? "bg-sky-600"
+                                : "bg-slate-200 dark:bg-slate-700"
+                            }`}
+                          >
+                            <div
+                              className={`absolute top-0.5 w-5.5 h-5.5 bg-white rounded-full shadow-sm transition-transform duration-200 ${
+                                formData.followUpRequired
+                                  ? "translate-x-6"
+                                  : "translate-x-0.5"
+                              }`}
+                            />
+                          </button>
+                        </div>
+
+                        {formData.followUpRequired && (
+                          <div className="mt-3 pt-3 border-t border-sky-500/20 space-y-2.5 animate-in fade-in duration-200">
+                            <DateTimePicker
+                              value={formData.followUpDate || getNowLocal()}
+                              onChange={(newDate) =>
+                                setFormData({
+                                  ...formData,
+                                  followUpDate: newDate,
+                                })
+                              }
+                            />
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {[
+                                { label: "+3 Days", days: 3 },
+                                { label: "+1 Week", days: 7 },
+                                { label: "+1 Month", days: 30 },
+                              ].map((preset) => (
+                                <button
+                                  key={preset.label}
+                                  type="button"
+                                  onClick={() =>
+                                    setFollowUpPresetDays(preset.days)
+                                  }
+                                  className="px-2 py-1 rounded-md text-[10px] font-mono font-semibold bg-white dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-400 transition-colors cursor-pointer"
+                                >
+                                  {preset.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     {/* RIGHT COLUMN: The Summary Engine */}
-                    <div className="flex-1 bg-white dark:bg-[#0B1120] p-6 sm:p-8 flex flex-col relative">
-                      <label className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <Mic size={14} className="text-indigo-500" />
-                        Executive Summary & Notes
-                      </label>
+                    <div className="flex-1 bg-white dark:bg-[#161B26] p-5 sm:p-6 flex flex-col">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                          <Mic size={13} className="text-sky-500" />
+                          Executive Summary & Notes{" "}
+                          <span className="text-rose-500">*</span>
+                        </label>
+                        <span className="text-[11px] font-mono text-slate-400">
+                          {formData.summary.length} chars
+                        </span>
+                      </div>
 
-                      {/* Deep Focus Textarea */}
-                      <div className="relative flex-1 flex flex-col group rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/50 focus-within:border-indigo-500 dark:focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 focus-within:bg-white dark:focus-within:bg-[#0B1120] transition-all shadow-sm">
+                      {/* Integrated Focus Textarea + Bottom Toolbar */}
+                      <div className="flex-1 flex flex-col rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#131720] focus-within:border-sky-500 dark:focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/15 focus-within:bg-white dark:focus-within:bg-[#131720] transition-all overflow-hidden">
                         <textarea
                           required
-                          className="w-full h-full min-h-75 p-6 bg-transparent text-sm text-slate-900 dark:text-white outline-none leading-relaxed placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-none font-medium custom-scrollbar"
+                          className="w-full flex-1 min-h-60 p-4 sm:p-5 bg-transparent text-sm text-slate-900 dark:text-white outline-none leading-relaxed placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-none font-normal custom-scrollbar"
                           placeholder="Detail the key takeaways, client sentiment, and required follow-up actions..."
                           value={formData.summary}
                           onChange={(e) =>
@@ -533,29 +601,36 @@ const InteractionModal = ({
                           }
                         />
 
-                        {/* Floating Command Bar inside the Textarea */}
-                        <div className="absolute bottom-4 right-4 left-4 flex justify-end items-center gap-3 z-10 pointer-events-none">
-                          {originalSummary && !isRefining && (
-                            <button
-                              type="button"
-                              onClick={handleUndoRefinement}
-                              className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 transition-all shadow-lg tracking-widest active:translate-y-px"
-                            >
-                              <RotateCcw size={14} /> Revert AI
-                            </button>
-                          )}
+                        {/* Integrated Bottom Command Bar */}
+                        <div className="px-3.5 py-2.5 border-t border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-[#1C2230]/70 flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-[11px] text-slate-400 hidden sm:inline">
+                            Use Voice Dictation or AI Polish to structure notes
+                          </span>
+                          <div className="flex items-center gap-2 ml-auto">
+                            {originalSummary && !isRefining && (
+                              <button
+                                type="button"
+                                onClick={handleUndoRefinement}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wider bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                              >
+                                <RotateCcw size={13} /> Revert AI
+                              </button>
+                            )}
 
-                          <div className="pointer-events-auto flex bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden p-1 gap-1">
                             <button
                               type="button"
                               onClick={handleAiRefine}
-                              disabled={isRefining || !formData.summary}
-                              className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[10px] font-black uppercase bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-all disabled:opacity-40 tracking-widest active:translate-y-px"
+                              disabled={
+                                isRefining ||
+                                !formData.summary ||
+                                formData.summary.trim().length < 5
+                              }
+                              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wider bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 hover:bg-sky-500/20 transition-all disabled:opacity-40 cursor-pointer"
                             >
                               {isRefining ? (
-                                <Loader2 size={14} className="animate-spin" />
+                                <Loader2 size={13} className="animate-spin" />
                               ) : (
-                                <Sparkles size={14} />
+                                <Sparkles size={13} />
                               )}
                               {isRefining ? "Polishing..." : "Refine Notes"}
                             </button>
@@ -563,13 +638,13 @@ const InteractionModal = ({
                             <button
                               type="button"
                               onClick={handleVoiceInput}
-                              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all active:translate-y-px ${
+                              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer border ${
                                 isListening
-                                  ? "bg-rose-500 text-white animate-pulse shadow-md shadow-rose-500/20"
-                                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                  ? "bg-rose-500 text-white border-rose-500 animate-pulse shadow-sm"
+                                  : "bg-slate-100 dark:bg-[#131720] border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
                               }`}
                             >
-                              <Mic size={14} />{" "}
+                              <Mic size={13} />
                               {isListening ? "Recording" : "Dictate"}
                             </button>
                           </div>
@@ -579,41 +654,39 @@ const InteractionModal = ({
                   </div>
 
                   {/* --- STICKY FOOTER COMMAND BAR --- */}
-                  <div className="px-6 py-5 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1120] shrink-0 flex flex-col sm:flex-row justify-between items-center gap-4 z-20 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)]">
-                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 hidden sm:block">
-                      Fields marked with an asterisk are mandatory.
+                  <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800/80 bg-white dark:bg-[#161B26] shrink-0 flex flex-col sm:flex-row justify-between items-center gap-3 z-20">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 hidden sm:block">
+                      Fields marked with <span className="text-rose-500">*</span>{" "}
+                      are mandatory.
                     </p>
                     <div className="flex w-full sm:w-auto items-center gap-3">
                       <button
                         type="button"
                         onClick={resetAndClose}
-                        className="w-full sm:w-auto px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors outline-none"
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1C2230] transition-colors outline-none cursor-pointer"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={loading || !formData.client || isRefining}
-                        className={`group w-full sm:w-auto px-10 py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/30 ${
+                        className={`w-full sm:w-auto px-7 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                           editingData
-                            ? "bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20 active:translate-y-px disabled:opacity-50"
-                            : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 active:translate-y-px disabled:opacity-50"
+                            ? "bg-amber-500 hover:bg-amber-600 text-white shadow-sm"
+                            : "bg-sky-600 hover:bg-sky-500 text-white shadow-sm"
                         }`}
                       >
                         {loading ? (
-                          <>Processing...</>
+                          <>
+                            <Loader2 size={15} className="animate-spin" />
+                            <span>Processing...</span>
+                          </>
                         ) : (
                           <>
-                            {editingData ? "Update Record" : "Commit Entry"}
-                            <Check
-                              size={18}
-                              strokeWidth={3}
-                              className={
-                                !loading && formData.client
-                                  ? "text-white/80"
-                                  : ""
-                              }
-                            />
+                            <span>
+                              {editingData ? "Update Record" : "Commit Entry"}
+                            </span>
+                            <Check size={16} strokeWidth={2.5} />
                           </>
                         )}
                       </button>

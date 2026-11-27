@@ -22,6 +22,9 @@ const Home = () => {
   const [isInteractionOpen, setIsInteractionOpen] = useState(false);
   const [isSubmissionOpen, setIsSubmissionOpen] = useState(false);
   const [isTaskOpen, setIsTaskOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const triggerRefresh = () => setRefreshKey((k) => k + 1);
 
   return (
     <>
@@ -39,22 +42,22 @@ const Home = () => {
         }
       >
         {/* KPI METRICS (Full Width) */}
-        <section className="w-full mb-12 sm:mb-16">
-          <StatCards />
+        <section className="w-full mb-8 sm:mb-10">
+          <StatCards refreshKey={refreshKey} />
         </section>
 
         {/* FLUID TWO-COLUMN LAYOUT */}
-        <div className="flex flex-col xl:flex-row gap-10 xl:gap-16 items-start">
+        <div className="flex flex-col xl:flex-row gap-8 xl:gap-10 items-start">
           {/* LEFT COLUMN: CORE OPERATIONS (~65%) */}
-          <div className="flex-1 w-full min-w-0 flex flex-col gap-12 sm:gap-16">
+          <div className="flex-1 w-full min-w-0 flex flex-col gap-8 sm:gap-10">
             {/* Quick Actions */}
             <div className="w-full">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="flex items-center justify-center w-8 h-8 rounded-md bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0">
-                  <Zap size={16} strokeWidth={2.5} />
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center justify-center w-8 h-8 rounded-md bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400 shrink-0">
+                  <Zap size={16} strokeWidth={2.25} />
                 </div>
                 <div>
-                  <h2 className="text-[13px] font-bold uppercase tracking-widest text-slate-900 dark:text-white leading-none">
+                  <h2 className="sora-font text-[13px] font-bold uppercase tracking-widest text-slate-900 dark:text-white leading-none">
                     Quick Actions
                   </h2>
                 </div>
@@ -71,65 +74,61 @@ const Home = () => {
 
             {/* Activity Feed */}
             <div className="w-full flex flex-col">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="flex items-center justify-center w-8 h-8 rounded-md bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
-                  <Activity size={16} strokeWidth={2.5} />
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center justify-center w-8 h-8 rounded-md bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400 shrink-0">
+                  <Activity size={16} strokeWidth={2.25} />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-[13px] font-bold uppercase tracking-widest text-slate-900 dark:text-white leading-none truncate">
+                  <h2 className="sora-font text-[13px] font-bold uppercase tracking-widest text-slate-900 dark:text-white leading-none truncate">
                     Global Activity Log
                   </h2>
-                  <p className="text-[11px] font-medium text-slate-500 mt-1.5 truncate">
+                  <p className="text-[11px] font-medium text-slate-500 mt-1 truncate">
                     Real-time chronological feed of all client interactions
                   </p>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-[#1B202C] border border-slate-200/90 dark:border-white/[0.08] rounded-2xl p-4 sm:p-6 lg:p-8 min-h-125">
-                <InteractionTimeline />
+              <div className="bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg p-4 sm:p-6 min-h-96 shadow-xs">
+                <InteractionTimeline refreshKey={refreshKey} />
               </div>
             </div>
           </div>
 
           {/* RIGHT COLUMN: INTELLIGENCE RAIL (~35%) */}
-          <aside className="w-full xl:w-105 2xl:w-115 shrink-0 flex flex-col gap-10">
+          <aside className="w-full xl:w-96 2xl:w-[420px] shrink-0 flex flex-col gap-8">
             <div className="w-full">
               <TallyPulse />
             </div>
 
-            <hr className="border-slate-200 dark:border-white/10" />
-
-            <div className="w-full flex flex-col gap-6">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex items-center justify-center w-8 h-8 rounded-md bg-amber-100 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
-                  <Compass size={16} strokeWidth={2.5} />
+            <div className="w-full flex flex-col gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-8 h-8 rounded-md bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400 shrink-0">
+                  <Compass size={16} strokeWidth={2.25} />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-[13px] font-bold uppercase tracking-widest text-slate-900 dark:text-white leading-none truncate">
+                  <h2 className="sora-font text-[13px] font-bold uppercase tracking-widest text-slate-900 dark:text-white leading-none truncate">
                     Actionable Intelligence
                   </h2>
                 </div>
               </div>
 
-              <FollowUpWidget />
+              <FollowUpWidget refreshKey={refreshKey} />
               <DormancyWidget />
             </div>
 
-            <hr className="border-slate-200 dark:border-white/10" />
-
-            <div className="w-full flex flex-col gap-6">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex items-center justify-center w-8 h-8 rounded-md bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
-                  <Layers size={16} strokeWidth={2.5} />
+            <div className="w-full flex flex-col gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-8 h-8 rounded-md bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400 shrink-0">
+                  <Layers size={16} strokeWidth={2.25} />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-[13px] font-bold uppercase tracking-widest text-slate-900 dark:text-white leading-none truncate">
+                  <h2 className="sora-font text-[13px] font-bold uppercase tracking-widest text-slate-900 dark:text-white leading-none truncate">
                     Active Operations
                   </h2>
                 </div>
               </div>
 
-              <ActiveTasksWidget />
+              <ActiveTasksWidget refreshKey={refreshKey} />
             </div>
           </aside>
         </div>
@@ -152,19 +151,20 @@ const Home = () => {
         key={selectedClient?._id || "new-interaction"}
         isOpen={isInteractionOpen}
         onClose={() => setIsInteractionOpen(false)}
+        onRefresh={triggerRefresh}
         initialClient={selectedClient}
       />
 
       <NewSubmission
         isOpen={isSubmissionOpen}
         onClose={() => setIsSubmissionOpen(false)}
-        onCreated={() => {}}
+        onCreated={triggerRefresh}
       />
 
       <NewTicketPanel
         isOpen={isTaskOpen}
         onClose={() => setIsTaskOpen(false)}
-        onCreated={() => {}}
+        onCreated={triggerRefresh}
       />
     </>
   );

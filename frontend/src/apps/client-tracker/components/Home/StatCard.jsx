@@ -1,30 +1,47 @@
 import React from 'react';
+import { ArrowUpRight } from 'lucide-react';
 
-const StatCard = ({ title, value, icon, theme }) => {
+const StatCard = ({ title, value, subtitle, icon, onClick }) => {
+  const Tag = onClick ? 'button' : 'div';
+
   return (
-    <div className="relative overflow-hidden flex flex-col p-4 sm:p-5 lg:p-6 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl hover:border-slate-300 dark:hover:border-white/20 hover:shadow-lg transition-all duration-300 group cursor-default">
-
-      {/* AMBIENT HOVER GLOW */}
-      <div className={`absolute -right-12 -top-12 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ${theme.glow}`} />
-
-      {/* HEADER: Icon */}
-      <div className="relative flex items-center justify-between mb-4 sm:mb-8">
-        <div className={`flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl border group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300 shadow-sm ${theme.bg} ${theme.border} ${theme.text}`}>
-          {React.cloneElement(icon, { size: 20, strokeWidth: 2.5 })}
+    <Tag
+      type={onClick ? 'button' : undefined}
+      onClick={onClick}
+      className={`relative overflow-hidden flex flex-col p-4 sm:p-5 bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg transition-all duration-200 group text-left w-full min-w-0 ${
+        onClick
+          ? 'hover:border-sky-500/50 dark:hover:border-sky-500/40 hover:shadow-md cursor-pointer'
+          : 'cursor-default'
+      }`}
+    >
+      {/* HEADER: Icon & Optional Arrow */}
+      <div className="relative flex items-center justify-between mb-3 sm:mb-4">
+        <div className="flex items-center justify-center w-9 h-9 rounded-md bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400 group-hover:scale-105 transition-transform duration-200">
+          {React.cloneElement(icon, { size: 18, strokeWidth: 2.25 })}
         </div>
+        {onClick && (
+          <ArrowUpRight
+            size={15}
+            className="text-slate-300 dark:text-slate-600 group-hover:text-sky-500 transition-colors"
+          />
+        )}
       </div>
 
       {/* DATA: Value & Label */}
       <div className="relative flex flex-col min-w-0 mt-auto">
-        <h3 className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1 truncate">
+        <h3 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1 truncate">
           {title}
         </h3>
-        <p className="text-2xl sm:text-3xl lg:text-4xl font-[1000] text-slate-900 dark:text-white tracking-tight truncate">
+        <p className="font-mono text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight truncate group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
           {value}
         </p>
+        {subtitle && (
+          <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 mt-1 truncate">
+            {subtitle}
+          </span>
+        )}
       </div>
-
-    </div>
+    </Tag>
   );
 };
 

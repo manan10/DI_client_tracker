@@ -56,12 +56,12 @@ const BankDropzoneCard = ({
   return (
     <div
       {...getRootProps()}
-      className={`relative flex flex-col p-4 rounded-xl border transition-all duration-200 cursor-pointer group outline-none overflow-hidden ${
+      className={`relative flex flex-col p-4 rounded-lg border transition-all duration-200 cursor-pointer group outline-none overflow-hidden ${
         isDragActive
-          ? "border-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/15 ring-2 ring-emerald-500/40 scale-[1.01] shadow-md"
+          ? "border-sky-500 bg-sky-500/10 dark:bg-sky-500/15 ring-2 ring-sky-500/40 scale-[1.01] shadow-md"
           : hasFiles
-            ? "border-emerald-500/40 dark:border-emerald-500/30 bg-white dark:bg-slate-900/80 shadow-xs hover:border-emerald-500/60"
-            : "border-slate-200/80 dark:border-white/10 bg-white dark:bg-slate-900/50 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
+            ? "border-emerald-500/40 dark:border-emerald-500/30 bg-white dark:bg-[#161B26] shadow-xs hover:border-emerald-500/60"
+            : "border-slate-200 dark:border-slate-800/80 bg-white dark:bg-[#161B26] hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-[#1C2230]"
       } ${disabled ? "opacity-50 pointer-events-none" : ""}`}
     >
       <input {...getInputProps()} />
@@ -70,10 +70,12 @@ const BankDropzoneCard = ({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div
-            className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-              hasFiles || isDragActive
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-white"
+            className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+              isDragActive
+                ? "bg-sky-600 text-white shadow-xs"
+                : hasFiles
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "bg-slate-100 dark:bg-[#1C2230] text-slate-500 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-white"
             }`}
           >
             <Landmark size={17} />
@@ -81,7 +83,7 @@ const BankDropzoneCard = ({
 
           <div className="flex flex-col min-w-0">
             <h4
-              className={`text-xs font-black uppercase tracking-tight truncate ${
+              className={`sora-font text-xs font-bold tracking-tight truncate ${
                 hasFiles
                   ? "text-emerald-700 dark:text-emerald-300"
                   : "text-slate-800 dark:text-slate-200"
@@ -89,7 +91,7 @@ const BankDropzoneCard = ({
             >
               {ledger.name}
             </h4>
-            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
               {ledger.group}
             </span>
           </div>
@@ -98,7 +100,7 @@ const BankDropzoneCard = ({
         {/* Upload Status Badge */}
         <div className="shrink-0 flex items-center gap-1.5">
           {hasFiles ? (
-            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider border border-emerald-500/30 flex items-center gap-1">
+            <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider border border-emerald-500/30 flex items-center gap-1">
               <Check size={11} strokeWidth={3} /> {stagedFiles.length}{" "}
               {stagedFiles.length === 1 ? "File" : "Files"}
             </span>
@@ -106,8 +108,8 @@ const BankDropzoneCard = ({
             <div
               className={`w-7 h-7 rounded-md flex items-center justify-center border transition-all ${
                 isDragActive
-                  ? "bg-emerald-500 border-emerald-500 text-white animate-bounce"
-                  : "bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-white/10 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400"
+                  ? "bg-sky-500 border-sky-500 text-white animate-bounce"
+                  : "bg-slate-50 dark:bg-[#1C2230] border-slate-200 dark:border-slate-700/80 text-slate-400 group-hover:text-sky-600 dark:group-hover:text-sky-400"
               }`}
             >
               <UploadCloud size={14} />
@@ -118,8 +120,8 @@ const BankDropzoneCard = ({
 
       {/* Empty Drop Prompt */}
       {!hasFiles && (
-        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/60 text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
             {isDragActive
               ? "Drop File to Attach"
               : "Click or Drag Statement (.csv, .xlsx)"}
@@ -129,7 +131,7 @@ const BankDropzoneCard = ({
 
       {/* Staged Files Viewport */}
       {hasFiles && (
-        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 flex flex-col gap-1.5 relative z-10">
+        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/60 flex flex-col gap-1.5 relative z-10">
           {stagedFiles.map((file, idx) => {
             const isCsv = file.name.toLowerCase().endsWith(".csv");
             const isTxt = file.name.toLowerCase().endsWith(".txt");
@@ -137,11 +139,11 @@ const BankDropzoneCard = ({
             return (
               <div
                 key={`${file.name}-${idx}`}
-                className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/80 rounded-lg border border-slate-200/60 dark:border-white/5 shadow-2xs group/file"
+                className="flex items-center justify-between p-2 bg-slate-50 dark:bg-[#1C2230] rounded-md border border-slate-200 dark:border-slate-700/80 shadow-2xs group/file"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   {isCsv ? (
-                    <FileCode2 size={13} className="text-blue-500 shrink-0" />
+                    <FileCode2 size={13} className="text-sky-500 shrink-0" />
                   ) : isTxt ? (
                     <FileText size={13} className="text-amber-500 shrink-0" />
                   ) : (
@@ -162,7 +164,7 @@ const BankDropzoneCard = ({
                     onFileRemoved(ledger.name, idx);
                   }}
                   disabled={disabled}
-                  className="p-1 text-slate-400 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 rounded transition-colors shrink-0 cursor-pointer"
+                  className="p-1 text-slate-400 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition-colors shrink-0 cursor-pointer"
                   title="Remove Statement"
                 >
                   <Trash2 size={13} />
@@ -172,10 +174,10 @@ const BankDropzoneCard = ({
           })}
 
           <div className="flex items-center justify-between pt-1">
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+            <span className="text-[9px] font-medium text-slate-400 uppercase tracking-wider">
               Drop more files to append
             </span>
-            <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+            <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
               Ready to Ingest
             </span>
           </div>
@@ -297,40 +299,40 @@ const SyncStep = ({ selection, setSelection, isProcessing }) => {
         {/* ========================================================================= */}
         {/* LEFT PANEL: GUIDANCE, SCOPE CONTEXT & INGESTION STATS                     */}
         {/* ========================================================================= */}
-        <aside className="w-full lg:w-80 bg-slate-50/60 dark:bg-slate-900/30 border-b lg:border-b-0 lg:border-r border-slate-200/80 dark:border-white/10 flex flex-col shrink-0 z-10 min-w-0 p-4 lg:p-6 space-y-4">
+        <aside className="w-full lg:w-80 bg-slate-50 dark:bg-[#131720] border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800/80 flex flex-col shrink-0 z-10 min-w-0 p-4 lg:p-6 space-y-4">
           {/* Header Title */}
           <div className="space-y-1">
-            <h3 className="text-base lg:text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
+            <h3 className="sora-font text-base lg:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
               Statement Ingestion
             </h3>
-            <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+            <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
               Attach statements per bank ledger
             </p>
           </div>
 
           {/* Target Company Context Box */}
-          <div className="p-4 bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-white/10 rounded-xl shadow-xs space-y-1.5">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+          <div className="p-4 bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg shadow-xs space-y-1.5">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">
               Target Company
             </span>
-            <p className="text-xs font-black uppercase text-slate-900 dark:text-white truncate">
+            <p className="sora-font text-xs font-bold text-slate-900 dark:text-white truncate">
               {selection.tallyCompany || "No Company Selected"}
             </p>
             {selection.month && (
-              <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider pt-1 border-t border-slate-100 dark:border-white/5">
+              <p className="text-[10px] font-semibold font-mono text-sky-600 dark:text-sky-400 uppercase tracking-wider pt-1 border-t border-slate-100 dark:border-slate-800/60">
                 Cycle: Month {selection.month} / {selection.year}
               </p>
             )}
           </div>
 
           {/* Staging Metrics Pill */}
-          <div className="p-4 bg-slate-900 text-white rounded-xl shadow-xs space-y-2.5 border border-slate-800">
+          <div className="p-4 bg-slate-900 dark:bg-[#161B26] text-white rounded-lg shadow-xs space-y-2.5 border border-slate-800 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Staging Summary
               </span>
               <span
-                className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold ${
+                className={`px-2 py-0.5 rounded-md text-[9px] font-mono font-bold ${
                   totalStagedFiles > 0
                     ? "bg-emerald-500 text-white"
                     : "bg-white/10 text-slate-400"
@@ -340,20 +342,20 @@ const SyncStep = ({ selection, setSelection, isProcessing }) => {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/10">
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
               <div>
-                <p className="text-[9px] text-slate-400 font-bold uppercase">
+                <p className="text-[9px] text-slate-400 font-semibold uppercase">
                   Accounts
                 </p>
-                <p className="text-sm font-black text-white font-mono">
+                <p className="sora-font text-sm font-bold text-white font-mono">
                   {totalStagedBanks} / {bankLedgers.length}
                 </p>
               </div>
               <div>
-                <p className="text-[9px] text-slate-400 font-bold uppercase">
+                <p className="text-[9px] text-slate-400 font-semibold uppercase">
                   Files
                 </p>
-                <p className="text-sm font-black text-emerald-400 font-mono">
+                <p className="sora-font text-sm font-bold text-sky-400 font-mono">
                   {totalStagedFiles}
                 </p>
               </div>
@@ -361,10 +363,10 @@ const SyncStep = ({ selection, setSelection, isProcessing }) => {
           </div>
 
           {/* Instruction Note */}
-          <div className="p-3.5 bg-emerald-500/10 dark:bg-emerald-500/10 border border-emerald-500/20 rounded-xl hidden lg:block space-y-1">
-            <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
+          <div className="p-3.5 bg-sky-500/10 dark:bg-sky-500/10 border border-sky-500/20 rounded-lg hidden lg:block space-y-1">
+            <div className="flex items-center gap-1.5 text-sky-700 dark:text-sky-400">
               <ShieldCheck size={13} />
-              <span className="text-[10px] font-black uppercase tracking-wider">
+              <span className="text-[10px] font-bold uppercase tracking-wider">
                 Multi-Bank Staging
               </span>
             </div>
@@ -381,13 +383,13 @@ const SyncStep = ({ selection, setSelection, isProcessing }) => {
         {/* ========================================================================= */}
         <section className="flex-1 flex flex-col overflow-hidden relative min-w-0">
           {/* Top Filter & Search Command Strip */}
-          <div className="px-4 lg:px-8 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-slate-800/20 shrink-0">
+          <div className="px-4 lg:px-8 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-[#1C2230] shrink-0">
             <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              <span className="sora-font text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                 Available Bank Accounts ({displayedLedgers.length})
               </span>
               {isLoading && (
-                <Loader2 size={13} className="animate-spin text-emerald-500" />
+                <Loader2 size={13} className="animate-spin text-sky-500" />
               )}
             </div>
 
@@ -401,7 +403,7 @@ const SyncStep = ({ selection, setSelection, isProcessing }) => {
                 placeholder="SEARCH BANK ACCOUNT..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold uppercase tracking-wider outline-none focus:border-emerald-500 transition-colors text-slate-900 dark:text-white placeholder:text-slate-400"
+                className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-700/80 rounded-lg text-xs font-semibold uppercase tracking-wider outline-none focus:border-sky-500 transition-colors text-slate-900 dark:text-white placeholder:text-slate-400"
               />
             </div>
           </div>
@@ -410,15 +412,15 @@ const SyncStep = ({ selection, setSelection, isProcessing }) => {
           <div className="flex-1 overflow-y-auto no-scrollbar p-4 lg:p-8 pb-24 min-w-0">
             {isLoading ? (
               <div className="h-64 flex flex-col items-center justify-center gap-2.5 text-slate-400">
-                <Loader2 className="animate-spin text-emerald-500" size={28} />
-                <span className="text-xs font-bold uppercase tracking-wider">
+                <Loader2 className="animate-spin text-sky-500" size={28} />
+                <span className="text-xs font-semibold uppercase tracking-wider">
                   Loading Tally Bank Masters...
                 </span>
               </div>
             ) : bankLedgers.length === 0 ? (
-              <div className="h-64 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl p-6 text-center space-y-2">
+              <div className="h-64 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-800/80 rounded-lg p-6 text-center space-y-2 bg-slate-50 dark:bg-[#1C2230]">
                 <AlertCircle size={32} className="text-slate-400 opacity-60" />
-                <p className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <p className="sora-font text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   No Bank Accounts Found
                 </p>
                 <p className="text-[11px] font-medium text-slate-400 max-w-sm">
@@ -429,7 +431,7 @@ const SyncStep = ({ selection, setSelection, isProcessing }) => {
             ) : displayedLedgers.length === 0 ? (
               <div className="h-64 flex flex-col items-center justify-center gap-2 text-slate-400 opacity-60">
                 <Search size={24} />
-                <p className="text-xs font-bold uppercase tracking-wider">
+                <p className="text-xs font-semibold uppercase tracking-wider">
                   No accounts matching "{searchQuery}"
                 </p>
               </div>

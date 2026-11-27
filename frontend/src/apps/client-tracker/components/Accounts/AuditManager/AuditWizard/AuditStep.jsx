@@ -386,7 +386,7 @@ const AuditStep = ({
         }}
       />
 
-      <div className="flex flex-col lg:flex-row h-full w-full overflow-hidden absolute inset-0 bg-white dark:bg-[#06080E] font-sans text-left min-w-0">
+      <div className="flex flex-col lg:flex-row h-full w-full overflow-hidden absolute inset-0 bg-white dark:bg-[#161B26] font-sans text-left min-w-0">
         {/* LEFT PANEL (40%) */}
         <BankSidebar
           companyName={selection.tallyCompany}
@@ -402,7 +402,7 @@ const AuditStep = ({
         />
 
         {/* RIGHT PANEL (60%) */}
-        <section className="flex-1 flex flex-col justify-between min-w-0 overflow-hidden bg-slate-100/90 dark:bg-[#07090E] h-full border-l border-slate-200/80 dark:border-white/10 shadow-inner">
+        <section className="flex-1 flex flex-col justify-between min-w-0 overflow-hidden bg-slate-50 dark:bg-[#131720] h-full border-l border-slate-200 dark:border-slate-800/80 shadow-inner">
           <TransactionInspector
             activeTx={activeTx}
             activeTab={activeTab}

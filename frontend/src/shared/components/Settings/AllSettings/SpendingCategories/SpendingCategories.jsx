@@ -40,8 +40,8 @@ const MasterRow = ({ parent, isActive, onSelect, isSelectionMode, isSelected, to
       onClick={() => isSelectionMode ? toggleSelection(parent._id) : onSelect(parent._id)}
       className={`group relative flex items-center p-2.5 sm:p-3 mb-1.5 rounded-lg cursor-pointer transition-all border text-left ${
         isActive && !isSelectionMode 
-          ? 'bg-slate-100/90 dark:bg-white/[0.06] border-slate-300 dark:border-white/15 shadow-2xs' 
-          : 'bg-white dark:bg-[#0B1120] border-slate-200/80 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 hover:bg-slate-50 dark:hover:bg-white/[0.02]'
+          ? 'bg-slate-50 dark:bg-[#1C2230] border-sky-500/50 dark:border-sky-400/50 shadow-2xs' 
+          : 'bg-white dark:bg-[#161B26] border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-[#1C2230]/50'
       }`}
     >
       {/* Active Left Indicator Bar */}
@@ -55,13 +55,13 @@ const MasterRow = ({ parent, isActive, onSelect, isSelectionMode, isSelected, to
 
       <div className="relative flex items-center w-full min-w-0 pl-1.5 sm:pl-1">
         {isSelectionMode ? (
-          <div className={`w-4 h-4 rounded border flex items-center justify-center mr-2.5 transition-colors shrink-0 ${
-            isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-transparent border-slate-400 dark:border-slate-500'
+          <div className={`w-4 h-4 rounded-md border flex items-center justify-center mr-2.5 transition-colors shrink-0 ${
+            isSelected ? 'bg-sky-600 border-sky-600 text-white' : 'bg-transparent border-slate-400 dark:border-slate-500'
           }`}>
             {isSelected && <Check size={11} strokeWidth={3.5} />}
           </div>
         ) : (
-          <div {...attributes} {...listeners} className={`mr-2 shrink-0 p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 ${isSearchActive ? 'opacity-20 cursor-not-allowed' : 'cursor-grab touch-none'}`}>
+          <div {...attributes} {...listeners} className={`mr-2 shrink-0 p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 ${isSearchActive ? 'opacity-20 cursor-not-allowed' : 'cursor-grab touch-none'}`}>
             <GripVertical size={14} />
           </div>
         )}
@@ -81,7 +81,7 @@ const MasterRow = ({ parent, isActive, onSelect, isSelectionMode, isSelected, to
 
         <div className="flex items-center gap-1.5 shrink-0">
           <span 
-            className="text-[10px] font-sans font-medium px-1.5 py-0.2 rounded border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/10"
+            className="text-[10px] font-sans font-medium px-1.5 py-0.2 rounded-md border bg-slate-50 dark:bg-[#1C2230] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700/80"
           >
             {parent.subCategories.length}
           </span>
@@ -118,11 +118,11 @@ const DetailRow = ({ sub, parent, onEdit, onDelete, isEditing, editValue, onEdit
       style={style}
       className={`group relative flex items-center p-2.5 sm:p-3 mb-2 rounded-lg border text-left transition-all ${
         isEditing 
-          ? 'bg-white dark:bg-[#0B1120] border-emerald-500 shadow-sm z-10' 
-          : 'bg-white dark:bg-[#0B1120] border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
+          ? 'bg-white dark:bg-[#161B26] border-sky-500 shadow-sm z-10' 
+          : 'bg-white dark:bg-[#161B26] border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700'
       }`}
     >
-      <div {...attributes} {...listeners} className={`mr-2.5 shrink-0 p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 ${isEditing || isSearchActive ? 'opacity-20 cursor-not-allowed' : 'cursor-grab touch-none'}`}>
+      <div {...attributes} {...listeners} className={`mr-2.5 shrink-0 p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 ${isEditing || isSearchActive ? 'opacity-20 cursor-not-allowed' : 'cursor-grab touch-none'}`}>
         <GripVertical size={14} />
       </div>
 
@@ -152,7 +152,7 @@ const DetailRow = ({ sub, parent, onEdit, onDelete, isEditing, editValue, onEdit
             <button 
               type="button" 
               onMouseDown={(e) => { e.preventDefault(); onSubmitEdit(); }} 
-              className="p-1 text-white bg-emerald-600 hover:bg-emerald-700 rounded transition-colors"
+              className="p-1 text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors"
               title="Save"
             >
               <Check size={13} strokeWidth={2.5} />
@@ -160,7 +160,7 @@ const DetailRow = ({ sub, parent, onEdit, onDelete, isEditing, editValue, onEdit
             <button 
               type="button" 
               onMouseDown={(e) => { e.preventDefault(); onCancelEdit(); }} 
-              className="p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+              className="p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors"
               title="Cancel"
             >
               <X size={13} />
@@ -170,7 +170,7 @@ const DetailRow = ({ sub, parent, onEdit, onDelete, isEditing, editValue, onEdit
           <button 
             type="button" 
             onClick={() => onDelete(parent._id, sub)} 
-            className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded transition-colors"
+            className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-md transition-colors"
             title="Delete tag"
           >
             <Trash2 size={13} />
@@ -346,17 +346,17 @@ const SpendingCategories = () => {
         
         {/* TOAST FEEDBACK PILL */}
         {feedback && (
-          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-200 flex items-center gap-2 bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-4 py-2 rounded-md shadow-lg border border-slate-700 dark:border-white/20 animate-in fade-in slide-in-from-top-4 duration-200">
-            <CheckCircle2 size={15} className="text-emerald-500" />
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-200 flex items-center gap-2 bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-4 py-2 rounded-md shadow-lg border border-slate-700 dark:border-slate-200 animate-in fade-in slide-in-from-top-4 duration-200">
+            <CheckCircle2 size={15} className="text-sky-500" />
             <span className="text-xs font-sans font-medium">{feedback}</span>
           </div>
         )}
 
         {/* SECTION HEADER */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-white/10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-slate-800/80">
           <div>
-            <h2 className="text-xl sm:text-2xl font-serif tracking-tight text-slate-900 dark:text-slate-100 leading-tight">
-              Spending <span className="italic font-normal text-emerald-800 dark:text-emerald-400">Categories</span>
+            <h2 className="sora-font text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
+              Spending <span className="font-normal text-sky-600 dark:text-sky-300">Categories</span>
             </h2>
             <p className="text-xs font-sans text-slate-500 dark:text-slate-400 mt-0.5">
               Organize main spending groups, add subcategory tags, and reorder items by dragging.
@@ -369,7 +369,7 @@ const SpendingCategories = () => {
           
           {/* LEFT PANE: MAIN CATEGORIES */}
           <div className={`w-full lg:w-80 shrink-0 flex flex-col ${isMobileDetailView ? 'hidden lg:flex' : 'flex'}`}>
-            <div className="bg-slate-50/70 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-lg p-3 flex flex-col gap-3">
+            <div className="bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg p-3 flex flex-col gap-3">
               
               {/* Controls Header */}
               <div className="flex items-center justify-between">
@@ -380,10 +380,10 @@ const SpendingCategories = () => {
                   <button 
                     type="button"
                     onClick={() => { setIsSelectionMode(!isSelectionMode); setSelectedIds([]); }} 
-                    className={`p-1.5 rounded text-xs font-sans transition-colors cursor-pointer border ${
+                    className={`p-1.5 rounded-md text-xs font-sans transition-colors cursor-pointer border ${
                       isSelectionMode 
-                        ? 'bg-indigo-600 text-white border-indigo-700' 
-                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:border-slate-300'
+                        ? 'bg-sky-600 text-white border-sky-600' 
+                        : 'bg-slate-50 dark:bg-[#1C2230] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700/80 hover:border-slate-300'
                     }`} 
                     title="Merge categories"
                   >
@@ -392,8 +392,8 @@ const SpendingCategories = () => {
 
                   <button 
                     type="button"
-                    onClick={() => { setCatColor("#10B981"); setModalMode('create'); }} 
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-sans font-semibold transition-colors cursor-pointer shadow-2xs"
+                    onClick={() => { setCatColor("#0284C7"); setModalMode('create'); }} 
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-400 text-white text-xs font-sans font-semibold transition-colors cursor-pointer shadow-2xs"
                   >
                     <Plus size={13} strokeWidth={2.5} />
                     <span>New</span>
@@ -403,14 +403,14 @@ const SpendingCategories = () => {
 
               {/* Merge Action Banner */}
               {isSelectionMode && selectedIds.length > 1 && (
-                <div className="flex items-center justify-between p-2 rounded bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20">
-                  <span className="text-[11px] font-sans font-medium text-indigo-900 dark:text-indigo-200">
+                <div className="flex items-center justify-between p-2 rounded-md bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-500/20">
+                  <span className="text-[11px] font-sans font-medium text-sky-900 dark:text-sky-200">
                     {selectedIds.length} categories chosen
                   </span>
                   <button
                     type="button"
                     onClick={() => { setCatName(""); setModalMode('merge'); }}
-                    className="px-2 py-0.5 rounded bg-indigo-600 text-white text-[11px] font-sans font-semibold cursor-pointer"
+                    className="px-2 py-0.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-sans font-semibold cursor-pointer"
                   >
                     Merge
                   </button>
@@ -425,7 +425,7 @@ const SpendingCategories = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search categories..."
-                  className="w-full bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-md py-1.5 pl-8 pr-3 text-xs font-sans text-slate-900 dark:text-white outline-none focus:border-emerald-600 placeholder:text-slate-400"
+                  className="w-full bg-slate-50 dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80 rounded-lg py-1.5 pl-8 pr-3 text-xs font-sans text-slate-900 dark:text-white outline-none focus:border-sky-500 placeholder:text-slate-400"
                 />
               </div>
 
@@ -458,10 +458,10 @@ const SpendingCategories = () => {
           {/* RIGHT PANE: SUB CATEGORIES & TAGS */}
           <div className={`flex-1 w-full flex flex-col ${!isMobileDetailView ? 'hidden lg:flex' : 'flex'}`}>
             {activeParent ? (
-              <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-lg p-4 sm:p-5 flex flex-col gap-4">
+              <div className="bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg p-4 sm:p-5 flex flex-col gap-4">
                 
                 {/* Header Strip with Color Accent & Controls */}
-                <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800/80">
                   <div className="flex items-center gap-3 min-w-0">
                     <button 
                       type="button"
@@ -475,7 +475,7 @@ const SpendingCategories = () => {
                       style={{ backgroundColor: activeParent.color }} 
                     />
                     <div className="min-w-0">
-                      <h3 className="text-base sm:text-lg font-serif tracking-tight text-slate-900 dark:text-white truncate">
+                      <h3 className="sora-font text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white truncate">
                         {activeParent.label}
                       </h3>
                       <span className="text-[11px] font-sans text-slate-400 block mt-0.5">
@@ -488,7 +488,7 @@ const SpendingCategories = () => {
                     <button 
                       type="button"
                       onClick={() => { setEditTarget(activeParent); setCatName(activeParent.label); setCatColor(activeParent.color); setModalMode('edit'); }} 
-                      className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors cursor-pointer" 
+                      className="p-1.5 text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-500/10 rounded-md transition-colors cursor-pointer" 
                       title="Edit Category Name & Color"
                     >
                       <Edit3 size={15} />
@@ -496,7 +496,7 @@ const SpendingCategories = () => {
                     <button 
                       type="button"
                       onClick={() => { setEditTarget({ ...activeParent, type: 'parent' }); setModalMode('delete'); }} 
-                      className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded transition-colors cursor-pointer" 
+                      className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-md transition-colors cursor-pointer" 
                       title="Delete Category"
                     >
                       <Trash2 size={15} />
@@ -517,7 +517,7 @@ const SpendingCategories = () => {
                     type="button"
                     onClick={() => { setAddingSubToId(activeParent._id); setEditingSub(null); setInputValue(""); }} 
                     disabled={searchTerm.length > 0}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white rounded text-xs font-sans font-semibold transition-all cursor-pointer disabled:opacity-40"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-400 text-white rounded-md text-xs font-sans font-semibold transition-all cursor-pointer disabled:opacity-40"
                   >
                     <Plus size={13} strokeWidth={2.5} />
                     <span>Add Tag</span>
@@ -528,7 +528,7 @@ const SpendingCategories = () => {
                 <div className="space-y-1 overflow-y-auto max-h-[440px] no-scrollbar">
                   {/* Inline Add Row */}
                   {addingSubToId === activeParent._id && (
-                    <div className="flex items-center p-2.5 mb-2 rounded-lg border-2 border-emerald-500 bg-white dark:bg-[#0B1120] shadow-xs">
+                    <div className="flex items-center p-2.5 mb-2 rounded-lg border-2 border-sky-500 bg-white dark:bg-[#161B26] shadow-xs">
                       <input 
                         ref={newSubInputRef} 
                         value={inputValue} 
@@ -544,14 +544,14 @@ const SpendingCategories = () => {
                         <button 
                           type="button"
                           onMouseDown={(e) => { e.preventDefault(); handleSubSubmit(activeParent._id); }} 
-                          className="p-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition-colors cursor-pointer"
+                          className="p-1 bg-sky-600 hover:bg-sky-700 text-white rounded-md transition-colors cursor-pointer"
                         >
                           <Check size={13} strokeWidth={2.5} />
                         </button>
                         <button 
                           type="button"
                           onMouseDown={(e) => { e.preventDefault(); setAddingSubToId(null); setInputValue(""); }} 
-                          className="p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors cursor-pointer"
+                          className="p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
                         >
                           <X size={13} />
                         </button>
@@ -586,7 +586,7 @@ const SpendingCategories = () => {
                 </div>
               </div>
             ) : (
-              <div className="h-64 border border-dashed border-slate-200 dark:border-white/10 rounded-lg flex flex-col items-center justify-center text-slate-400 gap-2">
+              <div className="h-64 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-lg flex flex-col items-center justify-center text-slate-400 gap-2">
                 <FolderOpen size={32} className="stroke-1" />
                 <span className="text-xs font-sans">Select a category on the left to view and edit its tags</span>
               </div>
@@ -598,11 +598,11 @@ const SpendingCategories = () => {
         <DragOverlay dropAnimation={defaultDropAnimationSideEffects({ styles: { active: { opacity: "0.4" } } })}>
           {activeDragItem ? (
             activeDragItem.type === 'parent' ? (
-              <div className="w-72 shadow-xl bg-white dark:bg-[#0B1120] rounded-lg border border-slate-300 dark:border-white/20 p-2">
+              <div className="w-72 shadow-xl bg-white dark:bg-[#161B26] rounded-lg border border-slate-300 dark:border-slate-700 p-2">
                 <MasterRow parent={activeDragItem.parent} isActive={true} onSelect={() => {}} />
               </div>
             ) : (
-              <div className="w-80 shadow-xl bg-white dark:bg-[#0B1120] rounded-lg border border-slate-300 dark:border-white/20 p-2">
+              <div className="w-80 shadow-xl bg-white dark:bg-[#161B26] rounded-lg border border-slate-300 dark:border-slate-700 p-2">
                 <DetailRow sub={activeDragItem.sub} parent={tree.find(p => p._id === activeDragItem.parentId)} isEditing={false} index={0} />
               </div>
             )

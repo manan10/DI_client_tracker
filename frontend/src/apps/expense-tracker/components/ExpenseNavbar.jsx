@@ -22,13 +22,13 @@ import { useAuth } from "../../../shared/hooks/useAuth";
 const allApps = [
   {
     id: "CLIENT_TRACKER",
-    title: "CRM Portal",
+    title: "DI Co-Pilot",
     path: "/dashboard",
     icon: Users,
   },
   {
     id: "EXPENSE_TRACKER",
-    title: "Expense Hub",
+    title: "Kharcha Paani",
     path: "/expenses",
     icon: ReceiptIndianRupee,
   },
@@ -217,7 +217,7 @@ const ExpenseNavbar = () => {
                       aria-haspopup="true"
                       aria-expanded={isAppDropdownOpen}
                     >
-                      <span>Expense Hub</span>
+                      <span>Kharcha Paani</span>
                       <ChevronDown
                         size={11}
                         className={`text-stone-400 group-hover/switcher:text-white transition-transform duration-200 ${

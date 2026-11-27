@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Minus, Plus, ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 
 /**
- * Custom Tactile Slider + Stepper Input Component (Sora Architectural & Sky Blue Edition)
+ * Custom Tactile Slider + Numeric Input Component
  */
 export const TactileSliderInput = ({
   label,
@@ -43,14 +43,18 @@ export const TactileSliderInput = ({
     setDraft(String(clamped));
   };
 
-  const handleStep = (delta) => {
-    const next = Math.min(max, Math.max(min, Number((value + delta).toFixed(2))));
-    onChange(next);
-  };
+  const maxDigits = String(max ?? "").length;
+  const inputWidthClass =
+    maxDigits <= 3
+      ? "w-11 sm:w-12"
+      : maxDigits <= 5
+        ? "w-16 sm:w-20"
+        : "w-20 sm:w-24";
 
   const skyTheme = {
     bar: "bg-sky-600 dark:bg-sky-500",
     thumb: "border-sky-600 dark:border-sky-400",
+    focus: "focus-within:border-sky-600 dark:focus-within:border-sky-400 focus-within:ring-2 focus-within:ring-sky-500/15",
     presetActive: "bg-sky-600 dark:bg-sky-500 text-white border-sky-600 dark:border-sky-400 shadow-2xs",
   };
 
@@ -60,20 +64,22 @@ export const TactileSliderInput = ({
     indigo: {
       bar: "bg-indigo-600 dark:bg-indigo-500",
       thumb: "border-indigo-600 dark:border-indigo-400",
+      focus: "focus-within:border-indigo-600 dark:focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-500/15",
       presetActive: "bg-indigo-600 dark:bg-indigo-500 text-white border-indigo-600 dark:border-indigo-400 shadow-2xs",
     },
     amber: {
       bar: "bg-amber-600 dark:bg-amber-500",
       thumb: "border-amber-600 dark:border-amber-400",
+      focus: "focus-within:border-amber-600 dark:focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-500/15",
       presetActive: "bg-amber-600 dark:bg-amber-500 text-white border-amber-600 dark:border-amber-400 shadow-2xs",
     },
   }[accent] || skyTheme;
 
   return (
     <div className="bg-white dark:bg-[#1B2230] border border-slate-300 dark:border-slate-700/80 rounded-lg p-3.5 sm:p-4.5 space-y-3 shadow-2xs">
-      {/* Header + Tactile Stepper */}
-      <div className="flex items-center sm:items-start justify-between gap-2.5 sm:gap-3">
-        <div className="flex-1 min-w-0">
+      {/* Header + Clean Numeric Input */}
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="flex-1 min-w-[120px]">
           <label className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white block leading-snug">
             {label}
           </label>
@@ -84,58 +90,46 @@ export const TactileSliderInput = ({
           )}
         </div>
 
-        <div className="inline-flex items-center bg-white dark:bg-[#232B3D] border border-slate-300 dark:border-slate-600 focus-within:border-sky-600 dark:focus-within:border-sky-400 rounded-md overflow-hidden shadow-2xs transition-colors shrink-0">
-          <button
-            type="button"
-            onClick={() => handleStep(-step)}
-            disabled={value <= min}
-            aria-label="Decrease"
-            className="px-2.5 py-1.5 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 disabled:opacity-35 transition-colors cursor-pointer"
-          >
-            <Minus size={13} strokeWidth={2.5} />
-          </button>
-
-          <div className="flex items-center justify-center px-2 sm:px-2.5 border-x border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-[#1B2230]/60">
-            {prefix && (
-              <span className="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-300 mr-1 select-none">
-                {prefix}
-              </span>
-            )}
-            <input
-              type="text"
-              inputMode="decimal"
-              value={draft}
-              onChange={(e) => {
-                setDraft(e.target.value);
-                const parsed = parseFloat(e.target.value);
-                if (!Number.isNaN(parsed) && parsed >= min && parsed <= max) {
-                  onChange(parsed);
-                }
-              }}
-              onBlur={commitDraft}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.currentTarget.blur();
-                }
-              }}
-              className="w-16 sm:w-24 text-center text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white bg-transparent outline-none tabular-nums py-1.5"
-            />
-            {suffix && (
-              <span className="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-300 ml-1 select-none">
-                {suffix}
-              </span>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => handleStep(step)}
-            disabled={value >= max}
-            aria-label="Increase"
-            className="px-2.5 py-1.5 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 disabled:opacity-35 transition-colors cursor-pointer"
-          >
-            <Plus size={13} strokeWidth={2.5} />
-          </button>
+        <div
+          className={`inline-flex items-center px-2.5 py-1.5 bg-slate-50 dark:bg-[#232B3D] border border-slate-300 dark:border-slate-600 ${accentStyles.focus} rounded-md shadow-2xs transition-all shrink-0 ml-auto`}
+        >
+          {prefix && (
+            <span className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 mr-1.5 select-none">
+              {prefix}
+            </span>
+          )}
+          <input
+            type="text"
+            inputMode="decimal"
+            value={draft}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              const parsed = parseFloat(e.target.value);
+              if (!Number.isNaN(parsed) && parsed >= min && parsed <= max) {
+                onChange(parsed);
+              }
+            }}
+            onBlur={commitDraft}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.currentTarget.blur();
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                const next = Math.min(max, Math.max(min, Number((value + step).toFixed(2))));
+                onChange(next);
+              } else if (e.key === "ArrowDown") {
+                e.preventDefault();
+                const next = Math.min(max, Math.max(min, Number((value - step).toFixed(2))));
+                onChange(next);
+              }
+            }}
+            className={`${inputWidthClass} text-right text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white bg-transparent outline-none tabular-nums`}
+          />
+          {suffix && (
+            <span className="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 ml-1.5 select-none">
+              {suffix}
+            </span>
+          )}
         </div>
       </div>
 

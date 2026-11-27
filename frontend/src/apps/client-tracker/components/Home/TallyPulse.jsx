@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { DatabaseZap, Loader2, Server, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { DatabaseZap, Loader2, Server, FileText, ArrowUpRight } from "lucide-react";
 import { useApi } from '../../../../shared/hooks/useApi';
 import { tallyTemplates } from "../../utils/tallyTemplates";
 
 const TallyPulse = () => {
   const { request } = useApi();
+  const navigate = useNavigate();
   
   const [isTallyOnline, setIsTallyOnline] = useState(false);
   const [pendingAudits, setPendingAudits] = useState(0);
@@ -60,15 +62,15 @@ const TallyPulse = () => {
   }, [checkConnection, fetchAudits]);
 
   return (
-    <div className="space-y-5 w-full">
+    <div className="space-y-4 w-full">
       
       {/* WIDGET HEADER */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="flex items-center justify-center w-8 h-8 rounded-md bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0">
-          <Server size={16} strokeWidth={2.5} />
+      <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center w-8 h-8 rounded-md bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400 shrink-0">
+          <Server size={16} strokeWidth={2.25} />
         </div>
         <div className="min-w-0">
-          <h2 className="text-[13px] font-bold uppercase tracking-widest text-slate-900 dark:text-white leading-none truncate">
+          <h2 className="sora-font text-[13px] font-bold uppercase tracking-widest text-slate-900 dark:text-white leading-none truncate">
             System Bridge
           </h2>
           <p className="text-[11px] font-medium text-slate-500 mt-1 truncate">
@@ -78,12 +80,12 @@ const TallyPulse = () => {
       </div>
 
       {/* METRIC CARDS GRID */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 gap-3">
         
         {/* Card 1: Connection Status */}
-        <div className="flex flex-col p-3.5 sm:p-4 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between mb-4">
-            <DatabaseZap size={16} className="text-slate-400 dark:text-slate-500" strokeWidth={2.5} />
+        <div className="flex flex-col p-3.5 sm:p-4 bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg shadow-xs">
+          <div className="flex items-center justify-between mb-3">
+            <DatabaseZap size={16} className="text-slate-400 dark:text-slate-500" strokeWidth={2.25} />
             {isLoading ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
             ) : isTallyOnline ? (
@@ -100,29 +102,34 @@ const TallyPulse = () => {
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
             Local Node
           </span>
-          <span className={`text-sm sm:text-base font-semibold tracking-tight truncate ${
+          <span className={`text-sm sm:text-base font-bold tracking-tight truncate ${
             isLoading ? "text-slate-400" :
-            isTallyOnline ? "text-slate-900 dark:text-white" : "text-rose-600 dark:text-rose-500"
+            isTallyOnline ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
           }`}>
             {isLoading ? "Polling..." : isTallyOnline ? "Connected" : "Offline"}
           </span>
         </div>
 
         {/* Card 2: Pending Audits */}
-        <div className="flex flex-col p-3.5 sm:p-4 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between mb-4">
-            <FileText size={16} className={`${pendingAudits > 0 ? 'text-amber-500' : 'text-slate-400 dark:text-slate-500'}`} strokeWidth={2.5} />
+        <button
+          type="button"
+          onClick={() => navigate('/accounts', { state: { activeTab: 'audit' } })}
+          className="group flex flex-col p-3.5 sm:p-4 bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 hover:border-sky-500/50 rounded-lg shadow-xs transition-all duration-200 text-left cursor-pointer"
+        >
+          <div className="flex items-center justify-between mb-3 w-full">
+            <FileText size={16} className={`${pendingAudits > 0 ? 'text-amber-500' : 'text-slate-400 dark:text-slate-500'}`} strokeWidth={2.25} />
+            <ArrowUpRight size={14} className="text-slate-300 dark:text-slate-600 group-hover:text-sky-500 transition-colors" />
           </div>
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
             Draft Dossiers
           </span>
-          <span className={`text-sm sm:text-base font-semibold tracking-tight truncate ${
+          <span className={`font-mono text-sm sm:text-base font-bold tracking-tight truncate ${
             isLoading ? "text-slate-400" : 
-            pendingAudits > 0 ? "text-amber-600 dark:text-amber-500" : "text-slate-900 dark:text-white"
+            pendingAudits > 0 ? "text-amber-600 dark:text-amber-400" : "text-slate-900 dark:text-white"
           }`}>
             {isLoading ? "--" : pendingAudits > 0 ? `${pendingAudits} Pending` : "All Clear"}
           </span>
-        </div>
+        </button>
 
       </div>
     </div>

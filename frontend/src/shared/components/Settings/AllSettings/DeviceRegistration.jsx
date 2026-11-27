@@ -61,20 +61,20 @@ const DeviceRegistration = () => {
       />
 
       {/* Main Card */}
-      <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl shadow-xs overflow-hidden flex flex-col md:flex-row min-w-0">
+      <div className="bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg shadow-xs overflow-hidden flex flex-col md:flex-row min-w-0">
         
         {/* Left Side: Visual Overview */}
-        <div className="md:w-5/12 bg-slate-50/70 dark:bg-slate-900/40 p-6 sm:p-8 border-b md:border-b-0 md:border-r border-slate-200 dark:border-white/10 flex flex-col justify-center items-center text-center">
+        <div className="md:w-5/12 bg-slate-50 dark:bg-[#1C2230] p-6 sm:p-8 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800/80 flex flex-col justify-center items-center text-center">
           <div className="relative mb-5">
-            <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+            <div className="w-20 h-20 bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-500/20 rounded-md flex items-center justify-center text-sky-600 dark:text-sky-400">
               <Laptop size={34} />
             </div>
-            <div className="absolute -bottom-2 -right-2 w-9 h-9 bg-slate-900 dark:bg-white text-white dark:text-slate-950 rounded-xl flex items-center justify-center shadow-md">
+            <div className="absolute -bottom-2 -right-2 w-9 h-9 bg-sky-600 text-white rounded-md flex items-center justify-center shadow-md">
               <Fingerprint size={18} />
             </div>
           </div>
 
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2">
+          <h3 className="text-sm font-bold sora-font text-slate-900 dark:text-white tracking-wide mb-2">
             One-Tap Sign In
           </h3>
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed max-w-xs">
@@ -86,18 +86,18 @@ const DeviceRegistration = () => {
         <div className="md:w-7/12 p-6 sm:p-8 flex flex-col justify-between min-w-0">
           <div className="space-y-4">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 Current Device Setup
               </span>
-              <h4 className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
+              <h4 className="text-base font-bold sora-font text-slate-900 dark:text-white mt-0.5">
                 Link This Phone or PC
               </h4>
             </div>
 
             {/* Explanation Points */}
             <div className="space-y-3">
-              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 flex items-start gap-3">
-                <ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80 flex items-start gap-3">
+                <ShieldCheck size={18} className="text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
                     Safe & Private
@@ -108,7 +108,7 @@ const DeviceRegistration = () => {
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 flex items-start gap-3">
+              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80 flex items-start gap-3">
                 <Smartphone size={18} className="text-slate-700 dark:text-slate-300 shrink-0 mt-0.5" />
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
@@ -131,15 +131,15 @@ const DeviceRegistration = () => {
           </div>
 
           {/* Action Button */}
-          <div className="pt-6 mt-6 border-t border-slate-100 dark:border-white/10">
+          <div className="pt-6 mt-6 border-t border-slate-100 dark:border-slate-800/60">
             <button
               type="button"
               onClick={handleRegisterDevice}
               disabled={isRegistering || success}
-              className={`w-full py-3.5 px-4 rounded-lg font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2.5 shadow-xs cursor-pointer active:scale-[0.99]
+              className={`w-full py-3.5 px-4 rounded-lg font-semibold text-xs tracking-wide transition-all flex items-center justify-center gap-2.5 shadow-xs cursor-pointer active:scale-[0.99]
                 ${success 
-                  ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 cursor-default' 
-                  : 'bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 disabled:opacity-50 disabled:cursor-not-allowed shadow-md'
+                  ? 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-500/30 cursor-default' 
+                  : 'bg-sky-600 hover:bg-sky-500 text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-sm'
                 }`}
             >
               {isRegistering ? (
@@ -149,7 +149,7 @@ const DeviceRegistration = () => {
                 </>
               ) : success ? (
                 <>
-                  <CheckCircle2 size={17} className="text-emerald-600 dark:text-emerald-400" />
+                  <CheckCircle2 size={17} className="text-sky-600 dark:text-sky-400" />
                   <span>Device Connected Successfully</span>
                 </>
               ) : (

@@ -109,29 +109,29 @@ const LedgerSearchModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 flex flex-col max-h-[80vh] overflow-hidden">
+      <div className="bg-white dark:bg-[#161B26] w-full max-w-xl rounded-lg shadow-2xl border border-slate-200 dark:border-slate-800/80 flex flex-col max-h-[80vh] overflow-hidden">
         
         {/* Modal Header */}
-        <div className="p-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
+        <div className="p-4 bg-slate-50 dark:bg-[#1C2230] border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between shrink-0">
           <div className="space-y-0.5 min-w-0 pr-4">
-            <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1">
+            <span className="text-[9px] font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-widest flex items-center gap-1">
               <CornerDownRight size={11} /> Smart Ledger Search Palette
             </span>
-            <p className="text-xs font-black uppercase truncate text-slate-100">
+            <p className="text-xs font-bold sora-font uppercase truncate text-slate-900 dark:text-white">
               {activeTx?.narration || "Select Master Ledger"}
             </p>
           </div>
           <button 
             type="button"
             onClick={onClose} 
-            className="p-1 text-slate-400 hover:text-white rounded transition-colors cursor-pointer"
+            className="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-md transition-colors cursor-pointer"
           >
             <X size={15} />
           </button>
         </div>
         
         {/* Search Input */}
-        <div className="p-3 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/40 shrink-0">
+        <div className="p-3 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-[#131720] shrink-0">
           <div className="relative">
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
@@ -139,7 +139,7 @@ const LedgerSearchModal = ({
               placeholder="TYPE TO SMART-SEARCH LEDGERS (USE ↑↓ AND ENTER)..." 
               value={searchQuery} 
               onChange={(e) => onSearchChange(e.target.value)} 
-              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg pl-9 pr-3 py-2 text-xs font-bold uppercase outline-none focus:border-emerald-500 text-slate-900 dark:text-white placeholder:text-slate-400" 
+              className="w-full bg-white dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80 rounded-lg pl-9 pr-3 py-2 text-xs font-semibold uppercase outline-none focus:border-sky-500 text-slate-900 dark:text-white placeholder:text-slate-400" 
             />
           </div>
         </div>
@@ -147,7 +147,7 @@ const LedgerSearchModal = ({
         {/* Filtered Ledgers List */}
         <div ref={listRef} className="flex-1 overflow-y-auto no-scrollbar p-2 space-y-1">
           {smartFilteredLedgers.length === 0 ? (
-            <div className="p-8 text-center text-xs font-bold text-slate-400 uppercase">
+            <div className="p-8 text-center text-xs font-semibold text-slate-400 uppercase">
               No matching ledgers found
             </div>
           ) : (
@@ -161,12 +161,12 @@ const LedgerSearchModal = ({
                   type="button"
                   onClick={() => onSelectLedger(l.name)}
                   onMouseEnter={() => setSelectedIndex(idx)}
-                  className={`cursor-pointer w-full text-left px-3.5 py-2.5 rounded-lg text-xs font-bold uppercase transition-colors flex items-center justify-between ${
+                  className={`cursor-pointer w-full text-left px-3.5 py-2.5 rounded-lg text-xs font-semibold uppercase transition-colors flex items-center justify-between ${
                     isHighlighted 
-                      ? 'bg-emerald-600 text-white font-black shadow-xs' 
+                      ? 'bg-sky-600 text-white font-bold shadow-xs' 
                       : isSelected 
-                        ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-bold' 
-                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                        ? 'bg-sky-500/15 text-sky-800 dark:text-sky-300 font-semibold' 
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1C2230]'
                   }`}
                 >
                   <span className="truncate pr-3">{l.name}</span>
@@ -180,9 +180,9 @@ const LedgerSearchModal = ({
         </div>
 
         {/* Keyboard Helper Footer */}
-        <div className="px-4 py-2 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-white/10 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-          <span>Use <kbd className="px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300">↑</kbd> <kbd className="px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300">↓</kbd> to navigate</span>
-          <span>Press <kbd className="px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300">Enter ↵</kbd> to select</span>
+        <div className="px-4 py-2 bg-slate-50 dark:bg-[#1C2230] border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+          <span>Use <kbd className="px-1 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300">↑</kbd> <kbd className="px-1 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300">↓</kbd> to navigate</span>
+          <span>Press <kbd className="px-1 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300">Enter ↵</kbd> to select</span>
         </div>
 
       </div>

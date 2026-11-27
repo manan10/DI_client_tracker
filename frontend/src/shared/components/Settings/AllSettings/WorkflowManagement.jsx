@@ -102,7 +102,7 @@ const WorkflowManagement = () => {
   if (isInitialLoading) {
     return (
       <div className="flex justify-center items-center py-32">
-        <Loader2 className="animate-spin text-emerald-500" size={36} />
+        <Loader2 className="animate-spin text-sky-500" size={36} />
       </div>
     );
   }
@@ -122,7 +122,7 @@ const WorkflowManagement = () => {
         {/* LEFT NAVIGATION: Task Procedure Selector */}
         <aside className="w-full lg:w-80 shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5">
           <div className="col-span-full pb-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Select Procedure
             </span>
           </div>
@@ -137,25 +137,25 @@ const WorkflowManagement = () => {
                 key={wf.type}
                 type="button"
                 onClick={() => handleSelect(wf)}
-                className={`flex items-start gap-3.5 p-3.5 rounded-xl border-2 transition-all text-left shadow-2xs cursor-pointer active:scale-[0.99]
+                className={`flex items-start gap-3.5 p-3.5 rounded-lg border transition-all text-left shadow-2xs cursor-pointer active:scale-[0.99]
                   ${isActive 
-                    ? "bg-slate-900 dark:bg-white text-white dark:text-slate-950 border-slate-900 dark:border-white shadow-sm" 
-                    : "bg-white dark:bg-[#0B1120] border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:hover:border-white/20"
+                    ? "bg-sky-600 dark:bg-sky-500 text-white border-sky-600 dark:border-sky-500 shadow-sm" 
+                    : "bg-white dark:bg-[#161B26] border-slate-200 dark:border-slate-800/80 text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700"
                   }`}
               >
-                <div className={`w-9 h-9 rounded-lg shrink-0 flex items-center justify-center transition-colors ${
+                <div className={`w-9 h-9 rounded-md shrink-0 flex items-center justify-center transition-colors ${
                   isActive 
-                    ? "bg-emerald-500 text-white" 
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                    ? "bg-white/20 text-white" 
+                    : "bg-slate-100 dark:bg-[#1C2230] text-slate-600 dark:text-slate-400"
                 }`}>
                   <Icon size={18} />
                 </div>
                 
                 <div className="flex flex-col min-w-0 flex-1">
-                  <span className="text-xs font-bold uppercase tracking-wider truncate">
+                  <span className="text-xs font-semibold tracking-wide truncate">
                     {config.label}
                   </span>
-                  <span className={`text-[11px] truncate mt-0.5 ${isActive ? "text-slate-300 dark:text-slate-600" : "text-slate-400 dark:text-slate-500"}`}>
+                  <span className={`text-[11px] truncate mt-0.5 ${isActive ? "text-sky-100" : "text-slate-400 dark:text-slate-500"}`}>
                     {wf.defaultSteps?.length || 0} checklist items
                   </span>
                 </div>
@@ -165,17 +165,17 @@ const WorkflowManagement = () => {
         </aside>
 
         {/* RIGHT EDITOR PANEL: Steps Reordering & Editing */}
-        <main className="flex-1 w-full bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-xs flex flex-col min-h-[460px]">
+        <main className="flex-1 w-full bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg overflow-hidden shadow-xs flex flex-col min-h-[460px]">
           {activeWf ? (
             <>
               {/* Header Bar */}
-              <div className="px-5 sm:px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-slate-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="px-5 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-[#1C2230] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20 shrink-0">
+                  <div className="p-2 rounded-md bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-200/60 dark:border-sky-500/20 shrink-0">
                     <ListOrdered size={18} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                    <h3 className="sora-font text-sm font-bold text-slate-900 dark:text-white tracking-tight">
                       {activeConfig?.label} Checklist
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -188,7 +188,7 @@ const WorkflowManagement = () => {
                   type="button"
                   onClick={saveWorkflow}
                   disabled={isSaving}
-                  className="w-full sm:w-auto px-5 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-[0.99] disabled:opacity-50"
+                  className="w-full sm:w-auto px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-[0.99] disabled:opacity-50"
                 >
                   {isSaving ? (
                     <>
@@ -209,15 +209,15 @@ const WorkflowManagement = () => {
                 {draftSteps.map((step, idx) => (
                   <div 
                     key={idx} 
-                    className="flex items-start gap-3 bg-slate-50/80 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-xl p-3 shadow-2xs focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/10 transition-all"
+                    className="flex items-start gap-3 bg-slate-50 dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80 rounded-lg p-3 shadow-2xs focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/10 transition-all"
                   >
                     {/* Index & Order Buttons */}
-                    <div className="flex flex-col items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg p-1 shrink-0">
+                    <div className="flex flex-col items-center bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-700/80 rounded-md p-1 shrink-0">
                       <button 
                         type="button"
                         onClick={() => moveStep(idx, "UP")} 
                         disabled={idx === 0} 
-                        className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-20 p-0.5 transition-colors cursor-pointer"
+                        className="text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 disabled:opacity-20 p-0.5 transition-colors cursor-pointer"
                         title="Move Up"
                       >
                         <ChevronUp size={14} />
@@ -229,7 +229,7 @@ const WorkflowManagement = () => {
                         type="button"
                         onClick={() => moveStep(idx, "DOWN")} 
                         disabled={idx === draftSteps.length - 1} 
-                        className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-20 p-0.5 transition-colors cursor-pointer"
+                        className="text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 disabled:opacity-20 p-0.5 transition-colors cursor-pointer"
                         title="Move Down"
                       >
                         <ChevronDown size={14} />
@@ -251,7 +251,7 @@ const WorkflowManagement = () => {
                     <button 
                       type="button"
                       onClick={() => setDeleteIndex(idx)} 
-                      className="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg shrink-0 transition-colors cursor-pointer"
+                      className="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-md shrink-0 transition-colors cursor-pointer"
                       title="Delete step"
                     >
                       <Trash2 size={15} />
@@ -260,7 +260,7 @@ const WorkflowManagement = () => {
                 ))}
 
                 {draftSteps.length === 0 && (
-                  <div className="text-center py-12 text-slate-400 dark:text-slate-500 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl">
+                  <div className="text-center py-12 text-slate-400 dark:text-slate-500 border-2 border-dashed border-slate-200 dark:border-slate-700/80 rounded-lg">
                     <CheckCircle2 size={28} className="mx-auto mb-2 opacity-30" />
                     <p className="text-xs font-semibold">No steps created yet for this checklist.</p>
                   </div>
@@ -270,7 +270,7 @@ const WorkflowManagement = () => {
                 <button 
                   type="button"
                   onClick={addStep} 
-                  className="w-full py-3.5 border-2 border-dashed border-slate-200 hover:border-emerald-500 dark:border-white/10 dark:hover:border-emerald-400 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer mt-2"
+                  className="w-full py-3.5 border-2 border-dashed border-slate-200 hover:border-sky-500 dark:border-slate-700/80 dark:hover:border-sky-400 rounded-lg text-xs font-semibold text-slate-500 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center justify-center gap-2 cursor-pointer mt-2"
                 >
                   <Plus size={16} />
                   <span>Add Checklist Step</span>
@@ -280,7 +280,7 @@ const WorkflowManagement = () => {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-12 text-center">
               <GitBranch size={32} className="mb-3 opacity-25" />
-              <p className="text-xs font-bold uppercase tracking-wider">No Task Selected</p>
+              <p className="sora-font text-xs font-bold uppercase tracking-wider">No Task Selected</p>
               <p className="text-xs mt-1 max-w-xs text-slate-500">Pick a procedure from the left side to customize its checklist.</p>
             </div>
           )}
@@ -292,12 +292,12 @@ const WorkflowManagement = () => {
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex justify-center items-start p-4 sm:p-6 sm:py-16 animate-in fade-in duration-150">
           <div onClick={() => setDeleteIndex(null)} className="fixed inset-0" />
           
-          <div className="relative z-10 w-full max-w-sm bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 p-6 rounded-2xl shadow-xl text-center">
-            <div className="w-12 h-12 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl flex items-center justify-center mx-auto mb-3 border border-rose-200 dark:border-rose-500/20">
+          <div className="relative z-10 w-full max-w-sm bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 p-6 rounded-lg shadow-xl text-center">
+            <div className="w-12 h-12 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-md flex items-center justify-center mx-auto mb-3 border border-rose-200 dark:border-rose-500/20">
               <AlertTriangle size={22} strokeWidth={2.4} />
             </div>
             
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+            <h3 className="sora-font text-base font-bold text-slate-900 dark:text-white">
               Delete Step #{deleteIndex + 1}?
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 mb-5">
@@ -308,14 +308,14 @@ const WorkflowManagement = () => {
               <button 
                 type="button"
                 onClick={() => setDeleteIndex(null)} 
-                className="py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                className="py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-[#1C2230] dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button 
                 type="button"
                 onClick={confirmDelete} 
-                className="py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors shadow-xs cursor-pointer"
+                className="py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-xs cursor-pointer"
               >
                 Delete
               </button>

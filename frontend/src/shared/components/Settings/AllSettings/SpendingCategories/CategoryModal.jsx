@@ -28,20 +28,20 @@ const CategoryModal = ({
       />
 
       {/* Modal Dialog Card */}
-      <div className="relative w-full max-w-sm sm:max-w-md bg-white dark:bg-[#0B1120] rounded-xl p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-white/10 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh] no-scrollbar z-10">
+      <div className="relative w-full max-w-sm sm:max-w-md bg-white dark:bg-[#161B26] rounded-lg p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800/80 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh] no-scrollbar z-10">
         
         {isDelete ? (
           /* DELETE CONFIRMATION STATE */
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-3">
-              <div className="w-10 h-10 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 shadow-2xs">
+              <div className="w-10 h-10 rounded-md bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 shadow-2xs">
                 <ShieldAlert size={20} strokeWidth={2.2} />
               </div>
 
               <button 
                 type="button"
                 onClick={closeModal} 
-                className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 aria-label="Close"
               >
                 <X size={16} />
@@ -49,9 +49,9 @@ const CategoryModal = ({
             </div>
 
             <div className="space-y-1.5">
-              <h3 className="text-lg font-serif tracking-tight text-slate-900 dark:text-white leading-tight">
+              <h3 className="sora-font text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
                 {isSubDelete ? "Remove" : "Delete"}{" "}
-                <span className="italic font-normal text-rose-700 dark:text-rose-400">
+                <span className="font-normal text-rose-600 dark:text-rose-400">
                   {isSubDelete ? "Tag" : "Category"}
                 </span>
               </h3>
@@ -73,7 +73,7 @@ const CategoryModal = ({
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-white/5">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60">
               <button 
                 type="button"
                 onClick={closeModal} 
@@ -94,33 +94,33 @@ const CategoryModal = ({
         ) : (
           /* CREATE / EDIT / MERGE STATE */
           <div className="space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-white/10">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800/60">
               <div className="flex items-center gap-2">
                 {isMerge && (
-                  <div className="p-1.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20">
+                  <div className="p-1.5 rounded-md bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-500/20">
                     <Merge size={16} />
                   </div>
                 )}
                 <div>
-                  <h3 className="text-base sm:text-lg font-serif tracking-tight text-slate-900 dark:text-white leading-tight">
+                  <h3 className="sora-font text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
                     {isMerge ? (
                       <>
                         Merge{" "}
-                        <span className="italic font-normal text-emerald-800 dark:text-emerald-400">
+                        <span className="font-normal text-sky-600 dark:text-sky-300">
                           {selectedCount} Categories
                         </span>
                       </>
                     ) : modalMode === 'edit' ? (
                       <>
                         Edit{" "}
-                        <span className="italic font-normal text-emerald-800 dark:text-emerald-400">
+                        <span className="font-normal text-sky-600 dark:text-sky-300">
                           Category
                         </span>
                       </>
                     ) : (
                       <>
                         New{" "}
-                        <span className="italic font-normal text-emerald-800 dark:text-emerald-400">
+                        <span className="font-normal text-sky-600 dark:text-sky-300">
                           Category
                         </span>
                       </>
@@ -137,7 +137,7 @@ const CategoryModal = ({
               <button 
                 type="button"
                 onClick={closeModal} 
-                className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 aria-label="Close"
               >
                 <X size={16} />
@@ -160,7 +160,7 @@ const CategoryModal = ({
                     if (e.key === 'Escape') closeModal();
                   }}
                   placeholder={isMerge ? "e.g. Subscriptions & Bills" : "e.g. Groceries"}
-                  className="w-full bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-lg border border-slate-200 dark:border-white/10 text-xs font-sans text-slate-900 dark:text-white outline-none focus:border-emerald-600 transition-colors placeholder:text-slate-400" 
+                  className="w-full bg-slate-50 dark:bg-[#1C2230] px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700/80 text-xs font-sans text-slate-900 dark:text-white outline-none focus:border-sky-500 transition-colors placeholder:text-slate-400" 
                 />
               </div>
 
@@ -169,8 +169,8 @@ const CategoryModal = ({
                 <label className="text-[10px] font-sans font-semibold uppercase tracking-wider text-slate-400">
                   Accent Color
                 </label>
-                <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-lg border border-slate-200 dark:border-white/10">
-                  <div className="relative w-7 h-7 rounded overflow-hidden shrink-0 border border-slate-300 dark:border-white/20 shadow-2xs cursor-pointer">
+                <div className="flex items-center gap-3 bg-slate-50 dark:bg-[#1C2230] px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700/80">
+                  <div className="relative w-7 h-7 rounded-md overflow-hidden shrink-0 border border-slate-300 dark:border-slate-600 shadow-2xs cursor-pointer">
                     <input 
                       type="color" 
                       value={catColor} 
@@ -191,7 +191,7 @@ const CategoryModal = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-white/5">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60">
                 <button 
                   type="button"
                   onClick={closeModal} 
@@ -204,11 +204,7 @@ const CategoryModal = ({
                   type="button"
                   onClick={handleAction} 
                   disabled={!catName.trim()}
-                  className={`inline-flex items-center gap-1.5 px-4 py-1.5 text-white rounded-md text-xs font-sans font-semibold tracking-wide transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs ${
-                    isMerge 
-                      ? 'bg-indigo-600 hover:bg-indigo-700' 
-                      : 'bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500'
-                  }`}
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-400 text-white rounded-lg text-xs font-sans font-semibold tracking-wide transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
                 >
                   <CheckCircle2 size={13} strokeWidth={2.4} />
                   <span>{isMerge ? "Confirm Merge" : modalMode === 'edit' ? "Save Changes" : "Create Category"}</span>

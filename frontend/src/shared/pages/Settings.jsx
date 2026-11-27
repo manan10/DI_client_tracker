@@ -522,7 +522,7 @@ const Settings = ({ mode, hideTopBar = false, navbar = null }) => {
           <button
             type="button"
             onClick={() => setActiveItem(null)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-[#232A3B] dark:hover:bg-[#2A3347] text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white border border-slate-200 dark:border-white/10 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white hover:bg-slate-50 dark:bg-[#161B26] dark:hover:bg-[#1C2230] text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
           >
             <ArrowLeft size={14} className="text-sky-600 dark:text-sky-400" />
             <span>Back to All Settings</span>
@@ -530,13 +530,19 @@ const Settings = ({ mode, hideTopBar = false, navbar = null }) => {
         ) : null
       }
     >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+        .sora-font {
+          font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+      `}</style>
       {!activeItem ? (
         <div className="space-y-10 animate-in fade-in duration-200">
           <SettingsSection
             title="General Settings"
             icon={SlidersHorizontal}
-            iconColor="text-purple-600 dark:text-purple-400"
-            iconBg="bg-purple-500/10 border-purple-500/20"
+            iconColor="text-sky-600 dark:text-sky-400"
+            iconBg="bg-sky-50 dark:bg-sky-500/10 border-sky-200/70 dark:border-sky-500/25"
             cards={generalCards}
             isAdmin={user?.isAdmin}
             onCardClick={setActiveItem}
@@ -546,8 +552,8 @@ const Settings = ({ mode, hideTopBar = false, navbar = null }) => {
             <SettingsSection
               title="Client Tracker Operations"
               icon={Building2}
-              iconColor="text-emerald-600 dark:text-emerald-400"
-              iconBg="bg-emerald-500/10 border-emerald-500/20"
+              iconColor="text-sky-600 dark:text-sky-400"
+              iconBg="bg-sky-50 dark:bg-sky-500/10 border-sky-200/70 dark:border-sky-500/25"
               cards={businessCards}
               isAdmin={user?.isAdmin}
               onCardClick={setActiveItem}
@@ -558,8 +564,8 @@ const Settings = ({ mode, hideTopBar = false, navbar = null }) => {
             <SettingsSection
               title="Expense Tracker Management"
               icon={Receipt}
-              iconColor="text-rose-600 dark:text-rose-400"
-              iconBg="bg-rose-500/10 border-rose-500/20"
+              iconColor="text-sky-600 dark:text-sky-400"
+              iconBg="bg-sky-50 dark:bg-sky-500/10 border-sky-200/70 dark:border-sky-500/25"
               cards={expenseCards}
               isAdmin={user?.isAdmin}
               onCardClick={setActiveItem}

@@ -8,8 +8,8 @@ import SettingsCard from "./SettingsCard";
 const SettingsSection = ({
   title,
   icon: Icon,
-  iconColor = "text-emerald-600 dark:text-emerald-400",
-  iconBg = "bg-emerald-500/10 border-emerald-500/20",
+  iconColor = "text-sky-600 dark:text-sky-400",
+  iconBg = "bg-sky-50 dark:bg-sky-500/10 border-sky-200/70 dark:border-sky-500/25",
   cards = [],
   isAdmin = false,
   onCardClick,
@@ -21,16 +21,16 @@ const SettingsSection = ({
   return (
     <div className="space-y-4">
       {/* Category Section Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-slate-300/80 dark:border-white/10">
+      <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/80 dark:border-slate-800/80">
         <div className="flex items-center gap-2.5">
-          <div className={`p-1 rounded-md border ${iconBg} ${iconColor}`}>
+          <div className={`p-1.5 rounded-md border ${iconBg} ${iconColor}`}>
             <Icon size={15} />
           </div>
-          <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+          <h2 className="sora-font text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
             {title}
           </h2>
         </div>
-        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+        <span className="text-[11px] font-mono font-medium text-slate-400 dark:text-slate-500">
           {visibleCards.length} Modules
         </span>
       </div>

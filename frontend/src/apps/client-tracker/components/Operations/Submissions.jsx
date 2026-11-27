@@ -150,7 +150,14 @@ const Submissions = () => {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 pb-20 md:pb-0">
+    <div className="w-full space-y-6 animate-in fade-in duration-300 pb-20 md:pb-0">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+        .sora-font {
+          font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+      `}</style>
+
       <CommandHeader
         viewMode={viewMode}
         setViewMode={setViewMode}
@@ -166,7 +173,7 @@ const Submissions = () => {
       />
 
       {/* CONTENT REGISTRY CONTAINER */}
-      <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-lg shadow-sm overflow-hidden flex flex-col min-h-125">
+      <div className="bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg overflow-hidden flex flex-col min-h-125">
         <DesktopTable
           data={paginatedData}
           sortConfig={sortConfig}
@@ -178,44 +185,45 @@ const Submissions = () => {
 
         {/* EMPTY STATE */}
         {processedData.length === 0 && (
-          <div className="px-6 py-20 text-center flex flex-col items-center justify-center opacity-40 flex-1">
-            <Landmark
-              size={40}
-              strokeWidth={1.5}
-              className="mb-4 text-slate-500"
-            />
-            <p className="text-[11px] font-[1000] uppercase tracking-[0.3em] text-slate-500">
-              Registry List Clear
+          <div className="px-6 py-20 text-center flex flex-col items-center justify-center flex-1">
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-[#1C2230] border border-slate-200/80 dark:border-slate-800 text-slate-400 dark:text-slate-500 mb-3">
+              <Landmark size={28} strokeWidth={1.75} />
+            </div>
+            <p className="sora-font text-xs font-semibold text-slate-600 dark:text-slate-300">
+              No submissions found
+            </p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+              Try switching categories or clearing your search filter.
             </p>
           </div>
         )}
 
         {/* PAGINATION FOOTER */}
         {processedData.length > 0 && (
-          <div className="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-white/10 p-4 flex items-center justify-between mt-auto">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+          <div className="bg-slate-50/90 dark:bg-[#1C2230] border-t border-slate-200 dark:border-slate-800/80 px-5 py-3.5 flex items-center justify-between mt-auto">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Showing{" "}
-              <span className="text-slate-900 dark:text-white font-[1000]">
+              <span className="font-mono font-semibold text-slate-900 dark:text-white">
                 {(currentPage - 1) * itemsPerPage + 1}
               </span>{" "}
               to{" "}
-              <span className="text-slate-900 dark:text-white font-[1000]">
+              <span className="font-mono font-semibold text-slate-900 dark:text-white">
                 {Math.min(currentPage * itemsPerPage, processedData.length)}
               </span>{" "}
               of{" "}
-              <span className="text-slate-900 dark:text-white font-[1000]">
+              <span className="font-mono font-semibold text-slate-900 dark:text-white">
                 {processedData.length}
               </span>
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="p-1.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors outline-none"
+                className="p-1.5 rounded-md bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:text-sky-600 dark:hover:text-sky-300 hover:border-slate-300 dark:hover:border-slate-600 transition-colors outline-none cursor-pointer disabled:cursor-not-allowed"
               >
-                <ChevronLeft size={16} />
+                <ChevronLeft size={15} />
               </button>
-              <span className="text-[11px] font-[1000] text-slate-700 dark:text-slate-300 px-3 tabular-nums">
+              <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-200 px-2.5 tabular-nums">
                 {currentPage} / {totalPages}
               </span>
               <button
@@ -223,9 +231,9 @@ const Submissions = () => {
                   setCurrentPage((p) => Math.min(totalPages, p + 1))
                 }
                 disabled={currentPage === totalPages}
-                className="p-1.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors outline-none"
+                className="p-1.5 rounded-md bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:text-sky-600 dark:hover:text-sky-300 hover:border-slate-300 dark:hover:border-slate-600 transition-colors outline-none cursor-pointer disabled:cursor-not-allowed"
               >
-                <ChevronRight size={16} />
+                <ChevronRight size={15} />
               </button>
             </div>
           </div>

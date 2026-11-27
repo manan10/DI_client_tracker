@@ -25,13 +25,13 @@ import Logo from "../../../../assets/logo_nobrand.png";
 const allApps = [
   {
     id: "CLIENT_TRACKER",
-    title: "CRM Portal",
+    title: "DI Co-Pilot",
     path: "/dashboard",
     icon: Users,
   },
   {
     id: "EXPENSE_TRACKER",
-    title: "Expense Logger",
+    title: "Kharcha Paani",
     path: "/expenses",
     icon: ReceiptIndianRupee,
   },
@@ -224,7 +224,7 @@ const Navbar = () => {
                       aria-haspopup="true"
                       aria-expanded={isAppDropdownOpen}
                     >
-                      <span>CRM Portal</span>
+                      <span>DI Co-Pilot</span>
                       <ChevronDown
                         size={11}
                         className={`text-slate-400 group-hover/switcher:text-sky-300 transition-transform duration-200 ${

@@ -741,17 +741,17 @@ const ResultStep = ({
   };
 
   return (
-    <div className="h-full w-full bg-slate-50 dark:bg-[#07090E] overflow-y-auto font-sans pb-48 select-none">
+    <div className="h-full w-full bg-slate-50 dark:bg-[#131720] overflow-y-auto font-sans pb-48 select-none">
       {/* 1. EXECUTIVE HEADER */}
-      <div className="bg-[#0B1120] w-full px-6 lg:px-12 pt-7 pb-10 text-white relative border-b border-slate-800 shadow-xl">
+      <div className="bg-slate-900 dark:bg-[#161B26] w-full px-6 lg:px-12 pt-7 pb-10 text-white relative border-b border-slate-800 dark:border-slate-800/80 shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-md bg-slate-800 border border-slate-700 text-emerald-400 flex items-center justify-center shrink-0">
+            <div className="w-11 h-11 rounded-md bg-slate-800 border border-slate-700 text-sky-400 flex items-center justify-center shrink-0">
               <Building2 size={22} strokeWidth={2} />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-1">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-sky-400 flex items-center gap-1">
                   <ShieldCheck size={12} /> Tally Link Active
                 </span>
                 <span className="text-slate-600">•</span>
@@ -759,7 +759,7 @@ const ResultStep = ({
                   Execution Workspace
                 </span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white leading-tight">
+              <h2 className="sora-font text-xl sm:text-2xl font-bold tracking-tight text-white leading-tight">
                 {companyName || "Target Company"}
               </h2>
             </div>
@@ -769,7 +769,7 @@ const ResultStep = ({
             <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest block mb-0.5">
               Target Batch Total
             </span>
-            <span className="text-xl font-mono font-black text-white">
+            <span className="sora-font text-xl font-mono font-bold text-white">
               {totals.totalActionable} Vouchers
             </span>
           </div>
@@ -779,7 +779,7 @@ const ResultStep = ({
       {/* 2. PROMINENT FAILED VOUCHERS BANNER */}
       {failedVouchers.length > 0 && (
         <div className="w-full px-6 lg:px-12 mt-4">
-          <div className="bg-rose-50 dark:bg-rose-950/30 border-2 border-rose-500/50 rounded-md p-4 sm:p-5 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-500/50 rounded-lg p-4 sm:p-5 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-start gap-3.5">
               <div className="p-2 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 shrink-0">
                 <AlertTriangle size={20} strokeWidth={2.5} />
@@ -790,11 +790,11 @@ const ResultStep = ({
                     Transmission Alert
                   </span>
                   <span className="text-slate-400">•</span>
-                  <span className="px-2 py-0.2 rounded-sm bg-rose-200/60 dark:bg-rose-900/60 text-rose-900 dark:text-rose-200 text-[10px] font-mono font-black">
+                  <span className="px-2 py-0.2 rounded-md bg-rose-200/60 dark:bg-rose-900/60 text-rose-900 dark:text-rose-200 text-[10px] font-mono font-bold">
                     {failedVouchers.length} Failed
                   </span>
                 </div>
-                <h3 className="text-sm font-black text-rose-950 dark:text-rose-100 mt-0.5">
+                <h3 className="sora-font text-sm font-bold text-rose-950 dark:text-rose-100 mt-0.5">
                   Some vouchers could not be created in Tally
                 </h3>
                 <p className="text-xs text-rose-800/80 dark:text-rose-300/80 mt-0.5 max-w-2xl">
@@ -819,7 +819,7 @@ const ResultStep = ({
                 type="button"
                 disabled={isProcessing}
                 onClick={handleRetryFailed}
-                className="cursor-pointer flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 text-white hover:bg-transparent hover:text-rose-600 dark:hover:text-rose-400 border border-transparent hover:border-rose-600 dark:hover:border-rose-500 rounded-md text-[11px] font-mono font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                className="cursor-pointer flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 text-white hover:bg-transparent hover:text-rose-600 dark:hover:text-rose-400 border border-transparent hover:border-rose-600 dark:hover:border-rose-500 rounded-md text-[11px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
               >
                 {isProcessing ? (
                   <Loader2 size={13} className="animate-spin" />
@@ -835,20 +835,20 @@ const ResultStep = ({
 
       {/* 3. COMMAND DECK WITH CATEGORY MARK/UNMARK CONTROLS */}
       <div className="w-full px-6 lg:px-12 -mt-5 relative z-10 mb-6">
-        <div className="bg-white dark:bg-[#0E131F] rounded-md border-2 border-slate-200 dark:border-white/10 p-4 shadow-sm flex flex-col gap-4">
+        <div className="bg-white dark:bg-[#161B26] rounded-lg border border-slate-200 dark:border-slate-800/80 p-4 shadow-sm flex flex-col gap-4">
           {/* Top Row: Permanent Target Counts + Category Mark/Unmark Controls + Sync Health */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-slate-100 dark:border-white/5">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-slate-100 dark:border-slate-800/60">
             <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                 Category Batches:
               </span>
 
               {/* Sales Category Pill with Mark/Unmark */}
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10">
-                <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80">
+                <span className="flex items-center gap-1.5 text-sky-600 dark:text-sky-400 font-bold">
                   <Layers size={13} />
                   <span>Sales:</span>
-                  <strong className="font-black text-sm">{totals.sales}</strong>
+                  <strong className="font-bold text-sm">{totals.sales}</strong>
                   <span className="text-[10px] opacity-70 font-normal">
                     ({stats.salesPending} P | {stats.salesSuccess} S)
                   </span>
@@ -858,7 +858,7 @@ const ResultStep = ({
                   type="button"
                   disabled={isProcessing || stats.salesPending === 0}
                   onClick={() => handleMarkCategoryAsPushed("SALES")}
-                  className="cursor-pointer text-[10px] font-bold text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 uppercase tracking-tight disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="cursor-pointer text-[10px] font-bold text-slate-600 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 uppercase tracking-tight disabled:opacity-30 disabled:cursor-not-allowed"
                   title="Mark all pending sales vouchers as pushed"
                 >
                   Mark
@@ -876,12 +876,12 @@ const ResultStep = ({
               </div>
 
               {/* Banking Category Pill with Mark/Unmark */}
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80">
                 <div className="flex items-center gap-2 font-bold">
                   <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                     <ArrowRightLeft size={13} />
                     <span>Rec:</span>
-                    <strong className="font-black text-sm">
+                    <strong className="font-bold text-sm">
                       {totals.receipts}
                     </strong>
                   </span>
@@ -889,7 +889,7 @@ const ResultStep = ({
                   <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400">
                     <Coins size={13} />
                     <span>Pay:</span>
-                    <strong className="font-black text-sm">
+                    <strong className="font-bold text-sm">
                       {totals.payments}
                     </strong>
                   </span>
@@ -929,14 +929,14 @@ const ResultStep = ({
 
             {/* Live Queue Status */}
             <div className="flex items-center gap-2 text-xs font-mono">
-              <span className="px-2.5 py-1 rounded-sm text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+              <span className="px-2.5 py-1 rounded-md text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
                 {stats.success} Synced
               </span>
-              <span className="px-2.5 py-1 rounded-sm text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20">
+              <span className="px-2.5 py-1 rounded-md text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20">
                 {stats.pending} Pending
               </span>
               {stats.failed > 0 && (
-                <span className="px-2.5 py-1 rounded-sm text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20">
+                <span className="px-2.5 py-1 rounded-md text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20">
                   {stats.failed} Failed
                 </span>
               )}
@@ -955,7 +955,7 @@ const ResultStep = ({
                 type="button"
                 disabled={isProcessing || stats.salesPending === 0}
                 onClick={() => handleSyncType("SALES")}
-                className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white hover:bg-transparent hover:text-blue-600 dark:hover:text-blue-400 border border-transparent hover:border-blue-600 dark:hover:border-blue-400 rounded-md text-[11px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 text-white hover:bg-transparent hover:text-sky-600 dark:hover:text-sky-400 border border-transparent hover:border-sky-600 dark:hover:border-sky-400 rounded-md text-[11px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
               >
                 <Layers size={13} /> Push Sales ({stats.salesPending})
               </button>
@@ -980,7 +980,7 @@ const ResultStep = ({
                 type="button"
                 disabled={isProcessing || stats.pending === 0}
                 onClick={handleSyncAll}
-                className="cursor-pointer flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 text-white hover:bg-transparent hover:text-emerald-600 dark:hover:text-emerald-400 border-2 border-transparent hover:border-emerald-600 dark:hover:border-emerald-400 rounded-md text-[11px] font-mono font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                className="cursor-pointer flex items-center gap-1.5 px-4 py-1.5 bg-sky-600 text-white hover:bg-transparent hover:text-sky-600 dark:hover:text-sky-400 border-2 border-transparent hover:border-sky-600 dark:hover:border-sky-400 rounded-lg text-[11px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
               >
                 {isProcessing ? (
                   <Loader2 size={13} className="animate-spin" />
@@ -992,7 +992,7 @@ const ResultStep = ({
             </div>
 
             {/* Right: Manual Verification Overrides */}
-            <div className="flex flex-wrap items-center gap-2 border-t lg:border-t-0 border-slate-100 dark:border-white/5 pt-2 lg:pt-0">
+            <div className="flex flex-wrap items-center gap-2 border-t lg:border-t-0 border-slate-100 dark:border-slate-800/60 pt-2 lg:pt-0">
               <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider mr-1">
                 Manual Overrides:
               </span>
@@ -1028,7 +1028,7 @@ const ResultStep = ({
         {isProcessing && (
           <div className="w-full mt-2 bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-emerald-500 h-full transition-all duration-300 ease-out"
+              className="bg-sky-500 h-full transition-all duration-300 ease-out"
               style={{ width: `${globalProgress}%` }}
             />
           </div>
@@ -1039,7 +1039,7 @@ const ResultStep = ({
       <div className="w-full px-6 lg:px-12">
         {/* Bank Tabs */}
         {Object.keys(uiGroups).length > 0 && (
-          <div className="flex border-b border-slate-300 dark:border-white/10 mb-6 overflow-x-auto no-scrollbar gap-2">
+          <div className="flex border-b border-slate-200 dark:border-slate-800/80 mb-6 overflow-x-auto no-scrollbar gap-2">
             {Object.keys(uiGroups).map((bank) => {
               const isActive = activeBankTab === bank;
               const bankPending = uiGroups[bank].reduce(
@@ -1070,22 +1070,22 @@ const ResultStep = ({
                   onClick={() => setActiveBankTab(bank)}
                   className={`cursor-pointer pb-2.5 px-3 flex items-center gap-2 border-b-2 text-xs font-mono uppercase tracking-wider transition-all whitespace-nowrap ${
                     isActive
-                      ? "border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold"
+                      ? "border-sky-500 text-sky-600 dark:text-sky-400 font-bold"
                       : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                   }`}
                 >
                   <Landmark
                     size={13}
-                    className={isActive ? "text-emerald-500" : "text-slate-400"}
+                    className={isActive ? "text-sky-500" : "text-slate-400"}
                   />
                   <span>{bank}</span>
                   {bankPending > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-sm text-[10px] font-mono font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+                    <span className="px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold bg-slate-200 dark:bg-[#1C2230] text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700/80">
                       {bankPending}
                     </span>
                   )}
                   {bankFailed > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-sm text-[10px] font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                    <span className="px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
                       {bankFailed} err
                     </span>
                   )}
@@ -1118,12 +1118,12 @@ const ResultStep = ({
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <span
-                        className={`px-2 py-0.5 rounded-sm border text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1 ${theme.badge}`}
+                        className={`px-2 py-0.5 rounded-md border text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1 ${theme.badge}`}
                       >
                         {theme.icon}
                         {group.type}
                       </span>
-                      <h4 className="text-base font-black uppercase tracking-tight text-slate-900 dark:text-white truncate">
+                      <h4 className="sora-font text-base font-bold tracking-tight text-slate-900 dark:text-white truncate">
                         {group.partyLedger}
                       </h4>
                       <span className="text-slate-400 text-xs font-mono font-bold">
@@ -1133,7 +1133,7 @@ const ResultStep = ({
 
                     <div className="flex items-center gap-3">
                       <span
-                        className={`font-mono text-base font-black mr-2 ${theme.text}`}
+                        className={`font-mono text-base font-bold mr-2 ${theme.text}`}
                       >
                         {group.type === "RECEIPT"
                           ? "+"
@@ -1173,7 +1173,7 @@ const ResultStep = ({
                             type="button"
                             disabled={isProcessing || groupPending === 0}
                             onClick={() => handleSyncGroup(group.id)}
-                            className="cursor-pointer flex items-center gap-1 px-2.5 py-1 bg-slate-900 text-white hover:bg-transparent hover:text-slate-900 dark:hover:text-white border border-transparent hover:border-slate-900 dark:hover:border-white rounded-md text-[10px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+                            className="cursor-pointer flex items-center gap-1 px-2.5 py-1 bg-sky-600 text-white hover:bg-transparent hover:text-sky-600 dark:hover:text-sky-400 border border-transparent hover:border-sky-600 dark:hover:border-sky-400 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
                           >
                             <Play size={11} className="fill-current" /> Sync (
                             {groupPending})
@@ -1193,7 +1193,7 @@ const ResultStep = ({
                       {group.transactions.map((tx, tIdx) => (
                         <div
                           key={tIdx}
-                          className="p-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-sm flex justify-between items-start gap-3"
+                          className="p-2.5 bg-slate-50 dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80 rounded-lg flex justify-between items-start gap-3"
                         >
                           <div className="flex flex-col gap-0.5 min-w-0">
                             <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">
@@ -1225,7 +1225,7 @@ const ResultStep = ({
                     </div>
 
                     {/* RIGHT: Resulting Tally Vouchers */}
-                    <div className="space-y-2 border-t lg:border-t-0 border-slate-200 dark:border-white/10 pt-3 lg:pt-0">
+                    <div className="space-y-2 border-t lg:border-t-0 border-slate-200 dark:border-slate-800/80 pt-3 lg:pt-0">
                       <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1">
                         <FileText size={12} /> Target Tally Vouchers
                       </div>
@@ -1248,12 +1248,12 @@ const ResultStep = ({
                           return (
                             <div
                               key={v.id}
-                              className={`bg-white dark:bg-[#0E131F] border ${isFailed ? "border-rose-400 dark:border-rose-500/50 border-l-4 border-l-rose-500" : "border-slate-200 dark:border-white/10 border-l-3 border-l-blue-500"} rounded-sm overflow-hidden shadow-xs`}
+                              className={`bg-white dark:bg-[#161B26] border ${isFailed ? "border-rose-400 dark:border-rose-500/50 border-l-4 border-l-rose-500" : "border-slate-200 dark:border-slate-800/80 border-l-3 border-l-sky-500"} rounded-lg overflow-hidden shadow-xs`}
                             >
-                              <div className="p-3 border-b border-slate-100 dark:border-white/5 flex justify-between items-start gap-3">
+                              <div className="p-3 border-b border-slate-100 dark:border-slate-800/60 flex justify-between items-start gap-3">
                                 <div className="flex flex-col gap-0.5 min-w-0">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">
+                                    <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-sky-600 dark:text-sky-400">
                                       Sales Invoice
                                     </span>
                                     <span className="text-[10px] font-mono text-slate-400">
@@ -1261,16 +1261,16 @@ const ResultStep = ({
                                         `INV-${v.rawTx._id.slice(-5).toUpperCase()}`}
                                     </span>
                                   </div>
-                                  <span className="text-xs font-black uppercase text-slate-900 dark:text-white truncate">
+                                  <span className="text-xs font-bold uppercase text-slate-900 dark:text-white truncate">
                                     {v.activeSalesLedger}
                                   </span>
                                 </div>
-                                <span className="font-mono text-xs font-black text-blue-600 dark:text-blue-400 shrink-0">
+                                <span className="font-mono text-xs font-bold text-sky-600 dark:text-sky-400 shrink-0">
                                   {formatINR(v.grossTotal)}
                                 </span>
                               </div>
 
-                              <div className="p-3 flex flex-col gap-2.5 text-xs bg-slate-50/50 dark:bg-white/1">
+                              <div className="p-3 flex flex-col gap-2.5 text-xs bg-slate-50 dark:bg-[#1C2230]">
                                 <div className="grid grid-cols-[24px_1fr] gap-x-2 gap-y-0.5 text-[11px]">
                                   <span className="font-mono text-slate-400 font-bold">
                                     Dr
@@ -1294,7 +1294,7 @@ const ResultStep = ({
                                 </div>
 
                                 {ledgerObj && (
-                                  <div className="flex flex-wrap gap-x-3 gap-y-1 p-2 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-white/5 rounded-sm text-[10px] font-mono text-slate-600 dark:text-slate-300">
+                                  <div className="flex flex-wrap gap-x-3 gap-y-1 p-2 bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-700/80 rounded-md text-[10px] font-mono text-slate-600 dark:text-slate-300">
                                     {ledgerObj.gstin && (
                                       <div className="flex items-center gap-1">
                                         <Hash
@@ -1316,7 +1316,7 @@ const ResultStep = ({
                                   </div>
                                 )}
 
-                                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200/60 dark:border-white/5 text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200 dark:border-slate-700/80 text-[10px] font-mono text-slate-500 dark:text-slate-400">
                                   <span>
                                     Base:{" "}
                                     <strong className="text-slate-900 dark:text-white">
@@ -1342,7 +1342,7 @@ const ResultStep = ({
                                   {v.igst > 0 && (
                                     <span>
                                       • IGST:{" "}
-                                      <strong className="text-blue-600 dark:text-blue-400">
+                                      <strong className="text-sky-600 dark:text-sky-400">
                                         {formatINR(v.igst).replace("₹", "")}
                                       </strong>
                                     </span>
@@ -1395,7 +1395,7 @@ const ResultStep = ({
                           return (
                             <div
                               key={v.id}
-                              className={`bg-white dark:bg-[#0E131F] border ${isFailed ? "border-rose-400 dark:border-rose-500/50" : "border-slate-200 dark:border-white/10"} border-l-4 ${config.border} rounded-sm overflow-hidden shadow-xs`}
+                              className={`bg-white dark:bg-[#161B26] border ${isFailed ? "border-rose-400 dark:border-rose-500/50" : "border-slate-200 dark:border-slate-800/80"} border-l-4 ${config.border} rounded-lg overflow-hidden shadow-xs`}
                             >
                               <div className="p-3 flex justify-between items-center gap-3">
                                 <div className="flex flex-col min-w-0">
@@ -1409,7 +1409,7 @@ const ResultStep = ({
                                   </span>
                                 </div>
                                 <span
-                                  className={`font-mono text-xs font-black ${config.text} shrink-0`}
+                                  className={`font-mono text-xs font-bold ${config.text} shrink-0`}
                                 >
                                   {formatINR(v.amount)}
                                 </span>
@@ -1434,7 +1434,7 @@ const ResultStep = ({
                           return (
                             <div
                               key={v.id}
-                              className="p-3 rounded-sm border border-slate-200 dark:border-white/10 border-l-3 border-l-amber-500 bg-white dark:bg-slate-900/60 flex justify-between items-center gap-3"
+                              className="p-3 rounded-lg border border-slate-200 dark:border-slate-800/80 border-l-3 border-l-amber-500 bg-white dark:bg-[#161B26] flex justify-between items-center gap-3"
                             >
                               <div className="flex flex-col min-w-0">
                                 <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
@@ -1444,7 +1444,7 @@ const ResultStep = ({
                                   Missing Ledger Mapping
                                 </span>
                               </div>
-                              <span className="font-mono text-xs font-black text-amber-600 dark:text-amber-400 shrink-0">
+                              <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400 shrink-0">
                                 {formatINR(v.amount)}
                               </span>
                             </div>
@@ -1473,10 +1473,10 @@ const VoucherStatusFooter = ({
   isProcessing,
 }) => {
   return (
-    <div className="flex items-center justify-between border-t border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/2 px-3 py-2">
+    <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60 bg-slate-50 dark:bg-[#1C2230] px-3 py-2">
       <div className="flex items-center">
         {v.status === "PROCESSING" && (
-          <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 text-[10px] font-mono font-bold uppercase tracking-wider">
+          <span className="flex items-center gap-1 text-sky-600 dark:text-sky-400 text-[10px] font-mono font-bold uppercase tracking-wider">
             <Loader2 size={11} className="animate-spin" /> Pushing
           </span>
         )}
@@ -1490,13 +1490,13 @@ const VoucherStatusFooter = ({
           <div className="flex items-center gap-1 text-rose-600 dark:text-rose-400 text-[10px] font-mono font-bold uppercase tracking-wider cursor-help relative group">
             <AlertCircle size={13} strokeWidth={2.5} /> Failed:{" "}
             {v.errorMsg || "Rejected"}
-            <div className="absolute left-0 bottom-full mb-2 w-56 bg-slate-900 text-white text-[11px] p-2.5 rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 normal-case font-normal border border-slate-800">
+            <div className="absolute left-0 bottom-full mb-2 w-56 bg-slate-900 text-white text-[11px] p-2.5 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 normal-case font-normal border border-slate-800">
               {v.errorMsg}
             </div>
           </div>
         )}
         {v.status === "PENDING" && (
-          <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest bg-slate-200/50 dark:bg-white/5 px-1.5 py-0.5 rounded border border-slate-300 dark:border-white/10">
+          <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest bg-slate-200/50 dark:bg-[#161B26] px-1.5 py-0.5 rounded-md border border-slate-300 dark:border-slate-700/80">
             Ready
           </span>
         )}
@@ -1508,7 +1508,7 @@ const VoucherStatusFooter = ({
             <button
               type="button"
               onClick={onUnmarkPushed}
-              className="cursor-pointer flex items-center gap-1 px-2.5 py-1 bg-amber-600 text-white hover:bg-transparent hover:text-amber-600 dark:hover:text-amber-400 border border-transparent hover:border-amber-600 dark:hover:border-amber-400 rounded text-[10px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 shadow-2xs"
+              className="cursor-pointer flex items-center gap-1 px-2.5 py-1 bg-amber-600 text-white hover:bg-transparent hover:text-amber-600 dark:hover:text-amber-400 border border-transparent hover:border-amber-600 dark:hover:border-amber-400 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 shadow-2xs"
               title="Reset this voucher back to pending"
             >
               <Undo2 size={11} strokeWidth={2.5} /> Unmark
@@ -1519,7 +1519,7 @@ const VoucherStatusFooter = ({
             <button
               type="button"
               onClick={onMarkPushed}
-              className="cursor-pointer flex items-center gap-1 px-2.5 py-1 bg-slate-700 text-white hover:bg-transparent hover:text-slate-700 dark:hover:text-slate-200 border border-transparent hover:border-slate-700 dark:hover:border-slate-400 rounded text-[10px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 shadow-2xs"
+              className="cursor-pointer flex items-center gap-1 px-2.5 py-1 bg-slate-700 text-white hover:bg-transparent hover:text-slate-700 dark:hover:text-slate-200 border border-transparent hover:border-slate-700 dark:hover:border-slate-400 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 shadow-2xs"
               title="Mark as pushed manually without pinging Tally bridge"
             >
               <Check size={11} strokeWidth={2.5} /> Mark Pushed
@@ -1530,10 +1530,10 @@ const VoucherStatusFooter = ({
             <button
               type="button"
               onClick={onPush}
-              className={`cursor-pointer flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 shadow-2xs border border-transparent ${
+              className={`cursor-pointer flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider transition-all active:scale-95 shadow-2xs border border-transparent ${
                 v.status === "FAILED"
                   ? "bg-rose-600 text-white hover:bg-transparent hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-600 dark:hover:border-rose-400"
-                  : "bg-emerald-600 text-white hover:bg-transparent hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-600 dark:hover:border-emerald-400"
+                  : "bg-sky-600 text-white hover:bg-transparent hover:text-sky-600 dark:hover:text-sky-400 hover:border-sky-600 dark:hover:border-sky-400"
               }`}
             >
               {v.status === "FAILED" ? (

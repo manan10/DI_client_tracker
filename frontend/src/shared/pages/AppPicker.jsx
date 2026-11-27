@@ -30,21 +30,21 @@ const allApps = [
     icon: Users,
     badge: "Business App",
     theme: {
-      primary: "bg-emerald-600 dark:bg-emerald-500",
-      text: "text-emerald-800 dark:text-emerald-300",
+      primary: "bg-sky-600 dark:bg-sky-500",
+      text: "text-sky-800 dark:text-sky-300",
       accentBg:
-        "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200/90 dark:border-emerald-500/30",
+        "bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-200/90 dark:border-sky-500/30",
       border:
-        "border-2 border-emerald-300/80 dark:border-emerald-500/40 hover:border-emerald-600 dark:hover:border-emerald-400",
+        "border-2 border-sky-300/80 dark:border-sky-500/40 hover:border-sky-600 dark:hover:border-sky-400",
       cardHover:
-        "hover:shadow-[0_18px_40px_rgba(16,185,129,0.15)] dark:hover:shadow-[0_18px_40px_rgba(16,185,129,0.12)]",
+        "hover:shadow-[0_18px_40px_rgba(14,165,233,0.15)] dark:hover:shadow-[0_18px_40px_rgba(14,165,233,0.12)]",
       badgeBg:
-        "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-300/90 dark:border-emerald-500/30",
+        "bg-sky-50 dark:bg-sky-500/10 text-sky-800 dark:text-sky-300 border border-sky-300/90 dark:border-sky-500/30",
       pillBg:
-        "bg-emerald-50/90 dark:bg-emerald-500/10 text-emerald-900 dark:text-emerald-200 border border-emerald-200/90 dark:border-emerald-500/25",
-      glow: "from-emerald-500/20 via-teal-500/10 to-transparent",
+        "bg-sky-50/90 dark:bg-sky-500/10 text-sky-900 dark:text-sky-200 border border-sky-200/90 dark:border-sky-500/25",
+      glow: "from-sky-500/20 via-cyan-500/10 to-transparent",
       arrowHover:
-        "group-hover:bg-emerald-700 group-hover:text-white group-hover:border-emerald-700 dark:group-hover:bg-emerald-500 dark:group-hover:text-slate-950 dark:group-hover:border-emerald-500",
+        "group-hover:bg-sky-600 group-hover:text-white group-hover:border-sky-600 dark:group-hover:bg-sky-500 dark:group-hover:text-slate-950 dark:group-hover:border-sky-500",
     },
   },
   {
@@ -145,18 +145,18 @@ const renderAppTitle = (app, variant = "desktop") => {
       return (
         <div className="flex items-center gap-1.5 flex-nowrap select-none min-w-0">
           <span
-            className={`font-serif font-bold tracking-tight text-slate-900 dark:text-white leading-none truncate ${
-              isMobile ? "text-[15px]" : "text-lg xl:text-[21px]"
+            className={`sora-font font-bold tracking-tight text-slate-900 dark:text-white leading-none truncate ${
+              isMobile ? "text-[15px]" : "text-lg xl:text-[20px]"
             }`}
           >
             Dalal Investments
           </span>
 
-          <div className="relative px-1.5 py-0.5 flex items-center gap-1 bg-emerald-500/[0.08] shrink-0">
-            <span className="absolute top-0 left-0 w-1.5 h-1.5 border-t border-l border-amber-500 dark:border-amber-400" />
-            <span className="absolute bottom-0 right-0 w-1.5 h-1.5 border-b border-r border-emerald-600 dark:border-emerald-400" />
-            <span className="w-1 h-1 rounded-full bg-amber-500 dark:bg-amber-400" />
-            <span className="font-sans font-extrabold text-[9.5px] xl:text-[10.5px] tracking-wide text-emerald-700 dark:text-emerald-300">
+          <div className="relative px-1.5 py-0.5 flex items-center gap-1 bg-sky-500/[0.08] shrink-0">
+            <span className="absolute top-0 left-0 w-1.5 h-1.5 border-t border-l border-sky-500 dark:border-sky-400" />
+            <span className="absolute bottom-0 right-0 w-1.5 h-1.5 border-b border-r border-sky-600 dark:border-sky-400" />
+            <span className="w-1 h-1 rounded-full bg-sky-500 dark:bg-sky-400" />
+            <span className="sora-font font-bold text-[9.5px] xl:text-[10.5px] tracking-wide text-sky-700 dark:text-sky-300">
               Co-Pilot
             </span>
           </div>

@@ -16,17 +16,17 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 p-5 space-y-4">
+      <div className="bg-white dark:bg-[#161B26] w-full max-w-md rounded-lg shadow-2xl border border-slate-200 dark:border-slate-800/80 p-5 space-y-4">
         
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-3">
           <div className="flex items-center gap-2 text-slate-900 dark:text-white">
-            <Keyboard size={16} className="text-indigo-500" />
-            <h3 className="text-sm font-black uppercase tracking-wider">Sales Keyboard Shortcuts</h3>
+            <Keyboard size={16} className="text-sky-500 dark:text-sky-400" />
+            <h3 className="sora-font text-sm font-bold uppercase tracking-wider">Sales Keyboard Shortcuts</h3>
           </div>
           <button 
             type="button"
             onClick={onClose}
-            className="cursor-pointer p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            className="cursor-pointer p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-md"
           >
             <X size={15} />
           </button>
@@ -34,7 +34,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
 
         <div className="space-y-2 text-xs">
           {shortcuts.map((s, idx) => (
-            <div key={idx} className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-white/5 last:border-none">
+            <div key={idx} className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/60 last:border-none">
               <span className="text-slate-500 dark:text-slate-400">{s.label}</span>
               <div className="flex items-center gap-1 font-mono">
                 {s.keys.map((k, kIdx) => (
@@ -42,7 +42,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
                     {k === "or" ? (
                       <span className="text-slate-400 text-[10px] px-0.5">or</span>
                     ) : (
-                      <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10">
+                      <kbd className="px-1.5 py-0.5 rounded-md bg-slate-50 dark:bg-[#1C2230] text-[10px] font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80">
                         {k}
                       </kbd>
                     )}
@@ -56,7 +56,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
         <button 
           type="button"
           onClick={onClose}
-          className="cursor-pointer w-full py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors hover:bg-slate-800"
+          className="cursor-pointer w-full py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors"
         >
           Got It
         </button>

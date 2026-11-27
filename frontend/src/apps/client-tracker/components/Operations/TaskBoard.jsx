@@ -20,16 +20,17 @@ import {
 } from "lucide-react";
 
 import { useTasks } from "../../hooks/useTasks";
+import TabHeader from "../../../../shared/components/TabHeader";
 import Column from "./TaskBoard/Column";
 import TaskCard from "./TaskBoard/TaskCard";
 import NewTicketPanel from "./TaskBoard/NewTicketPanel";
 import TicketDetailView from "./TaskBoard/TicketDetailView";
 
 const COLUMNS = [
-  { id: "BACKLOG", title: "TO DO" },
-  { id: "IN_PROGRESS", title: "IN PROGRESS" },
-  { id: "PENDING_CLIENT", title: "WAITING ON CLIENT" },
-  { id: "COMPLETED", title: "DONE" },
+  { id: "BACKLOG", title: "To Do" },
+  { id: "IN_PROGRESS", title: "In Progress" },
+  { id: "PENDING_CLIENT", title: "Waiting on Client" },
+  { id: "COMPLETED", title: "Done" },
 ];
 
 const TaskBoard = () => {
@@ -96,71 +97,69 @@ const TaskBoard = () => {
 
   return (
     <div className="min-h-screen bg-transparent text-slate-900 dark:text-slate-200 transition-colors duration-300 relative">
-      <div className="w-full space-y-6">
-        {/* COMMAND & ACTION BAR (Border-free flat layout inspired by Vercel/Linear to eliminate widget boxes) */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center py-2 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20">
-              <Kanban size={18} strokeWidth={2.5} />
-            </div>
-            <div>
-              <h2 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">
-                Fulfillment Kanban Pipeline
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                Real-time tracking of operational tickets, workflow handoffs,
-                and client action queues.
-              </p>
-            </div>
-          </div>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+        .sora-font {
+          font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+      `}</style>
 
-          <div className="flex items-center gap-3 w-full lg:w-auto">
-            <div className="hidden sm:flex items-center gap-6 px-4 py-1.5 bg-slate-100/70 dark:bg-slate-900/40 rounded-lg border border-slate-200/60 dark:border-white/5 text-[11px] font-bold text-slate-500 dark:text-slate-400">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-slate-400"></span>{" "}
-                Total:{" "}
-                <strong className="text-slate-900 dark:text-white">
-                  {totalTasks}
-                </strong>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-blue-500"></span>{" "}
-                Active:{" "}
-                <strong className="text-slate-900 dark:text-white">
-                  {inProgressTasks}
-                </strong>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>{" "}
-                Done:{" "}
-                <strong className="text-slate-900 dark:text-white">
-                  {completedTasks}
-                </strong>
-              </span>
-            </div>
+      <div className="w-full space-y-6 animate-in fade-in duration-300">
+        {/* COMPLEMENTARY TAB HEADER */}
+        <TabHeader
+          kicker="Operations Pipeline"
+          title="Task"
+          accent="Board"
+          description="Real-time tracking of operational tickets, workflow handoffs, and client action queues."
+          actions={
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="hidden sm:flex items-center gap-4 px-3.5 py-2 bg-slate-100/90 dark:bg-[#161B26] rounded-lg border border-slate-200/80 dark:border-slate-800 text-xs font-medium text-slate-500 dark:text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-slate-400" />
+                  Total:{" "}
+                  <strong className="font-mono font-semibold text-slate-900 dark:text-white">
+                    {totalTasks}
+                  </strong>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-sky-500" />
+                  Active:{" "}
+                  <strong className="font-mono font-semibold text-slate-900 dark:text-white">
+                    {inProgressTasks}
+                  </strong>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  Done:{" "}
+                  <strong className="font-mono font-semibold text-slate-900 dark:text-white">
+                    {completedTasks}
+                  </strong>
+                </span>
+              </div>
 
-            <button
-              onClick={() => setIsPanelOpen(true)}
-              className="w-full lg:w-auto px-5 py-2.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-xs font-bold uppercase tracking-wider transition-all shadow-xs flex items-center justify-center gap-2 outline-none cursor-pointer"
-            >
-              <Plus size={15} strokeWidth={2.5} />
-              <span>Create Ticket</span>
-            </button>
-          </div>
-        </div>
+              <button
+                onClick={() => setIsPanelOpen(true)}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold tracking-wide transition-all active:scale-[0.99] flex items-center justify-center gap-2 outline-none cursor-pointer shrink-0"
+              >
+                <Plus size={15} strokeWidth={2.5} />
+                <span>Create Ticket</span>
+              </button>
+            </div>
+          }
+        />
 
         {/* SEARCH & TEAM TOOLBAR STRIP */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
-          <div className="relative group flex-1">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="relative group flex-1 sm:max-w-md">
             <Search
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"
-              size={15}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors"
+              size={14}
             />
             <input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search tasks, descriptions or client accounts..."
-              className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-semibold focus:ring-1 ring-emerald-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 dark:text-white shadow-2xs"
+              className="w-full pl-9 pr-4 py-2 bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800 rounded-lg text-xs focus:border-sky-500 dark:focus:border-sky-400 outline-none transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white"
             />
           </div>
 
@@ -169,16 +168,16 @@ const TaskBoard = () => {
               {["AD", "MD", "UD", "PD"].map((initials, i) => (
                 <div
                   key={i}
-                  className="w-7 h-7 rounded-full border-2 border-white dark:border-slate-950 bg-slate-800 flex items-center justify-center text-[9px] font-black text-white shadow-2xs cursor-pointer hover:-translate-y-0.5 transition-transform"
+                  className="w-7 h-7 rounded-full border-2 border-white dark:border-[#131720] bg-slate-800 dark:bg-[#1C2230] flex items-center justify-center text-[10px] font-mono font-semibold text-white cursor-pointer hover:-translate-y-0.5 transition-transform"
                 >
                   {initials}
                 </div>
               ))}
-              <div className="w-7 h-7 rounded-full border-2 border-white dark:border-slate-950 bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[9px] font-black text-slate-600 dark:text-slate-300">
+              <div className="w-7 h-7 rounded-full border-2 border-white dark:border-[#131720] bg-slate-200 dark:bg-[#161B26] flex items-center justify-center text-[10px] font-mono font-semibold text-slate-600 dark:text-slate-300">
                 +4
               </div>
             </div>
-            <button className="sm:hidden p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg text-slate-500">
+            <button className="sm:hidden p-2 bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-500 dark:text-slate-400">
               <Filter size={15} />
             </button>
           </div>
@@ -186,9 +185,9 @@ const TaskBoard = () => {
 
         {/* BOARD AREA */}
         {loading && tasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-[40vh] gap-4">
-            <Loader2 className="animate-spin text-emerald-500" size={32} />
-            <span className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.3em]">
+          <div className="flex flex-col items-center justify-center h-[40vh] gap-3">
+            <Loader2 className="animate-spin text-sky-600 dark:text-sky-400" size={26} strokeWidth={2.25} />
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Syncing Board Tasks...
             </span>
           </div>

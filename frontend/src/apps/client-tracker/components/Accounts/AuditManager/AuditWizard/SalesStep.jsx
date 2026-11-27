@@ -541,7 +541,7 @@ const SalesStep = ({
     return (
       <div className="h-full w-full flex flex-col items-center justify-center p-6 text-center space-y-4 font-sans select-none">
         <div className="space-y-1 max-w-md">
-          <h3 className="text-base font-black uppercase tracking-wider text-slate-900 dark:text-white">
+          <h3 className="sora-font text-base font-bold uppercase tracking-wider text-slate-900 dark:text-white">
             No Sales Vouchers Found
           </h3>
           <p className="text-xs text-slate-500 leading-relaxed">
@@ -549,9 +549,9 @@ const SalesStep = ({
             You can proceed directly to the batch summary.
           </p>
         </div>
-        <div className="p-3 bg-slate-100 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-white/10 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+        <div className="p-3 bg-slate-50 dark:bg-[#1C2230] rounded-lg border border-slate-200 dark:border-slate-700/80 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
           Tally Company:{" "}
-          <span className="text-indigo-600 dark:text-indigo-400 font-black">
+          <span className="text-sky-600 dark:text-sky-400 font-bold">
             {selection.tallyCompany}
           </span>
         </div>
@@ -562,10 +562,10 @@ const SalesStep = ({
   // 2. MANDATORY GLOBAL LEDGER SELECTION GATE
   if (!globalSalesLedger) {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center p-6 bg-slate-50/50 dark:bg-slate-900/30 font-sans">
-        <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl p-6 lg:p-8 border border-slate-200 dark:border-white/10 shadow-xl space-y-6 animate-in zoom-in-95 duration-200">
+      <div className="h-full w-full flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-[#131720] font-sans">
+        <div className="w-full max-w-lg bg-white dark:bg-[#161B26] rounded-lg p-6 lg:p-8 border border-slate-200 dark:border-slate-800/80 shadow-xl space-y-6 animate-in zoom-in-95 duration-200">
           <div className="space-y-2 text-center">
-            <h2 className="text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white">
+            <h2 className="sora-font text-lg font-bold tracking-tight text-slate-900 dark:text-white">
               Configure Global Sales Ledger
             </h2>
             <p className="text-xs text-slate-500 leading-relaxed">
@@ -588,7 +588,7 @@ const SalesStep = ({
                 onChange={(e) => {
                   if (e.target.value) handleLedgerSelect(e.target.value);
                 }}
-                className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-white/10 rounded-xl p-3.5 text-xs font-black uppercase text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+                className="w-full bg-slate-50 dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80 rounded-lg p-3.5 text-xs font-bold uppercase text-slate-900 dark:text-white outline-none focus:border-sky-500 transition-all appearance-none cursor-pointer"
               >
                 <option value="">-- Click to choose Tally Ledger --</option>
                 {allCompanyLedgers.map((l) => (
@@ -617,19 +617,19 @@ const SalesStep = ({
       />
 
       <div className="flex flex-col h-full w-full overflow-hidden absolute inset-0 min-w-0 font-sans">
-        <header className="flex flex-col shrink-0 z-20 bg-white dark:bg-[#0B0F19] border-b border-slate-200/80 dark:border-white/10 shadow-xs">
+        <header className="flex flex-col shrink-0 z-20 bg-white dark:bg-[#161B26] border-b border-slate-200 dark:border-slate-800/80 shadow-xs">
           <div className="px-4 lg:px-6 py-2.5 flex items-center justify-between gap-3 min-w-0">
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">
-                  Sales <span className="text-indigo-500">Validation</span>
+                <span className="sora-font text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                  Sales <span className="text-sky-600 dark:text-sky-400">Validation</span>
                 </span>
                 {isGstCompliant ? (
-                  <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  <span className="px-1.5 py-0.5 rounded-md text-[8px] font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                     GST Compliant
                   </span>
                 ) : (
-                  <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                  <span className="px-1.5 py-0.5 rounded-md text-[8px] font-bold uppercase bg-slate-100 text-slate-600 dark:bg-[#1C2230] dark:text-slate-400 border border-slate-200 dark:border-slate-700/80">
                     Non-GST
                   </span>
                 )}
@@ -640,23 +640,23 @@ const SalesStep = ({
               <button
                 type="button"
                 onClick={() => setLedgerModalMode("GLOBAL")}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-500/10 hover:border-indigo-500 text-xs text-left cursor-pointer transition-all"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-sky-500/30 bg-sky-50 dark:bg-sky-500/10 hover:border-sky-500 text-xs text-left cursor-pointer transition-all"
                 title="Change Global Sales Income Ledger"
               >
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[7px] font-bold text-slate-400 uppercase tracking-wider">
+                  <span className="text-[7px] font-semibold text-slate-400 uppercase tracking-wider">
                     Global Sales Fallback
                   </span>
-                  <span className="text-[11px] font-black uppercase text-indigo-600 dark:text-indigo-400 truncate max-w-44">
+                  <span className="text-[11px] font-bold uppercase text-sky-600 dark:text-sky-400 truncate max-w-44">
                     {globalSalesLedger || "Choose Ledger..."}
                   </span>
                 </div>
-                <Edit3 size={12} className="text-indigo-500 opacity-70" />
+                <Edit3 size={12} className="text-sky-500 opacity-70" />
               </button>
 
-              <div className="flex items-center border border-slate-200 dark:border-white/10 rounded-lg bg-slate-50/80 dark:bg-slate-800/40 px-3 py-1.5 text-xs">
-                <div className="flex flex-col text-right pr-3 border-r border-slate-200 dark:border-white/10">
-                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+              <div className="flex items-center border border-slate-200 dark:border-slate-700/80 rounded-lg bg-slate-50 dark:bg-[#1C2230] px-3 py-1.5 text-xs">
+                <div className="flex flex-col text-right pr-3 border-r border-slate-200 dark:border-slate-700/80">
+                  <span className="text-[8px] font-semibold text-slate-400 uppercase tracking-wider">
                     Global Sales Total
                   </span>
                   <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
@@ -664,7 +664,7 @@ const SalesStep = ({
                   </span>
                 </div>
                 <div className="flex flex-col text-left pl-3">
-                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                  <span className="text-[8px] font-semibold text-slate-400 uppercase tracking-wider">
                     {currentBank} Total
                   </span>
                   <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
@@ -676,7 +676,7 @@ const SalesStep = ({
               <button
                 type="button"
                 onClick={() => setShowShortcuts(true)}
-                className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-slate-800/40 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-[#1C2230] text-[10px] font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
                 title="View Keyboard Hotkeys (?)"
               >
                 <Keyboard size={13} />
@@ -698,18 +698,18 @@ const SalesStep = ({
             isTrue={isTrue}
           />
 
-          <section className="flex-1 flex flex-col bg-white dark:bg-[#07090E] relative min-w-0 overflow-hidden">
-            <div className="px-4 py-2 border-b border-slate-200/80 dark:border-white/10 bg-slate-50/60 dark:bg-slate-800/40 flex items-center justify-between shrink-0">
+          <section className="flex-1 flex flex-col bg-white dark:bg-[#161B26] relative min-w-0 overflow-hidden">
+            <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-[#1C2230] flex items-center justify-between shrink-0">
               <button
                 type="button"
                 onClick={() => setIsListDrawerOpen((prev) => !prev)}
-                className="flex items-center gap-2 text-xs font-black uppercase text-slate-700 dark:text-slate-300 hover:text-indigo-600 transition-colors cursor-pointer"
+                className="flex items-center gap-2 text-xs font-bold uppercase text-slate-700 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 transition-colors cursor-pointer"
               >
-                <Layers size={14} className="text-indigo-500" />
+                <Layers size={14} className="text-sky-500" />
                 <span>
                   {displayTransactions.length} Vouchers in {currentBank}
                 </span>
-                <kbd className="hidden sm:inline-block px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-700 text-[9px] font-mono">
+                <kbd className="hidden sm:inline-block px-1.5 py-0.2 rounded-md bg-slate-200 dark:bg-slate-700 text-[9px] font-mono">
                   A
                 </kbd>
               </button>
@@ -718,10 +718,10 @@ const SalesStep = ({
                 <button
                   type="button"
                   onClick={handleSelectAll}
-                  className={`cursor-pointer flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${
+                  className={`cursor-pointer flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${
                     isAllDisplayedChecked
                       ? "text-emerald-700 dark:text-emerald-400 bg-emerald-500/10"
-                      : "text-slate-500 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800"
+                      : "text-slate-500 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-[#161B26] border border-slate-200 dark:border-slate-700/80"
                   }`}
                 >
                   <Check size={11} strokeWidth={3} />{" "}

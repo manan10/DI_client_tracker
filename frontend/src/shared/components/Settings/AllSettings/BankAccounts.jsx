@@ -92,7 +92,7 @@ const BankAccounts = () => {
   if (isInitialLoading) {
     return (
       <div className="flex justify-center items-center py-32">
-        <Loader2 className="animate-spin text-emerald-500" size={36} />
+        <Loader2 className="animate-spin text-sky-500" size={36} />
       </div>
     );
   }
@@ -108,8 +108,8 @@ const BankAccounts = () => {
       />
 
       {/* QUICK ADD BOX */}
-      <div className="bg-slate-50/80 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+      <div className="bg-slate-50 dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg p-4 sm:p-5 shadow-xs space-y-3">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
           Add New Bank Account
         </span>
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
@@ -117,20 +117,20 @@ const BankAccounts = () => {
             value={formData.accountName} 
             onChange={e => setFormData({ ...formData, accountName: e.target.value })} 
             placeholder="Bank Name (e.g. HDFC Bank, ICICI)" 
-            className="w-full lg:w-1/3 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold uppercase text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 shadow-xs" 
+            className="w-full lg:w-1/3 bg-white dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80 rounded-lg px-3.5 py-2.5 text-xs sm:text-sm font-semibold uppercase text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 shadow-xs" 
           />
           <input 
             value={formData.accountNumber} 
             onChange={e => setFormData({ ...formData, accountNumber: e.target.value })} 
             placeholder="Account Number (Optional)" 
-            className="w-full lg:w-1/3 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 shadow-xs" 
+            className="w-full lg:w-1/3 bg-white dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80 rounded-lg px-3.5 py-2.5 text-xs sm:text-sm font-mono font-medium text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 shadow-xs" 
           />
           
           <div className="relative w-full lg:w-1/4">
             <select 
               value={formData.arnCode} 
               onChange={e => setFormData({ ...formData, arnCode: e.target.value })} 
-              className="w-full appearance-none bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold uppercase text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 shadow-xs cursor-pointer"
+              className="w-full appearance-none bg-white dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80 rounded-lg px-3.5 py-2.5 text-xs sm:text-sm font-semibold uppercase text-slate-900 dark:text-white outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 shadow-xs cursor-pointer"
             >
               <option value="">No License Linked</option>
               {arns.map(arn => (
@@ -145,7 +145,7 @@ const BankAccounts = () => {
           <button 
             type="button"
             onClick={handleAdd} 
-            className="shrink-0 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+            className="shrink-0 bg-sky-600 hover:bg-sky-700 text-white px-5 py-2.5 rounded-lg font-semibold text-xs transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
           >
             <Plus size={16} />
             <span>Add Bank</span>
@@ -158,7 +158,7 @@ const BankAccounts = () => {
         {accounts.map((acc) => (
           <div 
             key={acc._id} 
-            className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl p-4 shadow-xs space-y-4"
+            className="bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg p-4 shadow-xs space-y-4"
           >
             {editingId === acc._id ? (
               <div className="space-y-3">
@@ -166,19 +166,19 @@ const BankAccounts = () => {
                   value={editData.accountName} 
                   onChange={e => setEditData({ ...editData, accountName: e.target.value })} 
                   placeholder="Bank Name"
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-emerald-500 rounded-lg px-3 py-2 text-xs font-bold uppercase text-slate-900 dark:text-white outline-none" 
+                  className="w-full bg-slate-50 dark:bg-[#1C2230] border border-sky-500 rounded-lg px-3 py-2 text-xs font-semibold uppercase text-slate-900 dark:text-white outline-none" 
                 />
                 <input 
                   value={editData.accountNumber} 
                   onChange={e => setEditData({ ...editData, accountNumber: e.target.value })} 
                   placeholder="Account Number"
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-emerald-500 rounded-lg px-3 py-2 text-xs font-medium text-slate-900 dark:text-white outline-none" 
+                  className="w-full bg-slate-50 dark:bg-[#1C2230] border border-sky-500 rounded-lg px-3 py-2 text-xs font-mono font-medium text-slate-900 dark:text-white outline-none" 
                 />
                 <div className="relative">
                   <select 
                     value={editData.arnCode} 
                     onChange={e => setEditData({ ...editData, arnCode: e.target.value })} 
-                    className="w-full appearance-none bg-slate-50 dark:bg-slate-900 border border-emerald-500 rounded-lg px-3 py-2 text-xs font-bold uppercase text-slate-900 dark:text-white outline-none cursor-pointer"
+                    className="w-full appearance-none bg-slate-50 dark:bg-[#1C2230] border border-sky-500 rounded-lg px-3 py-2 text-xs font-semibold uppercase text-slate-900 dark:text-white outline-none cursor-pointer"
                   >
                     <option value="">No License Linked</option>
                     {arns.map(arn => (
@@ -194,14 +194,14 @@ const BankAccounts = () => {
                   <button 
                     type="button"
                     onClick={() => handleUpdate(acc._id)} 
-                    className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-xs"
+                    className="flex-1 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs"
                   >
                     <Check size={14} /> Save
                   </button>
                   <button 
                     type="button"
                     onClick={() => setEditingId(null)} 
-                    className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5"
+                    className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-[#1C2230] text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5"
                   >
                     <X size={14} /> Cancel
                   </button>
@@ -211,11 +211,11 @@ const BankAccounts = () => {
               <>
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex items-start gap-3 min-w-0">
-                    <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0 border border-slate-200 dark:border-white/5">
+                    <div className="p-2.5 rounded-md bg-slate-100 dark:bg-[#1C2230] text-slate-600 dark:text-slate-300 shrink-0 border border-slate-200 dark:border-slate-700/80">
                       <Landmark size={18} />
                     </div>
                     <div className="min-w-0">
-                      <div className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider truncate">
+                      <div className="sora-font text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wide truncate">
                         {acc.name}
                       </div>
                       <div className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
@@ -226,32 +226,32 @@ const BankAccounts = () => {
 
                   <div className="shrink-0">
                     {acc.arn ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-500/20 rounded-md text-[10px] font-mono font-semibold uppercase tracking-wider">
                         <ShieldCheck size={11} /> {acc.arn}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                      <span className="inline-flex items-center px-2 py-0.5 bg-slate-100 dark:bg-[#1C2230] text-slate-500 dark:text-slate-400 rounded-md text-[10px] font-semibold uppercase tracking-wider">
                         Unlinked
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 dark:border-white/5">
+                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60">
                   <button 
                     type="button"
                     onClick={() => {
                       setEditingId(acc._id);
                       setEditData({ accountName: acc.name, accountNumber: acc.accountNumber || '', arnCode: acc.arn || '' });
                     }} 
-                    className="flex items-center justify-center gap-1.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-white/5"
+                    className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-50 hover:bg-slate-100 dark:bg-[#1C2230] dark:hover:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-700/80"
                   >
                     <Edit2 size={13} /> Edit
                   </button>
                   <button 
                     type="button"
                     onClick={() => setDeleteConfirm({ id: acc._id, name: acc.name })} 
-                    className="flex items-center justify-center gap-1.5 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 rounded-lg transition-colors border border-rose-200/60 dark:border-rose-500/20"
+                    className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 rounded-lg transition-colors border border-rose-200/60 dark:border-rose-500/20"
                   >
                     <Trash2 size={13} /> Delete
                   </button>
@@ -262,7 +262,7 @@ const BankAccounts = () => {
         ))}
 
         {accounts.length === 0 && (
-          <div className="p-8 text-center text-slate-400 dark:text-slate-500 bg-white dark:bg-[#0B1120] rounded-xl border border-slate-200 dark:border-white/10">
+          <div className="p-8 text-center text-slate-400 dark:text-slate-500 bg-white dark:bg-[#161B26] rounded-lg border border-slate-200 dark:border-slate-800/80">
             <Landmark size={28} className="mx-auto mb-2 opacity-30" />
             <p className="text-xs font-semibold">No bank accounts registered yet.</p>
           </div>
@@ -270,46 +270,46 @@ const BankAccounts = () => {
       </div>
 
       {/* DESKTOP VIEW: Data Table */}
-      <div className="hidden lg:block bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xl shadow-xs overflow-hidden">
+      <div className="hidden lg:block bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 rounded-lg shadow-xs overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-white/10">
-              <th className="px-5 py-3.5 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider w-1/3">
+            <tr className="bg-slate-50 dark:bg-[#1C2230] border-b border-slate-200 dark:border-slate-700/80">
+              <th className="px-5 py-3.5 text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider w-1/3">
                 Bank Name
               </th>
-              <th className="px-5 py-3.5 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider w-1/4">
+              <th className="px-5 py-3.5 text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider w-1/4">
                 Account Number
               </th>
-              <th className="px-5 py-3.5 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider w-1/4">
+              <th className="px-5 py-3.5 text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider w-1/4">
                 Linked License
               </th>
-              <th className="px-5 py-3.5 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider text-right">
+              <th className="px-5 py-3.5 text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider text-right">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {accounts.map((acc) => (
-              <tr key={acc._id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors">
+              <tr key={acc._id} className="hover:bg-slate-50/50 dark:hover:bg-[#1C2230]/40 transition-colors">
                 {editingId === acc._id ? (
-                  <td colSpan="4" className="p-3 bg-emerald-50/30 dark:bg-emerald-500/5">
+                  <td colSpan="4" className="p-3 bg-sky-50/30 dark:bg-sky-500/5">
                     <div className="flex items-center gap-3">
                       <input 
                         value={editData.accountName} 
                         onChange={e => setEditData({ ...editData, accountName: e.target.value })} 
-                        className="w-1/3 bg-white dark:bg-[#0B1120] border border-emerald-500 rounded-lg px-3 py-1.5 text-xs font-bold uppercase text-slate-900 dark:text-white outline-none" 
+                        className="w-1/3 bg-white dark:bg-[#1C2230] border border-sky-500 rounded-lg px-3 py-1.5 text-xs font-semibold uppercase text-slate-900 dark:text-white outline-none" 
                       />
                       <input 
                         value={editData.accountNumber} 
                         onChange={e => setEditData({ ...editData, accountNumber: e.target.value })} 
                         placeholder="Optional Account #"
-                        className="w-1/4 bg-white dark:bg-[#0B1120] border border-emerald-500 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-900 dark:text-white outline-none" 
+                        className="w-1/4 bg-white dark:bg-[#1C2230] border border-sky-500 rounded-lg px-3 py-1.5 text-xs font-mono font-medium text-slate-900 dark:text-white outline-none" 
                       />
                       <div className="relative w-1/4">
                         <select 
                           value={editData.arnCode} 
                           onChange={e => setEditData({ ...editData, arnCode: e.target.value })} 
-                          className="w-full appearance-none bg-white dark:bg-[#0B1120] border border-emerald-500 rounded-lg px-3 py-1.5 text-xs font-bold uppercase text-slate-900 dark:text-white outline-none cursor-pointer"
+                          className="w-full appearance-none bg-white dark:bg-[#1C2230] border border-sky-500 rounded-lg px-3 py-1.5 text-xs font-semibold uppercase text-slate-900 dark:text-white outline-none cursor-pointer"
                         >
                           <option value="">No License Linked</option>
                           {arns.map(arn => (
@@ -325,14 +325,14 @@ const BankAccounts = () => {
                         <button 
                           type="button"
                           onClick={() => handleUpdate(acc._id)} 
-                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-xs"
+                          className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs"
                         >
                           <Check size={14} /> Save
                         </button>
                         <button 
                           type="button"
                           onClick={() => setEditingId(null)} 
-                          className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold"
+                          className="px-3 py-1.5 bg-slate-100 dark:bg-[#1C2230] text-slate-600 dark:text-slate-300 rounded-lg text-xs font-semibold"
                         >
                           <X size={14} />
                         </button>
@@ -343,10 +343,10 @@ const BankAccounts = () => {
                   <>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                        <div className="p-2 rounded-md bg-slate-100 dark:bg-[#1C2230] text-slate-500 dark:text-slate-400">
                           <Landmark size={15} />
                         </div>
-                        <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                        <span className="text-xs font-semibold text-slate-900 dark:text-white uppercase tracking-wider">
                           {acc.name}
                         </span>
                       </div>
@@ -361,11 +361,11 @@ const BankAccounts = () => {
 
                     <td className="px-5 py-4">
                       {acc.arn ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-indigo-700 dark:text-indigo-300 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-500/20 text-sky-700 dark:text-sky-300 rounded-md text-[10px] font-mono font-semibold uppercase tracking-wider">
                           <ShieldCheck size={12} /> {acc.arn}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 bg-slate-100 dark:bg-white/5 text-slate-500 rounded-md text-[10px] font-semibold uppercase tracking-wider">
+                        <span className="inline-flex items-center px-2 py-0.5 bg-slate-100 dark:bg-[#1C2230] text-slate-500 dark:text-slate-400 rounded-md text-[10px] font-semibold uppercase tracking-wider">
                           Unlinked
                         </span>
                       )}
@@ -379,7 +379,7 @@ const BankAccounts = () => {
                             setEditingId(acc._id);
                             setEditData({ accountName: acc.name, accountNumber: acc.accountNumber || '', arnCode: acc.arn || '' });
                           }} 
-                          className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg transition-colors"
+                          className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-md transition-colors"
                           title="Edit account"
                         >
                           <Edit2 size={15} />
@@ -387,7 +387,7 @@ const BankAccounts = () => {
                         <button 
                           type="button"
                           onClick={() => setDeleteConfirm({ id: acc._id, name: acc.name })} 
-                          className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition-colors"
+                          className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition-colors"
                           title="Delete account"
                         >
                           <Trash2 size={15} />
@@ -416,13 +416,13 @@ const BankAccounts = () => {
       {/* DELETE CONFIRMATION MODAL */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 p-6 rounded-2xl w-full max-w-sm shadow-xl space-y-4">
+          <div className="bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 p-6 rounded-lg w-full max-w-sm shadow-xl space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl flex items-center justify-center shrink-0 border border-rose-200 dark:border-rose-500/20">
+              <div className="w-10 h-10 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-md flex items-center justify-center shrink-0 border border-rose-200 dark:border-rose-500/20">
                 <AlertTriangle size={20} />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">Delete Bank Account</h3>
+                <h3 className="sora-font text-base font-bold text-slate-900 dark:text-white">Delete Bank Account</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Remove account from records</p>
               </div>
             </div>
@@ -435,14 +435,14 @@ const BankAccounts = () => {
               <button 
                 type="button"
                 onClick={() => setDeleteConfirm(null)} 
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold cursor-pointer"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-[#1C2230] dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold cursor-pointer"
               >
                 Cancel
               </button>
               <button 
                 type="button"
                 onClick={executeDelete} 
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer"
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer"
               >
                 Delete
               </button>

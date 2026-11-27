@@ -311,10 +311,10 @@ const SummaryStep = ({ selection, arns = [] }) => {
 
   if (!selection?.stagedData?.transactions || !activeBank) {
     return (
-      <div className="h-full w-full bg-white dark:bg-[#07090E] flex flex-col items-center justify-center gap-4 text-slate-500 py-32">
+      <div className="h-full w-full bg-white dark:bg-[#161B26] flex flex-col items-center justify-center gap-4 text-slate-500 py-32">
         <Activity
           size={24}
-          className="animate-spin text-emerald-600 dark:text-emerald-400"
+          className="animate-spin text-sky-600 dark:text-sky-400"
         />
         <span className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400">
           Loading Voucher Manifesto...
@@ -368,18 +368,18 @@ const SummaryStep = ({ selection, arns = [] }) => {
       />
 
       {/* Scrollable Container with guaranteed clearance for the fixed bottom bar */}
-      <div className="w-full min-h-screen bg-white dark:bg-[#07090E] overflow-y-auto custom-scroll text-slate-900 dark:text-slate-100 pb-48 select-none font-sans">
+      <div className="w-full min-h-screen bg-slate-50 dark:bg-[#131720] overflow-y-auto custom-scroll text-slate-900 dark:text-slate-100 pb-48 select-none font-sans">
         {/* ===================== EXECUTIVE HEADER ===================== */}
-        <div className="bg-[#0B1120] text-white w-full px-6 lg:px-12 pt-7 pb-10 relative border-b border-slate-800">
+        <div className="bg-slate-900 dark:bg-[#161B26] text-white w-full px-6 lg:px-12 pt-7 pb-10 relative border-b border-slate-800 dark:border-slate-800/80">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 w-full">
             {/* Left: Entity Identification */}
             <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-md bg-slate-800 border border-slate-700 text-emerald-400 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-md bg-slate-800 border border-slate-700 text-sky-400 flex items-center justify-center shrink-0">
                 <Building2 size={20} strokeWidth={2} />
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-1">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-sky-400 flex items-center gap-1">
                     <ShieldCheck size={12} />{" "}
                     {selection?.tallyCompany || "Company"}
                   </span>
@@ -388,7 +388,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                     {monthName} {selection?.year}
                   </span>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white leading-tight">
+                <h2 className="sora-font text-xl sm:text-2xl font-bold tracking-tight text-white leading-tight">
                   Voucher Manifesto Review
                 </h2>
               </div>
@@ -397,21 +397,21 @@ const SummaryStep = ({ selection, arns = [] }) => {
             {/* Right: Auto-Log Action Card + Global Counts */}
             <div className="flex flex-wrap items-center gap-3">
               {/* Global Voucher Batch Metrics */}
-              <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-md">
+              <div className="flex items-center gap-2 bg-slate-950/60 dark:bg-[#1C2230] border border-slate-800 dark:border-slate-700/80 px-3.5 py-2 rounded-lg">
                 <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest border-r border-slate-800 pr-2.5 mr-0.5 hidden sm:inline">
                   Batch
                 </span>
-                <span className="px-1.5 py-0.5 rounded-sm text-[11px] font-mono font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20">
+                <span className="px-1.5 py-0.5 rounded-md text-[11px] font-mono font-bold text-sky-400 bg-sky-500/10 border border-sky-500/20">
                   {globalCounts.sales} Sales
                 </span>
-                <span className="px-1.5 py-0.5 rounded-sm text-[11px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+                <span className="px-1.5 py-0.5 rounded-md text-[11px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
                   {globalCounts.receipts} Rec
                 </span>
-                <span className="px-1.5 py-0.5 rounded-sm text-[11px] font-mono font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20">
+                <span className="px-1.5 py-0.5 rounded-md text-[11px] font-mono font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20">
                   {globalCounts.payments} Pay
                 </span>
                 {globalCounts.manual > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-sm text-[11px] font-mono font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20">
+                  <span className="px-1.5 py-0.5 rounded-md text-[11px] font-mono font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20">
                     {globalCounts.manual} Holds
                   </span>
                 )}
@@ -419,11 +419,11 @@ const SummaryStep = ({ selection, arns = [] }) => {
 
               {/* HIGH-PROMINENCE AUTO-LOG COMMISSION ACTION */}
               {globalCommissionLines.length > 0 && (
-                <div className="flex items-center gap-3 bg-slate-900 border border-emerald-500/40 px-3.5 py-1.5 rounded-md">
+                <div className="flex items-center gap-3 bg-slate-950/60 dark:bg-[#1C2230] border border-sky-500/40 px-3.5 py-1.5 rounded-lg">
                   <div className="flex flex-col text-left">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-wider">
+                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+                      <span className="text-[10px] font-mono font-bold text-sky-400 uppercase tracking-wider">
                         Auto-Log Commissions
                       </span>
                     </div>
@@ -433,7 +433,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                   </div>
 
                   {isCommissionCommitted ? (
-                    <div className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-sm text-[11px] font-mono font-bold uppercase tracking-wider">
+                    <div className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-md text-[11px] font-mono font-bold uppercase tracking-wider">
                       <CheckCircle2 size={13} />
                       <span>Mapped</span>
                     </div>
@@ -441,7 +441,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                     <button
                       type="button"
                       onClick={() => setIsMapperOpen(true)}
-                      className="cursor-pointer flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-sm text-[11px] font-mono font-bold uppercase tracking-wider transition-colors active:scale-95 shadow-sm"
+                      className="cursor-pointer flex items-center gap-1 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-md text-[11px] font-mono font-bold uppercase tracking-wider transition-colors active:scale-95 shadow-sm"
                     >
                       <span>Open</span>
                       <ArrowUpRight size={13} strokeWidth={2.5} />
@@ -463,19 +463,19 @@ const SummaryStep = ({ selection, arns = [] }) => {
                     onClick={() => setUserSelectedBank(bank.tallyLedgerName)}
                     className={`pb-2.5 px-1 text-xs font-mono font-bold uppercase tracking-wider transition-colors relative whitespace-nowrap cursor-pointer flex items-center gap-2 ${
                       isActive
-                        ? "text-emerald-400 font-bold"
+                        ? "text-sky-400 font-bold"
                         : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
                     <Landmark
                       size={13}
                       className={
-                        isActive ? "text-emerald-400" : "text-slate-500"
+                        isActive ? "text-sky-400" : "text-slate-500"
                       }
                     />
                     <span>{bank.tallyLedgerName}</span>
                     {isActive && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500" />
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-500" />
                     )}
                   </button>
                 );
@@ -485,7 +485,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
         </div>
 
         {/* ===================== FINANCIAL METRICS STRIP ===================== */}
-        <div className="w-full px-6 lg:px-12 py-3 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-white/10">
+        <div className="w-full px-6 lg:px-12 py-3 bg-slate-50 dark:bg-[#1C2230] border-b border-slate-200 dark:border-slate-700/80">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-6 lg:gap-10">
               <div className="flex flex-col">
@@ -493,29 +493,29 @@ const SummaryStep = ({ selection, arns = [] }) => {
                   <Wallet size={12} className="text-slate-400" /> Opening
                   Balance
                 </span>
-                <span className="font-mono text-sm font-bold text-slate-900 dark:text-white">
+                <span className="sora-font font-mono text-sm font-bold text-slate-900 dark:text-white">
                   {formatINR(activeBankMetrics.openingBalance)}
                 </span>
               </div>
 
-              <div className="hidden sm:block w-px h-6 bg-slate-200 dark:bg-slate-800" />
+              <div className="hidden sm:block w-px h-6 bg-slate-200 dark:bg-slate-700/80" />
 
               <div className="flex flex-col">
                 <span className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-bold">
                   <TrendingUp size={12} /> Receipts Inflow
                 </span>
-                <span className="font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                <span className="sora-font font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400">
                   +{formatINR(activeBankVoucherStats.receiptTotal)}
                 </span>
               </div>
 
-              <div className="hidden sm:block w-px h-6 bg-slate-200 dark:bg-slate-800" />
+              <div className="hidden sm:block w-px h-6 bg-slate-200 dark:bg-slate-700/80" />
 
               <div className="flex flex-col">
                 <span className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-rose-600 dark:text-rose-400 font-bold">
                   <TrendingDown size={12} /> Payments Outflow
                 </span>
-                <span className="font-mono text-sm font-bold text-rose-600 dark:text-rose-400">
+                <span className="sora-font font-mono text-sm font-bold text-rose-600 dark:text-rose-400">
                   -{formatINR(activeBankVoucherStats.paymentTotal)}
                 </span>
               </div>
@@ -526,7 +526,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                 <Landmark size={12} className="text-slate-400" /> Closing
                 Balance
               </span>
-              <span className="font-mono text-base font-black text-slate-900 dark:text-white leading-none">
+              <span className="sora-font font-mono text-base font-bold text-slate-900 dark:text-white leading-none">
                 {formatINR(activeBankMetrics.closingBalance)}
               </span>
             </div>
@@ -535,8 +535,8 @@ const SummaryStep = ({ selection, arns = [] }) => {
 
         {/* ===================== FLAT DOCUMENT LEDGER PIPELINE ===================== */}
         <div className="w-full px-6 lg:px-12 mt-8">
-          <div className="flex items-center justify-between pb-2 mb-6 border-b border-slate-300 dark:border-white/10">
-            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <div className="flex items-center justify-between pb-2 mb-6 border-b border-slate-200 dark:border-slate-800/80">
+            <h3 className="sora-font text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Bank Statement Lines vs Generated Tally Vouchers
             </h3>
             <span className="text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400">
@@ -545,12 +545,12 @@ const SummaryStep = ({ selection, arns = [] }) => {
           </div>
 
           {transactionGroups.length === 0 ? (
-            <div className="py-20 flex flex-col items-center justify-center text-center p-6 border border-dashed border-slate-200 dark:border-white/10 rounded-sm">
+            <div className="py-20 flex flex-col items-center justify-center text-center p-6 border border-dashed border-slate-200 dark:border-slate-800/80 rounded-lg bg-white dark:bg-[#161B26]">
               <Layers
                 size={32}
                 className="mb-2 text-slate-300 dark:text-slate-700"
               />
-              <span className="text-xs font-mono font-bold uppercase tracking-widest text-slate-700 dark:text-slate-300">
+              <span className="sora-font text-xs font-bold uppercase tracking-widest text-slate-700 dark:text-slate-300">
                 No Transactions Found
               </span>
               <span className="text-xs text-slate-500 mt-0.5">
@@ -570,13 +570,13 @@ const SummaryStep = ({ selection, arns = [] }) => {
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <span
-                          className={`px-2 py-0.5 rounded-sm text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1 ${theme.badge}`}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1 ${theme.badge}`}
                         >
                           {theme.icon}
                           {group.type}
                         </span>
                         <h4
-                          className={`text-base font-black uppercase tracking-tight ${theme.text} truncate`}
+                          className={`sora-font text-base font-bold tracking-tight ${theme.text} truncate`}
                         >
                           {group.partyLedger}
                         </h4>
@@ -587,7 +587,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
 
                       <div className="flex sm:flex-col sm:items-end justify-between items-center shrink-0">
                         <span
-                          className={`font-mono text-base font-black ${theme.text}`}
+                          className={`font-mono text-base font-bold ${theme.text}`}
                         >
                           {group.type === "RECEIPT" ? "+" : "-"}
                           {formatINR(group.totalBankAmount)}
@@ -606,7 +606,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                         {group.transactions.map((tx, tIdx) => (
                           <div
                             key={tIdx}
-                            className="p-2.5 bg-slate-50/80 dark:bg-white/2 border border-slate-200 dark:border-white/10 rounded-sm flex justify-between items-start gap-3 hover:bg-slate-100/80 dark:hover:bg-white/4 transition-colors"
+                            className="p-2.5 bg-slate-50 dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80 rounded-lg flex justify-between items-start gap-3 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-colors"
                           >
                             <div className="flex flex-col gap-0.5 min-w-0">
                               <span className="text-[10px] font-mono text-slate-500 uppercase">
@@ -641,7 +641,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                       </div>
 
                       {/* RIGHT: Generated Tally Vouchers */}
-                      <div className="space-y-1.5 border-t lg:border-t-0 border-slate-200 dark:border-white/10 pt-3 lg:pt-0">
+                      <div className="space-y-1.5 border-t lg:border-t-0 border-slate-200 dark:border-slate-800/80 pt-3 lg:pt-0">
                         <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1">
                           <FileText size={12} /> Generated Tally Vouchers
                         </div>
@@ -658,7 +658,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                             return (
                               <div
                                 key={vIdx}
-                                className="p-2.5 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 border-l-3 border-l-emerald-500 rounded-sm flex justify-between items-center gap-3"
+                                className="p-2.5 bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 border-l-3 border-l-emerald-500 rounded-lg flex justify-between items-center gap-3"
                               >
                                 <div className="flex flex-col min-w-0">
                                   <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
@@ -668,7 +668,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                                     {party}
                                   </span>
                                 </div>
-                                <span className="font-mono text-xs font-black text-emerald-600 dark:text-emerald-400 shrink-0">
+                                <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
                                   {formatINR(v.amount)}
                                 </span>
                               </div>
@@ -680,12 +680,12 @@ const SummaryStep = ({ selection, arns = [] }) => {
                             return (
                               <div
                                 key={vIdx}
-                                className="p-2.5 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 border-l-3 border-l-blue-500 rounded-sm flex flex-col gap-1.5"
+                                className="p-2.5 bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 border-l-3 border-l-sky-500 rounded-lg flex flex-col gap-1.5"
                               >
                                 <div className="flex justify-between items-start gap-3">
                                   <div className="flex flex-col min-w-0">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">
+                                      <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-sky-600 dark:text-sky-400">
                                         Sales Invoice
                                       </span>
                                       {v.invoiceBillingDate && (
@@ -703,24 +703,24 @@ const SummaryStep = ({ selection, arns = [] }) => {
 
                                     {/* PARTY NAME & SALES LEDGER BREAKDOWN */}
                                     <div className="flex flex-col mt-0.5">
-                                      <span className="text-xs font-black text-slate-900 dark:text-white uppercase truncate">
+                                      <span className="text-xs font-bold text-slate-900 dark:text-white uppercase truncate">
                                         Party: {v.partyName}
                                       </span>
-                                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase truncate">
+                                      <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400 uppercase truncate">
                                         Income A/C: {v.activeSalesLedger}
                                       </span>
                                     </div>
                                   </div>
 
                                   <div className="flex flex-col items-end shrink-0">
-                                    <span className="font-mono text-xs font-black text-blue-600 dark:text-blue-400">
+                                    <span className="font-mono text-xs font-bold text-sky-600 dark:text-sky-400">
                                       {formatINR(v.grossTotal)}
                                     </span>
                                   </div>
                                 </div>
 
                                 {/* GST Tax Breakdown */}
-                                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60 text-[10px] font-mono text-slate-500 dark:text-slate-400">
                                   <span>
                                     Base:{" "}
                                     <strong className="text-slate-900 dark:text-white">
@@ -754,7 +754,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                                       <span>•</span>
                                       <span>
                                         IGST:{" "}
-                                        <strong className="text-blue-600 dark:text-blue-400">
+                                        <strong className="text-sky-600 dark:text-sky-400">
                                           {formatINR(v.igst).replace("₹", "")}
                                         </strong>
                                       </span>
@@ -776,7 +776,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                             return (
                               <div
                                 key={vIdx}
-                                className="p-2.5 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 border-l-3 border-l-rose-500 rounded-sm flex justify-between items-center gap-3"
+                                className="p-2.5 bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 border-l-3 border-l-rose-500 rounded-lg flex justify-between items-center gap-3"
                               >
                                 <div className="flex flex-col min-w-0">
                                   <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-rose-600 dark:text-rose-400">
@@ -786,7 +786,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                                     {party}
                                   </span>
                                 </div>
-                                <span className="font-mono text-xs font-black text-rose-600 dark:text-rose-400 shrink-0">
+                                <span className="font-mono text-xs font-bold text-rose-600 dark:text-rose-400 shrink-0">
                                   {formatINR(v.amount)}
                                 </span>
                               </div>
@@ -798,7 +798,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                             return (
                               <div
                                 key={vIdx}
-                                className="p-2.5 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 border-l-3 border-l-amber-500 rounded-sm flex justify-between items-center gap-3"
+                                className="p-2.5 bg-white dark:bg-[#161B26] border border-slate-200 dark:border-slate-800/80 border-l-3 border-l-amber-500 rounded-lg flex justify-between items-center gap-3"
                               >
                                 <div className="flex flex-col min-w-0">
                                   <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
@@ -808,7 +808,7 @@ const SummaryStep = ({ selection, arns = [] }) => {
                                     Missing Ledger Mapping
                                   </span>
                                 </div>
-                                <span className="font-mono text-xs font-black text-amber-600 dark:text-amber-400 shrink-0">
+                                <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400 shrink-0">
                                   {formatINR(v.amount)}
                                 </span>
                               </div>

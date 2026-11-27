@@ -322,9 +322,9 @@ const FormsVault = () => {
 
   if (isInitialLoading) {
     return (
-      <div className="p-24 flex flex-col items-center justify-center text-slate-400 gap-3 font-sans">
-        <Loader2 size={32} className="animate-spin text-emerald-500" />
-        <span className="text-xs font-mono font-semibold uppercase tracking-wider">
+      <div className="h-[50vh] flex flex-col items-center justify-center text-slate-400 gap-3 font-sans">
+        <Loader2 size={26} strokeWidth={2.25} className="animate-spin text-sky-600 dark:text-sky-400" />
+        <span className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
           Opening Forms Vault...
         </span>
       </div>
@@ -332,7 +332,14 @@ const FormsVault = () => {
   }
 
   return (
-    <div className="space-y-6 select-none font-sans text-left">
+    <div className="w-full space-y-6 select-none font-sans text-left animate-in fade-in duration-300">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+        .sora-font {
+          font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+      `}</style>
+
       {/* 1. Header & Category Tabs */}
       <VaultHeader
         activeSection={activeSection}
@@ -367,18 +374,18 @@ const FormsVault = () => {
           onEditForm={handleOpenEditModal}
         />
       ) : (
-        <div className="p-16 text-center bg-white dark:bg-white/1 border border-dashed border-slate-200 dark:border-white/10 rounded-2xl flex flex-col items-center justify-center">
-          <FolderPlus size={32} className="text-slate-300 dark:text-slate-600 mb-2.5" />
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+        <div className="p-16 text-center bg-white dark:bg-[#161B26] border border-dashed border-slate-200 dark:border-slate-800 rounded-lg flex flex-col items-center justify-center">
+          <FolderPlus size={30} className="text-slate-300 dark:text-slate-600 mb-2.5" />
+          <h3 className="sora-font text-sm font-bold text-slate-800 dark:text-white">
             No Folders in {activeSection}
           </h3>
-          <p className="text-xs text-slate-400 max-w-xs mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mt-1">
             Create an institution folder (e.g. HDFC, SBI, Axis) to begin indexing forms.
           </p>
           <button
             type="button"
             onClick={() => setIsAddFolderModalOpen(true)}
-            className="mt-4 px-4 py-2 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-lg text-xs font-bold uppercase tracking-wider cursor-pointer shadow-xs"
+            className="mt-4 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors"
           >
             Create First Folder
           </button>

@@ -49,67 +49,67 @@ const CustomDatePicker = ({ value, onChange }) => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full bg-white dark:bg-slate-900/90 border ${
-          isOpen 
-            ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-sm' 
-            : 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
-        } rounded-md px-3.5 py-2.5 text-xs font-black uppercase flex justify-between items-center transition-all shadow-sm outline-none`}
+        className={`w-full bg-white dark:bg-[#1C2230] border ${
+          isOpen
+            ? 'border-sky-500 ring-2 ring-sky-500/15'
+            : 'border-slate-200 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600'
+        } rounded-lg px-3.5 py-2.5 text-xs font-semibold flex justify-between items-center transition-all outline-none cursor-pointer`}
       >
-        <span className={value ? "text-slate-900 dark:text-white font-mono tracking-wider" : "text-slate-400"}>
+        <span className={value ? "text-slate-900 dark:text-white font-mono tracking-wider" : "text-slate-400 dark:text-slate-500"}>
           {formatDisplayDate(value)}
         </span>
-        <Calendar size={14} className={isOpen ? "text-emerald-500" : "text-slate-400"} />
+        <Calendar size={14} className={isOpen ? "text-sky-500 dark:text-sky-400" : "text-slate-400"} />
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1.5 p-3.5 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-lg shadow-2xl z-120 min-w-70 animate-in zoom-in-95 duration-150">
-          <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-white/10">
-            <button 
-              type="button" 
-              onClick={handlePrevMonth} 
-              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-400 hover:text-emerald-500 transition-colors"
+        <div className="absolute top-full left-0 mt-1.5 p-3.5 bg-white dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-120 min-w-70 animate-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={handlePrevMonth}
+              className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-500 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-300 transition-colors cursor-pointer"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={15} />
             </button>
-            <span className="text-[11px] font-[1000] uppercase tracking-widest text-slate-900 dark:text-white">
+            <span className="sora-font text-xs font-bold text-slate-900 dark:text-white">
               {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
             </span>
-            <button 
-              type="button" 
-              onClick={handleNextMonth} 
-              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-400 hover:text-emerald-500 transition-colors"
+            <button
+              type="button"
+              onClick={handleNextMonth}
+              className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-500 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-300 transition-colors cursor-pointer"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={15} />
             </button>
           </div>
-          
+
           <div className="grid grid-cols-7 gap-1 mb-1.5">
-            {['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].map(day => (
-              <div key={day} className="text-center text-[9px] font-black text-slate-400 uppercase tracking-wider">{day}</div>
+            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+              <div key={day} className="text-center text-[10px] font-semibold text-slate-400 dark:text-slate-500 py-0.5">{day}</div>
             ))}
           </div>
-          
+
           <div className="grid grid-cols-7 gap-1">
             {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-              <div key={`empty-${i}`} className="h-7" />
+              <div key={`empty-${i}`} className="h-8" />
             ))}
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
               const dateStr = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), day)).toISOString().split('T')[0];
               const isSelected = value === dateStr;
               const isToday = new Date().toISOString().split('T')[0] === dateStr;
-              
+
               return (
                 <button
                   key={day}
                   type="button"
                   onClick={() => handleSelectDate(day)}
-                  className={`h-7 rounded text-[10px] font-bold font-mono transition-all flex items-center justify-center
-                    ${isSelected 
-                      ? 'bg-emerald-600 text-white font-black shadow-sm' 
-                      : isToday 
-                        ? 'border border-emerald-500 text-emerald-600 dark:text-emerald-400 font-black' 
-                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  className={`h-8 rounded-md text-xs font-semibold font-mono transition-colors flex items-center justify-center cursor-pointer
+                    ${isSelected
+                      ? 'bg-sky-600 text-white'
+                      : isToday
+                        ? 'bg-sky-50 dark:bg-sky-500/15 border border-sky-200 dark:border-sky-500/30 text-sky-600 dark:text-sky-300'
+                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                 >
                   {day}
@@ -270,75 +270,89 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
 
   return (
     <div className="fixed inset-0 z-2000 flex justify-end">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+        .sora-font {
+          font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+      `}</style>
+
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity" 
-        onClick={handleClose} 
+      <div
+        className="absolute inset-0 bg-slate-900/50 dark:bg-black/75 backdrop-blur-xs transition-opacity"
+        onClick={handleClose}
       />
 
       {/* Drawer Container */}
-      <div className="relative w-full sm:max-w-xl md:max-w-2xl bg-slate-50 dark:bg-[#080D1A] h-full shadow-2xl flex flex-col border-l border-slate-200 dark:border-white/10 animate-in slide-in-from-right duration-300 z-10 overflow-hidden">
-        
+      <div className="relative w-full sm:max-w-xl md:max-w-2xl bg-slate-50 dark:bg-[#131720] h-full shadow-2xl flex flex-col border-l border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-300 z-10 overflow-hidden">
+
         {/* TOP BAR / COMMAND HEADER */}
-        <div className="px-6 md:px-8 py-4.5 flex justify-between items-center border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1120]">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-              <Zap size={18} strokeWidth={2.5} />
+        <div className="px-6 md:px-7 py-4 flex justify-between items-center border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#161B26]">
+          <div className="flex items-center gap-3.5">
+            <div className="p-2 rounded-lg bg-sky-50 dark:bg-sky-500/10 border border-sky-200/80 dark:border-sky-500/25 flex items-center justify-center text-sky-600 dark:text-sky-400">
+              <Zap size={18} strokeWidth={2.2} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base font-black uppercase tracking-tight text-slate-900 dark:text-white">
-                  New <span className="text-emerald-600 dark:text-emerald-500">Submission</span>
+              <div className="flex items-center gap-2.5">
+                <h1 className="sora-font text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                  New{" "}
+                  <span className="font-normal text-sky-600 dark:text-sky-300">
+                    Submission
+                  </span>
                 </h1>
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-300 border border-sky-200/70 dark:border-sky-500/25">
                   Live
                 </span>
               </div>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">
-                Service Entry
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Log a new client financial transaction or service request
               </p>
             </div>
           </div>
-          
-          <button 
-            onClick={handleClose} 
-            className="p-1.5 rounded-md text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+
+          <button
+            onClick={handleClose}
+            className="p-1.5 rounded-md text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* SCROLLABLE FORM WORKSPACE */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 md:px-8 py-5 space-y-5 text-left no-scrollbar">
-          
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 md:px-7 py-5 space-y-5 text-left no-scrollbar">
+
           {/* SECTION 1: DUAL HERO CATEGORY CARDS */}
           <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
-              Step 1: Select Operation Category
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-2">
+              Step 1: Operation Category
             </span>
             <div className="grid grid-cols-2 gap-3">
               {/* Financial Card */}
               <button
                 type="button"
                 onClick={() => setCategory("FINANCIAL")}
-                className={`p-3.5 rounded-lg border text-left transition-all relative overflow-hidden ${
+                className={`p-3.5 rounded-lg border text-left transition-colors relative overflow-hidden cursor-pointer ${
                   category === 'FINANCIAL'
-                    ? 'bg-white dark:bg-slate-900 border-emerald-500 shadow-md ring-1 ring-emerald-500/20'
-                    : 'bg-white/60 dark:bg-slate-900/40 border-slate-200 dark:border-white/5 hover:border-slate-300'
+                    ? 'bg-sky-50/80 dark:bg-sky-500/10 border-sky-300 dark:border-sky-500/40'
+                    : 'bg-white dark:bg-[#161B26] border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <div className={`p-2 rounded-md ${category === 'FINANCIAL' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
-                    <IndianRupee size={15} strokeWidth={2.5} />
+                  <div className={`p-1.5 rounded-md border ${
+                    category === 'FINANCIAL'
+                      ? 'bg-sky-600 text-white border-sky-600 dark:bg-sky-500 dark:border-sky-400'
+                      : 'bg-slate-50 dark:bg-[#1C2230] text-slate-500 dark:text-slate-400 border-slate-200/70 dark:border-slate-700/70'
+                  }`}>
+                    <IndianRupee size={15} strokeWidth={2.2} />
                   </div>
                   {category === 'FINANCIAL' && (
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <div className="w-2 h-2 rounded-full bg-sky-500 dark:bg-sky-400" />
                   )}
                 </div>
-                <p className={`text-xs font-[1000] uppercase tracking-tight ${category === 'FINANCIAL' ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                <p className={`sora-font text-xs font-bold ${category === 'FINANCIAL' ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
                   Financial Transaction
                 </p>
-                <p className="text-[9px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                   SIP, Lumpsum, SWP & Redemptions
                 </p>
               </button>
@@ -347,24 +361,28 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
               <button
                 type="button"
                 onClick={() => setCategory("SERVICE")}
-                className={`p-3.5 rounded-lg border text-left transition-all relative overflow-hidden ${
+                className={`p-3.5 rounded-lg border text-left transition-colors relative overflow-hidden cursor-pointer ${
                   category === 'SERVICE'
-                    ? 'bg-white dark:bg-slate-900 border-indigo-500 shadow-md ring-1 ring-indigo-500/20'
-                    : 'bg-white/60 dark:bg-slate-900/40 border-slate-200 dark:border-white/5 hover:border-slate-300'
+                    ? 'bg-sky-50/80 dark:bg-sky-500/10 border-sky-300 dark:border-sky-500/40'
+                    : 'bg-white dark:bg-[#161B26] border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <div className={`p-2 rounded-md ${category === 'SERVICE' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
-                    <Settings size={15} strokeWidth={2.5} />
+                  <div className={`p-1.5 rounded-md border ${
+                    category === 'SERVICE'
+                      ? 'bg-sky-600 text-white border-sky-600 dark:bg-sky-500 dark:border-sky-400'
+                      : 'bg-slate-50 dark:bg-[#1C2230] text-slate-500 dark:text-slate-400 border-slate-200/70 dark:border-slate-700/70'
+                  }`}>
+                    <Settings size={15} strokeWidth={2.2} />
                   </div>
                   {category === 'SERVICE' && (
-                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                    <div className="w-2 h-2 rounded-full bg-sky-500 dark:bg-sky-400" />
                   )}
                 </div>
-                <p className={`text-xs font-[1000] uppercase tracking-tight ${category === 'SERVICE' ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                <p className={`sora-font text-xs font-bold ${category === 'SERVICE' ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
                   Service Request
                 </p>
-                <p className="text-[9px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                   KYC, Bank change, Transmission
                 </p>
               </button>
@@ -372,27 +390,27 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
           </div>
 
           {/* SECTION 2: CLIENT SELECTION */}
-          <div className="bg-white dark:bg-[#0B1120] p-4 rounded-lg border border-slate-200 dark:border-white/10 shadow-sm space-y-2">
+          <div className="bg-white dark:bg-[#161B26] p-4 rounded-lg border border-slate-200 dark:border-slate-800/80 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                <User size={12} className="text-slate-400" /> Select Client
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <User size={12} className="text-sky-500 dark:text-sky-400" /> Select Client
               </span>
-              <span className="text-[9px] font-bold text-slate-400 uppercase">Search</span>
+              <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">Search</span>
             </div>
 
             {formData.client ? (
-              /* Selected Client State (Unified, Clean Container) */
-              <div className="flex items-center justify-between px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 rounded-md shadow-sm">
+              /* Selected Client State */
+              <div className="flex items-center justify-between px-3.5 py-2.5 bg-slate-50 dark:bg-[#1C2230] border border-slate-200/80 dark:border-slate-700/80 rounded-lg">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-7 h-7 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                    <User size={13} className="text-emerald-600 dark:text-emerald-400" />
+                  <div className="w-7 h-7 rounded-md bg-sky-50 dark:bg-sky-500/10 border border-sky-200/70 dark:border-sky-500/25 flex items-center justify-center shrink-0">
+                    <User size={13} className="text-sky-600 dark:text-sky-400" />
                   </div>
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-xs font-bold text-slate-900 dark:text-white uppercase truncate">
+                    <span className="sora-font text-xs font-semibold text-slate-900 dark:text-white truncate">
                       {formData.clientName}
                     </span>
                     {formData.clientPan && (
-                      <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-200/60 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-white/10 shrink-0">
+                      <span className="text-[11px] font-mono font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-[#161B26] px-2 py-0.5 rounded-md border border-slate-200/70 dark:border-slate-700/70 shrink-0">
                         {formData.clientPan}
                       </span>
                     )}
@@ -400,11 +418,11 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
                 </div>
                 <button
                   type="button"
-                  onClick={() => { 
-                    setFormData({ ...formData, client: "", clientName: "", clientPan: "" }); 
-                    setSearchTerm(""); 
+                  onClick={() => {
+                    setFormData({ ...formData, client: "", clientName: "", clientPan: "" });
+                    setSearchTerm("");
                   }}
-                  className="p-1 text-slate-400 hover:text-rose-500 hover:bg-slate-200/50 dark:hover:bg-white/10 rounded transition-colors ml-2"
+                  className="p-1 text-slate-400 hover:text-rose-500 hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded-md transition-colors ml-2 cursor-pointer"
                   title="Change Client"
                 >
                   <X size={14} />
@@ -413,37 +431,37 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
             ) : (
               /* Live Search Input */
               <div className="relative">
-                <div className="flex items-center gap-2.5 px-3 py-2 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/80 focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all shadow-sm">
+                <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-[#1C2230] focus-within:border-sky-500 focus-within:bg-white dark:focus-within:bg-[#1C2230] transition-colors">
                   {isSearching ? (
-                    <Loader2 size={14} className="animate-spin text-emerald-500 shrink-0" />
+                    <Loader2 size={14} className="animate-spin text-sky-500 shrink-0" />
                   ) : (
                     <Search size={14} className="text-slate-400 shrink-0" />
                   )}
                   <input
-                    placeholder="TYPE CLIENT NAME OR PAN..."
-                    className="bg-transparent border-none outline-none text-xs font-bold w-full uppercase placeholder:text-slate-400 text-slate-900 dark:text-white tracking-tight"
+                    placeholder="Type client name or PAN..."
+                    className="bg-transparent border-none outline-none text-xs w-full placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
 
                 {searchTerm && clients.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-md shadow-2xl z-130 overflow-hidden max-h-56 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-130 overflow-hidden max-h-56 overflow-y-auto">
                     {clients.map((c) => (
                       <button
                         key={c._id}
                         type="button"
-                        onClick={() => { 
-                          setFormData({ ...formData, client: c._id, clientName: c.name, clientPan: c.pan }); 
-                          setSearchTerm(""); 
+                        onClick={() => {
+                          setFormData({ ...formData, client: c._id, clientName: c.name, clientPan: c.pan });
+                          setSearchTerm("");
                         }}
-                        className="w-full px-3.5 py-2.5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 border-b border-slate-100 dark:border-white/5 last:border-0 transition-colors text-left"
+                        className="w-full px-3.5 py-2.5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/70 border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors text-left cursor-pointer"
                       >
                         <div className="min-w-0">
-                          <div className="text-xs font-[1000] uppercase tracking-tight text-slate-900 dark:text-white truncate">{c.name}</div>
-                          <div className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400">{c.pan}</div>
+                          <div className="sora-font text-xs font-semibold text-slate-900 dark:text-white truncate">{c.name}</div>
+                          <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">{c.pan}</div>
                         </div>
-                        <ChevronRight size={14} className="text-slate-300 shrink-0 ml-2" />
+                        <ChevronRight size={14} className="text-slate-400 shrink-0 ml-2" />
                       </button>
                     ))}
                   </div>
@@ -453,8 +471,8 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
           </div>
 
           {/* SECTION 3: SPECIFICATIONS & FINANCIAL INFLOW */}
-          <div className="bg-white dark:bg-[#0B1120] p-4 rounded-lg border border-slate-200 dark:border-white/10 shadow-sm space-y-4">
-            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest block">
+          <div className="bg-white dark:bg-[#161B26] p-4 rounded-lg border border-slate-200 dark:border-slate-800/80 space-y-4">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
               Step 2: Transaction Parameters
             </span>
 
@@ -462,49 +480,49 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-20">
               {/* Date */}
               <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                   <Calendar size={11} /> Application Date
                 </label>
-                <CustomDatePicker 
+                <CustomDatePicker
                   value={formData.creationDate}
-                  onChange={(val) => setFormData({...formData, creationDate: val})}
+                  onChange={(val) => setFormData({ ...formData, creationDate: val })}
                 />
               </div>
 
               {/* Type Dropdown */}
               <div className="space-y-1.5 relative">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                   <Hash size={11} /> {category === 'FINANCIAL' ? 'Transaction Type' : 'Service Type'}
                 </label>
-                <button 
+                <button
                   type="button"
                   onClick={() => setShowTypeDrop(!showTypeDrop)}
-                  className="w-full bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 rounded-md px-3.5 py-2.5 text-xs font-black uppercase flex justify-between items-center shadow-sm outline-none text-slate-900 dark:text-white"
+                  className="w-full bg-white dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600 rounded-lg px-3.5 py-2.5 text-xs font-semibold flex justify-between items-center outline-none text-slate-900 dark:text-white cursor-pointer"
                 >
                   <span className="truncate">
-                    {category === 'FINANCIAL' 
-                      ? FINANCIAL_TYPES.find(o => o.id === formData.type)?.label 
-                      : (SERVICE_TYPES.find(o => o.id === formData.subType)?.label || "SELECT SERVICE...")}
+                    {category === 'FINANCIAL'
+                      ? FINANCIAL_TYPES.find(o => o.id === formData.type)?.label
+                      : (SERVICE_TYPES.find(o => o.id === formData.subType)?.label || "Select service...")}
                   </span>
                   <ChevronDown size={14} className="text-slate-400 ml-1 shrink-0" />
                 </button>
-                
+
                 {showTypeDrop && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-md shadow-2xl z-120 overflow-hidden py-1 animate-in zoom-in-95 duration-150 max-h-60 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-120 overflow-hidden py-1 animate-in zoom-in-95 duration-150 max-h-60 overflow-y-auto">
                     {(category === 'FINANCIAL' ? FINANCIAL_TYPES : SERVICE_TYPES).map(opt => (
                       <button
                         key={opt.id}
                         type="button"
-                        onClick={() => { 
-                          if (category === 'FINANCIAL') setFormData({...formData, type: opt.id});
-                          else setFormData({...formData, subType: opt.id});
-                          setShowTypeDrop(false); 
+                        onClick={() => {
+                          if (category === 'FINANCIAL') setFormData({ ...formData, type: opt.id });
+                          else setFormData({ ...formData, subType: opt.id });
+                          setShowTypeDrop(false);
                         }}
-                        className="w-full px-3.5 py-2 text-left hover:bg-emerald-600 hover:text-white transition-colors text-slate-700 dark:text-slate-200 flex flex-col"
+                        className="w-full px-3.5 py-2 text-left hover:bg-sky-600 hover:text-white transition-colors text-slate-700 dark:text-slate-200 flex flex-col cursor-pointer"
                       >
-                        <span className="text-[10px] font-black uppercase tracking-wider">{opt.label}</span>
+                        <span className="text-xs font-semibold">{opt.label}</span>
                         {opt.desc && (
-                          <span className="text-[8px] opacity-70 tracking-tight">{opt.desc}</span>
+                          <span className="text-[10px] opacity-75">{opt.desc}</span>
                         )}
                       </button>
                     ))}
@@ -515,13 +533,13 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
 
             {/* Scheme / Description Input */}
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+              <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                 <Landmark size={11} /> {category === 'SERVICE' ? 'Scheme / Context Description' : 'Fund / Scheme Name'}
               </label>
               <input
                 required={category === 'FINANCIAL'}
-                placeholder={category === 'SERVICE' ? "E.G. ALL FOLIOS OR FOLIO NO." : "E.G. NIPPON INDIA SMALL CAP FUND"}
-                className="w-full bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 rounded-md px-3.5 py-2.5 text-xs font-bold outline-none focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 transition-all uppercase shadow-sm text-slate-900 dark:text-white"
+                placeholder={category === 'SERVICE' ? "e.g. All Folios or Folio No." : "e.g. Nippon India Small Cap Fund"}
+                className="w-full bg-slate-50 dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80 rounded-lg px-3.5 py-2.5 text-xs font-medium outline-none focus:border-sky-500 focus:bg-white dark:focus:bg-[#1C2230] transition-colors uppercase text-slate-900 dark:text-white placeholder:normal-case placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 value={formData.schemeName}
                 onChange={(e) => setFormData({ ...formData, schemeName: e.target.value.toUpperCase() })}
               />
@@ -531,15 +549,15 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {category === 'FINANCIAL' && (
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                    <IndianRupee size={11} /> Inflow Amount
+                  <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    <IndianRupee size={11} /> Amount
                   </label>
                   <div className="relative">
                     <input
                       type="text"
                       required
                       placeholder="0.00"
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 rounded-md text-base font-[1000] outline-none focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 transition-all tabular-nums tracking-tight shadow-sm text-emerald-600 dark:text-emerald-400"
+                      className="sora-font w-full px-3.5 py-2 bg-slate-50 dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80 rounded-lg text-base font-bold outline-none focus:border-sky-500 focus:bg-white dark:focus:bg-[#1C2230] transition-colors tabular-nums tracking-tight text-sky-600 dark:text-sky-300 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       value={formatIndianNumber(formData.amount)}
                       onChange={(e) => {
                         const rawValue = e.target.value.replace(/,/g, "");
@@ -551,12 +569,12 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                   <Hash size={11} /> Folio Number
                 </label>
                 <input
-                  placeholder="NEW / EXISTING..."
-                  className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 rounded-md text-xs font-mono font-black outline-none focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 transition-all uppercase shadow-sm text-slate-900 dark:text-white"
+                  placeholder="NEW / Existing..."
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80 rounded-lg text-xs font-mono font-semibold outline-none focus:border-sky-500 focus:bg-white dark:focus:bg-[#1C2230] transition-colors uppercase text-slate-900 dark:text-white placeholder:normal-case placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   value={formData.folioNumber}
                   onChange={(e) => setFormData({ ...formData, folioNumber: e.target.value })}
                 />
@@ -565,39 +583,39 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
           </div>
 
           {/* SECTION 4: EXECUTION LOGISTICS & PAYMENT STATUS */}
-          <div className="bg-white dark:bg-[#0B1120] p-4 rounded-lg border border-slate-200 dark:border-white/10 shadow-sm space-y-4">
-            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest block">
+          <div className="bg-white dark:bg-[#161B26] p-4 rounded-lg border border-slate-200 dark:border-slate-800/80 space-y-4">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
               Step 3: Logistics & Settlement
             </span>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {/* Submission Mode */}
               <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                   <Send size={11} /> Submission Logistics
                 </label>
-                <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-md border border-slate-200 dark:border-white/10">
+                <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100/90 dark:bg-[#131720] rounded-lg border border-slate-200/80 dark:border-slate-800">
                   <button
                     type="button"
-                    onClick={() => setFormData({...formData, submissionMode: 'DIGITAL'})}
-                    className={`py-1.5 rounded text-[9px] font-black uppercase transition-all ${
+                    onClick={() => setFormData({ ...formData, submissionMode: 'DIGITAL' })}
+                    className={`py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                       formData.submissionMode === 'DIGITAL'
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                        ? 'bg-sky-600 text-white'
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
-                    Digital Online
+                    Digital
                   </button>
                   <button
                     type="button"
-                    onClick={() => setFormData({...formData, submissionMode: 'PHYSICAL'})}
-                    className={`py-1.5 rounded text-[9px] font-black uppercase transition-all ${
+                    onClick={() => setFormData({ ...formData, submissionMode: 'PHYSICAL' })}
+                    className={`py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                       formData.submissionMode === 'PHYSICAL'
-                        ? 'bg-amber-600 text-white shadow-sm'
-                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                        ? 'bg-amber-600 text-white'
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
-                    Physical Paper
+                    Physical
                   </button>
                 </div>
               </div>
@@ -605,26 +623,26 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
               {/* Payment Mode (Financial Only) */}
               {category === 'FINANCIAL' && !formData.type.includes('REDEMPTION') && !formData.type.includes('SWP') ? (
                 <div className="space-y-1.5 relative">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                  <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                     <CreditCard size={11} /> Payment Mode
                   </label>
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setShowPayDrop(!showPayDrop)}
-                    className="w-full bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 rounded-md px-3.5 py-2 text-xs font-black uppercase flex justify-between items-center shadow-sm outline-none text-slate-900 dark:text-white"
+                    className="w-full bg-slate-50 dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700/80 rounded-lg px-3.5 py-2.5 text-xs font-semibold flex justify-between items-center outline-none text-slate-900 dark:text-white cursor-pointer"
                   >
                     <span>{PAY_OPTIONS.find(o => o.id === formData.paymentMode)?.label}</span>
                     <ChevronDown size={14} className="text-slate-400 ml-1" />
                   </button>
 
                   {showPayDrop && (
-                    <div className="absolute bottom-full left-0 right-0 mb-1 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-md shadow-2xl z-120 overflow-hidden py-1 animate-in zoom-in-95 duration-150">
+                    <div className="absolute bottom-full left-0 right-0 mb-1.5 bg-white dark:bg-[#1C2230] border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-120 overflow-hidden py-1 animate-in zoom-in-95 duration-150">
                       {PAY_OPTIONS.map(opt => (
                         <button
                           key={opt.id}
                           type="button"
-                          onClick={() => { setFormData({...formData, paymentMode: opt.id}); setShowPayDrop(false); }}
-                          className="w-full px-3.5 py-2 text-left text-[10px] font-black uppercase hover:bg-emerald-600 hover:text-white transition-colors text-slate-700 dark:text-slate-200 tracking-wider"
+                          onClick={() => { setFormData({ ...formData, paymentMode: opt.id }); setShowPayDrop(false); }}
+                          className="w-full px-3.5 py-2 text-left text-xs font-semibold hover:bg-sky-600 hover:text-white transition-colors text-slate-700 dark:text-slate-200 cursor-pointer"
                         >
                           {opt.label}
                         </button>
@@ -634,8 +652,8 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
                 </div>
               ) : (
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Routing Status</label>
-                  <div className="px-3 py-2 rounded-md bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                  <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Routing Status</label>
+                  <div className="px-3.5 py-2.5 rounded-lg bg-slate-50 dark:bg-[#1C2230] border border-slate-200/70 dark:border-slate-800 text-xs font-medium text-slate-500 dark:text-slate-400">
                     Direct Payout / N/A
                   </div>
                 </div>
@@ -644,18 +662,18 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
 
             {/* Payment Verification Initial State */}
             {category === 'FINANCIAL' && !formData.type.includes('REDEMPTION') && !formData.type.includes('SWP') && (
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/5">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Initial Payment Status</span>
-                <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-900 rounded-md border border-slate-200 dark:border-white/10">
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Initial Payment Status</span>
+                <div className="inline-flex p-1 bg-slate-100/90 dark:bg-[#131720] rounded-lg border border-slate-200/80 dark:border-slate-800">
                   {["WAITING", "PAID"].map((s) => (
                     <button
                       key={s}
                       type="button"
-                      onClick={() => setFormData({...formData, paymentStatus: s})}
-                      className={`px-3 py-1 rounded text-[9px] font-black uppercase transition-all ${
-                        formData.paymentStatus === s 
-                          ? "bg-emerald-600 text-white shadow-sm" 
-                          : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
+                      onClick={() => setFormData({ ...formData, paymentStatus: s })}
+                      className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
+                        formData.paymentStatus === s
+                          ? "bg-sky-600 text-white"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                       }`}
                     >
                       {s}
@@ -668,28 +686,28 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
 
           {/* SECTION 5: PROTOCOL BLUEPRINT ROADMAP */}
           {blueprint && (
-            <div className="bg-slate-100/70 dark:bg-[#0B1120] p-4 rounded-lg border border-slate-200 dark:border-white/10 space-y-3">
+            <div className="bg-white dark:bg-[#161B26] p-4 rounded-lg border border-slate-200 dark:border-slate-800/80 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="p-1 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-500">
+                  <div className="p-1.5 rounded-md bg-sky-50 dark:bg-sky-500/10 border border-sky-200/70 dark:border-sky-500/20 text-sky-600 dark:text-sky-400">
                     <ShieldCheck size={14} />
                   </div>
-                  <span className="text-[10px] font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest">
-                    Automation Protocol: {blueprint.name || 'Standard Flow'}
+                  <span className="sora-font text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    Protocol: {blueprint.name || 'Standard Flow'}
                   </span>
                 </div>
-                <span className="text-[9px] font-mono font-bold text-slate-400 uppercase">
-                  {blueprint.defaultSteps?.length || 0} Steps Prepped
+                <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                  {blueprint.defaultSteps?.length || 0} steps
                 </span>
               </div>
 
               <div className="space-y-1.5 pl-1">
                 {blueprint.defaultSteps.map((step, idx) => (
-                  <div key={idx} className="flex items-center gap-2.5 text-[10px] font-bold text-slate-700 dark:text-slate-300">
-                    <span className="w-4 h-4 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-[8px] font-black text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <div key={idx} className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300">
+                    <span className="w-5 h-5 rounded-md bg-slate-50 dark:bg-[#1C2230] border border-slate-200/80 dark:border-slate-700/80 text-[10px] font-mono font-semibold text-sky-600 dark:text-sky-300 flex items-center justify-center shrink-0">
                       {idx + 1}
                     </span>
-                    <span className="uppercase tracking-tight truncate">{step}</span>
+                    <span className="truncate">{step}</span>
                   </div>
                 ))}
               </div>
@@ -699,24 +717,24 @@ const NewSubmission = ({ isOpen, onClose, onCreated }) => {
         </form>
 
         {/* BOTTOM ACTION BAR */}
-        <div className="p-4 md:px-8 border-t border-slate-200 dark:border-white/10 flex items-center justify-between bg-white dark:bg-[#0B1120] shrink-0">
-          <button 
+        <div className="p-4 md:px-7 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#161B26] shrink-0">
+          <button
             type="button"
-            onClick={handleClose} 
-            className="text-[10px] font-black text-slate-400 hover:text-rose-600 uppercase tracking-widest transition-colors px-2 py-1"
+            onClick={handleClose}
+            className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors px-2 py-1.5 cursor-pointer"
           >
             Cancel & Discard
           </button>
-          
+
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || !formData.client || (category === 'FINANCIAL' && (!formData.schemeName || !formData.amount)) || (category === 'SERVICE' && !formData.subType)}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-md transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed shadow-md outline-none"
+            className="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white px-5 py-2.5 rounded-lg text-xs font-semibold tracking-wide transition-all active:scale-[0.99] disabled:opacity-35 disabled:cursor-not-allowed outline-none cursor-pointer"
           >
-            <span className="text-xs font-[1000] uppercase tracking-widest">
-              {isSubmitting ? "Committing..." : "Submit Submission"}
+            <span>
+              {isSubmitting ? "Submitting..." : "Submit Entry"}
             </span>
-            {isSubmitting ? <Loader2 size={15} className="animate-spin" /> : <ArrowRight size={15} strokeWidth={2.5} />}
+            {isSubmitting ? <Loader2 size={15} className="animate-spin" /> : <ArrowRight size={15} strokeWidth={2.2} />}
           </button>
         </div>
 
