@@ -30,50 +30,60 @@ const allApps = [
     icon: Users,
     badge: "Business App",
     theme: {
-      primary: "bg-sky-600 dark:bg-sky-500",
-      text: "text-sky-800 dark:text-sky-300",
+      // Crisp Architectural Slate + Sky Blue
+      cardBg:
+        "bg-[#F0F7FF] dark:bg-[#1E2738] dark:shadow-[0_12px_32px_rgba(0,0,0,0.45)]",
+      primary: "bg-sky-600 dark:bg-sky-400",
+      text: "text-sky-700 dark:text-sky-300",
+      descText: "text-slate-600 dark:text-slate-300",
+      indexText:
+        "text-sky-900/[0.06] dark:text-sky-300/[0.07] group-hover:text-sky-600/[0.12] dark:group-hover:text-sky-300/[0.14]",
       accentBg:
-        "bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-200/90 dark:border-sky-500/30",
+        "bg-sky-600/10 dark:bg-sky-400/15 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-400/35",
       border:
-        "border-2 border-sky-300/80 dark:border-sky-500/40 hover:border-sky-600 dark:hover:border-sky-400",
+        "border-2 border-sky-300 dark:border-sky-500/40 hover:border-sky-600 dark:hover:border-sky-400",
       cardHover:
-        "hover:shadow-[0_18px_40px_rgba(14,165,233,0.15)] dark:hover:shadow-[0_18px_40px_rgba(14,165,233,0.12)]",
+        "hover:shadow-[0_18px_40px_rgba(2,132,199,0.16)] dark:hover:shadow-[0_18px_40px_rgba(56,189,248,0.14)]",
       badgeBg:
-        "bg-sky-50 dark:bg-sky-500/10 text-sky-800 dark:text-sky-300 border border-sky-300/90 dark:border-sky-500/30",
+        "bg-white/90 dark:bg-sky-950/80 text-sky-800 dark:text-sky-300 border border-sky-300/90 dark:border-sky-400/35",
       pillBg:
-        "bg-sky-50/90 dark:bg-sky-500/10 text-sky-900 dark:text-sky-200 border border-sky-200/90 dark:border-sky-500/25",
-      glow: "from-sky-500/20 via-cyan-500/10 to-transparent",
+        "bg-white/85 dark:bg-sky-950/70 text-sky-900 dark:text-sky-200 border border-sky-200 dark:border-sky-500/30",
       arrowHover:
-        "group-hover:bg-sky-600 group-hover:text-white group-hover:border-sky-600 dark:group-hover:bg-sky-500 dark:group-hover:text-slate-950 dark:group-hover:border-sky-500",
+        "group-hover:bg-sky-600 group-hover:text-white group-hover:border-sky-600 dark:group-hover:bg-sky-400 dark:group-hover:text-slate-950 dark:group-hover:border-sky-400",
     },
   },
   {
     id: "EXPENSE_TRACKER",
     title: "Kha₹cha Paani",
     subtitle: "Household & Daily Accounts",
-    category: "Personal",
+    category: "Household",
     description:
-      "Track everyday home expenses, view monthly category totals, and manage family accounts.",
-    features: ["Spending", "Categories", "Ledger"],
+      "Cash reserves, active accounts, and monthly household spending in one editorial ledger.",
+    features: ["Wallets", "Categories", "Ledger"],
     path: "/expenses",
     icon: ReceiptIndianRupee,
-    badge: "Personal App",
+    badge: "Expense Tracker",
     theme: {
-      primary: "bg-indigo-600 dark:bg-indigo-500",
-      text: "text-indigo-800 dark:text-indigo-300",
+      // Warm Parchment Ledger + Sage Emerald
+      cardBg:
+        "bg-[#F3F5EE] dark:bg-[#212622] dark:shadow-[0_12px_32px_rgba(0,0,0,0.45)]",
+      primary: "bg-emerald-700 dark:bg-[#4EA885]",
+      text: "text-emerald-800 dark:text-[#68C19D]",
+      descText: "text-stone-700 dark:text-stone-300",
+      indexText:
+        "text-stone-900/[0.06] dark:text-emerald-200/[0.06] group-hover:text-emerald-800/[0.13] dark:group-hover:text-[#4EA885]/[0.15]",
       accentBg:
-        "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200/90 dark:border-indigo-500/30",
+        "bg-emerald-700/10 dark:bg-[#4EA885]/15 text-emerald-800 dark:text-[#68C19D] border border-emerald-700/25 dark:border-[#4EA885]/35",
       border:
-        "border-2 border-indigo-300/80 dark:border-indigo-500/40 hover:border-indigo-600 dark:hover:border-indigo-400",
+        "border-2 border-stone-300 dark:border-[#2E3530] hover:border-emerald-700 dark:hover:border-[#4EA885]",
       cardHover:
-        "hover:shadow-[0_18px_40px_rgba(99,102,241,0.15)] dark:hover:shadow-[0_18px_40px_rgba(99,102,241,0.12)]",
+        "hover:shadow-[0_18px_40px_rgba(4,120,87,0.14)] dark:hover:shadow-[0_18px_40px_rgba(78,168,133,0.14)]",
       badgeBg:
-        "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border border-indigo-300/90 dark:border-indigo-500/30",
+        "bg-[#FAF9F6] dark:bg-[#222724] text-emerald-800 dark:text-[#86D4B4] border border-emerald-700/25 dark:border-[#4EA885]/35",
       pillBg:
-        "bg-indigo-50/90 dark:bg-indigo-500/10 text-indigo-900 dark:text-indigo-200 border border-indigo-200/90 dark:border-indigo-500/25",
-      glow: "from-indigo-500/20 via-blue-500/10 to-transparent",
+        "bg-[#FAF9F6] dark:bg-[#222724] text-stone-800 dark:text-stone-200 border border-stone-300/90 dark:border-white/10",
       arrowHover:
-        "group-hover:bg-indigo-700 group-hover:text-white group-hover:border-indigo-700 dark:group-hover:bg-indigo-500 dark:group-hover:text-slate-950 dark:group-hover:border-indigo-500",
+        "group-hover:bg-emerald-700 group-hover:text-white group-hover:border-emerald-700 dark:group-hover:bg-[#4EA885] dark:group-hover:text-[#121315] dark:group-hover:border-[#4EA885]",
     },
   },
   {
@@ -88,21 +98,26 @@ const allApps = [
     icon: Clapperboard,
     badge: "Cinema Vault",
     theme: {
-      primary: "bg-pink-500",
-      text: "text-pink-600 dark:text-pink-400",
+      // Screening-Room Cinema Surface + Electric Rose/Pink
+      cardBg:
+        "bg-[#FDF2F8] dark:bg-[#1E222E] dark:shadow-[0_12px_32px_rgba(0,0,0,0.45)]",
+      primary: "bg-pink-600 dark:bg-pink-400",
+      text: "text-pink-700 dark:text-pink-400",
+      descText: "text-slate-700 dark:text-stone-300",
+      indexText:
+        "text-pink-600/[0.08] dark:text-pink-400/[0.09] group-hover:text-pink-600/[0.16] dark:group-hover:text-pink-400/[0.18]",
       accentBg:
-        "bg-pink-50 dark:bg-[#161B22] text-pink-600 dark:text-pink-400 border border-pink-200/90 dark:border-[#2C3545]",
+        "bg-pink-500/10 dark:bg-[#1C2230] text-pink-600 dark:text-pink-400 border border-pink-300 dark:border-[#2E384D]",
       border:
-        "border-2 border-pink-300/80 dark:border-[#2C3545] hover:border-pink-500 dark:hover:border-pink-400",
+        "border-2 border-pink-300 dark:border-[#2A3346] hover:border-pink-600 dark:hover:border-pink-400",
       cardHover:
-        "hover:shadow-[0_18px_40px_rgba(236,72,153,0.16)] dark:hover:shadow-[0_18px_40px_rgba(236,72,153,0.14)]",
+        "hover:shadow-[0_18px_40px_rgba(236,72,153,0.16)] dark:hover:shadow-[0_18px_40px_rgba(236,72,153,0.16)]",
       badgeBg:
-        "bg-pink-50 dark:bg-[#161B22] text-pink-700 dark:text-pink-400 border border-pink-200 dark:border-[#2C3545]",
+        "bg-white/90 dark:bg-[#1C2230] text-pink-700 dark:text-pink-400 border border-pink-200 dark:border-[#2E384D]",
       pillBg:
-        "bg-pink-50/90 dark:bg-[#161B22] text-pink-900 dark:text-stone-300 border border-pink-200/90 dark:border-[#2C3545]",
-      glow: "from-pink-500/20 via-fuchsia-500/10 to-transparent",
+        "bg-white/90 dark:bg-[#1C2230] text-pink-950 dark:text-stone-200 border border-pink-200 dark:border-[#2E384D]",
       arrowHover:
-        "group-hover:bg-pink-500 group-hover:text-white group-hover:border-pink-500",
+        "group-hover:bg-pink-600 group-hover:text-white group-hover:border-pink-600 dark:group-hover:bg-pink-500 dark:group-hover:text-white dark:group-hover:border-pink-500",
     },
   },
   {
@@ -117,46 +132,54 @@ const allApps = [
     icon: UtensilsCrossed,
     badge: "Culinary App",
     theme: {
-      primary: "bg-amber-600 dark:bg-amber-500",
+      // Warm Saffron / Shahi Rasoi Amber
+      cardBg:
+        "bg-[#FFF9EB] dark:bg-[#28221A] dark:shadow-[0_12px_32px_rgba(0,0,0,0.45)]",
+      primary: "bg-amber-600 dark:bg-amber-400",
       text: "text-amber-800 dark:text-amber-300",
+      descText: "text-stone-700 dark:text-amber-100/75",
+      indexText:
+        "text-amber-700/[0.08] dark:text-amber-400/[0.08] group-hover:text-amber-700/[0.15] dark:group-hover:text-amber-400/[0.16]",
       accentBg:
-        "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200/90 dark:border-amber-500/30",
+        "bg-amber-500/12 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/35",
       border:
-        "border-2 border-amber-300/80 dark:border-amber-500/40 hover:border-amber-600 dark:hover:border-amber-400",
+        "border-2 border-amber-300 dark:border-amber-500/40 hover:border-amber-600 dark:hover:border-amber-400",
       cardHover:
-        "hover:shadow-[0_18px_40px_rgba(217,119,6,0.17)] dark:hover:shadow-[0_18px_40px_rgba(217,119,6,0.14)]",
+        "hover:shadow-[0_18px_40px_rgba(217,119,6,0.17)] dark:hover:shadow-[0_18px_40px_rgba(245,158,11,0.15)]",
       badgeBg:
-        "bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-300/90 dark:border-amber-500/30",
+        "bg-white/90 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/35",
       pillBg:
-        "bg-amber-50/90 dark:bg-amber-500/10 text-amber-900 dark:text-amber-200 border border-amber-200/90 dark:border-amber-500/25",
-      glow: "from-amber-500/20 via-orange-500/10 to-transparent",
+        "bg-white/90 dark:bg-amber-950/60 text-amber-950 dark:text-amber-100 border border-amber-200 dark:border-amber-500/30",
       arrowHover:
-        "group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600 dark:group-hover:bg-amber-500 dark:group-hover:text-slate-950 dark:group-hover:border-amber-500",
+        "group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600 dark:group-hover:bg-amber-400 dark:group-hover:text-slate-950 dark:group-hover:border-amber-400",
     },
   },
 ];
 
-// Single-line Navbar Title Lockups for uniform, sleek card heights
+// Single-line Navbar Title Lockups tailored to each app's native typography
 const renderAppTitle = (app, variant = "desktop") => {
   const isMobile = variant === "mobile";
 
   switch (app.id) {
     case "CLIENT_TRACKER":
       return (
-        <div className="flex items-center gap-1.5 flex-nowrap select-none min-w-0">
+        <div
+          style={{ fontFamily: "'Sora', sans-serif" }}
+          className="flex items-center gap-1.5 flex-nowrap select-none min-w-0"
+        >
           <span
-            className={`sora-font font-bold tracking-tight text-slate-900 dark:text-white leading-none truncate ${
-              isMobile ? "text-[15px]" : "text-lg xl:text-[20px]"
+            className={`font-bold tracking-tight text-slate-900 dark:text-white leading-none truncate ${
+              isMobile ? "text-[15px]" : "text-lg xl:text-[19px]"
             }`}
           >
             Dalal Investments
           </span>
 
-          <div className="relative px-1.5 py-0.5 flex items-center gap-1 bg-sky-500/[0.08] shrink-0">
-            <span className="absolute top-0 left-0 w-1.5 h-1.5 border-t border-l border-sky-500 dark:border-sky-400" />
+          <div className="relative px-1.5 py-0.5 flex items-center gap-1 bg-sky-500/10 dark:bg-sky-400/15 shrink-0">
+            <span className="absolute top-0 left-0 w-1.5 h-1.5 border-t border-l border-sky-600 dark:border-sky-400" />
             <span className="absolute bottom-0 right-0 w-1.5 h-1.5 border-b border-r border-sky-600 dark:border-sky-400" />
-            <span className="w-1 h-1 rounded-full bg-sky-500 dark:bg-sky-400" />
-            <span className="sora-font font-bold text-[9.5px] xl:text-[10.5px] tracking-wide text-sky-700 dark:text-sky-300">
+            <span className="w-1 h-1 rounded-full bg-sky-600 dark:bg-sky-400" />
+            <span className="font-bold text-[9.5px] xl:text-[10.5px] tracking-wide text-sky-700 dark:text-sky-300">
               Co-Pilot
             </span>
           </div>
@@ -165,15 +188,19 @@ const renderAppTitle = (app, variant = "desktop") => {
 
     case "EXPENSE_TRACKER":
       return (
-        <div className="flex items-baseline leading-none select-none">
+        <div
+          style={{ fontFamily: "'Lora', serif" }}
+          className="flex items-baseline leading-none select-none font-bold tracking-tight"
+        >
           <span
-            className={`font-serif font-bold tracking-tight inline-flex items-baseline text-indigo-950 dark:text-indigo-100 ${
+            className={`inline-flex items-baseline text-stone-950 dark:text-stone-50 ${
               isMobile ? "text-[17px]" : "text-xl xl:text-2xl"
             }`}
           >
             <span>Kha</span>
             <span
-              className={`font-sans font-black text-indigo-600 dark:text-indigo-400 mx-[1px] ${
+              style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+              className={`font-bold text-emerald-700 dark:text-[#68C19D] mx-[1px] ${
                 isMobile ? "text-[15px]" : "text-lg xl:text-xl"
               }`}
             >
@@ -182,7 +209,7 @@ const renderAppTitle = (app, variant = "desktop") => {
             <span>cha</span>
           </span>
           <span
-            className={`ml-1.5 font-serif italic font-normal bg-gradient-to-r from-indigo-600 to-blue-500 dark:from-indigo-300 dark:to-sky-300 bg-clip-text text-transparent tracking-tight pr-0.5 ${
+            className={`ml-1.5 text-emerald-700 dark:text-[#68C19D] ${
               isMobile ? "text-[17px]" : "text-xl xl:text-2xl"
             }`}
           >
@@ -200,12 +227,8 @@ const renderAppTitle = (app, variant = "desktop") => {
               isMobile ? "text-[17px]" : "text-xl xl:text-[23px]"
             }`}
           >
-            <span className="text-slate-950 dark:text-white">
-              plot
-            </span>
-            <span className="text-pink-600 dark:text-pink-400">
-              twist
-            </span>
+            <span className="text-slate-950 dark:text-white">plot</span>
+            <span className="text-pink-600 dark:text-pink-400">twist</span>
           </div>
           <div className="flex items-center gap-1 shrink-0 pb-0.5">
             <span className="w-1.5 h-1.5 rounded-full bg-pink-500" />
@@ -217,15 +240,18 @@ const renderAppTitle = (app, variant = "desktop") => {
 
     case "SOUS_CHEF":
       return (
-        <div className="flex items-center gap-1.5 leading-none select-none">
+        <div
+          style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+          className="flex items-center gap-1.5 leading-none select-none"
+        >
           <span
-            className={`font-sans font-black tracking-[0.12em] uppercase bg-gradient-to-r from-amber-700 via-amber-500 to-amber-600 dark:from-amber-100 dark:via-amber-300 dark:to-amber-500 bg-clip-text text-transparent ${
-              isMobile ? "text-[16px]" : "text-xl xl:text-2xl"
+            className={`font-bold tracking-[0.08em] uppercase bg-gradient-to-r from-amber-800 via-amber-600 to-amber-700 dark:from-amber-100 dark:via-amber-300 dark:to-amber-500 bg-clip-text text-transparent ${
+              isMobile ? "text-[16px]" : "text-xl xl:text-[22px]"
             }`}
           >
             SOUS CHEF
           </span>
-          <span className="text-amber-500 dark:text-amber-400 text-xs">✦</span>
+          <span className="text-amber-600 dark:text-amber-400 text-xs">✦</span>
         </div>
       );
 
@@ -268,21 +294,43 @@ const AppPicker = () => {
 
   const toggleTheme = () => setIsDark((prev) => !prev);
 
-  // Load Bungee, Space Grotesk & Space Mono fonts for the Plot Twist card
+  // Load app-authentic fonts:
+  // - Sora (Dalal Investments Co-Pilot)
+  // - Lora, Nunito Sans & IBM Plex Mono (Kha₹cha Paani)
+  // - Bungee, Space Grotesk & Space Mono (plot twist)
+  // - Playfair Display & Plus Jakarta Sans (Sous Chef)
   useEffect(() => {
-    const fontLinkId = "plottwist-locked-fonts";
-    const fontHref =
-      "https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@600;700&family=Space+Mono:wght@400;700&display=swap";
-    const existing = document.getElementById(fontLinkId);
-    if (!existing) {
-      const link = document.createElement("link");
-      link.id = fontLinkId;
-      link.rel = "stylesheet";
-      link.href = fontHref;
-      document.head.appendChild(link);
-    } else if (existing.href !== fontHref) {
-      existing.href = fontHref;
-    }
+    const fonts = [
+      {
+        id: "dalal-copilot-sora-font",
+        href: "https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&display=swap",
+      },
+      {
+        id: "plottwist-locked-fonts",
+        href: "https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@600;700&family=Space+Mono:wght@400;700&display=swap",
+      },
+      {
+        id: "kharcha-paani-sage-fonts",
+        href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Lora:wght@600;700&family=Nunito+Sans:wght@400;500;600;700&display=swap",
+      },
+      {
+        id: "sous-chef-culinary-fonts",
+        href: "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap",
+      },
+    ];
+
+    fonts.forEach(({ id, href }) => {
+      const existing = document.getElementById(id);
+      if (!existing) {
+        const link = document.createElement("link");
+        link.id = id;
+        link.rel = "stylesheet";
+        link.href = href;
+        document.head.appendChild(link);
+      } else if (existing.href !== href) {
+        existing.href = href;
+      }
+    });
   }, []);
 
   // Strict check: only render apps included in allowedApps
@@ -305,15 +353,56 @@ const AppPicker = () => {
     return "grid-cols-2 lg:grid-cols-4 w-full";
   }, [authorizedApps.length]);
 
-  return (
-    <div className="h-dvh w-screen bg-[#F8FAFC] dark:bg-[#060A14] text-slate-900 dark:text-slate-100 flex flex-col font-serif overflow-hidden relative selection:bg-emerald-800 selection:text-white transition-colors duration-300">
-      {/* --- AMBIENT HALO + VIGNETTE DOT LATTICE --- */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-[20%] left-1/4 w-[48vw] h-[48vw] max-w-[540px] max-h-[540px] rounded-full bg-emerald-400/12 dark:bg-emerald-500/10 blur-[110px]" />
-        <div className="absolute -bottom-[20%] right-1/4 w-[48vw] h-[48vw] max-w-[540px] max-h-[540px] rounded-full bg-indigo-400/10 dark:bg-indigo-500/10 blur-[110px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(#94a3b8_1.1px,transparent_1.1px)] dark:bg-[radial-gradient(rgba(255,255,255,0.07)_1.1px,transparent_1.1px)] [background-size:24px_24px] opacity-35 dark:opacity-35 [mask-image:radial-gradient(ellipse_75%_65%_at_50%_50%,#000_65%,transparent_100%)]" />
-      </div>
+  // App-authentic font family & corner geometry helper
+  const getAppStyleMeta = (appId) => {
+    switch (appId) {
+      case "CLIENT_TRACKER":
+        return {
+          fontStyle: { fontFamily: "'Sora', sans-serif" },
+          radiusDesktop: "rounded-xl",
+          radiusMobile: "rounded-lg",
+          metaClass: "font-semibold uppercase tracking-wider text-[10px]",
+          descClass: "font-normal text-xs xl:text-[13px]",
+          pillClass: "font-medium text-[10.5px] px-2 py-0.5 rounded-md",
+        };
+      case "EXPENSE_TRACKER":
+        return {
+          fontStyle: { fontFamily: "'Nunito Sans', sans-serif" },
+          radiusDesktop: "rounded-2xl",
+          radiusMobile: "rounded-xl",
+          metaClass: "font-bold uppercase tracking-[0.14em] text-[10px]",
+          descClass: "font-normal text-xs xl:text-[13px]",
+          pillClass: "font-semibold text-[10.5px] px-2 py-0.5 rounded-md",
+        };
+      case "SHOW_RATER":
+        return {
+          fontStyle: {
+            "--font-sans": "'Space Grotesk', sans-serif",
+            "--font-mono": "'Space Mono', monospace",
+            fontFamily: "'Space Grotesk', sans-serif",
+          },
+          radiusDesktop: "rounded-lg",
+          radiusMobile: "rounded-lg",
+          metaClass: "font-mono font-bold uppercase tracking-wider text-[10px]",
+          descClass: "font-mono font-normal text-[11px] xl:text-xs",
+          pillClass:
+            "font-mono font-bold uppercase tracking-wider text-[10px] px-2 py-0.5 rounded-sm",
+        };
+      case "SOUS_CHEF":
+      default:
+        return {
+          fontStyle: { fontFamily: "'Plus Jakarta Sans', sans-serif" },
+          radiusDesktop: "rounded-2xl",
+          radiusMobile: "rounded-xl",
+          metaClass: "font-semibold uppercase tracking-[0.12em] text-[10px]",
+          descClass: "font-normal text-xs xl:text-[13px]",
+          pillClass: "font-semibold text-[10.5px] px-2.5 py-0.5 rounded-full",
+        };
+    }
+  };
 
+  return (
+    <div className="h-dvh w-screen bg-[#F5F2EB] dark:bg-[#191C22] text-slate-900 dark:text-slate-100 flex flex-col font-serif overflow-hidden relative selection:bg-emerald-800 selection:text-white transition-colors duration-300">
       {/* --- TOP FLOATING CONTROLS --- */}
       <div className="absolute top-4 sm:top-6 lg:top-7 right-4 sm:right-8 lg:right-10 z-50 flex items-center gap-2 sm:gap-2.5">
         {/* Settings Button */}
@@ -363,13 +452,13 @@ const AppPicker = () => {
 
       {/* --- CENTRAL PORTAL WORKSPACE --- */}
       <main className="flex-1 flex flex-col items-center justify-center w-full max-w-[1760px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 relative z-10 min-h-0 py-3 sm:py-5 lg:py-7">
-        {/* --- WIDE ARCHITECTURAL BRANDING & PRIVATE DESK COORDINATE GREETING (OPTION #6) --- */}
+        {/* --- WIDE ARCHITECTURAL BRANDING & PRIVATE DESK COORDINATE GREETING --- */}
         <div className="flex flex-col items-center text-center mb-6 sm:mb-8 lg:mb-11 shrink-0 w-full">
           <div className="mb-2.5 sm:mb-3.5 select-none transition-transform duration-300 hover:scale-105">
             <img
               src={Logo}
               alt="Dalal Studio Logo"
-              className="h-16 sm:h-20 md:h-24 lg:h-28 xl:h-32 2xl:h-36 w-auto object-contain drop-shadow-[0_10px_24px_rgba(16,185,129,0.22)] dark:drop-shadow-[0_12px_28px_rgba(16,185,129,0.3)]"
+              className="h-16 sm:h-20 md:h-24 lg:h-28 xl:h-32 2xl:h-36 w-auto object-contain"
             />
           </div>
 
@@ -386,7 +475,6 @@ const AppPicker = () => {
             </div>
           </div>
 
-          {/* Private Desk Coordinate Greeting (Option #6) */}
           <div className="mt-4 sm:mt-5 flex flex-col items-center gap-1">
             <span className="font-mono text-[10.5px] sm:text-[11px] font-bold uppercase tracking-[0.26em] text-slate-500 dark:text-slate-400">
               ACTIVE SESSION •{" "}
@@ -402,7 +490,7 @@ const AppPicker = () => {
 
         {/* Empty State Fallback */}
         {authorizedApps.length === 0 ? (
-          <div className="p-8 text-center bg-white/90 dark:bg-slate-900/90 border-2 border-slate-300 dark:border-white/20 rounded-2xl backdrop-blur-md shadow-sm max-w-md mx-auto">
+          <div className="p-8 text-center bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-white/20 rounded-2xl shadow-sm max-w-md mx-auto">
             <p className="text-base font-serif font-semibold text-slate-800 dark:text-slate-200">
               No Assigned Applications
             </p>
@@ -413,196 +501,160 @@ const AppPicker = () => {
         ) : (
           <>
             {/* ======================================================== */}
-            {/* 📱 MOBILE VIEW: SCROLL-SAFE ACTION PODS (< lg)           */}
+            {/* 📱 MOBILE VIEW: SOLID APP-STYLED ACTION PODS (< lg)       */}
             {/* ======================================================== */}
             <div className="flex lg:hidden flex-col gap-2.5 w-full max-w-md mx-auto overflow-y-auto no-scrollbar max-h-[54dvh] py-1 px-1">
               {authorizedApps.map((app) => {
-                const isPlotTwist = app.id === "SHOW_RATER";
+                const meta = getAppStyleMeta(app.id);
                 return (
-                <div
-                  key={`mob-${app.id}`}
-                  onClick={() => navigate(app.path)}
-                  style={
-                    isPlotTwist
-                      ? {
-                          "--font-sans": "'Space Grotesk', sans-serif",
-                          "--font-mono": "'Space Mono', monospace",
-                          fontFamily: "'Space Grotesk', sans-serif",
-                        }
-                      : undefined
-                  }
-                  className={`group relative flex items-center justify-between p-3.5 rounded-xl ${
-                    isPlotTwist ? "bg-white dark:bg-[#12171F]" : "bg-white dark:bg-slate-900/90"
-                  } ${app.theme.border} transition-all duration-200 active:scale-[0.98] shadow-xs hover:shadow-md cursor-pointer overflow-hidden shrink-0`}
-                >
                   <div
-                    className={`absolute top-0 right-0 w-28 h-28 bg-linear-to-bl ${app.theme.glow} rounded-bl-full pointer-events-none opacity-80`}
-                  />
-
-                  <div className="flex items-center gap-3.5 min-w-0 relative z-10">
-                    <div
-                      className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${app.theme.accentBg}`}
-                    >
-                      <app.icon size={20} strokeWidth={2.2} />
-                    </div>
-                    <div className="min-w-0 text-left">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <span
-                          className={`${isPlotTwist ? "font-mono uppercase tracking-wider text-[10px] font-bold" : "font-serif italic text-xs font-semibold"} ${app.theme.text}`}
-                        >
-                          {app.category}
-                        </span>
-                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                        <span className={`${isPlotTwist ? "font-mono text-[10px]" : "font-sans text-[11px]"} font-semibold text-slate-500 dark:text-stone-400`}>
-                          {app.badge}
-                        </span>
-                      </div>
-
-                      {renderAppTitle(app, "mobile")}
-                    </div>
-                  </div>
-
-                  <div
-                    className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${app.theme.accentBg} group-hover:translate-x-0.5 transition-transform relative z-10 ml-2`}
+                    key={`mob-${app.id}`}
+                    onClick={() => navigate(app.path)}
+                    style={meta.fontStyle}
+                    className={`group relative flex items-center justify-between p-3.5 ${meta.radiusMobile} ${app.theme.cardBg} ${app.theme.border} transition-all duration-200 active:scale-[0.98] shadow-xs hover:shadow-md cursor-pointer overflow-hidden shrink-0`}
                   >
-                    <ArrowRight size={14} strokeWidth={2.2} />
+                    <div className="flex items-center gap-3.5 min-w-0 relative z-10">
+                      <div
+                        className={`w-11 h-11 ${meta.radiusMobile} flex items-center justify-center shrink-0 ${app.theme.accentBg}`}
+                      >
+                        <app.icon size={20} strokeWidth={2.2} />
+                      </div>
+                      <div className="min-w-0 text-left">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className={`${meta.metaClass} ${app.theme.text}`}>
+                            {app.category}
+                          </span>
+                          <span className="w-1 h-1 rounded-full bg-slate-400/50 dark:bg-slate-600" />
+                          <span className="text-[10.5px] font-semibold text-slate-500 dark:text-stone-400">
+                            {app.badge}
+                          </span>
+                        </div>
+
+                        {renderAppTitle(app, "mobile")}
+                      </div>
+                    </div>
+
+                    <div
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${app.theme.accentBg} ${app.theme.arrowHover} group-hover:translate-x-0.5 transition-all relative z-10 ml-2`}
+                    >
+                      <ArrowRight size={14} strokeWidth={2.2} />
+                    </div>
                   </div>
-                </div>
                 );
               })}
             </div>
 
             {/* ======================================================== */}
-            {/* 💻 DESKTOP VIEW: SLEEK LANDSCAPE-PROPORTIONED CARDS      */}
+            {/* 💻 DESKTOP VIEW: SOLID APP-AUTHENTIC CARDS               */}
             {/* ======================================================== */}
             <div
               className={`hidden lg:grid gap-5 xl:gap-6 2xl:gap-7 mx-auto py-1 px-1 ${desktopGridClass}`}
             >
               {authorizedApps.map((app, idx) => {
-                const isPlotTwist = app.id === "SHOW_RATER";
+                const meta = getAppStyleMeta(app.id);
+                const isKharchaPaani = app.id === "EXPENSE_TRACKER";
+
                 return (
-                <div
-                  key={`desk-${app.id}`}
-                  role="button"
-                  tabIndex={0}
-                  onMouseEnter={() => setActiveId(app.id)}
-                  onMouseLeave={() => setActiveId(null)}
-                  onClick={() => navigate(app.path)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      navigate(app.path);
-                    }
-                  }}
-                  style={
-                    isPlotTwist
-                      ? {
-                          "--font-sans": "'Space Grotesk', sans-serif",
-                          "--font-mono": "'Space Mono', monospace",
-                          fontFamily: "'Space Grotesk', sans-serif",
-                        }
-                      : undefined
-                  }
-                  className={`group relative flex flex-col justify-between p-4 xl:p-5 rounded-2xl ${
-                    isPlotTwist
-                      ? "bg-white dark:bg-[#12171F]"
-                      : "bg-white dark:bg-slate-900/95"
-                  } backdrop-blur-md ${app.theme.border} transition-all duration-300 ${app.theme.cardHover} cursor-pointer overflow-hidden shadow-xs hover:-translate-y-1 active:scale-[0.99] outline-none`}
-                >
-                  {/* Internal Glow */}
                   <div
-                    className={`absolute top-0 right-0 w-36 h-36 bg-linear-to-bl ${app.theme.glow} rounded-bl-full pointer-events-none transition-opacity duration-300 opacity-65 group-hover:opacity-100`}
-                  />
-
-                  {/* Background Index Marker */}
-                  <div
-                    className={`absolute bottom-2.5 right-4 text-3xl xl:text-4xl leading-none pointer-events-none select-none transition-colors ${
-                      isPlotTwist
-                        ? "font-mono font-bold text-pink-500/15 dark:text-pink-400/15 group-hover:text-pink-500/30 dark:group-hover:text-pink-400/30"
-                        : "font-serif italic text-slate-200/55 dark:text-slate-800/45 group-hover:text-slate-300/80 dark:group-hover:text-slate-700/60"
-                    }`}
+                    key={`desk-${app.id}`}
+                    role="button"
+                    tabIndex={0}
+                    onMouseEnter={() => setActiveId(app.id)}
+                    onMouseLeave={() => setActiveId(null)}
+                    onClick={() => navigate(app.path)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        navigate(app.path);
+                      }
+                    }}
+                    style={meta.fontStyle}
+                    className={`group relative flex flex-col justify-between p-4 xl:p-5 ${meta.radiusDesktop} ${app.theme.cardBg} ${app.theme.border} transition-all duration-300 ${app.theme.cardHover} cursor-pointer overflow-hidden shadow-xs hover:-translate-y-1 active:scale-[0.99] outline-none`}
                   >
-                    0{idx + 1}
-                  </div>
-
-                  {/* Top Header Row: Icon + Badge + Launch Arrow */}
-                  <div className="relative z-10 flex items-center justify-between mb-2.5">
+                    {/* Solid Top Accent Datum Bar */}
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center ${app.theme.accentBg} group-hover:scale-105 transition-transform duration-200`}
+                      className={`absolute top-0 inset-x-0 h-[3px] ${app.theme.primary} opacity-80 group-hover:opacity-100 transition-opacity`}
+                    />
+
+                    {/* Background Index Marker */}
+                    <div
+                      style={
+                        isKharchaPaani
+                          ? { fontFamily: "'IBM Plex Mono', monospace" }
+                          : undefined
+                      }
+                      className={`absolute bottom-2.5 right-4 text-3xl xl:text-4xl font-bold leading-none pointer-events-none select-none transition-colors ${app.theme.indexText}`}
                     >
-                      <app.icon size={20} strokeWidth={2.2} />
+                      0{idx + 1}
                     </div>
 
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded ${
-                          isPlotTwist ? "font-mono text-[10px] font-bold uppercase tracking-wider" : "text-[11px] font-sans font-semibold tracking-wide"
-                        } ${app.theme.badgeBg}`}
-                      >
-                        <Zap size={11} />
-                        {app.badge}
-                      </span>
-
+                    {/* Top Header Row: Icon + Badge + Launch Arrow */}
+                    <div className="relative z-10 flex items-center justify-between mb-2.5 pt-0.5">
                       <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 ${app.theme.accentBg} ${app.theme.arrowHover}`}
+                        className={`w-10 h-10 ${meta.radiusMobile} flex items-center justify-center ${app.theme.accentBg} group-hover:scale-105 transition-transform duration-200`}
                       >
-                        <ArrowUpRight
-                          size={15}
-                          strokeWidth={2.4}
-                          className="transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                        />
+                        <app.icon size={20} strokeWidth={2.2} />
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded ${meta.metaClass} ${app.theme.badgeBg}`}
+                        >
+                          <Zap size={11} />
+                          {app.badge}
+                        </span>
+
+                        <div
+                          className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 ${app.theme.accentBg} ${app.theme.arrowHover}`}
+                        >
+                          <ArrowUpRight
+                            size={15}
+                            strokeWidth={2.4}
+                            className="transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Main Body: Category, Single-Line Navbar Title & Description */}
-                  <div className="relative z-10 text-left space-y-1">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${app.theme.primary} opacity-90`}
-                      />
+                    {/* Main Body: Category, Single-Line Navbar Title & Description */}
+                    <div className="relative z-10 text-left space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${app.theme.primary}`}
+                        />
+                        <p className={`${meta.metaClass} ${app.theme.text}`}>
+                          {app.category}
+                        </p>
+                      </div>
+
+                      <div className="min-h-[28px] flex items-center">
+                        {renderAppTitle(app, "desktop")}
+                      </div>
+
                       <p
-                        className={`${
-                          isPlotTwist
-                            ? "font-mono text-[11px] font-bold uppercase tracking-wider"
-                            : "font-serif italic text-xs font-semibold tracking-wide"
-                        } ${app.theme.text}`}
+                        className={`${meta.descClass} ${app.theme.descText} leading-snug pt-0.5 line-clamp-2`}
                       >
-                        {app.category}
+                        {app.description}
                       </p>
                     </div>
 
-                    <div className="min-h-[28px] flex items-center">
-                      {renderAppTitle(app, "desktop")}
+                    {/* Solid Bottom Micro-Pills */}
+                    <div className="relative z-10 flex flex-wrap gap-1.5 pt-3">
+                      {app.features.map((feat) => (
+                        <span
+                          key={feat}
+                          style={
+                            isKharchaPaani
+                              ? { fontFamily: "'IBM Plex Mono', monospace" }
+                              : undefined
+                          }
+                          className={`${meta.pillClass} ${app.theme.pillBg}`}
+                        >
+                          {feat}
+                        </span>
+                      ))}
                     </div>
-
-                    <p
-                      className={`${
-                        isPlotTwist
-                          ? "font-mono text-[11px] xl:text-xs text-slate-600 dark:text-stone-400"
-                          : "font-sans text-xs xl:text-[13px] text-slate-600 dark:text-slate-300"
-                      } font-normal leading-snug pt-0.5 line-clamp-2`}
-                    >
-                      {app.description}
-                    </p>
                   </div>
-
-                  {/* Compact Bottom Micro-Pills */}
-                  <div className="relative z-10 flex flex-wrap gap-1.5 pt-3">
-                    {app.features.map((feat) => (
-                      <span
-                        key={feat}
-                        className={`${
-                          isPlotTwist
-                            ? "font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
-                            : "font-sans text-[10.5px] font-medium px-2 py-0.5 rounded"
-                        } ${app.theme.pillBg}`}
-                      >
-                        {feat}
-                      </span>
-                    ))}
-                  </div>
-                </div>
                 );
               })}
             </div>

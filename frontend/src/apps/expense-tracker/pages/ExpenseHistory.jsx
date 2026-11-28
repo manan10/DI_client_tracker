@@ -301,21 +301,42 @@ const ExpenseHistory = () => {
     return groups;
   }, [transactions]);
 
-  return (
-    <div className="min-h-screen bg-white dark:bg-[#060913] text-slate-900 dark:text-slate-100 font-sans selection:bg-emerald-500/20 overflow-x-hidden pb-28 relative">
-      <main className="relative z-10 w-full max-w-440 mx-auto px-3 sm:px-6 lg:px-10 xl:px-14 pt-6 sm:pt-10 flex flex-col gap-5 sm:gap-6">
-        {/* 1. Header with Period Picker & Month Totals */}
-        <HistoryHeader
-          selectedMonth={selectedMonth}
-          setSelectedMonth={setSelectedMonth}
-          selectedYear={selectedYear}
-          setSelectedYear={setSelectedYear}
-          months={months}
-          years={years}
-          monthTotalOutflow={periodHeaderMetrics.monthTotalOutflow}
-          monthTotalInflow={periodHeaderMetrics.monthTotalInflow}
-        />
+  // Load Warm Household Typography Suite (Lora + Nunito Sans + IBM Plex Mono)
+  useEffect(() => {
+    const linkId = "kharcha-paani-sage-fonts";
+    if (!document.getElementById(linkId)) {
+      const link = document.createElement("link");
+      link.id = linkId;
+      link.rel = "stylesheet";
+      link.href =
+        "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Lora:wght@600;700&family=Nunito+Sans:wght@400;500;600;700&display=swap";
+      document.head.appendChild(link);
+    }
+  }, []);
 
+  return (
+    <div
+      style={{
+        fontFamily: "'Nunito Sans', sans-serif",
+        "--kp-font-title": "'Lora', serif",
+        "--kp-font-body": "'Nunito Sans', sans-serif",
+        "--kp-font-mono": "'IBM Plex Mono', monospace",
+      }}
+      className="min-h-screen bg-[#F5F4F0] dark:bg-[#121315] text-stone-900 dark:text-stone-100 selection:bg-emerald-700/15 dark:selection:bg-[#4EA885]/25 overflow-x-hidden pb-32 relative transition-colors duration-200"
+    >
+      {/* 1. Warm Editorial Header Band with Period Picker & Month Totals */}
+      <HistoryHeader
+        selectedMonth={selectedMonth}
+        setSelectedMonth={setSelectedMonth}
+        selectedYear={selectedYear}
+        setSelectedYear={setSelectedYear}
+        months={months}
+        years={years}
+        monthTotalOutflow={periodHeaderMetrics.monthTotalOutflow}
+        monthTotalInflow={periodHeaderMetrics.monthTotalInflow}
+      />
+
+      <main className="relative z-10 w-full max-w-[1680px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 2xl:px-14 pt-6 sm:pt-9 flex flex-col gap-5 sm:gap-6">
         {/* 2. Filter Bar: Search & Account Channel */}
         <HistoryFilterBar
           searchQuery={searchQuery}

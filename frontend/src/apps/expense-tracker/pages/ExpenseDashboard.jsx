@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useApi } from "../../../shared/hooks/useApi";
 import ReconcileModal from "../components/Dashboard/ReconcileModal";
 import WalletActionModal from "../components/Dashboard/WalletActionModal";
 import WalletGridSection from "../components/Dashboard/WalletGridSection";
 import TransactionLedger from "../components/Dashboard/TransactionLedger";
-import { Wallet, CalendarDays, ArrowUpRight, Sparkles } from "lucide-react";
-import PageHeader from "../../../shared/components/Auth/PageHeader";
+import { CalendarDays } from "lucide-react";
 
 const formatINR = (amount) => {
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(
-    amount || 0,
+    amount || 0
   );
 };
 
@@ -34,6 +33,10 @@ const ExpenseDashboard = () => {
   });
   const [history, setHistory] = useState([]);
 
+  // Wallet filter state for inspecting last 10 entries of a single wallet
+  const [filteredWalletId, setFilteredWalletId] = useState(null);
+  const ledgerRef = useRef(null);
+
   // Active wallet action modal state
   const [selectedWallet, setSelectedWallet] = useState(null);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
@@ -42,9 +45,26 @@ const ExpenseDashboard = () => {
   const [isReconcileModalOpen, setIsReconcileModalOpen] = useState(false);
   const [walletToReconcile, setWalletToReconcile] = useState(null);
 
+  // Load Warm Household Typography Suite (Lora + Nunito Sans + IBM Plex Mono)
+  useEffect(() => {
+    const linkId = "kharcha-paani-sage-fonts";
+    if (!document.getElementById(linkId)) {
+      const link = document.createElement("link");
+      link.id = linkId;
+      link.rel = "stylesheet";
+      link.href =
+        "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Lora:wght@600;700&family=Nunito+Sans:wght@400;500;600;700&display=swap";
+      document.head.appendChild(link);
+    }
+  }, []);
+
   const currentMonthName = new Date().toLocaleDateString("en-IN", {
     month: "long",
     year: "numeric",
+  });
+
+  const shortMonthName = new Date().toLocaleDateString("en-IN", {
+    month: "short",
   });
 
   const loadDashboardData = async () => {
@@ -83,9 +103,32 @@ const ExpenseDashboard = () => {
     }
   };
 
+  // Primary card/row click opens WalletActionModal
   const handleCardClick = (wallet) => {
+    if (!wallet) return;
     setSelectedWallet(wallet);
     setIsActionModalOpen(true);
+  };
+
+  // Explicit "Filter" button toggles filtering the ledger to that wallet's last 10 entries
+  const handleFilterWallet = (wallet) => {
+    if (!wallet?._id) return;
+
+    setFilteredWalletId((prev) => {
+      const nextId = prev === wallet._id ? null : wallet._id;
+
+      // On mobile/tablet stacked layouts, scroll smoothly down to the filtered ledger
+      if (nextId && window.innerWidth < 1024 && ledgerRef.current) {
+        setTimeout(() => {
+          ledgerRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 60);
+      }
+
+      return nextId;
+    });
   };
 
   const handleTriggerAction = (type, wallet) => {
@@ -116,99 +159,155 @@ const ExpenseDashboard = () => {
   const cashWallets = wallets.filter((w) => !w.isVirtual);
   const virtualWallets = wallets.filter((w) => w.isVirtual);
   const totalCash = cashWallets.reduce((acc, curr) => acc + curr.balance, 0);
-  const recentHistory = history?.slice(0, 15) || [];
+
+  const activeFilteredWallet = useMemo(
+    () => wallets.find((w) => w._id === filteredWalletId) || null,
+    [wallets, filteredWalletId]
+  );
+
+  // Show last 10 entries for the selected wallet, or last 15 overall when unfiltered
+  const displayedHistory = useMemo(() => {
+    if (!filteredWalletId) {
+      return history?.slice(0, 15) || [];
+    }
+
+    return (history || [])
+      .filter((item) => {
+        const srcId = item.sourceWallet?._id || item.sourceWallet;
+        const tgtId = item.targetWallet?._id || item.targetWallet;
+        return srcId === filteredWalletId || tgtId === filteredWalletId;
+      })
+      .slice(0, 10);
+  }, [history, filteredWalletId]);
+
+  const hasMonthlySpend = Number(summary.monthlyTotal) > 0;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#050811] text-slate-900 dark:text-slate-100 font-sans selection:bg-emerald-500/20 overflow-x-hidden pb-28 relative">
-      {/* ULTRA-WIDE CONTAINER */}
-      <main className="relative z-10 w-full max-w-[1680px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 2xl:px-14 pt-6 sm:pt-10 flex flex-col gap-8 lg:gap-12">
-        {/* HEADER SECTION */}
-        <header className="relative flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 sm:gap-8 pb-8 border-b border-slate-200/80 dark:border-white/[0.08]">
-          {/* Left: Brand Identity & Overview */}
-          <div className="flex flex-col justify-between gap-4 max-w-3xl">
-            {/* Context Badges */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-gradient-to-r from-white to-slate-50 dark:from-[#0B1120] dark:to-[#0F172A] border border-slate-300 dark:border-white/20 ring-1 ring-slate-200 dark:ring-white/5 shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <span className="text-[11px] font-sans font-semibold tracking-wider uppercase text-slate-700 dark:text-slate-300">
-                  Dalal <span className="font-serif italic font-normal text-emerald-800 dark:text-emerald-400 capitalize">Book</span>
-                </span>
-              </div>
-
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gradient-to-r from-slate-100 to-slate-50 dark:from-white/[0.04] dark:to-white/[0.02] border border-slate-300/80 dark:border-white/15 ring-1 ring-slate-200/70 dark:ring-white/5 text-slate-600 dark:text-slate-400 text-xs font-sans font-medium">
-                <CalendarDays size={13} className="text-emerald-600 dark:text-emerald-400" />
+    <div
+      style={{
+        fontFamily: "'Nunito Sans', sans-serif",
+        "--kp-font-title": "'Lora', serif",
+        "--kp-font-body": "'Nunito Sans', sans-serif",
+        "--kp-font-mono": "'IBM Plex Mono', monospace",
+      }}
+      className="min-h-screen bg-[#F5F4F0] dark:bg-[#121315] text-stone-900 dark:text-stone-100 selection:bg-emerald-700/15 dark:selection:bg-[#4EA885]/25 overflow-x-hidden pb-32 relative transition-colors duration-200"
+    >
+      {/* =================================================================== */}
+      {/* WARM EDITORIAL HEADER BAND                                          */}
+      {/* =================================================================== */}
+      <header className="relative z-10 w-full bg-[#FAF9F6] dark:bg-[#16181C] border-b border-stone-200/90 dark:border-white/[0.07]">
+        <div className="w-full max-w-[1680px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 2xl:px-14 py-6 sm:py-8 flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+          {/* Left: Unified Upright Heading Block */}
+          <div className="flex flex-col justify-center min-w-0">
+            <div className="flex items-center gap-2 text-xs font-semibold text-stone-500 dark:text-stone-400 mb-2">
+              <span className="uppercase tracking-[0.16em] text-[10px] font-bold text-emerald-700 dark:text-[#68C19D]">
+                Kharcha Paani
+              </span>
+              <span className="text-stone-300 dark:text-stone-700">•</span>
+              <span className="inline-flex items-center gap-1.5 text-stone-600 dark:text-stone-300">
+                <CalendarDays
+                  size={12}
+                  className="text-emerald-700 dark:text-[#68C19D]"
+                />
                 <span>{currentMonthName}</span>
-              </div>
+              </span>
             </div>
 
-            {/* Title & Explainer */}
-            <PageHeader
-              title="Expense"
-              accent="Overview"
-              description="See all your cash balances, track daily expenses, and check what's been spent this month in one place."
-            />
+            <h1
+              style={{ fontFamily: "'Lora', serif" }}
+              className="text-2xl sm:text-3xl lg:text-[40px] font-bold tracking-tight leading-none text-stone-950 dark:text-stone-50"
+            >
+              Overview
+            </h1>
 
-            {/* Micro Balance Note */}
-            <div className="flex items-center gap-3 text-xs font-sans font-medium text-slate-500 dark:text-slate-400">
-              <div className="flex items-center gap-1.5">
-                <Wallet size={13} className="text-slate-400 dark:text-slate-500" />
-                <span>{wallets.length} active wallets</span>
-              </div>
-              <span className="text-slate-300 dark:text-slate-700">•</span>
-              <div>
-                Physical Cash In Hand:{" "}
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  ₹{formatINR(totalCash)}
+            <p className="mt-2.5 text-xs sm:text-sm font-medium text-stone-500 dark:text-stone-400 max-w-xl">
+              Cash reserves, active accounts, and monthly spending in one ledger.
+            </p>
+          </div>
+
+          {/* Right: Architectural Typographic Ledger Figures */}
+          <div className="flex items-center gap-6 sm:gap-11 pt-4 lg:pt-0 border-t lg:border-t-0 border-stone-200/80 dark:border-white/[0.07]">
+            {/* Metric 1: Monthly Spend */}
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-stone-500 dark:text-stone-400">
+                Spent ({shortMonthName})
+              </span>
+              <div className="mt-1.5 flex items-baseline gap-1">
+                <span
+                  style={{ fontFamily: "'Lora', serif" }}
+                  className="text-base sm:text-lg font-semibold text-stone-400 dark:text-stone-500"
+                >
+                  ₹
+                </span>
+                <span
+                  style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                  className={`text-2xl sm:text-3xl lg:text-[38px] font-bold tracking-tight leading-none tabular-nums ${
+                    hasMonthlySpend
+                      ? "text-stone-950 dark:text-stone-50"
+                      : "text-stone-400 dark:text-stone-500"
+                  }`}
+                >
+                  {formatINR(summary.monthlyTotal)}
                 </span>
               </div>
-            </div>
-          </div>
-
-          {/* Right: TOTAL SPENT CARD */}
-          <div className="relative w-full lg:w-auto lg:min-w-[420px] 2xl:min-w-[480px] rounded-2xl p-5 sm:p-6 lg:p-7 overflow-hidden transition-all duration-300 border border-slate-300 dark:border-indigo-500/40 ring-1 ring-slate-400/50 dark:ring-indigo-400/20 bg-gradient-to-br from-indigo-50/80 via-white to-violet-100/50 dark:from-[#0E1326] dark:via-[#0B1020] dark:to-[#17142E] shadow-sm">
-            {/* Top Row: Crisp Contrast Tag */}
-            <div className="relative z-10 flex items-center justify-between gap-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-indigo-500/10 dark:bg-indigo-400/15 border border-indigo-500/20 text-indigo-900 dark:text-indigo-300 text-[10px] font-sans font-semibold tracking-wider uppercase">
-                <ArrowUpRight size={13} strokeWidth={2.5} />
-                <span>Spent This Month</span>
-              </div>
-
-              <div className="flex items-center gap-1 text-[11px] font-sans font-semibold text-slate-500 dark:text-slate-400">
-                <Sparkles size={11} className="text-indigo-600 dark:text-indigo-400" />
-                <span className="text-[10px] uppercase tracking-wider">Live Total</span>
-              </div>
-            </div>
-
-            {/* Middle Row: Standout Currency Display */}
-            <div className="relative z-10 mt-3 sm:mt-5 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl lg:text-4xl font-serif italic text-slate-400 dark:text-slate-500 select-none">
-                ₹
-              </span>
-              <span className="text-4xl sm:text-5xl lg:text-6xl 2xl:text-7xl font-mono font-bold text-slate-950 dark:text-white tracking-tight leading-none tabular-nums truncate">
-                {formatINR(summary.monthlyTotal)}
+              <span className="mt-1.5 text-[11px] font-medium text-stone-500 dark:text-stone-400">
+                {hasMonthlySpend ? "All channels combined" : "No spend logged yet"}
               </span>
             </div>
 
-            {/* Bottom Row: Context Footer */}
-            <div className="relative z-10 mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-between text-[11px] font-sans text-slate-600 dark:text-slate-400">
-              <span>Card, Bank Transfers & Cash</span>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
-                Auto-Calculated
+            {/* Vertical Ledger Rule */}
+            <div className="w-px h-13 bg-stone-200 dark:bg-white/[0.08] shrink-0" />
+
+            {/* Metric 2: Physical Cash In Hand (Anchored with Subtle Botanical Accent) */}
+            <div className="flex flex-col pl-3.5 border-l-2 border-emerald-700/75 dark:border-[#4EA885]">
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-stone-500 dark:text-stone-400">
+                Cash In Hand
+              </span>
+              <div className="mt-1.5 flex items-baseline gap-1">
+                <span
+                  style={{ fontFamily: "'Lora', serif" }}
+                  className="text-base sm:text-lg font-semibold text-emerald-700/65 dark:text-[#68C19D]/65"
+                >
+                  ₹
+                </span>
+                <span
+                  style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                  className="text-2xl sm:text-3xl lg:text-[38px] font-bold text-emerald-700 dark:text-[#68C19D] tracking-tight leading-none tabular-nums"
+                >
+                  {formatINR(totalCash)}
+                </span>
+              </div>
+              <span className="mt-1.5 text-[11px] font-medium text-stone-600 dark:text-stone-300">
+                Across {cashWallets.length} cash wallets
               </span>
             </div>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {/* WORKSPACE MATRIX */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 2xl:gap-14 items-start">
+      {/* =================================================================== */}
+      {/* WORKSPACE CONTAINER                                                 */}
+      {/* =================================================================== */}
+      <main className="relative z-10 w-full max-w-[1680px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 2xl:px-14 pt-6 sm:pt-9">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 lg:gap-11 2xl:gap-14 items-start">
           <WalletGridSection
             cashWallets={cashWallets}
             virtualWallets={virtualWallets}
             totalCash={totalCash}
+            selectedWalletId={filteredWalletId}
             onCardClick={handleCardClick}
+            onFilterWallet={handleFilterWallet}
           />
 
-          <TransactionLedger recentHistory={recentHistory} wallets={wallets} />
+          <div ref={ledgerRef} className="lg:col-span-7 w-full min-w-0 scroll-mt-4">
+            <TransactionLedger
+              recentHistory={displayedHistory}
+              wallets={wallets}
+              filteredWallet={activeFilteredWallet}
+              onClearFilter={() => setFilteredWalletId(null)}
+              onOpenWalletActions={handleCardClick}
+            />
+          </div>
         </div>
       </main>
 
@@ -220,6 +319,7 @@ const ExpenseDashboard = () => {
           setSelectedWallet(null);
         }}
         wallet={selectedWallet}
+        wallets={wallets}
         onOpenExpense={() => handleTriggerAction("EXPENSE", selectedWallet)}
         onOpenTopUp={() => handleTriggerAction("TOPUP", selectedWallet)}
         onOpenTransfer={() => handleTriggerAction("TRANSFER", selectedWallet)}

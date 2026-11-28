@@ -1,71 +1,54 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
-  Wallet,
   Building2,
   QrCode,
-  ArrowUpRight,
   ShieldCheck,
-  Coins,
   KeyRound,
+  Filter,
+  X,
 } from "lucide-react";
 
 const formatINR = (amount = 0) => {
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(
-    amount || 0,
+    amount || 0
   );
 };
 
-// Subtle double-bordered gradient palettes for cash wallets
-const PALETTES = [
-  {
-    // Tuscan Amber
-    border: "border-amber-200/90 dark:border-amber-500/30 hover:border-amber-400 dark:hover:border-amber-400 ring-1 ring-amber-300/30 dark:ring-amber-400/10",
-    bg: "bg-gradient-to-br from-amber-500/[0.04] via-amber-500/[0.015] to-transparent dark:from-amber-500/[0.06] dark:via-transparent dark:to-transparent",
-    stitch: "border-amber-500/15 dark:border-amber-400/15",
-    badge: "bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/20",
-    textPrimary: "text-slate-900 dark:text-white",
-    textAccent: "text-amber-700 dark:text-amber-300",
-    clip: "bg-amber-500",
-  },
-  {
-    // Emerald Green
-    border: "border-emerald-200/90 dark:border-emerald-500/30 hover:border-emerald-400 dark:hover:border-emerald-400 ring-1 ring-emerald-300/30 dark:ring-emerald-400/10",
-    bg: "bg-gradient-to-br from-emerald-500/[0.04] via-emerald-500/[0.015] to-transparent dark:from-emerald-500/[0.06] dark:via-transparent dark:to-transparent",
-    stitch: "border-emerald-500/15 dark:border-emerald-400/15",
-    badge: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/20",
-    textPrimary: "text-slate-900 dark:text-white",
-    textAccent: "text-emerald-700 dark:text-emerald-300",
-    clip: "bg-emerald-500",
-  },
-  {
-    // Sapphire Blue
-    border: "border-sky-200/90 dark:border-sky-500/30 hover:border-sky-400 dark:hover:border-sky-400 ring-1 ring-sky-300/30 dark:ring-sky-400/10",
-    bg: "bg-gradient-to-br from-sky-500/[0.04] via-sky-500/[0.015] to-transparent dark:from-sky-500/[0.06] dark:via-transparent dark:to-transparent",
-    stitch: "border-sky-500/15 dark:border-sky-400/15",
-    badge: "bg-sky-500/10 text-sky-800 dark:text-sky-300 border-sky-500/20",
-    textPrimary: "text-slate-900 dark:text-white",
-    textAccent: "text-sky-700 dark:text-sky-300",
-    clip: "bg-sky-500",
-  },
-  {
-    // Rose Burgundy
-    border: "border-rose-200/90 dark:border-rose-500/30 hover:border-rose-400 dark:hover:border-rose-400 ring-1 ring-rose-300/30 dark:ring-rose-400/10",
-    bg: "bg-gradient-to-br from-rose-500/[0.04] via-rose-500/[0.015] to-transparent dark:from-rose-500/[0.06] dark:via-transparent dark:to-transparent",
-    stitch: "border-rose-500/15 dark:border-rose-400/15",
-    badge: "bg-rose-500/10 text-rose-800 dark:text-rose-300 border-rose-500/20",
-    textPrimary: "text-slate-900 dark:text-white",
-    textAccent: "text-rose-700 dark:text-rose-300",
-    clip: "bg-rose-500",
-  },
-];
+// Normalizes wallet casing cleanly while preserving acronyms like UPI / HDFC / SBI / ICICI
+const formatWalletTitle = (name = "") => {
+  if (!name) return "";
+  const acronyms = new Set([
+    "UPI",
+    "HDFC",
+    "SBI",
+    "ICICI",
+    "IDFC",
+    "KOTAK",
+    "AXIS",
+    "ATM",
+  ]);
+  return String(name)
+    .trim()
+    .split(/\s+/)
+    .map((word) => {
+      const upper = word.toUpperCase();
+      if (acronyms.has(upper)) return upper;
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ");
+};
 
 const WalletGridSection = ({
   cashWallets = [],
   virtualWallets = [],
   totalCash = 0,
+  selectedWalletId = null,
   onCardClick,
+  onFilterWallet,
 }) => {
-  // 1. Separate Primary Drawer
+  const [activeTab, setActiveTab] = useState("ALL");
+
+  // 1. Separate Primary Drawer from Regular Cash Wallets
   const { drawerWallet, regularCashWallets } = useMemo(() => {
     let drawer = null;
     const others = [];
@@ -73,6 +56,7 @@ const WalletGridSection = ({
     cashWallets.forEach((w) => {
       const name = (w.walletName || "").toLowerCase();
       const isDrawer =
+        w.isGeneralPool ||
         name.includes("drawer") ||
         name.includes("tijori") ||
         name.includes("cash box") ||
@@ -92,7 +76,7 @@ const WalletGridSection = ({
     return { drawerWallet: drawer, regularCashWallets: others };
   }, [cashWallets]);
 
-  // 2. Classify Virtual Wallets into UPI Apps vs Bank Accounts
+  // 2. Classify & Sort Virtual Wallets (UPI vs Bank)
   const { upiWallets, bankWallets } = useMemo(() => {
     const upiKeywords = [
       "upi",
@@ -115,9 +99,9 @@ const WalletGridSection = ({
         upiKeywords.some((k) => name.includes(k));
 
       if (isUpi) {
-        upi.push(w);
+        upi.push({ ...w, channelKind: "UPI" });
       } else {
-        banks.push(w);
+        banks.push({ ...w, channelKind: "BANK" });
       }
     });
 
@@ -127,240 +111,432 @@ const WalletGridSection = ({
     return { upiWallets: upi, bankWallets: banks };
   }, [virtualWallets]);
 
+  const cashCount = (drawerWallet ? 1 : 0) + regularCashWallets.length;
+  const digitalCount = upiWallets.length + bankWallets.length;
+  const totalCount = cashCount + digitalCount;
+
+  const showCash = activeTab === "ALL" || activeTab === "CASH";
+  const showDigital = activeTab === "ALL" || activeTab === "DIGITAL";
+  const digitalCombined = [...upiWallets, ...bankWallets];
+
+  const computedTotalCash =
+    totalCash ||
+    cashWallets.reduce((sum, item) => sum + (Number(item.balance) || 0), 0);
+
+  const drawerSharePct =
+    drawerWallet && computedTotalCash > 0
+      ? Math.round(((drawerWallet.balance || 0) / computedTotalCash) * 100)
+      : 0;
+
+  const isDrawerFiltered =
+    drawerWallet && selectedWalletId === drawerWallet._id;
+
   return (
-    <aside className="lg:col-span-5 w-full flex flex-col gap-6 relative z-10 select-none font-sans">
+    <aside
+      style={{ fontFamily: "'Nunito Sans', sans-serif" }}
+      className="lg:col-span-5 lg:sticky lg:top-24 w-full flex flex-col gap-3.5 relative z-10 select-none min-w-0"
+    >
       {/* ─────────────────────────────────────────────────────────────
-          1. TOTAL CASH (INLINE HEADER BANNER)
+          1. CLEAN SECTION HEADER & SAGE SEGMENTED TABS
          ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-end justify-between pb-3.5 border-b border-slate-200/90 dark:border-white/[0.08]">
-        <div>
-          <div className="flex items-center gap-2">
-            <Coins size={15} className="text-emerald-600 dark:text-emerald-400" />
-            <span className="text-base sm:text-lg font-serif tracking-tight text-emerald-800 dark:text-emerald-400">
-              Total Cash <span className="italic font-normal">Balance</span>
-            </span>
-          </div>
+      <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/90 dark:border-white/[0.07]">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="w-1 h-3.5 rounded-full bg-emerald-700 dark:bg-[#4EA885] shrink-0" />
+          <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-stone-800 dark:text-stone-100 truncate">
+            Wallets &amp; Channels
+          </h2>
         </div>
 
-        <div className="text-right">
-          <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-slate-900 dark:text-white tabular-nums leading-none">
-            ₹{formatINR(totalCash)}
-          </span>
+        {/* Soft Borderless Segmented Pill with Botanical Sage Active Tab */}
+        <div className="inline-flex items-center p-0.5 rounded-lg bg-stone-200/70 dark:bg-white/[0.06] shrink-0">
+          {[
+            { id: "ALL", label: `All (${totalCount})` },
+            { id: "CASH", label: `Cash (${cashCount})` },
+            { id: "DIGITAL", label: `Digital (${digitalCount})` },
+          ].map((tab) => {
+            const isSelected = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-2.5 py-1 rounded-md text-[10.5px] font-bold transition-all cursor-pointer touch-manipulation ${
+                  isSelected
+                    ? "bg-emerald-700 dark:bg-[#4EA885] text-white dark:text-[#121315] shadow-2xs"
+                    : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          2. THE MASTER DRAWER (SUBTLE GRADIENT & DOUBLE BORDER)
+          2. DE-BOXED EDITORIAL TREASURY SHEET (EDGE-TO-EDGE ON MOBILE)
          ───────────────────────────────────────────────────────────── */}
-      {drawerWallet && (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-serif tracking-tight text-amber-800 dark:text-amber-400 flex items-center gap-1.5">
-              <KeyRound size={13} className="text-amber-600 dark:text-amber-400" />
-              Master <span className="italic font-normal">Drawer</span>
-            </span>
-            <span className="text-[10px] font-sans font-medium text-slate-500 dark:text-slate-400">
-              Primary Wallet
-            </span>
-          </div>
-
-          <button
-            type="button"
+      <div className="-mx-4 sm:mx-0 sm:w-full rounded-none sm:rounded-2xl bg-white dark:bg-[#1A1C20] border-y border-x-0 sm:border border-stone-200/80 dark:border-white/[0.07] sm:shadow-2xs overflow-hidden flex flex-col divide-y divide-stone-100 dark:divide-white/[0.05]">
+        {/* A. PRIMARY RESERVE ROW (INTEGRATED BOTTOM PROGRESS TRACK, ZERO CLUTTER) */}
+        {showCash && drawerWallet && (
+          <div
+            role="button"
+            tabIndex={0}
             onClick={() => onCardClick(drawerWallet)}
-            className="group relative w-full text-left p-4 sm:p-5 rounded-xl bg-gradient-to-br from-amber-500/[0.05] via-amber-500/[0.015] to-transparent dark:from-amber-400/[0.07] dark:via-transparent dark:to-transparent border border-amber-300/80 hover:border-amber-400 dark:border-amber-500/30 dark:hover:border-amber-400 ring-1 ring-amber-300/30 dark:ring-amber-400/10 shadow-2xs hover:shadow-xs hover:-translate-y-0.5 active:scale-[0.99] transition-all duration-200 cursor-pointer overflow-hidden backdrop-blur-xs font-sans"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onCardClick(drawerWallet);
+              }
+            }}
+            className={`group relative w-full text-left px-4 py-4.5 sm:px-5 sm:py-4.5 min-h-[76px] transition-colors duration-150 cursor-pointer touch-manipulation flex items-center justify-between gap-3 ${
+              isDrawerFiltered
+                ? "bg-emerald-50/75 dark:bg-[#4EA885]/[0.14]"
+                : "bg-[#FAF9F6] dark:bg-[#1F2227] hover:bg-stone-100/70 dark:hover:bg-[#24282E]"
+            }`}
           >
-            <div
-              aria-hidden="true"
-              className="absolute inset-1 rounded-lg border border-dashed border-amber-500/20 dark:border-amber-400/15 pointer-events-none"
-            />
+            {/* Active Left Spine */}
+            {isDrawerFiltered && (
+              <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-700 dark:bg-[#68C19D]" />
+            )}
 
-            <div className="relative z-10 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/20 dark:border-amber-400/20 flex items-center justify-center shrink-0">
-                  <ShieldCheck size={20} className="text-amber-600 dark:text-amber-400" />
-                </div>
-
-                <div className="min-w-0">
-                  <h3 className="text-base sm:text-lg font-serif tracking-tight capitalize text-slate-900 dark:text-white break-words leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                    {drawerWallet.walletName}
-                  </h3>
-                  <p className="text-xs font-sans text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
-                    Central Cash Reserve
-                  </p>
-                </div>
+            <div className="flex items-center gap-3.5 flex-1 min-w-0">
+              <div
+                className={`w-10 h-10 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                  isDrawerFiltered
+                    ? "bg-emerald-700 dark:bg-[#4EA885] text-white dark:text-[#121315]"
+                    : "bg-emerald-700/10 dark:bg-[#4EA885]/15 text-emerald-700 dark:text-[#68C19D]"
+                }`}
+              >
+                <ShieldCheck size={18} />
               </div>
 
-              <div className="text-right flex items-center gap-2.5 shrink-0">
-                <div>
-                  <span className="text-[10px] font-sans text-slate-500 dark:text-slate-400 block font-medium">
-                    Balance
-                  </span>
-                  <span className="text-xl sm:text-2xl font-bold font-mono text-amber-700 dark:text-amber-400 tabular-nums">
-                    ₹{formatINR(drawerWallet.balance)}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3
+                    style={{ fontFamily: "'Lora', serif" }}
+                    className={`text-[15px] sm:text-base font-bold tracking-tight transition-colors truncate ${
+                      isDrawerFiltered
+                        ? "text-emerald-800 dark:text-[#86D4B4]"
+                        : "text-stone-950 dark:text-stone-50 group-hover:text-emerald-800 dark:group-hover:text-[#86D4B4]"
+                    }`}
+                  >
+                    {formatWalletTitle(drawerWallet.walletName)}
+                  </h3>
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-700/10 dark:bg-[#4EA885]/15 text-emerald-800 dark:text-[#86D4B4] shrink-0">
+                    <KeyRound size={9} />
+                    Primary
                   </span>
                 </div>
-                <div className="w-6.5 h-6.5 rounded-md bg-amber-500/10 group-hover:bg-amber-500/15 flex items-center justify-center text-amber-700 dark:text-amber-400 transition-colors">
-                  <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                </div>
+
+                <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium mt-0.5 truncate">
+                  Central cash reserve
+                </p>
               </div>
             </div>
-          </button>
-        </div>
-      )}
 
-      {/* ─────────────────────────────────────────────────────────────
-          3. MEMBER CASH WALLETS (ROUNDED-XL & SUBTLE TINT)
-         ───────────────────────────────────────────────────────────── */}
-      {regularCashWallets.length > 0 && (
-        <div className="flex flex-col gap-2.5">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-serif tracking-tight text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-              <Wallet size={13} className="text-emerald-600 dark:text-emerald-400" />
-              Pocket <span className="italic font-normal">Wallets</span>
-            </span>
-            <span className="text-[10px] font-sans font-medium text-slate-500 dark:text-slate-400">
-              {regularCashWallets.length} Wallets
-            </span>
+            {/* Balance + Ghost Filter Icon */}
+            <div className="flex items-center gap-2.5 shrink-0">
+              <div className="text-right">
+                <span
+                  style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                  className="text-base sm:text-xl font-bold text-stone-950 dark:text-stone-50 tabular-nums tracking-tight block leading-none"
+                >
+                  ₹{formatINR(drawerWallet.balance)}
+                </span>
+                <span
+                  style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                  className="text-[10px] font-semibold text-stone-500 dark:text-stone-400 block mt-1 tabular-nums"
+                >
+                  {drawerSharePct}% share
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onFilterWallet(drawerWallet);
+                }}
+                title={
+                  isDrawerFiltered
+                    ? "Clear filter"
+                    : `Filter ledger to ${formatWalletTitle(drawerWallet.walletName)}`
+                }
+                aria-label={
+                  isDrawerFiltered
+                    ? "Clear filter"
+                    : `Filter ledger to ${formatWalletTitle(drawerWallet.walletName)}`
+                }
+                className={`w-8 h-8 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer touch-manipulation shrink-0 ${
+                  isDrawerFiltered
+                    ? "bg-emerald-700 dark:bg-[#4EA885] text-white dark:text-[#121315]"
+                    : "text-stone-400 dark:text-stone-500 hover:bg-emerald-700/10 hover:text-emerald-700 dark:hover:bg-[#4EA885]/15 dark:hover:text-[#68C19D]"
+                }`}
+              >
+                {isDrawerFiltered ? (
+                  <X size={14} strokeWidth={2.5} />
+                ) : (
+                  <Filter size={13} />
+                )}
+              </button>
+            </div>
+
+            {/* Architectural Bottom Share Track */}
+            <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-stone-200/60 dark:bg-white/[0.04]">
+              <div
+                style={{ width: `${Math.max(drawerSharePct, 3)}%` }}
+                className="h-full bg-emerald-700 dark:bg-[#4EA885] transition-all duration-300"
+              />
+            </div>
           </div>
+        )}
 
-          <div className="grid grid-cols-2 gap-3">
-            {regularCashWallets.map((w, idx) => {
-              const theme = PALETTES[idx % PALETTES.length];
+        {/* B. POCKET CASH WALLETS (BOTANICAL SAGE-TINTED SECTION STRIP) */}
+        {showCash && regularCashWallets.length > 0 && (
+          <div className="flex flex-col divide-y divide-stone-100 dark:divide-white/[0.05]">
+            <div className="px-4 sm:px-5 py-2.5 border-b border-slate-300/75 dark:border-[#4EA885]/20 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-900/80 dark:text-[#86D4B4]/90">
+              <span>Pocket Wallets ({regularCashWallets.length})</span>
+              <span>Balance</span>
+            </div>
+
+            {regularCashWallets.map((w) => {
+              const displayName = formatWalletTitle(w.walletName);
+              const initial = displayName.charAt(0).toUpperCase() || "W";
+
+              const sharePct =
+                computedTotalCash > 0
+                  ? Math.round(((w.balance || 0) / computedTotalCash) * 100)
+                  : 0;
+
+              const isFiltered = selectedWalletId === w._id;
 
               return (
-                <button
+                <div
                   key={w._id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onCardClick(w)}
-                  className={`group relative text-left p-3 sm:p-3.5 rounded-xl ${theme.bg} ${theme.border} border shadow-2xs hover:shadow-xs hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 cursor-pointer overflow-hidden flex flex-col justify-between backdrop-blur-xs min-h-[92px] font-sans`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onCardClick(w);
+                    }
+                  }}
+                  className={`group relative w-full text-left px-4 py-4 sm:px-5 sm:py-3.5 min-h-[64px] transition-colors cursor-pointer touch-manipulation flex items-center justify-between gap-3 ${
+                    isFiltered
+                      ? "bg-emerald-50/70 dark:bg-[#4EA885]/[0.12]"
+                      : "hover:bg-stone-50/90 dark:hover:bg-white/[0.02]"
+                  }`}
                 >
-                  <div
-                    aria-hidden="true"
-                    className={`absolute inset-1 rounded-lg border border-dashed ${theme.stitch} pointer-events-none`}
-                  />
+                  {isFiltered && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-700 dark:bg-[#68C19D]" />
+                  )}
 
-                  {/* Header: Title and Accent Clip */}
-                  <div className="relative z-10 flex items-start justify-between gap-1 mb-2">
-                    <span className={`text-xs sm:text-sm font-serif tracking-tight capitalize break-words leading-tight ${theme.textPrimary}`}>
-                      {w.walletName}
-                    </span>
-                    <div className={`w-3 h-1.5 rounded-[1px] ${theme.clip} opacity-80 shrink-0 mt-1`} />
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div
+                      style={{ fontFamily: "'Lora', serif" }}
+                      className={`w-9 h-9 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-colors shrink-0 ${
+                        isFiltered
+                          ? "bg-emerald-700 dark:bg-[#4EA885] text-white dark:text-[#121315]"
+                          : "bg-stone-100 dark:bg-white/[0.06] text-stone-700 dark:text-stone-200 group-hover:bg-emerald-700/10 group-hover:text-emerald-800 dark:group-hover:bg-[#4EA885]/15 dark:group-hover:text-[#68C19D]"
+                      }`}
+                    >
+                      {initial}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <span
+                        style={{ fontFamily: "'Lora', serif" }}
+                        className={`text-sm font-bold tracking-tight transition-colors block truncate ${
+                          isFiltered
+                            ? "text-emerald-800 dark:text-[#86D4B4]"
+                            : "text-stone-900 dark:text-stone-100 group-hover:text-emerald-800 dark:group-hover:text-[#86D4B4]"
+                        }`}
+                      >
+                        {displayName}
+                      </span>
+
+                      <div className="mt-1.5 h-1 w-full max-w-[150px] rounded-full bg-stone-100 dark:bg-white/[0.06] overflow-hidden">
+                        <div
+                          style={{ width: `${Math.max(sharePct, 4)}%` }}
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            isFiltered
+                              ? "bg-emerald-700 dark:bg-[#68C19D]"
+                              : "bg-emerald-700/55 dark:bg-[#4EA885]/65 group-hover:bg-emerald-700 dark:group-hover:bg-[#68C19D]"
+                          }`}
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Balance Display */}
-                  <div className="relative z-10 flex items-baseline justify-between mt-auto pt-1 font-sans">
-                    <div>
-                      <span className="text-[9px] font-sans font-medium text-slate-500 dark:text-slate-400 block leading-none">
-                        Balance
-                      </span>
-                      <span className={`text-base sm:text-lg font-bold font-mono tabular-nums tracking-tight mt-0.5 block ${theme.textAccent}`}>
+                  {/* Balance + Ghost Filter Icon */}
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <div className="text-right">
+                      <span
+                        style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                        className="text-[15px] sm:text-base font-bold tabular-nums tracking-tight text-stone-950 dark:text-stone-50 block leading-none"
+                      >
                         ₹{formatINR(w.balance)}
                       </span>
+                      <span
+                        style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                        className="text-[10px] font-medium text-stone-500 dark:text-stone-400 block mt-1 tabular-nums"
+                      >
+                        {sharePct}% share
+                      </span>
                     </div>
-                    <ArrowUpRight size={13} className="text-slate-400 opacity-60 group-hover:opacity-100 transition-opacity" />
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onFilterWallet(w);
+                      }}
+                      title={
+                        isFiltered
+                          ? "Clear filter"
+                          : `Filter ledger to ${displayName}`
+                      }
+                      aria-label={
+                        isFiltered
+                          ? "Clear filter"
+                          : `Filter ledger to ${displayName}`
+                      }
+                      className={`w-8 h-8 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer touch-manipulation shrink-0 ${
+                        isFiltered
+                          ? "bg-emerald-700 dark:bg-[#4EA885] text-white dark:text-[#121315]"
+                          : "text-stone-400 dark:text-stone-500 hover:bg-emerald-700/10 hover:text-emerald-700 dark:hover:bg-[#4EA885]/15 dark:hover:text-[#68C19D]"
+                      }`}
+                    >
+                      {isFiltered ? (
+                        <X size={14} strokeWidth={2.5} />
+                      ) : (
+                        <Filter size={13} />
+                      )}
+                    </button>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ─────────────────────────────────────────────────────────────
-          4. DIGITAL CHANNELS (EXPANDED TO PREVENT TEXT TRUNCATION)
-         ───────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-4 pt-1 font-sans">
-        {/* SUBSECTION A: UPI Wallets */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-serif tracking-tight text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5">
-              <QrCode size={13} />
-              UPI & Online <span className="italic font-normal">Apps</span>
-            </span>
-            <span className="text-[10px] font-sans font-medium text-slate-500 dark:text-slate-400">
-              {upiWallets.length} Apps
-            </span>
-          </div>
+        {/* C. DE-BOXED DIGITAL CHANNELS (BOTANICAL SAGE-TINTED SECTION STRIP) */}
+        {showDigital && (
+          <div className="flex flex-col bg-[#FAF9F6] dark:bg-[#16181C]">
+            <div className="px-4 sm:px-5 py-2.5 border-b border-slate-300/75 dark:border-[#4EA885]/20 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-900/80 dark:text-[#86D4B4]/90">
+              <span>Digital Channels ({digitalCombined.length})</span>
+              <span>Tap to Log</span>
+            </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-3 gap-2.5">
-            {upiWallets.map((w) => (
-              <button
-                key={w._id}
-                type="button"
-                onClick={() => onCardClick(w)}
-                className="group relative flex flex-col justify-between p-3 rounded-lg bg-gradient-to-br from-emerald-500/[0.04] via-emerald-500/[0.01] to-transparent dark:from-emerald-500/[0.07] dark:via-transparent dark:to-transparent border border-emerald-200/90 dark:border-emerald-500/30 hover:border-emerald-400 dark:hover:border-emerald-400 ring-1 ring-emerald-300/30 dark:ring-emerald-400/10 transition-all duration-150 active:scale-95 cursor-pointer text-left min-h-[78px] font-sans"
-              >
-                <div className="flex items-center justify-between w-full mb-1.5">
-                  <span className="px-1.5 py-0.5 rounded text-[8.5px] font-sans font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-800 dark:text-emerald-300">
-                    UPI
-                  </span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                </div>
+            {digitalCombined.length > 0 ? (
+              <div className="flex flex-col divide-y divide-stone-200/60 dark:divide-white/[0.05] sm:divide-y-0 sm:p-3 sm:grid sm:grid-cols-2 sm:gap-2">
+                {digitalCombined.map((w) => {
+                  const isUpi = w.channelKind === "UPI";
+                  const isFiltered = selectedWalletId === w._id;
+                  const displayName = formatWalletTitle(w.walletName);
 
-                <div className="min-w-0 w-full mt-auto">
-                  <span className="text-xs font-serif tracking-tight capitalize text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors break-words leading-tight block">
-                    {w.walletName}
-                  </span>
-                  <span className="text-[9px] font-sans font-normal text-slate-500 dark:text-slate-400 block mt-0.5">
-                    Tap to Log
-                  </span>
-                </div>
-              </button>
-            ))}
+                  return (
+                    <div
+                      key={w._id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => onCardClick(w)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onCardClick(w);
+                        }
+                      }}
+                      className={`group relative w-full flex items-center justify-between gap-2 px-4 py-3.5 sm:px-3 sm:py-2.5 min-h-[56px] sm:min-h-0 sm:rounded-xl transition-all duration-150 cursor-pointer touch-manipulation text-left min-w-0 ${
+                        isFiltered
+                          ? "bg-emerald-50/90 dark:bg-[#4EA885]/[0.16] ring-1 ring-emerald-700/50 dark:ring-[#68C19D]/50"
+                          : "bg-white dark:bg-[#1F2227] hover:bg-stone-100/80 dark:hover:bg-[#252930]"
+                      }`}
+                    >
+                      {isFiltered && (
+                        <div className="sm:hidden absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-700 dark:bg-[#68C19D]" />
+                      )}
 
-            {upiWallets.length === 0 && (
-              <div className="col-span-full py-2.5 border border-dashed border-slate-300 dark:border-white/10 rounded-lg text-center text-xs font-sans text-slate-400">
-                No UPI Wallets
+                      <div className="flex items-center gap-3 sm:gap-2.5 min-w-0">
+                        <div
+                          className={`w-8 h-8 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                            isFiltered
+                              ? "bg-emerald-700 dark:bg-[#4EA885] text-white dark:text-[#121315]"
+                              : "bg-emerald-700/10 dark:bg-[#4EA885]/15 text-emerald-700 dark:text-[#68C19D]"
+                          }`}
+                        >
+                          {isUpi ? (
+                            <QrCode size={14} className="sm:w-3.5 sm:h-3.5" />
+                          ) : (
+                            <Building2 size={14} className="sm:w-3.5 sm:h-3.5" />
+                          )}
+                        </div>
+
+                        <div className="min-w-0">
+                          <span
+                            style={{ fontFamily: "'Lora', serif" }}
+                            className={`text-sm sm:text-xs font-bold tracking-tight transition-colors block truncate ${
+                              isFiltered
+                                ? "text-emerald-800 dark:text-[#86D4B4]"
+                                : "text-stone-950 dark:text-stone-50 group-hover:text-emerald-800 dark:group-hover:text-[#86D4B4]"
+                            }`}
+                          >
+                            {displayName}
+                          </span>
+                          <span className="text-[10px] sm:text-[9px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 block leading-none mt-1 sm:mt-0.5">
+                            {isUpi ? "UPI Handle" : "Bank Account"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onFilterWallet(w);
+                        }}
+                        title={
+                          isFiltered
+                            ? "Clear filter"
+                            : `Filter ledger to ${displayName}`
+                        }
+                        aria-label={
+                          isFiltered
+                            ? "Clear filter"
+                            : `Filter ledger to ${displayName}`
+                        }
+                        className={`w-8 h-8 sm:w-6.5 sm:h-6.5 rounded-lg flex items-center justify-center transition-all cursor-pointer touch-manipulation shrink-0 ${
+                          isFiltered
+                            ? "bg-emerald-700 dark:bg-[#4EA885] text-white dark:text-[#121315]"
+                            : "text-stone-400 dark:text-stone-500 hover:bg-emerald-700/10 hover:text-emerald-700 dark:hover:bg-[#4EA885]/15 dark:hover:text-[#68C19D]"
+                        }`}
+                      >
+                        {isFiltered ? (
+                          <X size={13} strokeWidth={2.5} />
+                        ) : (
+                          <Filter size={12} />
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-6 text-center text-xs font-medium text-stone-500 dark:text-stone-400">
+                No UPI or Bank channels added yet
               </div>
             )}
           </div>
-        </div>
+        )}
 
-        {/* SUBSECTION B: Bank Accounts */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-serif tracking-tight text-sky-800 dark:text-sky-400 flex items-center gap-1.5">
-              <Building2 size={13} />
-              Bank <span className="italic font-normal">Accounts</span>
-            </span>
-            <span className="text-[10px] font-sans font-medium text-slate-500 dark:text-slate-400">
-              {bankWallets.length} Accounts
-            </span>
+        {/* Empty State */}
+        {totalCount === 0 && (
+          <div className="py-10 px-4 text-center text-xs font-medium text-stone-500 dark:text-stone-400">
+            No wallets configured yet.
           </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-3 gap-2.5">
-            {bankWallets.map((w) => (
-              <button
-                key={w._id}
-                type="button"
-                onClick={() => onCardClick(w)}
-                className="group relative flex flex-col justify-between p-3 rounded-lg bg-gradient-to-br from-sky-500/[0.04] via-sky-500/[0.01] to-transparent dark:from-sky-500/[0.07] dark:via-transparent dark:to-transparent border border-sky-200/90 dark:border-sky-500/30 hover:border-sky-400 dark:hover:border-sky-400 ring-1 ring-sky-300/30 dark:ring-sky-400/10 transition-all duration-150 active:scale-95 cursor-pointer text-left min-h-[78px] font-sans"
-              >
-                <div className="flex items-center justify-between w-full mb-1.5">
-                  <div className="w-3.5 h-2 rounded-[2px] bg-amber-400/20 border border-amber-500/40 flex items-center justify-center shrink-0">
-                    <div className="w-1.5 h-0.5 border-t border-b border-amber-700/40" />
-                  </div>
-                  <span className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0" />
-                </div>
-
-                <div className="min-w-0 w-full mt-auto">
-                  <span className="text-xs font-serif tracking-tight capitalize text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors break-words leading-tight block">
-                    {w.walletName}
-                  </span>
-                  <span className="text-[9px] font-sans font-normal text-slate-500 dark:text-slate-400 block mt-0.5">
-                    Tap to Log
-                  </span>
-                </div>
-              </button>
-            ))}
-
-            {bankWallets.length === 0 && (
-              <div className="col-span-full py-2.5 border border-dashed border-slate-300 dark:border-white/10 rounded-lg text-center text-xs font-sans text-slate-400">
-                No Bank Accounts
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </aside>
   );

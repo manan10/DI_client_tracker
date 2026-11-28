@@ -12,9 +12,9 @@ import {
   CheckCircle2,
   ArrowUpRight,
   ArrowDownLeft,
+  ArrowLeftRight,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
-import { getWalletColor } from "../walletUtils";
 
 const formatINR = (amount) => {
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(
@@ -22,7 +22,6 @@ const formatINR = (amount) => {
   );
 };
 
-// Formats text into proper case: 1st letter capitalized, rest lowercase per word
 const toProperCase = (str = "") => {
   if (!str) return "";
   return String(str)
@@ -46,21 +45,20 @@ const DesktopLedgerTable = ({
   toggleRow,
 }) => {
   return (
-    <div className="hidden lg:flex flex-col w-full overflow-hidden rounded-sm border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1120] shadow-2xs font-sans">
-      {/* ── Table Header Strip ── */}
-      <div className="grid grid-cols-12 gap-3 px-6 py-3.5 border-b border-slate-200 dark:border-white/10 select-none text-xs font-mono font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-200 bg-slate-100/80 dark:bg-white/[0.04]">
-        <div className="col-span-2 flex items-center gap-1.5">
-          <span>Date</span>
-          <span className="text-slate-300 dark:text-slate-600">•</span>
-          <span>Time</span>
-        </div>
-        <div className="col-span-4">Expense / Item</div>
-        <div className="col-span-3">Paid From</div>
-        <div className="col-span-3 text-right pr-2">Amount</div>
+    <div
+      style={{ fontFamily: "'Nunito Sans', sans-serif" }}
+      className="hidden lg:flex flex-col w-full overflow-hidden rounded-2xl border border-stone-200/80 dark:border-white/[0.07] bg-white dark:bg-[#1A1C20] shadow-2xs"
+    >
+      {/* ── Table Header Strip (Clean Borderless Columns) ── */}
+      <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-stone-300/75 dark:border-white/[0.20] text-emerald-900/80 dark:text-[#86D4B4]/90 select-none text-[10px] font-bold uppercase tracking-[0.12em] bg-[#FAF9F6] dark:bg-[#16181C]">
+        <div className="col-span-2">Date &amp; Time</div>
+        <div className="col-span-4">Item &amp; Category</div>
+        <div className="col-span-3">Account</div>
+        <div className="col-span-3 text-right pr-4">Amount</div>
       </div>
 
-      {/* ── Continuous Row Feed ── */}
-      <div className="flex flex-col divide-y divide-slate-100 dark:divide-white/5">
+      {/* ── Continuous Row Feed (Zero Vertical Dividers) ── */}
+      <div className="flex flex-col divide-y divide-stone-100 dark:divide-white/[0.05]">
         {recentHistory.map((item) => {
           const isExpanded = expandedId === item._id;
           const isPopulated = item.category && typeof item.category === "object";
@@ -70,27 +68,33 @@ const DesktopLedgerTable = ({
           const rawSubCategory = item.subCategory || "General Expense";
 
           const categoryLabel = toProperCase(rawCategory);
-          const subCategoryLabel = toProperCase(rawSubCategory);
+          const descLower = (item.description || "").toLowerCase();
+          const isSystem =
+            String(rawCategory).toUpperCase() === "SYSTEM" ||
+            Boolean(item.targetWallet) ||
+            descLower.includes("internal transfer") ||
+            descLower.includes("reconciliation sync") ||
+            descLower.includes("top-up allocated");
+
+          const displayTitle = isSystem
+            ? descLower.includes("reconciliation")
+              ? "Balance Sync"
+              : descLower.includes("top-up")
+              ? "Drawer Allocation"
+              : "Internal Transfer"
+            : toProperCase(rawSubCategory);
+
           const categoryIcon = isPopulated ? item.category.icon : "CreditCard";
 
-          const sourceWalletIndex = wallets?.findIndex(
+          const sourceWallet = wallets?.find(
             (w) => w._id === (item.sourceWallet?._id || item.sourceWallet)
           );
-          const sourceWallet = wallets?.[sourceWalletIndex];
           const sourceName = sourceWallet?.walletName || "Direct Spend";
-          const sourcePalette = getWalletColor(
-            sourceWallet?._id || sourceName,
-            sourceWalletIndex >= 0 ? sourceWalletIndex : null
-          );
 
-          const targetWalletIndex = wallets?.findIndex(
+          const targetWallet = wallets?.find(
             (w) => w._id === (item.targetWallet?._id || item.targetWallet)
           );
-          const targetWallet = wallets?.[targetWalletIndex];
           const targetName = targetWallet?.walletName;
-          const targetPalette = targetWallet
-            ? getWalletColor(targetWallet._id, targetWalletIndex)
-            : null;
 
           const isDebit = item.type === "DEBIT" || (!item.type && !item.isTopUp);
           const isTransfer = Boolean(item.targetWallet);
@@ -122,98 +126,111 @@ const DesktopLedgerTable = ({
               key={item._id}
               className={`group relative flex flex-col transition-colors duration-150 select-none ${
                 isExpanded
-                  ? "bg-slate-50/70 dark:bg-white/[0.03]"
-                  : "hover:bg-slate-50/40 dark:hover:bg-white/[0.015]"
+                  ? "bg-stone-50/90 dark:bg-[#202329]"
+                  : isSystem
+                  ? "bg-stone-50/30 dark:bg-white/[0.01] hover:bg-stone-50/80 dark:hover:bg-white/[0.025]"
+                  : "hover:bg-stone-50/80 dark:hover:bg-white/[0.025]"
               }`}
             >
               {/* Left Accent Stripe */}
               <div
-                className={`absolute left-0 top-0 bottom-0 w-0.5 transition-all duration-150 ${
+                className={`absolute left-0 top-0 bottom-0 w-[3px] transition-all duration-150 ${
                   isExpanded
-                    ? isDebit
-                      ? "bg-rose-500"
-                      : "bg-emerald-500"
-                    : isDebit
-                    ? "bg-transparent group-hover:bg-rose-400"
-                    : "bg-transparent group-hover:bg-emerald-400"
+                    ? isSystem
+                      ? "bg-stone-500 dark:bg-stone-400"
+                      : isDebit
+                      ? "bg-rose-700 dark:bg-[#E88D96]"
+                      : "bg-emerald-700 dark:bg-[#4EA885]"
+                    : "bg-transparent"
                 }`}
               />
 
               {/* Main Interactive Row */}
               <div
                 onClick={() => toggleRow(item._id)}
-                className="grid grid-cols-12 gap-3 items-center px-6 py-3.5 cursor-pointer min-h-[58px]"
+                className="grid grid-cols-12 gap-4 items-center px-6 py-3.5 cursor-pointer min-h-[60px]"
               >
                 {/* 1. Date & Time Column */}
-                <div className="col-span-2 flex flex-col min-w-0 pr-2 border-r border-slate-100 dark:border-white/5">
+                <div
+                  style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                  className="col-span-2 flex flex-col min-w-0"
+                >
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-xs font-mono font-bold text-slate-900 dark:text-white tracking-tight">
+                    <span className="text-xs font-bold text-stone-900 dark:text-stone-100 tracking-tight">
                       {dayStr} {monthStr}
                     </span>
-                    <span className="text-[10px] font-mono text-slate-400 font-medium">
+                    <span className="text-[10.5px] text-stone-400 dark:text-stone-500 font-medium">
                       {yearStr}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <Clock size={10} className="text-slate-400 shrink-0" />
-                    <span className="text-[10px] font-mono font-medium text-slate-500 dark:text-slate-400">
-                      {timeStr}
-                    </span>
-                  </div>
+                  <span className="text-[10.5px] font-medium text-stone-500 dark:text-stone-400 mt-0.5">
+                    {timeStr}
+                  </span>
                 </div>
 
-                {/* 2. Expense / Item Column */}
-                <div className="col-span-4 flex items-center gap-3 min-w-0 pr-2 border-r border-slate-100 dark:border-white/5">
+                {/* 2. Expense / Item Column (Clean Hierarchy, No Boxed Badges) */}
+                <div className="col-span-4 flex items-center gap-3.5 min-w-0">
                   <div
-                    className={`w-7 h-7 rounded-xs flex items-center justify-center shrink-0 border transition-transform duration-150 group-hover:scale-105 ${
-                      isDebit
-                        ? "bg-rose-50 text-rose-600 border-rose-200/80 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20"
-                        : "bg-emerald-50 text-emerald-600 border-emerald-200/80 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
+                    className={`w-8.5 h-8.5 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                      isSystem
+                        ? "bg-stone-100 text-stone-600 dark:bg-white/[0.06] dark:text-stone-300"
+                        : isDebit
+                        ? "bg-rose-700/[0.08] text-rose-700 dark:bg-[#E88D96]/15 dark:text-[#F09BA3]"
+                        : "bg-emerald-700/[0.09] text-emerald-700 dark:bg-[#4EA885]/15 dark:text-[#68C19D]"
                     }`}
                   >
-                    <IconRenderer iconName={categoryIcon} />
+                    {isSystem ? (
+                      <ArrowLeftRight size={14} />
+                    ) : (
+                      <IconRenderer iconName={categoryIcon} />
+                    )}
                   </div>
 
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-serif tracking-tight text-xs text-slate-900 dark:text-white truncate">
-                        {subCategoryLabel}
+                  <div className="flex flex-col justify-center min-w-0 flex-1">
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span
+                        style={{ fontFamily: "'Lora', serif" }}
+                        className={`font-bold tracking-tight text-[13.5px] leading-snug ${
+                          isSystem
+                            ? "text-stone-700 dark:text-stone-200"
+                            : "text-stone-950 dark:text-stone-50"
+                        }`}
+                      >
+                        {displayTitle}
                       </span>
-                      <span className="text-[9px] font-mono font-medium uppercase tracking-wider px-1.5 py-0.2 rounded-xs bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 border border-slate-200/70 dark:border-white/10 truncate max-w-28">
+                      <span className="text-[11px] font-medium text-stone-500 dark:text-stone-400">
                         {categoryLabel}
                       </span>
                     </div>
 
-                    {item.description ? (
-                      <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                        "{item.description}"
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 mt-0.5">
-                        No note added
+                    {item.description && (
+                      <span className="text-[11.5px] text-stone-500 dark:text-stone-400 truncate mt-0.5">
+                        &ldquo;{item.description}&rdquo;
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* 3. Paid From Column */}
-                <div className="col-span-3 flex items-center min-w-0 pr-2 border-r border-slate-100 dark:border-white/5">
+                {/* 3. Account Column (Soft Borderless Surface Chips) */}
+                <div className="col-span-3 flex items-center min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-xs text-[10px] font-mono font-bold tracking-wide uppercase border ${sourcePalette.badge}`}
-                    >
-                      <Wallet size={11} className="shrink-0 opacity-80" />
-                      <span className="truncate max-w-28">{sourceName}</span>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold tracking-wide capitalize bg-stone-100 dark:bg-white/[0.06] text-stone-700 dark:text-stone-200">
+                      <Wallet
+                        size={10}
+                        className="shrink-0 text-emerald-700 dark:text-[#68C19D]"
+                      />
+                      <span className="truncate max-w-32">{sourceName}</span>
                     </span>
 
-                    {targetWallet && targetPalette && (
+                    {targetWallet && (
                       <>
-                        <ArrowRight size={11} className="text-slate-400 shrink-0" />
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-xs text-[10px] font-mono font-bold tracking-wide uppercase border ${targetPalette.badge}`}
-                        >
-                          <Wallet size={11} className="shrink-0 opacity-80" />
-                          <span className="truncate max-w-28">{targetName}</span>
+                        <ArrowRight
+                          size={11}
+                          className="text-stone-400 shrink-0"
+                        />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold tracking-wide capitalize bg-emerald-700/10 dark:bg-[#4EA885]/15 text-emerald-800 dark:text-[#86D4B4]">
+                          <Wallet size={10} className="shrink-0 opacity-90" />
+                          <span className="truncate max-w-32">{targetName}</span>
                         </span>
                       </>
                     )}
@@ -221,31 +238,39 @@ const DesktopLedgerTable = ({
                 </div>
 
                 {/* 4. Amount Column */}
-                <div className="col-span-3 flex items-center justify-end gap-3 pl-1 whitespace-nowrap">
-                  <div className="flex items-baseline justify-end gap-1.5 text-right shrink-0">
-                    {isDebit ? (
+                <div className="col-span-3 flex items-center justify-end gap-2.5 pl-1 whitespace-nowrap">
+                  <div className="flex items-baseline justify-end gap-1 text-right shrink-0">
+                    {isSystem ? (
+                      <ArrowLeftRight
+                        size={12}
+                        className="text-stone-400 shrink-0"
+                      />
+                    ) : isDebit ? (
                       <ArrowUpRight
-                        size={14}
-                        className="text-rose-600 dark:text-rose-400 shrink-0 stroke-[2.5]"
+                        size={13}
+                        className="text-rose-700 dark:text-[#F09BA3] shrink-0 stroke-[2.5]"
                       />
                     ) : (
                       <ArrowDownLeft
-                        size={14}
-                        className="text-emerald-600 dark:text-emerald-400 shrink-0 stroke-[2.5]"
+                        size={13}
+                        className="text-emerald-700 dark:text-[#68C19D] shrink-0 stroke-[2.5]"
                       />
                     )}
                     <span
-                      className={`font-mono font-bold text-sm tabular-nums tracking-tight ${
-                        isDebit
-                          ? "text-rose-600 dark:text-rose-400"
-                          : "text-emerald-600 dark:text-emerald-400"
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                      className={`font-bold text-sm tabular-nums tracking-tight ${
+                        isSystem
+                          ? "text-stone-600 dark:text-stone-300"
+                          : isDebit
+                          ? "text-rose-700 dark:text-[#F09BA3]"
+                          : "text-emerald-700 dark:text-[#68C19D]"
                       }`}
                     >
                       {isDebit ? "-" : "+"}₹{formatINR(item.amount)}
                     </span>
                   </div>
 
-                  <div className="text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors p-1 shrink-0">
+                  <div className="text-stone-400 group-hover:text-stone-800 dark:group-hover:text-stone-200 transition-colors p-1 shrink-0">
                     {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   </div>
                 </div>
@@ -253,68 +278,88 @@ const DesktopLedgerTable = ({
 
               {/* ── Expanded Detail Drawer ── */}
               {isExpanded && (
-                <div className="px-6 pb-4 pt-1 border-t border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.015] animate-in fade-in duration-100">
-                  <div className="grid grid-cols-3 gap-4 p-3.5 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-white/10 rounded-xs shadow-2xs mt-1.5">
-                    
+                <div className="px-6 pb-4 pt-1 bg-[#FAF9F6] dark:bg-[#16181C] border-t border-stone-200/70 dark:border-white/[0.06] animate-in fade-in duration-100">
+                  <div className="grid grid-cols-3 gap-5 p-4 bg-white dark:bg-[#1A1C20] border border-stone-200/80 dark:border-white/[0.07] rounded-xl mt-1.5">
                     {/* Section 1: Details */}
-                    <div className="flex flex-col gap-1.5 border-r border-slate-100 dark:border-white/5 pr-4">
-                      <span className="text-[11px] font-sans font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                        <Tag size={12} className="text-emerald-600 dark:text-emerald-400" /> Details
+                    <div className="flex flex-col gap-1.5 border-r border-stone-100 dark:border-white/[0.06] pr-4">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
+                        <Tag
+                          size={11}
+                          className="text-emerald-700 dark:text-[#68C19D]"
+                        />{" "}
+                        Details
                       </span>
                       <div className="flex flex-col mt-0.5">
-                        <span className="text-xs font-serif tracking-tight text-slate-900 dark:text-white">
-                          {subCategoryLabel}
+                        <span
+                          style={{ fontFamily: "'Lora', serif" }}
+                          className="text-xs font-bold tracking-tight text-stone-950 dark:text-white"
+                        >
+                          {displayTitle}
                         </span>
-                        <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 mt-0.5">
-                          Category: <strong className="text-slate-800 dark:text-slate-200 font-semibold">{categoryLabel}</strong>
+                        <span className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">
+                          Category:{" "}
+                          <strong className="text-stone-800 dark:text-stone-200 font-semibold">
+                            {categoryLabel}
+                          </strong>
                         </span>
                       </div>
-                      <div className="mt-1 p-2 rounded-xs bg-slate-50 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/5 text-[11px] font-sans text-slate-600 dark:text-slate-300">
-                        <span className="font-semibold text-slate-400 block text-[9px] uppercase tracking-wider mb-0.5 font-sans">
-                          Note:
-                        </span>
-                        {item.description ? `"${item.description}"` : "No note attached."}
-                      </div>
+                      {item.description && (
+                        <div className="mt-1 p-2.5 rounded-lg bg-[#FAF9F6] dark:bg-[#16181C] text-[11.5px] text-stone-700 dark:text-stone-200">
+                          &ldquo;{item.description}&rdquo;
+                        </div>
+                      )}
                     </div>
 
                     {/* Section 2: Wallet Balance */}
-                    <div className="flex flex-col gap-1.5 border-r border-slate-100 dark:border-white/5 px-4">
-                      <span className="text-[11px] font-sans font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    <div className="flex flex-col gap-1.5 border-r border-stone-100 dark:border-white/[0.06] px-4">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
                         {isDebit ? (
-                          <TrendingDown size={12} className="text-rose-500" />
+                          <TrendingDown
+                            size={11}
+                            className="text-rose-700 dark:text-[#F09BA3]"
+                          />
                         ) : (
-                          <TrendingUp size={12} className="text-emerald-500" />
+                          <TrendingUp
+                            size={11}
+                            className="text-emerald-700 dark:text-[#68C19D]"
+                          />
                         )}
-                        Wallet Balance
+                        Account Balance
                       </span>
 
                       <div className="flex flex-col gap-1 mt-0.5">
-                        <span className="text-xs font-serif tracking-tight text-slate-800 dark:text-slate-200 truncate">
+                        <span
+                          style={{ fontFamily: "'Lora', serif" }}
+                          className="text-xs font-bold tracking-tight text-stone-900 dark:text-white truncate"
+                        >
                           {sourceName}
                         </span>
-                        <div className="flex items-center gap-2 text-xs font-mono font-bold bg-slate-50 dark:bg-white/[0.02] p-2 rounded-xs border border-slate-200/70 dark:border-white/5">
+                        <div
+                          style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                          className="flex items-center gap-2 text-xs font-bold bg-[#FAF9F6] dark:bg-[#16181C] p-2.5 rounded-lg"
+                        >
                           {beforeSource !== null && (
                             <>
-                              <span className="text-slate-500 dark:text-slate-400 tabular-nums">
+                              <span className="text-stone-500 dark:text-stone-400 tabular-nums">
                                 ₹{formatINR(beforeSource)}
                               </span>
-                              <ArrowRight size={11} className="text-slate-400" />
+                              <ArrowRight size={11} className="text-stone-400" />
                             </>
                           )}
                           <span
                             className={`tabular-nums ${
                               isDebit
-                                ? "text-rose-600 dark:text-rose-400 font-bold"
-                                : "text-emerald-600 dark:text-emerald-400 font-bold"
+                                ? "text-rose-700 dark:text-[#F09BA3]"
+                                : "text-emerald-700 dark:text-[#68C19D]"
                             }`}
                           >
                             ₹{formatINR(afterSource ?? item.amount)}
                           </span>
                         </div>
-                        <span className="text-[11px] font-sans font-normal text-slate-500 dark:text-slate-400">
+                        <span className="text-[11px] font-medium text-stone-500 dark:text-stone-400">
                           {isDebit
-                            ? `Amount spent: ₹${formatINR(item.amount)}`
-                            : `Amount added: ₹${formatINR(item.amount)}`}
+                            ? `Amount deducted: ₹${formatINR(item.amount)}`
+                            : `Amount credited: ₹${formatINR(item.amount)}`}
                         </span>
                       </div>
                     </div>
@@ -322,17 +367,24 @@ const DesktopLedgerTable = ({
                     {/* Section 3: Summary & Date */}
                     <div className="flex flex-col justify-between pl-4">
                       <div className="flex flex-col gap-1">
-                        <span className="text-[11px] font-sans font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                          <Clock size={12} className="text-indigo-500" /> Date & Time
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
+                          <Clock
+                            size={11}
+                            className="text-emerald-700 dark:text-[#68C19D]"
+                          />{" "}
+                          Date &amp; Time
                         </span>
-                        <span className="text-xs font-mono font-medium text-slate-800 dark:text-slate-200 mt-0.5">
+                        <span
+                          style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                          className="text-xs font-semibold text-stone-900 dark:text-white mt-0.5"
+                        >
                           {dayStr} {monthStr} {yearStr} at {timeStr}
                         </span>
-                        <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 mt-1">
-                          Payment Type:{" "}
-                          <strong className="text-slate-800 dark:text-slate-200 font-semibold">
-                            {isTransfer
-                              ? "Transfer"
+                        <span className="text-[11px] text-stone-500 dark:text-stone-400 mt-1">
+                          Entry Type:{" "}
+                          <strong className="text-stone-800 dark:text-stone-200 font-semibold">
+                            {isTransfer || isSystem
+                              ? "Internal / System"
                               : isDebit
                               ? "Expense"
                               : "Top-up"}
@@ -340,15 +392,20 @@ const DesktopLedgerTable = ({
                         </span>
                       </div>
 
-                      <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                      <div
+                        style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                        className="pt-2 border-t border-stone-100 dark:border-white/[0.06] flex items-center justify-between text-[11px] text-stone-400"
+                      >
                         <span>ID: #{item._id?.slice(-8).toUpperCase()}</span>
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-500/20 text-[10px] font-sans">
+                        <span
+                          style={{ fontFamily: "'Nunito Sans', sans-serif" }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-700/10 dark:bg-[#4EA885]/18 text-emerald-800 dark:text-[#86D4B4] font-bold text-[10px]"
+                        >
                           <CheckCircle2 size={11} />
-                          Checked
+                          Verified
                         </span>
                       </div>
                     </div>
-
                   </div>
                 </div>
               )}

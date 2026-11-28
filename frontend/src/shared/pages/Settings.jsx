@@ -78,6 +78,20 @@ const Settings = ({ mode, hideTopBar = false, navbar = null }) => {
   const showClientSection = isClientOnly || (isStandalone && canAccessClientApp);
   const showExpenseSection = isExpenseOnly || (isStandalone && canAccessExpenseApp);
 
+  // Load Warm Household Typography Suite when in Expense Tracker mode
+  useEffect(() => {
+    if (!isExpenseOnly) return;
+    const linkId = "kharcha-paani-sage-fonts";
+    if (!document.getElementById(linkId)) {
+      const link = document.createElement("link");
+      link.id = linkId;
+      link.rel = "stylesheet";
+      link.href =
+        "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Lora:wght@600;700&family=Nunito+Sans:wght@400;500;600;700&display=swap";
+      document.head.appendChild(link);
+    }
+  }, [isExpenseOnly]);
+
   const userInitials = useMemo(() => {
     if (!user?.name) return "U";
     const parts = user.name.trim().split(" ");
@@ -393,8 +407,21 @@ const Settings = ({ mode, hideTopBar = false, navbar = null }) => {
 
   if (isInitialLoading) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-[#F6F8FB] dark:bg-[#131720]">
-        <Loader2 className="animate-spin text-sky-600 dark:text-sky-400" size={32} />
+      <div
+        className={`min-h-screen w-full flex items-center justify-center ${
+          isExpenseOnly
+            ? "bg-[#F5F4F0] dark:bg-[#121315]"
+            : "bg-[#F6F8FB] dark:bg-[#131720]"
+        }`}
+      >
+        <Loader2
+          className={`animate-spin ${
+            isExpenseOnly
+              ? "text-emerald-700 dark:text-[#4EA885]"
+              : "text-sky-600 dark:text-sky-400"
+          }`}
+          size={32}
+        />
       </div>
     );
   }
@@ -504,11 +531,139 @@ const Settings = ({ mode, hideTopBar = false, navbar = null }) => {
   ) : null;
 
   const pageDescription = isExpenseOnly
-    ? "Manage family cash vaults, spending tags, top-ups, and appearance preferences."
+    ? "Manage family cash wallets, spending categories, monthly top-ups, and appearance preferences."
     : isClientOnly
     ? "Manage client tier rules, mutual fund AMCs, synchronization pipelines, and system users."
     : "Manage general platform preferences, client tracking rules, integrations, and treasury vaults.";
 
+  const settingsContent = !activeItem ? (
+    <div className="space-y-9 sm:space-y-10 animate-in fade-in duration-200">
+      <SettingsSection
+        variant={isExpenseOnly ? "expense" : "default"}
+        title="General Settings"
+        icon={SlidersHorizontal}
+        iconColor="text-sky-600 dark:text-sky-400"
+        iconBg="bg-sky-50 dark:bg-sky-500/10 border-sky-200/70 dark:border-sky-500/25"
+        cards={generalCards}
+        isAdmin={user?.isAdmin}
+        onCardClick={setActiveItem}
+      />
+
+      {showClientSection && (
+        <SettingsSection
+          variant={isExpenseOnly ? "expense" : "default"}
+          title="Client Tracker Operations"
+          icon={Building2}
+          iconColor="text-sky-600 dark:text-sky-400"
+          iconBg="bg-sky-50 dark:bg-sky-500/10 border-sky-200/70 dark:border-sky-500/25"
+          cards={businessCards}
+          isAdmin={user?.isAdmin}
+          onCardClick={setActiveItem}
+        />
+      )}
+
+      {showExpenseSection && (
+        <SettingsSection
+          variant={isExpenseOnly ? "expense" : "default"}
+          title="Expense Tracker Management"
+          icon={Receipt}
+          iconColor="text-sky-600 dark:text-sky-400"
+          iconBg="bg-sky-50 dark:bg-sky-500/10 border-sky-200/70 dark:border-sky-500/25"
+          cards={expenseCards}
+          isAdmin={user?.isAdmin}
+          onCardClick={setActiveItem}
+        />
+      )}
+    </div>
+  ) : (
+    <SettingsDetailView
+      variant={isExpenseOnly ? "expense" : "default"}
+      selectedSetting={selectedSetting}
+      isAdmin={user?.isAdmin}
+      thresholds={thresholds}
+      setThresholds={setThresholds}
+      compliance={compliance}
+      setCompliance={setCompliance}
+      wallets={wallets}
+      loadInitialData={loadInitialData}
+      isDark={isDark}
+      toggleTheme={toggleTheme}
+      handlePocketRefill={handlePocketRefill}
+      loading={loading}
+      onBack={() => setActiveItem(null)}
+    />
+  );
+
+  // Expense Tracker (Kharcha Paani) Warm Household Editorial Shell
+  if (isExpenseOnly) {
+    return (
+      <div
+        style={{
+          fontFamily: "'Nunito Sans', sans-serif",
+          "--kp-font-title": "'Lora', serif",
+          "--kp-font-body": "'Nunito Sans', sans-serif",
+          "--kp-font-mono": "'IBM Plex Mono', monospace",
+        }}
+        className="min-h-screen bg-[#F5F4F0] dark:bg-[#121315] text-stone-900 dark:text-stone-100 selection:bg-emerald-700/15 dark:selection:bg-[#4EA885]/25 overflow-x-hidden pb-32 relative transition-colors duration-200"
+      >
+        {navbar}
+
+        {/* Warm Editorial Header Band */}
+        <header className="relative z-10 w-full bg-[#FAF9F6] dark:bg-[#16181C] border-b border-stone-200/90 dark:border-white/[0.07]">
+          <div className="w-full max-w-[1680px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 2xl:px-14 py-6 sm:py-8 flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+            <div className="flex flex-col justify-center min-w-0">
+              <div className="flex items-center gap-2 text-xs font-semibold text-stone-500 dark:text-stone-400 mb-2">
+                <span className="uppercase tracking-[0.16em] text-[10px] font-bold text-emerald-700 dark:text-[#68C19D]">
+                  Kharcha Paani
+                </span>
+                <span className="text-stone-300 dark:text-stone-700">•</span>
+                <span className="inline-flex items-center gap-1.5 text-stone-600 dark:text-stone-300">
+                  <SettingsIcon
+                    size={12}
+                    className="text-emerald-700 dark:text-[#68C19D]"
+                  />
+                  <span>Preferences</span>
+                </span>
+              </div>
+
+              <h1
+                style={{ fontFamily: "'Lora', serif" }}
+                className="text-2xl sm:text-3xl lg:text-[40px] font-bold tracking-tight leading-none text-stone-950 dark:text-stone-50"
+              >
+                Settings
+              </h1>
+
+              <p className="mt-2.5 text-xs sm:text-sm font-medium text-stone-500 dark:text-stone-400 max-w-xl">
+                {pageDescription}
+              </p>
+            </div>
+
+            {activeItem && (
+              <div className="flex items-center shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setActiveItem(null)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-stone-50 dark:bg-[#1A1C20] dark:hover:bg-[#22252C] text-xs font-bold text-stone-700 dark:text-stone-200 border border-stone-200/90 dark:border-white/[0.08] shadow-2xs transition-colors cursor-pointer"
+                >
+                  <ArrowLeft
+                    size={14}
+                    className="text-emerald-700 dark:text-[#68C19D]"
+                  />
+                  <span>Back to All Settings</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </header>
+
+        <main className="relative z-10 w-full max-w-[1680px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 2xl:px-14 pt-6 sm:pt-9">
+          {settingsContent}
+        </main>
+      </div>
+    );
+  }
+
+  // Default / Client Tracker WorkspaceShell (Sora Architectural Edition)
   return (
     <WorkspaceShell
       navbar={navbar || standaloneTopBar}
@@ -536,59 +691,7 @@ const Settings = ({ mode, hideTopBar = false, navbar = null }) => {
           font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
         }
       `}</style>
-      {!activeItem ? (
-        <div className="space-y-10 animate-in fade-in duration-200">
-          <SettingsSection
-            title="General Settings"
-            icon={SlidersHorizontal}
-            iconColor="text-sky-600 dark:text-sky-400"
-            iconBg="bg-sky-50 dark:bg-sky-500/10 border-sky-200/70 dark:border-sky-500/25"
-            cards={generalCards}
-            isAdmin={user?.isAdmin}
-            onCardClick={setActiveItem}
-          />
-
-          {showClientSection && (
-            <SettingsSection
-              title="Client Tracker Operations"
-              icon={Building2}
-              iconColor="text-sky-600 dark:text-sky-400"
-              iconBg="bg-sky-50 dark:bg-sky-500/10 border-sky-200/70 dark:border-sky-500/25"
-              cards={businessCards}
-              isAdmin={user?.isAdmin}
-              onCardClick={setActiveItem}
-            />
-          )}
-
-          {showExpenseSection && (
-            <SettingsSection
-              title="Expense Tracker Management"
-              icon={Receipt}
-              iconColor="text-sky-600 dark:text-sky-400"
-              iconBg="bg-sky-50 dark:bg-sky-500/10 border-sky-200/70 dark:border-sky-500/25"
-              cards={expenseCards}
-              isAdmin={user?.isAdmin}
-              onCardClick={setActiveItem}
-            />
-          )}
-        </div>
-      ) : (
-        <SettingsDetailView
-          selectedSetting={selectedSetting}
-          isAdmin={user?.isAdmin}
-          thresholds={thresholds}
-          setThresholds={setThresholds}
-          compliance={compliance}
-          setCompliance={setCompliance}
-          wallets={wallets}
-          loadInitialData={loadInitialData}
-          isDark={isDark}
-          toggleTheme={toggleTheme}
-          handlePocketRefill={handlePocketRefill}
-          loading={loading}
-          onBack={() => setActiveItem(null)}
-        />
-      )}
+      {settingsContent}
     </WorkspaceShell>
   );
 };

@@ -30,6 +30,19 @@ const ExpenseAnalytics = () => {
   // Active Category Filter for Trend Chart
   const [trendCategory, setTrendCategory] = useState("All Categories");
 
+  // Load Warm Household Typography Suite (Lora + Nunito Sans + IBM Plex Mono)
+  useEffect(() => {
+    const linkId = "kharcha-paani-sage-fonts";
+    if (!document.getElementById(linkId)) {
+      const link = document.createElement("link");
+      link.id = linkId;
+      link.rel = "stylesheet";
+      link.href =
+        "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Lora:wght@600;700&family=Nunito+Sans:wght@400;500;600;700&display=swap";
+      document.head.appendChild(link);
+    }
+  }, []);
+
   // 1. Fetch Global Categories for Tree Filter
   useEffect(() => {
     const fetchGlobalCategories = async () => {
@@ -173,9 +186,15 @@ const ExpenseAnalytics = () => {
 
   if (loading && !data) {
     return (
-      <div className="fixed inset-0 bg-white dark:bg-[#030712] z-50 flex flex-col items-center justify-center p-6 font-sans">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 dark:border-slate-800 border-t-emerald-500 mb-4" />
-        <p className="text-xs font-sans font-bold uppercase tracking-wider text-slate-400 text-center">
+      <div
+        style={{ fontFamily: "'Nunito Sans', sans-serif" }}
+        className="fixed inset-0 bg-[#F5F4F0] dark:bg-[#121315] z-50 flex flex-col items-center justify-center p-6"
+      >
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-stone-200 dark:border-white/10 border-t-emerald-700 dark:border-t-[#4EA885] mb-4" />
+        <p
+          style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+          className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 text-center"
+        >
           Loading Analytics...
         </p>
       </div>
@@ -183,15 +202,22 @@ const ExpenseAnalytics = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#030712] text-left transition-colors duration-300 pb-24 font-sans">
-      <main className="w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 pt-6 sm:pt-10 space-y-10 sm:space-y-12 min-w-0">
-        
-        {/* Section 1: Standardized Header & Period Switcher */}
-        <AnalyticsHeader
-          selectedDate={selectedDate}
-          onChangeMonth={changeMonth}
-        />
+    <div
+      style={{
+        fontFamily: "'Nunito Sans', sans-serif",
+        "--kp-font-title": "'Lora', serif",
+        "--kp-font-body": "'Nunito Sans', sans-serif",
+        "--kp-font-mono": "'IBM Plex Mono', monospace",
+      }}
+      className="min-h-screen bg-[#F5F4F0] dark:bg-[#121315] text-stone-900 dark:text-stone-100 selection:bg-emerald-700/15 dark:selection:bg-[#4EA885]/25 text-left transition-colors duration-200 pb-32"
+    >
+      {/* Section 1: Warm Editorial Header Band & Period Switcher */}
+      <AnalyticsHeader
+        selectedDate={selectedDate}
+        onChangeMonth={changeMonth}
+      />
 
+      <main className="w-full max-w-[1680px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 2xl:px-14 pt-6 sm:pt-9 space-y-8 sm:space-y-10 min-w-0">
         {/* Section 2: Macro Metrics & Account Outflows */}
         <section className="w-full">
           <AnalyticsHero
@@ -205,7 +231,7 @@ const ExpenseAnalytics = () => {
         </section>
 
         {/* Section 3: Deep Ledger Analysis (Continuous Grid) */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-stretch min-w-0">
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-11 2xl:gap-14 items-stretch min-w-0">
           <CategoryDistribution
             categories={activeCategories}
             totalSpend={totalSpend}

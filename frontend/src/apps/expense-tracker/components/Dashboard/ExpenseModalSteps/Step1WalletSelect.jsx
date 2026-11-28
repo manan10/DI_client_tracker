@@ -11,33 +11,28 @@ export const Step1WalletSelect = ({
   onSelectWallet,
 }) => {
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-150 font-sans">
+    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-150">
       <div className="text-left mb-2">
-        <h2 className="font-serif text-base sm:text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
-          {isEditMode ? (
-            <>
-              Switch <span className="italic font-normal text-emerald-600 dark:text-emerald-400">Wallet</span>
-            </>
-          ) : (
-            <>
-              Wallet <span className="italic font-normal text-emerald-600 dark:text-emerald-400">Selection</span>
-            </>
-          )}
+        <h2
+          style={{ fontFamily: "'Lora', serif" }}
+          className="text-lg font-bold tracking-tight text-stone-950 dark:text-stone-50"
+        >
+          {isEditMode ? "Switch Wallet" : "Select Wallet"}
         </h2>
-        <p className="font-sans text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+        <p className="text-xs font-medium text-stone-500 dark:text-stone-400 mt-0.5">
           Select the account the expense was paid from.
         </p>
       </div>
 
       {/* Segmented Control */}
-      <div className="bg-slate-100 dark:bg-slate-900/50 p-1 rounded-lg flex gap-1 border border-slate-200 dark:border-white/5 font-sans">
+      <div className="bg-stone-200/70 dark:bg-white/[0.06] p-1 rounded-xl flex gap-1">
         <button
           type="button"
           onClick={() => setActiveTab("cash")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md font-sans text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 cursor-pointer ${
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10.5px] sm:text-xs font-bold uppercase tracking-wider transition-all outline-none cursor-pointer ${
             activeTab === "cash"
-              ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm"
-              : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              ? "bg-white dark:bg-[#262930] text-emerald-700 dark:text-[#68C19D] shadow-2xs"
+              : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200"
           }`}
         >
           <Coins size={14} /> Cash Wallets
@@ -45,69 +40,80 @@ export const Step1WalletSelect = ({
         <button
           type="button"
           onClick={() => setActiveTab("online")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md font-sans text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer ${
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10.5px] sm:text-xs font-bold uppercase tracking-wider transition-all outline-none cursor-pointer ${
             activeTab === "online"
-              ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
-              : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              ? "bg-white dark:bg-[#262930] text-emerald-700 dark:text-[#68C19D] shadow-2xs"
+              : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200"
           }`}
         >
           <Globe size={14} /> Digital Accounts
         </button>
       </div>
 
-      <div className="flex flex-col gap-2.5">
-        {filteredWallets[activeTab].map((w) => (
-          <button
-            key={w._id}
-            type="button"
-            onClick={() => {
-              setExpenseData((prev) => ({ ...prev, sourceWallet: w._id }));
-              onSelectWallet();
-            }}
-            className={`flex items-center justify-between p-3.5 rounded-lg border transition-all text-left outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 font-sans ${
-              expenseData.sourceWallet === w._id
-                ? w.isVirtual
-                  ? "bg-indigo-50 border-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-300"
-                  : "bg-emerald-50 border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
-                : "bg-white border-slate-200 dark:bg-[#0B1120] dark:border-white/10 hover:border-emerald-500 dark:hover:border-emerald-500 text-slate-900 dark:text-white"
-            }`}
-          >
-            <div className="flex items-center gap-3 overflow-hidden min-w-0">
-              <div
-                className={`p-2 rounded-md shrink-0 ${
-                  expenseData.sourceWallet === w._id
-                    ? w.isVirtual
-                      ? "bg-indigo-600 text-white"
-                      : "bg-emerald-600 text-white"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                }`}
-              >
-                {w.isGeneralPool ? (
-                  <Landmark size={16} />
-                ) : w.isVirtual ? (
-                  <Globe size={16} />
-                ) : (
-                  <Wallet size={16} />
-                )}
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="font-sans text-sm font-semibold truncate">{w.walletName}</span>
-                <span
-                  className={`font-sans text-[9px] font-bold uppercase tracking-wider mt-0.5 ${
-                    expenseData.sourceWallet === w._id ? "opacity-80" : "text-slate-500"
+      <div className="flex flex-col gap-2">
+        {filteredWallets[activeTab].map((w) => {
+          const isSelected = expenseData.sourceWallet === w._id;
+          return (
+            <button
+              key={w._id}
+              type="button"
+              onClick={() => {
+                setExpenseData((prev) => ({ ...prev, sourceWallet: w._id }));
+                onSelectWallet();
+              }}
+              className={`flex items-center justify-between p-3.5 rounded-xl border transition-all text-left outline-none cursor-pointer ${
+                isSelected
+                  ? "bg-emerald-50/75 border-emerald-700/60 dark:bg-[#4EA885]/[0.14] dark:border-[#4EA885]/60 text-emerald-800 dark:text-[#86D4B4]"
+                  : "bg-white border-stone-200/80 dark:bg-[#1A1C20] dark:border-white/[0.07] hover:border-emerald-700/50 dark:hover:border-[#4EA885]/50 text-stone-950 dark:text-stone-50"
+              }`}
+            >
+              <div className="flex items-center gap-3 overflow-hidden min-w-0">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    isSelected
+                      ? "bg-emerald-700 dark:bg-[#4EA885] text-white dark:text-[#121315]"
+                      : "bg-emerald-700/10 dark:bg-[#4EA885]/15 text-emerald-700 dark:text-[#68C19D]"
                   }`}
                 >
-                  {w.isVirtual ? "DIGITAL ACCOUNT" : "CASH WALLET"}
-                </span>
+                  {w.isGeneralPool ? (
+                    <Landmark size={16} />
+                  ) : w.isVirtual ? (
+                    <Globe size={16} />
+                  ) : (
+                    <Wallet size={16} />
+                  )}
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span
+                    style={{ fontFamily: "'Lora', serif" }}
+                    className="text-sm font-bold truncate"
+                  >
+                    {w.walletName}
+                  </span>
+                  <span
+                    className={`text-[9.5px] font-bold uppercase tracking-wider mt-0.5 ${
+                      isSelected
+                        ? "opacity-80"
+                        : "text-stone-500 dark:text-stone-400"
+                    }`}
+                  >
+                    {w.isVirtual ? "Digital Channel" : "Cash Wallet"}
+                  </span>
+                </div>
               </div>
-            </div>
-            <span className="font-sans text-sm font-bold tabular-nums shrink-0 pl-3">
-              {w.isVirtual ? "—" : `₹${w.balance?.toLocaleString("en-IN") || 0}`}
-            </span>
-          </button>
-        ))}
+              <span
+                style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                className="text-sm font-bold tabular-nums shrink-0 pl-3 text-stone-700 dark:text-stone-300"
+              >
+                {w.isVirtual
+                  ? "—"
+                  : `₹${w.balance?.toLocaleString("en-IN") || 0}`}
+              </span>
+            </button>
+          );
+        })}
         {filteredWallets[activeTab].length === 0 && (
-          <div className="p-6 text-center text-slate-400 font-sans text-xs font-bold uppercase tracking-widest border border-dashed border-slate-200 dark:border-white/10 rounded-lg">
+          <div className="p-6 text-center text-stone-400 text-xs font-bold uppercase tracking-wider border border-dashed border-stone-200 dark:border-white/10 rounded-xl">
             No matching accounts
           </div>
         )}

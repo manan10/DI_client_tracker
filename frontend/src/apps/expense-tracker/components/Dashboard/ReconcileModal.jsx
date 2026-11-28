@@ -8,11 +8,12 @@ const formatDisplayAmount = (val) => {
 };
 
 const ReconcileModal = ({ isOpen, setOpen, wallet, onSubmit, loading }) => {
-  const [actualAmount, setActualAmount] = useState(String(wallet?.balance ?? 0));
+  const [actualAmount, setActualAmount] = useState(
+    String(wallet?.balance ?? 0)
+  );
   const [localError, setLocalError] = useState("");
   const amountInputRef = useRef(null);
 
-  // Lock scroll and focus when opened
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -58,67 +59,84 @@ const ReconcileModal = ({ isOpen, setOpen, wallet, onSubmit, loading }) => {
   const isBalanced = difference === 0;
 
   return (
-    <div className="fixed inset-0 z-100 flex items-end sm:items-center justify-center p-0 sm:p-4 text-left font-sans">
+    <div
+      style={{ fontFamily: "'Nunito Sans', sans-serif" }}
+      className="fixed inset-0 z-100 flex items-end sm:items-center justify-center p-0 sm:p-4 text-left"
+    >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/60 dark:bg-[#020617]/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-stone-950/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
         onClick={handleClose}
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-md bg-white dark:bg-[#0B1120] rounded-t-2xl sm:rounded-xl shadow-2xl flex flex-col overflow-hidden border-t sm:border border-slate-200 dark:border-white/10 z-10 animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border-t sm:border border-stone-200/90 dark:border-white/[0.08] z-10 animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200">
         {/* COMMAND HEADER */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0B1120] shrink-0">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 border-b border-stone-200/80 dark:border-white/[0.07] bg-[#FAF9F6] dark:bg-[#16181C] shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded-md bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-500">
-              <Scale size={14} strokeWidth={2.5} />
+            <div className="w-7 h-7 rounded-lg bg-amber-700/10 dark:bg-amber-400/15 flex items-center justify-center text-amber-700 dark:text-amber-400">
+              <Scale size={14} strokeWidth={2.3} />
             </div>
-            <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-slate-700 dark:text-slate-300">
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-stone-700 dark:text-stone-300">
               Wallet Reconciliation
             </span>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500 active:scale-95 outline-none cursor-pointer"
+            className="p-1.5 hover:bg-stone-200/60 dark:hover:bg-white/[0.06] rounded-lg transition-colors text-stone-400 hover:text-stone-800 dark:hover:text-stone-100 active:scale-95 outline-none cursor-pointer"
           >
             <X size={16} strokeWidth={2.5} />
           </button>
         </div>
+
         <div className="p-5 sm:p-6 space-y-5">
           {localError && (
-            <div className="flex items-start gap-2.5 p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-lg animate-in fade-in slide-in-from-top-2">
-              <AlertCircle size={14} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-              <p className="font-sans text-[10px] sm:text-xs font-semibold text-rose-700 dark:text-rose-300 leading-snug">
+            <div className="flex items-start gap-2.5 p-3 bg-rose-700/[0.08] dark:bg-[#E88D96]/15 border border-rose-700/20 dark:border-[#E88D96]/25 rounded-xl animate-in fade-in slide-in-from-top-2">
+              <AlertCircle
+                size={14}
+                className="text-rose-700 dark:text-[#F09BA3] shrink-0 mt-0.5"
+              />
+              <p className="text-xs font-semibold text-rose-700 dark:text-[#F09BA3] leading-snug">
                 {localError}
               </p>
             </div>
           )}
 
           <div className="text-left space-y-1">
-            <h2 className="font-serif text-lg sm:text-xl font-semibold tracking-tight text-slate-900 dark:text-white truncate">
+            <h2
+              style={{ fontFamily: "'Lora', serif" }}
+              className="text-lg sm:text-xl font-bold tracking-tight text-stone-950 dark:text-stone-50 truncate"
+            >
               {wallet.walletName}
             </h2>
-            <p className="font-sans text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-              Amount showing in Wallet:{" "}
-              <span className="font-sans font-bold tabular-nums text-slate-700 dark:text-slate-300">
+            <p className="text-[11px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
+              Ledger Balance:{" "}
+              <span
+                style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                className="font-bold tabular-nums text-stone-800 dark:text-stone-200"
+              >
                 ₹{currentBalance.toLocaleString("en-IN")}
               </span>
             </p>
           </div>
 
-          <div className="relative border-b border-slate-200 dark:border-white/10 focus-within:border-amber-500 transition-colors pt-3">
-            <p className="font-sans text-[10px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest absolute top-0 left-0">
+          <div className="relative border-b border-stone-200 dark:border-white/[0.09] focus-within:border-emerald-700 dark:focus-within:border-[#4EA885] transition-colors pt-4">
+            <p className="text-[10px] font-bold text-emerald-700 dark:text-[#68C19D] uppercase tracking-[0.12em] absolute top-0 left-0">
               Actual Physical Balance
             </p>
-            <span className="font-serif italic absolute left-0 bottom-3 text-2xl font-bold text-slate-400 dark:text-slate-600">
+            <span
+              style={{ fontFamily: "'Lora', serif" }}
+              className="absolute left-0 bottom-3 text-2xl font-bold text-stone-400 dark:text-stone-500"
+            >
               ₹
             </span>
             <input
               ref={amountInputRef}
               type="text"
               inputMode="numeric"
-              className="w-full bg-transparent pb-3 pl-8 font-sans text-3xl sm:text-4xl font-bold tabular-nums text-slate-900 dark:text-white outline-none placeholder:text-slate-200 dark:placeholder:text-slate-800"
+              style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+              className="w-full bg-transparent pb-3 pl-7 text-3xl sm:text-4xl font-bold tabular-nums text-stone-950 dark:text-stone-50 outline-none placeholder:text-stone-300 dark:placeholder:text-stone-700"
               value={formatDisplayAmount(actualAmount)}
               onChange={handleAmountChange}
               placeholder="0"
@@ -127,37 +145,42 @@ const ReconcileModal = ({ isOpen, setOpen, wallet, onSubmit, loading }) => {
 
           {/* Dynamic Difference Display */}
           <div
-            className={`flex items-center justify-between p-3.5 rounded-lg border transition-all ${
+            className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
               isBalanced
-                ? "bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:border-white/5"
+                ? "bg-[#FAF9F6] border-stone-200/80 dark:bg-[#16181C] dark:border-white/[0.07]"
                 : isMissingCash
-                ? "bg-rose-50 border-rose-200 dark:bg-rose-500/10 dark:border-rose-500/20"
-                : "bg-emerald-50 border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/20"
+                ? "bg-rose-700/[0.06] border-rose-700/20 dark:bg-[#E88D96]/12 dark:border-[#E88D96]/25"
+                : "bg-emerald-700/[0.07] border-emerald-700/20 dark:bg-[#4EA885]/12 dark:border-[#4EA885]/25"
             }`}
           >
             <div className="flex flex-col min-w-0 pr-2">
-              <span className="font-sans text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+              <span className="text-[9.5px] font-bold uppercase tracking-[0.12em] text-stone-500 dark:text-stone-400">
                 Difference
               </span>
               <span
-                className={`font-sans text-xs font-semibold truncate mt-0.5 ${
+                className={`text-xs font-bold truncate mt-0.5 ${
                   isBalanced
-                    ? "text-slate-600 dark:text-slate-300"
+                    ? "text-stone-600 dark:text-stone-300"
                     : isMissingCash
-                    ? "text-rose-700 dark:text-rose-300"
-                    : "text-emerald-700 dark:text-emerald-300"
+                    ? "text-rose-700 dark:text-[#F09BA3]"
+                    : "text-emerald-700 dark:text-[#68C19D]"
                 }`}
               >
-                {isBalanced ? "Perfect match" : isMissingCash ? "Funds missing" : "Surplus funds"}
+                {isBalanced
+                  ? "Perfect match"
+                  : isMissingCash
+                  ? "Funds missing"
+                  : "Surplus funds"}
               </span>
             </div>
             <span
-              className={`font-sans text-base font-bold tabular-nums tracking-tight shrink-0 ${
+              style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+              className={`text-base font-bold tabular-nums tracking-tight shrink-0 ${
                 isBalanced
-                  ? "text-slate-400 dark:text-slate-500"
+                  ? "text-stone-400 dark:text-stone-500"
                   : isMissingCash
-                  ? "text-rose-600 dark:text-rose-500"
-                  : "text-emerald-600 dark:text-emerald-500"
+                  ? "text-rose-700 dark:text-[#F09BA3]"
+                  : "text-emerald-700 dark:text-[#68C19D]"
               }`}
             >
               {isBalanced
@@ -168,15 +191,15 @@ const ReconcileModal = ({ isOpen, setOpen, wallet, onSubmit, loading }) => {
             </span>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-1">
             <button
               type="button"
               disabled={loading || isBalanced || actualAmount === ""}
               onClick={handleFinalSubmit}
-              className="w-full bg-amber-500 hover:bg-amber-600 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-amber-500 dark:focus-visible:ring-offset-[#0B1120] text-white h-12 rounded-lg font-sans font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 outline-none transition-all shadow-sm cursor-pointer"
+              className="w-full bg-emerald-700 hover:bg-emerald-800 dark:bg-[#4EA885] dark:hover:bg-[#68C19D] text-white dark:text-[#121315] h-12 rounded-xl font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-40 outline-none transition-all shadow-2xs cursor-pointer"
             >
               {loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white dark:border-stone-900/30 dark:border-t-stone-900" />
               ) : (
                 <>
                   Perform Correction <RefreshCw size={14} strokeWidth={2.5} />

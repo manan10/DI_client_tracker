@@ -261,17 +261,20 @@ const ExpenseModalContent = ({
   const currentWallet = wallets.find((w) => w._id === expenseData.sourceWallet);
 
   return (
-    <div className="fixed inset-0 z-100 flex items-end sm:items-center justify-center p-0 sm:p-4 text-left font-sans">
+    <div
+      style={{ fontFamily: "'Nunito Sans', sans-serif" }}
+      className="fixed inset-0 z-100 flex items-end sm:items-center justify-center p-0 sm:p-4 text-left"
+    >
       {/* Dimmed Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/60 dark:bg-[#020617]/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-stone-950/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
         onClick={handleClose}
       />
 
       {/* Modal Viewport */}
-      <div className="relative w-full max-w-2xl bg-white dark:bg-[#0B1120] rounded-t-2xl sm:rounded-xl shadow-2xl flex flex-col h-[85vh] sm:h-auto sm:max-h-[85vh] overflow-hidden border-t sm:border border-slate-200 dark:border-white/10 z-10 animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-[#1A1C20] rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col h-[85vh] sm:h-auto sm:max-h-[85vh] overflow-hidden border-t sm:border border-stone-200/90 dark:border-white/[0.08] z-10 animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200">
         {/* COMMAND HEADER / STEP NAVIGATION */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0B1120] shrink-0">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-stone-200/80 dark:border-white/[0.07] bg-[#FAF9F6] dark:bg-[#16181C] shrink-0">
           <div className="flex items-center gap-3 min-w-0" role="tablist" aria-label="Expense Steps">
             {[1, 2, 3, 4].map((s) => (
               <button
@@ -281,21 +284,22 @@ const ExpenseModalContent = ({
                 aria-selected={step === s}
                 disabled={(step < s && !isEditMode) || loading}
                 onClick={() => setStep(s)}
-                className={`flex items-center gap-2 transition-all outline-none rounded-md focus-visible:ring-2 focus-visible:ring-emerald-500 font-sans ${
+                className={`flex items-center gap-2 transition-all outline-none rounded-md ${
                   step === s ? "opacity-100" : "opacity-40 hover:opacity-75"
                 } ${step < s && !isEditMode ? "cursor-not-allowed" : "cursor-pointer"}`}
               >
                 <span
+                  style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                   className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
                     step >= s
-                      ? "bg-emerald-600 dark:bg-emerald-500 text-white"
-                      : "bg-slate-200 dark:bg-slate-800 text-slate-500"
+                      ? "bg-emerald-700 dark:bg-[#4EA885] text-white dark:text-[#121315]"
+                      : "bg-stone-200 dark:bg-white/[0.08] text-stone-500 dark:text-stone-400"
                   }`}
                 >
                   {s}
                 </span>
                 {step === s && (
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-900 dark:text-white">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-stone-900 dark:text-stone-100">
                     {s === 1
                       ? "Select Wallet"
                       : s === 2
@@ -312,7 +316,7 @@ const ExpenseModalContent = ({
           <button
             type="button"
             onClick={handleClose}
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 cursor-pointer font-sans"
+            className="p-1.5 hover:bg-stone-200/60 dark:hover:bg-white/[0.06] rounded-lg transition-colors text-stone-400 hover:text-stone-800 dark:hover:text-stone-100 active:scale-95 outline-none cursor-pointer"
             aria-label="Close modal"
           >
             <X size={16} strokeWidth={2.5} />
@@ -322,9 +326,9 @@ const ExpenseModalContent = ({
         {/* SCROLLABLE WORKSPACE */}
         <div className="flex-1 overflow-y-auto no-scrollbar p-5 sm:p-6 pb-8 sm:pb-6">
           {localError && (
-            <div className="mb-5 flex items-start gap-2.5 p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-lg animate-in fade-in slide-in-from-top-2">
-              <AlertCircle size={14} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-              <p className="font-sans text-[10px] sm:text-xs font-semibold text-rose-700 dark:text-rose-300 leading-snug">
+            <div className="mb-5 flex items-start gap-2.5 p-3 bg-rose-700/[0.08] dark:bg-[#E88D96]/15 border border-rose-700/20 dark:border-[#E88D96]/25 rounded-xl animate-in fade-in slide-in-from-top-2">
+              <AlertCircle size={14} className="text-rose-700 dark:text-[#F09BA3] shrink-0 mt-0.5" />
+              <p className="text-xs font-semibold text-rose-700 dark:text-[#F09BA3] leading-snug">
                 {localError}
               </p>
             </div>
